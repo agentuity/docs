@@ -1,0 +1,48 @@
+---
+title: Getting Started Guide
+description: Quick guide to get up and running with Agentuity
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+<Steps>
+<Step>
+### Create an Account
+[Create an Agentuity account](/docs/CloudPortal) or sign in to the Cloud Portal
+</Step>
+
+<Step>
+### Install the CLI
+```bash
+brew tap agentuity/tap && brew install agentuity
+```
+[More CLI installation options →](/docs/CLI/installation)
+</Step>
+
+<Step>
+### Login to Agentuity
+```bash
+agentuity login
+```
+[CLI authentication details →](/docs/CLI/login)
+</Step>
+
+<Step>
+### Create Your First Project
+```bash
+agentuity create project my-project
+cd my-project
+```
+[Project creation guide →](/docs/projects/creating)
+</Step>
+
+<Step>
+### Deploy Your Project
+```bash
+agentuity deploy
+```
+[Deployment documentation →](/docs/projects/deployment)
+</Step>
+</Steps>
+
+That's it! Your project is now live. Need help? Visit our [Support](/support) page. 

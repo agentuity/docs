@@ -1,0 +1,6 @@
+---
+description: MDX markdown rules
+globs: *.mdx
+---
+- Always create front matter with a title and description
+- This is MDX so some react components can be used

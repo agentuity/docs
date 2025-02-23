@@ -1,0 +1,13 @@
+---
+description: About this project
+globs: 
+---
+
+This is the technical documentation for the Agentuity Cloud, which covers:
+
+- General cloud and account information (docs stored in /content/docs/Cloud)
+- The CLI (/content/docs/CLI)
+- Examples, tutorials, samples (/content/docs/Examples)
+- And the different SDKs (/content/docs/SDKs)
+
+This doc app is a NextJS app built on top of Fumadocs (https://fumadocs.vercel.app/docs/ui).

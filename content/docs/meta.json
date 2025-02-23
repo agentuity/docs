@@ -1,4 +1,11 @@
 {
 	"title": "Docs",
-	"pages": ["Introduction", "Cloud", "CLI", "SDKs", "Examples"]
+	"pages": [
+		"Introduction",
+		"Cloud",
+		"CLI",
+		"SDKs",
+		"Examples",
+		"Troubleshooting"
+	]
 }
