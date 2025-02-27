@@ -1,0 +1,291 @@
+---
+title: Troubleshooting
+description: Common issues and solutions when working with the Agentuity JavaScript SDK
+---
+
+# Troubleshooting
+
+This section covers common issues you might encounter when working with the Agentuity JavaScript SDK and provides solutions to help you resolve them.
+
+## Environment Configuration Problems
+
+### API Key Issues
+
+**Issue**: `AGENTUITY_API_KEY is not set` error when running your application.
+
+**Solution**:
+1. Ensure you've set the `AGENTUITY_API_KEY` environment variable:
+   ```bash
+   export AGENTUITY_API_KEY=your_api_key
+   ```
+2. For local development, you can create a `.env` file in your project root:
+   ```
+   AGENTUITY_API_KEY=your_api_key
+   ```
+3. Verify the API key is correctly loaded in your application:
+   ```typescript
+   console.log('API Key set:', !!process.env.AGENTUITY_API_KEY);
+   ```
+
+### Project ID Issues
+
+**Issue**: `projectId is required and not found` error when starting your application.
+
+**Solution**:
+1. Set the `AGENTUITY_CLOUD_PROJECT_ID` environment variable:
+   ```bash
+   export AGENTUITY_CLOUD_PROJECT_ID=your_project_id
+   ```
+2. Alternatively, you can specify the project ID in your code:
+   ```typescript
+   await runner(true, './agents', {
+     projectId: 'your_project_id'
+   });
+   ```
+3. Check if your `agentuity.yaml` file in the parent directory contains the correct project ID.
+
+### Node.js Version Issues
+
+**Issue**: Errors related to unsupported JavaScript features or syntax.
+
+**Solution**:
+1. Verify your Node.js version meets the minimum requirement (v22+):
+   ```bash
+   node --version
+   ```
+2. If you're using an older version, upgrade Node.js:
+   ```bash
+   # Using nvm (recommended)
+   nvm install 22
+   nvm use 22
+   
+   # Or download from nodejs.org
+   ```
+3. If you can't upgrade Node.js, consider using a transpiler like Babel to support newer syntax in older environments.
+
+## Authentication Issues
+
+### Invalid API Key
+
+**Issue**: `401 Unauthorized` errors when making API requests.
+
+**Solution**:
+1. Verify your API key is correct and not expired.
+2. Check if you have the correct permissions for the operations you're trying to perform.
+3. Regenerate your API key from the Agentuity Cloud Console if necessary.
+4. Ensure the API key is being correctly passed in the Authorization header.
+
+### Permission Issues
+
+**Issue**: `403 Forbidden` errors when accessing certain resources.
+
+**Solution**:
+1. Check if your API key has the necessary permissions for the resources you're trying to access.
+2. Verify you're using the correct project ID and organization ID.
+3. Contact your organization administrator to request additional permissions if needed.
+
+## Agent Deployment Issues
+
+### Agent Not Found
+
+**Issue**: Agent not found or not accessible after deployment.
+
+**Solution**:
+1. Verify the agent name matches exactly what's defined in your code:
+   ```typescript
+   export const config: AgentConfig = {
+     name: 'my-agent', // This name must match exactly
+     description: 'My agent description'
+   };
+   ```
+2. Check if the agent is properly exported as the default export:
+   ```typescript
+   export default handler;
+   ```
+3. Ensure the agent file is in the correct directory structure.
+4. Verify the agent has been successfully deployed to your project.
+
+### Agent Initialization Errors
+
+**Issue**: Errors when initializing or starting agents.
+
+**Solution**:
+1. Check if your agent handler is properly implemented and exported.
+2. Verify all required dependencies are installed.
+3. Check for syntax errors in your agent code.
+4. Ensure your agent's directory structure matches what's expected by the SDK.
+
+## Storage API Issues
+
+### Key-Value Storage Issues
+
+**Issue**: Errors when using the key-value storage API.
+
+**Solution**:
+1. Verify you're using the correct storage name and key.
+2. Ensure you're handling binary data correctly:
+   ```typescript
+   // When storing JSON data
+   await context.kv.set('storage-name', 'key', JSON.stringify(data));
+   
+   // When retrieving JSON data
+   const buffer = await context.kv.get('storage-name', 'key');
+   const data = JSON.parse(new TextDecoder().decode(buffer));
+   ```
+3. Check if you're exceeding storage limits or quotas.
+4. Ensure TTL values are at least 60 seconds if specified.
+
+### Vector Storage Issues
+
+**Issue**: Errors or unexpected results when using vector storage.
+
+**Solution**:
+1. Verify you're using the correct storage name.
+2. Ensure your embeddings have the correct dimensionality.
+3. Check if your similarity threshold is appropriate (between 0.0 and 1.0).
+4. Verify your query text is not empty or too short.
+5. Check if you're exceeding storage limits or quotas.
+
+## Performance Issues
+
+### Slow Response Times
+
+**Issue**: Agents respond slowly to requests.
+
+**Solution**:
+1. Optimize your agent code to reduce processing time.
+2. Use caching for frequently accessed data:
+   ```typescript
+   // Check cache first
+   const cachedData = await context.kv.get('cache', cacheKey);
+   if (cachedData) {
+     return JSON.parse(new TextDecoder().decode(cachedData));
+   }
+   
+   // If not in cache, compute and store
+   const result = await computeExpensiveOperation();
+   await context.kv.set('cache', cacheKey, JSON.stringify(result), 3600); // 1 hour TTL
+   return result;
+   ```
+3. Minimize external API calls and database queries.
+4. Consider using Bun instead of Node.js for better performance.
+5. Monitor your application using OpenTelemetry to identify bottlenecks.
+
+### Memory Leaks
+
+**Issue**: Increasing memory usage over time.
+
+**Solution**:
+1. Avoid creating large objects or buffers that aren't properly garbage collected.
+2. Use streams for processing large files or data.
+3. Implement proper error handling to prevent resource leaks.
+4. Monitor memory usage with tools like `process.memoryUsage()`.
+5. Consider implementing a restart strategy for long-running processes.
+
+## Debugging Tips
+
+### Enable Debug Logging
+
+To get more detailed logs from the SDK:
+
+```typescript
+// Create a more verbose logger
+const debugLogger = context.logger.child({ 
+  level: 'debug',
+  component: 'my-agent'
+});
+
+// Use the debug logger
+debugLogger.debug('Detailed information', { 
+  requestId: '123',
+  payload: request.json()
+});
+```
+
+### Use OpenTelemetry for Tracing
+
+Enable detailed tracing to debug complex issues:
+
+```typescript
+// Set up environment variables
+process.env.AGENTUITY_OTLP_URL = 'your-otlp-collector-url';
+process.env.AGENTUITY_OTLP_BEARER_TOKEN = 'your-bearer-token';
+
+// Use tracing in your code
+context.tracer.startActiveSpan('operation-name', async (span) => {
+  span.setAttribute('request.id', requestId);
+  
+  try {
+    // Your code here
+    span.addEvent('operation.milestone', { timestamp: Date.now() });
+    
+    // More code
+  } catch (error) {
+    span.recordException(error);
+    throw error;
+  } finally {
+    span.end();
+  }
+});
+```
+
+### Inspect Network Requests
+
+To debug API calls made by the SDK:
+
+1. Use a tool like [Wireshark](https://www.wireshark.org/) or [mitmproxy](https://mitmproxy.org/) to inspect network traffic.
+2. Set up a proxy server to intercept and log requests.
+3. Use environment variables to point the SDK to your proxy:
+   ```bash
+   export HTTPS_PROXY=http://localhost:8080
+   ```
+
+### Local Development Server
+
+For local development and testing:
+
+```typescript
+import { createServer, createServerContext } from '@agentuity/sdk';
+
+// Create a local development server
+const server = await createServer({
+  context: createServerContext({
+    logger: customLogger,
+    tracer: customTracer,
+    devmode: true,
+    projectId: 'local-dev',
+    orgId: 'local-dev',
+  }),
+  directory: './agents',
+  port: 3000,
+  logger: customLogger,
+});
+
+// Start the server
+await server.start();
+console.log('Server running on http://localhost:3000');
+```
+
+## Common Error Messages and Solutions
+
+| Error Message | Possible Cause | Solution |
+|---------------|----------------|----------|
+| `AGENTUITY_API_KEY is not set` | Missing API key environment variable | Set the AGENTUITY_API_KEY environment variable |
+| `projectId is required and not found` | Missing project ID | Set the AGENTUITY_CLOUD_PROJECT_ID environment variable |
+| `No routes found in [directory]` | No valid agent handlers in directory | Check agent file structure and exports |
+| `No handler found in [filename]` | Agent file doesn't export a handler | Ensure the agent exports a default handler function |
+| `handler returned undefined instead of a response` | Agent handler doesn't return a response | Make sure your handler returns a valid response |
+| `ttl for keyvalue set must be at least 60 seconds` | TTL value too low | Use a TTL of at least 60 seconds |
+| `invalid payload type` | Unsupported payload type | Use only supported payload types (string, ArrayBuffer, JSON) |
+| `401 Unauthorized` | Invalid API key | Check and update your API key |
+| `403 Forbidden` | Insufficient permissions | Request additional permissions |
+| `429 Too Many Requests` | Rate limiting applied | Implement backoff strategy and reduce request frequency |
+
+## Getting Additional Help
+
+If you're still experiencing issues after trying the troubleshooting steps above:
+
+1. Check the [Agentuity documentation](https://docs.agentuity.com) for updates and additional information.
+2. Join the [Agentuity Community](https://community.agentuity.com) to ask questions and get help from other developers.
+3. Contact [Agentuity Support](https://support.agentuity.com) for assistance with account-specific issues.
+4. File an issue on the [GitHub repository](https://github.com/agentuity/sdk-js/issues) if you believe you've found a bug.

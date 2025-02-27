@@ -1,0 +1,78 @@
+---
+title: JavaScript SDK
+description: Documentation for the Agentuity JavaScript SDK
+---
+
+# Agentuity JavaScript SDK
+
+The Agentuity JavaScript SDK provides a powerful framework for building AI agents in JavaScript and TypeScript. It offers a comprehensive set of tools for creating, deploying, and managing agents with features like key-value storage, vector storage, and OpenTelemetry integration.
+
+## Installation
+
+You can install the Agentuity JavaScript SDK using npm, yarn, or pnpm:
+
+```bash
+# Using npm
+npm install @agentuity/sdk
+
+# Using yarn
+yarn add @agentuity/sdk
+
+# Using pnpm
+pnpm add @agentuity/sdk
+```
+
+## Prerequisites
+
+Before using the Agentuity JavaScript SDK, ensure you have the following prerequisites installed:
+
+- **Node.js**: Version 22 or higher is required
+- **Bun** (optional): For enhanced performance and additional runtime support
+
+### Installing Node.js
+
+You can download and install Node.js from the [official website](https://nodejs.org/). Make sure to install version 22 or higher.
+
+### Installing Bun
+
+Bun is an optional but recommended runtime for the Agentuity SDK. You can install it using the following command:
+
+```bash
+curl -fsSL https://bun.sh/install | bash
+```
+
+For more information, visit the [Bun installation documentation](https://bun.sh/docs/installation).
+
+## Environment Setup
+
+To use the Agentuity JavaScript SDK, you'll need to set up the following environment variables:
+
+```bash
+# Required
+AGENTUITY_API_KEY=your_api_key
+AGENTUITY_CLOUD_PROJECT_ID=your_project_id
+
+# Optional
+AGENTUITY_CLOUD_ORG_ID=your_org_id
+AGENTUITY_CLOUD_DEPLOYMENT_ID=your_deployment_id
+AGENTUITY_CLOUD_RUN_ID=your_run_id
+AGENTUITY_SDK_DIR=path_to_your_agents_directory
+```
+
+## Building the SDK
+
+If you're working with the SDK source code, you can build it using the following commands:
+
+```bash
+# Using Bun
+bun run build
+
+# Using npm
+npm run build
+```
+
+## Next Steps
+
+- [Core Concepts](./core-concepts.mdx) - Learn about the fundamental concepts of the Agentuity JavaScript SDK
+- [API Reference](./api-reference.mdx) - Explore the detailed API documentation
+- [Examples](./examples.mdx) - See practical examples of using the SDK
