@@ -1,0 +1,116 @@
+---
+title: Key-Value Memory Storage
+description: Learn how to create, view, and manage key-value memory storage in the Agentuity Cloud Console
+---
+
+# Key-Value Memory Storage
+
+The Key-Value Memory Storage section of the Agentuity Cloud Console allows you to create, view, and manage key-value stores for fast, simple, or temporary data storage. This guide covers the main key-value memory storage features and common workflows.
+
+## Understanding Key-Value Memory Storage
+
+Key-value memory storage is designed for fast, simple, or temporary data storage, making it ideal for:
+
+- Session data
+- Configuration settings
+- Caching
+- Temporary state management
+- Simple data structures
+
+## Viewing Your Key-Value Instances
+
+When you navigate to the Memory > Key-Value page in the Cloud Console, you'll see a table listing all your key-value instances with the following information:
+
+- **Name**: The name of your key-value instance
+- **Size**: The storage size used by the key-value instance
+
+You can filter the list of key-value instances using the search box at the top of the table to quickly find specific instances by name.
+
+## Creating a New Key-Value Instance
+
+To create a new key-value memory storage instance:
+
+1. Navigate to the Memory > Key-Value page in the Cloud Console
+2. Click the "Create Memory Storage" button in the top-right corner
+3. In the dialog that appears:
+   - Enter a name for the key-value instance (using only letters, numbers, hyphens, and underscores)
+   - Select "Key-Value Store" as the storage type
+   - Review the description: "Key-value store for fast, simple, or temporary data storage."
+4. Click "Provision" to create the new key-value instance
+5. Once created, your new key-value instance will appear in the list
+
+## Managing Key-Value Instances
+
+### Viewing Key-Value Instance Details
+
+To view details of a key-value instance:
+
+1. Find the key-value instance in the list
+2. Click on the instance name to navigate to its details page
+
+The key-value instance details page includes several tabs:
+
+- **Overview**: General information about the key-value instance
+- **Data**: View and manage the data stored in the key-value instance
+- **Logs**: View logs related to the key-value instance
+- **Settings**: Configure the key-value instance settings
+
+### Key-Value Instance Data
+
+The Data tab allows you to:
+
+- View the key-value pairs stored in your instance
+- Add new key-value pairs to your instance
+- Edit existing key-value pairs
+- Delete key-value pairs from your instance
+- Search through your key-value data
+
+### Key-Value Instance Logs
+
+The Logs tab displays:
+
+- Access logs
+- Operation logs
+- Error logs
+- Performance metrics
+
+### Key-Value Instance Settings
+
+The Settings tab allows you to configure:
+
+- Instance name
+- Access permissions
+- Expiration policies
+- Advanced configuration options
+
+## Using Key-Value Memory in Applications
+
+Key-value memory storage can be integrated with your applications using the Agentuity SDK:
+
+```javascript
+import { Agentuity } from '@agentuity/sdk';
+
+const client = new Agentuity({
+  apiKey: 'YOUR_API_KEY'
+});
+
+// Store data in key-value memory
+await client.memory.keyValue.set('my-kv-instance', 'my-key', 'my-value');
+
+// Retrieve data from key-value memory
+const value = await client.memory.keyValue.get('my-kv-instance', 'my-key');
+
+// Delete data from key-value memory
+await client.memory.keyValue.delete('my-kv-instance', 'my-key');
+```
+
+## Best Practices
+
+- **Use descriptive names**: Give your key-value instances clear, descriptive names that indicate their purpose
+- **Organize by domain**: Create separate key-value instances for different data domains
+- **Monitor size**: Regularly check the size of your key-value instances to manage costs
+- **Set expiration policies**: Configure expiration policies for temporary data to automatically clean up unused data
+- **Regular maintenance**: Periodically review and clean up outdated or irrelevant data
+- **Security**: Ensure sensitive information is properly handled when storing in key-value memory
+
+{/* Placeholder for screenshots of the Key-Value Memory Storage interface */}

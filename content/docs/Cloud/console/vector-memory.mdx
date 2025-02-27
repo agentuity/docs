@@ -1,0 +1,124 @@
+---
+title: Vector Memory Storage
+description: Learn how to create, view, and manage vector memory storage in the Agentuity Cloud Console
+---
+
+# Vector Memory Storage
+
+The Vector Memory Storage section of the Agentuity Cloud Console allows you to create, view, and manage vector databases for semantic search and large context windows. This guide covers the main vector memory storage features and common workflows.
+
+## Understanding Vector Memory Storage
+
+Vector memory storage is designed for semantic search and large context windows, making it ideal for:
+
+- Knowledge bases
+- Historical data
+- Semantic search applications
+- Applications requiring understanding of content meaning
+- Long-term memory for agents
+
+## Viewing Your Vector Instances
+
+When you navigate to the Memory > Vector page in the Cloud Console, you'll see a table listing all your vector instances with the following information:
+
+- **Name**: The name of your vector instance
+- **Size**: The storage size used by the vector instance
+
+You can filter the list of vector instances using the search box at the top of the table to quickly find specific instances by name.
+
+## Creating a New Vector Instance
+
+To create a new vector memory storage instance:
+
+1. Navigate to the Memory > Vector page in the Cloud Console
+2. Click the "Create Memory Storage" button in the top-right corner
+3. In the dialog that appears:
+   - Enter a name for the vector instance (using only letters, numbers, hyphens, and underscores)
+   - Select "Vector Database" as the storage type
+   - Review the description: "Vector database for semantic search and large context windows. Perfect for knowledge bases and historical data."
+4. Click "Provision" to create the new vector instance
+5. Once created, your new vector instance will appear in the list
+
+## Managing Vector Instances
+
+### Viewing Vector Instance Details
+
+To view details of a vector instance:
+
+1. Find the vector instance in the list
+2. Click on the instance name to navigate to its details page
+
+The vector instance details page includes several tabs:
+
+- **Overview**: General information about the vector instance
+- **Data**: View and manage the data stored in the vector instance
+- **Chat**: Interact with the vector instance using natural language
+- **Logs**: View logs related to the vector instance
+- **Settings**: Configure the vector instance settings
+
+### Vector Instance Data
+
+The Data tab allows you to:
+
+- View the data stored in your vector instance
+- Add new data to your vector instance
+- Delete data from your vector instance
+- Search through your vector data
+
+### Vector Instance Chat
+
+The Chat tab provides an interface to:
+
+- Interact with your vector data using natural language
+- Test semantic search capabilities
+- Verify data retrieval accuracy
+
+### Vector Instance Logs
+
+The Logs tab displays:
+
+- Access logs
+- Operation logs
+- Error logs
+- Performance metrics
+
+### Vector Instance Settings
+
+The Settings tab allows you to configure:
+
+- Instance name
+- Access permissions
+- Integration settings
+- Advanced configuration options
+
+## Using Vector Memory in Applications
+
+Vector memory storage can be integrated with your applications using the Agentuity SDK:
+
+```javascript
+import { Agentuity } from '@agentuity/sdk';
+
+const client = new Agentuity({
+  apiKey: 'YOUR_API_KEY'
+});
+
+// Store data in vector memory
+await client.memory.vector.store('my-vector-instance', {
+  text: 'This is some text to store',
+  metadata: { source: 'example' }
+});
+
+// Search vector memory
+const results = await client.memory.vector.search('my-vector-instance', 'search query');
+```
+
+## Best Practices
+
+- **Use descriptive names**: Give your vector instances clear, descriptive names that indicate their purpose
+- **Organize by domain**: Create separate vector instances for different knowledge domains
+- **Monitor size**: Regularly check the size of your vector instances to manage costs
+- **Optimize embeddings**: Consider the embedding model and parameters for your specific use case
+- **Regular maintenance**: Periodically review and clean up outdated or irrelevant data
+- **Security**: Ensure sensitive information is properly handled when storing in vector memory
+
+{/* Placeholder for screenshots of the Vector Memory Storage interface */}
