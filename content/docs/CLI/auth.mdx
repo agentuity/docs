@@ -1,0 +1,73 @@
+---
+title: Authentication Commands
+description: Commands for authenticating with the Agentuity Cloud Platform
+---
+
+The `auth` commands allow you to authenticate with the Agentuity Cloud Platform, manage your login session, and check your authentication status.
+
+## auth login
+
+Logs you into the Agentuity Cloud Platform.
+
+### Aliases
+
+`agentuity login` (shortcut for `agentuity auth login`)
+
+### Usage
+
+```bash
+agentuity auth login
+```
+
+This command will open a browser window where you can log in to your Agentuity account. After successful authentication, your credentials will be stored locally for future use.
+
+### Example
+
+```bash
+$ agentuity auth login
+✓ You are now logged in
+```
+
+## auth logout
+
+Logs you out of the Agentuity Cloud Platform.
+
+### Aliases
+
+`agentuity logout` (shortcut for `agentuity auth logout`)
+
+### Usage
+
+```bash
+agentuity auth logout
+```
+
+This command will remove your stored credentials.
+
+### Example
+
+```bash
+$ agentuity auth logout
+✓ You have been logged out
+```
+
+## auth whoami
+
+Displays information about the currently logged-in user.
+
+### Aliases
+
+`agentuity whoami` (shortcut for `agentuity auth whoami`)
+
+### Usage
+
+```bash
+agentuity auth whoami
+```
+
+### Example
+
+```bash
+$ agentuity auth whoami
+You are logged in with user id: user_2sj1EN9JfryK3FhRDzWJAuteCGz
+```

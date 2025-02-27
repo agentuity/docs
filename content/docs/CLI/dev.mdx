@@ -1,0 +1,51 @@
+---
+title: Development Commands
+description: Commands for local development of Agentuity projects
+---
+
+The `dev` commands allow you to run and test your Agentuity projects locally during development.
+
+## dev run
+
+Runs a development server for local testing and development.
+
+### Aliases
+
+`agentuity run` (shortcut for `agentuity dev run`)
+
+### Usage
+
+```bash
+agentuity dev run [flags]
+```
+
+### Flags
+
+| Flag | Description |
+| ---- | ----------- |
+| `--dir`, `-d` | The directory of the project to run |
+| `--websocket-id` | Specify a WebSocket room ID for real-time communication |
+
+### Examples
+
+Run a development server for a project in the current directory:
+```bash
+$ agentuity dev run
+✓ Development server started
+🔗 Local URL: http://localhost:3000
+```
+
+Run a development server for a project in a specific directory:
+```bash
+$ agentuity dev run --dir ~/projects/my-project
+✓ Development server started
+🔗 Local URL: http://localhost:3000
+```
+
+Run a development server with a specific WebSocket room ID:
+```bash
+$ agentuity dev run --websocket-id room_123456
+✓ Development server started
+🔗 Local URL: http://localhost:3000
+🔌 WebSocket connected: room_123456
+```

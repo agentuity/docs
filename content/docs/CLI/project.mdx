@@ -1,0 +1,76 @@
+---
+title: Project Commands
+description: Commands for creating and managing Agentuity projects
+---
+
+The `project` commands allow you to create and manage Agentuity projects.
+
+## project create
+
+Creates a new Agentuity project.
+
+### Aliases
+
+`agentuity create` (shortcut for `agentuity project create`)
+`agentuity project new`
+
+### Usage
+
+```bash
+agentuity project create [name] [flags]
+```
+
+### Aliases
+
+`agentuity project new`
+
+### Flags
+
+| Flag | Description |
+| ---- | ----------- |
+| `--dir`, `-d` | The directory to create the project in |
+| `--provider`, `-p` | The provider to use for the project |
+
+### Examples
+
+Create a new project with interactive prompts:
+```bash
+$ agentuity project create my-project
+✓ Project created successfully
+
+Next steps:
+
+1. Switch into the project directory at ~/my-project
+2. Run agentuity run to run the project locally in development mode
+3. Run agentuity deploy to deploy the project to the Agentuity Agent Cloud
+
+🏠 Access your project at https://app.agentuity.com/projects/proj_123456
+```
+
+Create a new project with a specific provider:
+```bash
+$ agentuity project create my-project --provider javascript
+✓ Project created successfully
+```
+
+## project init
+
+Initializes an existing directory as an Agentuity project.
+
+### Aliases
+
+`agentuity init` (shortcut for `agentuity project init`)
+
+### Usage
+
+```bash
+agentuity project init [directory]
+```
+
+### Examples
+
+Initialize the current directory as an Agentuity project:
+```bash
+$ agentuity project init .
+✓ Project initialized successfully
+```
