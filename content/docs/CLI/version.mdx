@@ -1,0 +1,38 @@
+---
+title: Version Command
+description: Command for checking the version of the Agentuity CLI
+---
+
+The `version` command allows you to check the version of the Agentuity CLI that you have installed.
+
+## version
+
+Displays the version of the Agentuity CLI.
+
+### Usage
+
+```bash
+agentuity version [flags]
+```
+
+### Flags
+
+| Flag | Description |
+| ---- | ----------- |
+| `--long` | Display detailed version information including commit hash and build date |
+
+### Examples
+
+Basic version information:
+```bash
+$ agentuity version
+1.0.0
+```
+
+Detailed version information:
+```bash
+$ agentuity version --long
+Version: 1.0.0
+Commit: abc123
+Date: 2025-02-27
+```
