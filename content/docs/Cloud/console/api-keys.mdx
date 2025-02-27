@@ -1,0 +1,87 @@
+---
+title: API Keys Management
+description: Learn how to create, view, and manage API keys in the Agentuity Cloud Console
+---
+
+# API Keys Management
+
+The API Keys section of the Agentuity Cloud Console allows you to create, view, and manage API keys for authenticating with Agentuity services. This guide covers the main API key management features and common workflows.
+
+## Viewing Your API Keys
+
+When you navigate to the API Keys page in the Cloud Console (under Settings), you'll see a table listing all your API keys with the following information:
+
+- **Name**: The descriptive name you've given to the API key
+- **Key**: The actual API key value (hidden by default for security)
+- **Expires**: When the API key will expire
+- **Last Used**: When the API key was last used
+- **Owner**: The user who created the API key
+
+### Filtering API Keys
+
+You can filter the list of API keys using the search box at the top of the table. This allows you to quickly find specific API keys by name, owner, or other attributes.
+
+## Creating a New API Key
+
+To create a new API key:
+
+1. Navigate to the API Keys page in the Cloud Console (under Settings)
+2. Click the "Create API Key" button in the top-right corner
+3. In the dialog that appears:
+   - Enter a descriptive name for the key (e.g., "Production API Key")
+   - Set an expiration date for the key
+4. Click "Create Key" to generate the new API key
+5. **Important**: Copy the API key value immediately, as it will only be shown once
+
+## Managing API Keys
+
+### Viewing API Key Values
+
+For security reasons, API key values are hidden by default. To view an API key value:
+
+1. Find the API key in the list
+2. Click the eye icon (👁️) in the Key column to reveal the full key value
+3. Click the eye icon again to hide the value
+
+### Copying API Key Values
+
+To copy an API key value to your clipboard:
+
+1. Find the API key in the list
+2. Click the copy icon in the Key column
+3. The API key value will be copied to your clipboard
+
+### API Key Expiration
+
+All API keys have an expiration date to enhance security. When creating a new API key, you'll need to set an expiration date. Once an API key expires, it will no longer work for authentication and will be removed from the list of active keys.
+
+## Using API Keys
+
+API keys are used to authenticate your applications with Agentuity services. Here are some common ways to use API keys:
+
+### In the CLI
+
+```bash
+agentuity login --api-key YOUR_API_KEY
+```
+
+### In SDK Applications
+
+```javascript
+import { Agentuity } from '@agentuity/sdk';
+
+const client = new Agentuity({
+  apiKey: 'YOUR_API_KEY'
+});
+```
+
+## Best Practices
+
+- **Use descriptive names**: Give your API keys clear, descriptive names that indicate their purpose and where they're being used
+- **Rotate keys regularly**: Create new API keys and retire old ones on a regular schedule
+- **Set appropriate expirations**: Choose expiration dates based on the key's purpose - shorter for temporary access, longer for production systems
+- **Monitor usage**: Regularly check the "Last Used" column to identify unused keys that can be deleted
+- **Limit access**: Only share API keys with those who need them and use different keys for different applications or environments
+- **Secure storage**: Store API keys securely and never commit them to version control systems
+
+{/* Placeholder for screenshots of the API Keys management interface */}
