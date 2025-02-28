@@ -53,7 +53,7 @@ $ agentuity bundle --production
 
 When you bundle an Agentuity project, the CLI performs the following steps:
 
-1. Reads the project configuration from `.agentuity/project.json`
+1. Reads the project configuration from `agentuity.yaml` in the root of the project
 2. Processes each agent in the project:
    - Reads the agent code from the agent's directory
    - Validates the agent code
@@ -62,19 +62,18 @@ When you bundle an Agentuity project, the CLI performs the following steps:
 
 ### Agent Configuration
 
-The bundling process automatically includes the agent configuration from the project configuration file. You no longer need to export a configuration object from your agent files.
-
-Previously, agent files required an exported configuration object:
+The bundling process automatically includes the agent configuration from the project configuration file.
 
 ```typescript
-// Old approach - no longer required
+// Agent configuration is managed by the CLI
 export const config: AgentConfig = {
+  id: "agent-agent_97c14977w8fK4iDlKdPwdeRqxnX41022",
   name: 'my-agent',
   description: 'My first Agentuity agent'
 };
 ```
 
-With the new approach, agent configuration is managed by the CLI and stored in the project configuration file. Your agent files only need to export the handler function:
+Your agent files only need to export the handler function:
 
 ```typescript
 // New approach - only export the handler function

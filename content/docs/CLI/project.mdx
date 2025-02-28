@@ -26,16 +26,12 @@ agentuity project create [name] [flags]
 | ---- | ----------- |
 | `--dir`, `-d` | The directory to create the project in |
 | `--provider`, `-p` | The provider to use for the project |
-| `--agent-name`, `-a` | The name of the initial agent to create |
-| `--agent-description` | The description of the initial agent |
 
 ### Examples
 
 Create a new project with interactive prompts:
 ```bash
 $ agentuity project create my-project
-What should we name your first agent? MyFirstAgent
-How should we describe what the MyFirstAgent agent does? A simple agent that can generate text
 ✓ Project created successfully
 
 Next steps:
@@ -47,9 +43,9 @@ Next steps:
 🏠 Access your project at https://app.agentuity.com/projects/proj_123456
 ```
 
-Create a new project with a specific provider and agent:
+Create a new project with a specific provider:
 ```bash
-$ agentuity project create my-project --provider javascript --agent-name MyFirstAgent --agent-description "A simple agent that can generate text"
+$ agentuity project create my-project --provider javascript
 ✓ Project created successfully
 ```
 
@@ -64,61 +60,13 @@ Initializes an existing directory as an Agentuity project.
 ### Usage
 
 ```bash
-agentuity project init [directory] [flags]
+agentuity project init [directory]
 ```
-
-### Flags
-
-| Flag | Description |
-| ---- | ----------- |
-| `--agent-name`, `-a` | The name of the initial agent to create |
-| `--agent-description` | The description of the initial agent |
 
 ### Examples
 
 Initialize the current directory as an Agentuity project:
 ```bash
 $ agentuity project init .
-What should we name your first agent? MyFirstAgent
-How should we describe what the MyFirstAgent agent does? A simple agent that can generate text
 ✓ Project initialized successfully
 ```
-
-## Project Structure
-
-When you create a new Agentuity project, the following structure is created:
-
-```
-my-project/
-├── .agentuity/
-│   └── project.json  # Project configuration file
-├── src/
-│   └── agents/
-│       └── MyFirstAgent/
-│           └── index.ts  # Agent handler code
-└── package.json
-```
-
-### Project Configuration
-
-The project configuration is stored in the `.agentuity/project.json` file. This file contains information about your project, including the agents that are part of the project.
-
-Each agent in your project has a unique ID that is generated when the agent is created. This ID is used to identify the agent in the Agentuity Cloud and in your local project.
-
-Example project configuration:
-
-```json
-{
-  "name": "my-project",
-  "provider": "javascript",
-  "agents": [
-    {
-      "id": "3c4c0b692533d7807cf0f649ef425dfa29b58bcc99be03e208e52749107fca2e",
-      "name": "MyFirstAgent",
-      "description": "A simple agent that can generate text"
-    }
-  ]
-}
-```
-
-You can add more agents to your project using the `agent create` command. See the [Agent Commands](./agent) documentation for more information.
