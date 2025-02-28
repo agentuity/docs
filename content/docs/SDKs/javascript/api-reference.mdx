@@ -19,14 +19,18 @@ This section provides detailed documentation for the Agentuity JavaScript SDK AP
 
 ## Agent Lifecycle
 
-The Agentuity SDK provides a structured way to define and handle agents. An agent consists of a configuration object and a handler function.
+The Agentuity SDK provides a structured way to define and handle agents. An agent consists of a handler function, with its configuration managed by the Agentuity CLI.
 
 ### Agent Configuration
 
-The `AgentConfig` interface defines the configuration for an agent:
+Agent configuration is now managed by the Agentuity CLI and stored in the project configuration file. The `AgentConfig` interface is used internally by the CLI and SDK:
 
 ```typescript
 interface AgentConfig {
+  /**
+   * the unique identifier of the agent
+   */
+  id: string;
   /**
    * the name of the agent
    */
@@ -37,6 +41,8 @@ interface AgentConfig {
   description?: string;
 }
 ```
+
+> **Note:** You no longer need to export a configuration object from your agent files. Agent configuration is managed through the Agentuity CLI using commands like `agentuity agent create`.
 
 ### Agent Handler
 
@@ -63,13 +69,7 @@ The handler function should return a Promise that resolves to an `AgentResponseT
 #### Example
 
 ```typescript
-import { AgentHandler, AgentConfig } from '@agentuity/sdk';
-
-// Agent configuration
-export const config: AgentConfig = {
-  name: 'greeting-agent',
-  description: 'An agent that provides personalized greetings'
-};
+import { AgentHandler } from '@agentuity/sdk';
 
 // Agent handler function
 const handler: AgentHandler = async (request, response, context) => {
@@ -97,6 +97,86 @@ export default handler;
 ## Storage APIs
 
 The Agentuity SDK provides two storage APIs: Key-Value Storage and Vector Storage.
+
+## Server Configuration
+
+The Agentuity SDK provides a server component that can be used to run your agents locally or in a production environment.
+
+### Server Options
+
+The `ServerOptions` interface defines the configuration for the server:
+
+```typescript
+interface ServerOptions {
+  /**
+   * The port to run the server on
+   */
+  port?: number;
+  /**
+   * The host to bind the server to
+   */
+  host?: string;
+  /**
+   * Whether to automatically start the server
+   */
+  autostart?: boolean;
+  /**
+   * The agents to register with the server
+   */
+  agents?: {
+    /**
+     * The unique identifier of the agent
+     */
+    id: string;
+    /**
+     * The path to the agent handler file
+     */
+    path: string;
+  }[];
+}
+```
+
+### Creating a Server
+
+You can create a server using the `createServer` function:
+
+```typescript
+import { createServer } from '@agentuity/sdk';
+
+const server = createServer({
+  port: 3000,
+  host: 'localhost',
+  autostart: true,
+  agents: [
+    {
+      id: '3c4c0b692533d7807cf0f649ef425dfa29b58bcc99be03e208e52749107fca2e',
+      path: './src/agents/MyFirstAgent/index.ts'
+    },
+    {
+      id: '7a8b9c0d1e2f3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3a4b5c6d7e8f',
+      path: './src/agents/MySecondAgent/index.ts'
+    }
+  ]
+});
+
+// Start the server manually if autostart is false
+if (!server.options.autostart) {
+  server.start();
+}
+```
+
+### Router Configuration
+
+The Agentuity SDK includes a router component that handles routing requests to the appropriate agent based on the agent ID. The router is automatically configured based on the agents registered with the server.
+
+When making requests to an agent, you must include the agent ID in the request URL:
+
+```
+POST /api/agents/{agentId}
+```
+
+This ensures that the request is routed to the correct agent handler.
+
 
 ### Key-Value Storage
 
