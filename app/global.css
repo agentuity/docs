@@ -4,3 +4,14 @@
 @import "fumadocs-twoslash/twoslash.css";
 
 @source "../node_modules/fumadocs-ui/dist/**/*.js";
+
+
+aside [data-radix-scroll-area-viewport] button,
+aside [data-radix-scroll-area-viewport] a {
+	color: #0A0A0A;
+}
+
+.dark aside [data-radix-scroll-area-viewport] button,
+.dark aside [data-radix-scroll-area-viewport] a {
+	color: #FFF;
+}
