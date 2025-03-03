@@ -4,8 +4,9 @@ import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
  * Shared layout configurations
  */
 export const baseOptions: BaseLayoutProps = {
-	githubUrl: "https://github.com/orgs/agentuity/repositories",
+	githubUrl: "https://github.com/agentuity",
 	nav: {
+		url: "/Introduction",
 		title: (
 			<div className="flex items-center gap-3 font-normal">
 				<svg

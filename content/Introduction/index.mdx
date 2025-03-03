@@ -1,19 +1,59 @@
 ---
-title: Agentuity Cloud
-description: The AI-native cloud for building and deploying agents
+title: Agentuity
 ---
 
-## About Agentuity Cloud
+Agentuity is a cloud platform designed specifically for building, deploying, and scaling autonomous AI agents. It provides the infrastructure and tools necessary to manage agents built with any framework, such as CrewAI, LangChain, or custom code.
 
-Agentuity Cloud is a platform designed specifically for building, deploying, and scaling autonomous AI agents. It provides the infrastructure and tools necessary to manage agents built with any framework, such as CrewAI, LangChain, or custom code. [Agentuity](https://agentuity.com/) simplifies the process of deploying agents, monitoring their performance, and scaling them to meet demand.
+With Agentuity, you can:
+- Deploy agents with a single click
+- Monitor real-time performance and analytics
+- Scale agents effortlessly
+- Connect agents to various channels (chat, webhooks, email, SMS, voice)
+- Integrate with any AI framework
 
-With Agentuity Cloud, you can:
+## Getting Started
 
-*   Deploy agents with a single click.
-*   Monitor real-time performance and analytics.
-*   Scale agents effortlessly.
-*   Connect agents to various channels (chat, webhooks, email, SMS, voice).
-*   Integrate with any AI framework.
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+<Steps>
+<Step>
+### Create an Account
+[Create an Agentuity account](/docs/CloudPortal) or sign in to the Cloud Portal
+</Step>
+
+<Step>
+### Install the CLI
+```bash
+brew tap agentuity/tap && brew install agentuity
+```
+[More CLI installation options →](/docs/CLI/installation)
+</Step>
+
+<Step>
+### Login to Agentuity
+```bash
+agentuity login
+```
+[CLI authentication details →](/docs/CLI/login)
+</Step>
+
+<Step>
+### Create Your First Project
+```bash
+agentuity create project my-project
+cd my-project
+```
+[Project creation guide →](/docs/projects/creating)
+</Step>
+
+<Step>
+### Deploy Your Project
+```bash
+agentuity deploy
+```
+[Deployment documentation →](/docs/projects/deployment)
+</Step>
+</Steps>
 
 ## Documentation Sections
 
@@ -23,40 +63,16 @@ With Agentuity Cloud, you can:
     href="/docs/Cloud"
     description="Learn about Agentuity Cloud features, account management, and general platform information."
   />
-</Cards>
-
-### Cloud & Account
-- [Getting Started](/docs/Cloud/getting-started)
-- [Account Management](/docs/Cloud/account)
-- [Deployment Options](/docs/Cloud/deployment)
-
-<Cards>
   <Card
     title="Command Line Interface"
     href="/docs/CLI"
     description="Get started with the Agentuity CLI for managing your agents and deployments from the terminal."
   />
-</Cards>
-
-### Command Line Interface
-- [Installation](/docs/CLI/installation)
-- [Quick Start Guide](/docs/CLI/quickstart)
-- [Commands Reference](/docs/CLI/commands)
-
-<Cards>
   <Card
     title="Examples & Tutorials"
     href="/docs/Examples"
     description="Explore sample projects, step-by-step tutorials, and implementation guides."
   />
-</Cards>
-
-### Examples & Tutorials
-- [Basic Agent Tutorial](/docs/Examples/basic-agent)
-- [Multi-Agent Systems](/docs/Examples/multi-agent)
-- [Integration Examples](/docs/Examples/integrations)
-
-<Cards>
   <Card
     title="SDKs & Integration"
     href="/docs/SDKs"
@@ -64,9 +80,6 @@ With Agentuity Cloud, you can:
   />
 </Cards>
 
-### SDKs & Integration
-- [CrewAI SDK](/docs/SDKs/crew)
-- [LangChain SDK](/docs/SDKs/langchain)
-- [Python SDK](/docs/SDKs/python)
-- [Node.js SDK](/docs/SDKs/nodejs)
+## Need Help?
 
+Join our [Community Discord](https://discord.com/invite/vtn3hgUfuc) for assistance.
