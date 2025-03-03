@@ -56,7 +56,7 @@ export async function generateMetadata(props: {
 
 	return {
 		title:
-			page.data.title && page.data.title !== "Agentuity Docs"
+			page.data.title && page.data.title !== "Agentuity"
 				? `${page.data.title} — Agentuity Docs`
 				: "Agentuity Docs",
 		description: page.data.description,
