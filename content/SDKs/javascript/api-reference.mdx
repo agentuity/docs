@@ -19,14 +19,18 @@ This section provides detailed documentation for the Agentuity JavaScript SDK AP
 
 ## Agent Lifecycle
 
-The Agentuity SDK provides a structured way to define and handle agents. An agent consists of a configuration object and a handler function.
+The Agentuity SDK provides a structured way to define and handle agents. An agent consists of a handler function, with its configuration managed by the Agentuity CLI.
 
 ### Agent Configuration
 
-The `AgentConfig` interface defines the configuration for an agent:
+Agent configuration is now managed by the Agentuity CLI and stored in the project configuration file. The `AgentConfig` interface is used internally by the CLI and SDK:
 
 ```typescript
 interface AgentConfig {
+  /**
+   * the unique identifier of the agent
+   */
+  id: string;
   /**
    * the name of the agent
    */
@@ -37,6 +41,8 @@ interface AgentConfig {
   description?: string;
 }
 ```
+
+> **Note:** You no longer need to export a configuration object from your agent files. Agent configuration is managed through the Agentuity CLI using commands like `agentuity agent create`.
 
 ### Agent Handler
 
@@ -63,13 +69,7 @@ The handler function should return a Promise that resolves to an `AgentResponseT
 #### Example
 
 ```typescript
-import { AgentHandler, AgentConfig } from '@agentuity/sdk';
-
-// Agent configuration
-export const config: AgentConfig = {
-  name: 'greeting-agent',
-  description: 'An agent that provides personalized greetings'
-};
+import { AgentHandler } from '@agentuity/sdk';
 
 // Agent handler function
 const handler: AgentHandler = async (request, response, context) => {
@@ -97,6 +97,7 @@ export default handler;
 ## Storage APIs
 
 The Agentuity SDK provides two storage APIs: Key-Value Storage and Vector Storage.
+
 
 ### Key-Value Storage
 

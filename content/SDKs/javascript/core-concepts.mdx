@@ -19,13 +19,7 @@ Agents in the Agentuity SDK are modular components that can process requests and
 The basic structure of an agent looks like this:
 
 ```typescript
-import { AgentHandler, AgentConfig } from '@agentuity/sdk';
-
-// Agent configuration
-export const config: AgentConfig = {
-  name: 'my-agent',
-  description: 'My first Agentuity agent'
-};
+import { AgentHandler } from '@agentuity/sdk';
 
 // Agent handler function
 const handler: AgentHandler = async (request, response, context) => {
@@ -41,6 +35,8 @@ const handler: AgentHandler = async (request, response, context) => {
 
 export default handler;
 ```
+
+> **Note:** Agent configuration (name, description, etc.) is now managed by the Agentuity CLI and stored in the project configuration file. You no longer need to export a configuration object from your agent files.
 
 ## Request and Response Handling
 
