@@ -5,10 +5,45 @@
 
 @source "../node_modules/fumadocs-ui/dist/**/*.js";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+	--color-cyan-50: #e5ffff;
+	--color-cyan-100: #ccffff;
+	--color-cyan-200: #99ffff;
+	--color-cyan-300: #66ffff;
+	--color-cyan-400: #33ffff;
+	--color-cyan-500: #00ffff;
+	--color-cyan-600: #00cccc;
+	--color-cyan-700: #009999;
+	--color-cyan-800: #006666;
+	--color-cyan-900: #003333;
+	--color-cyan-950: #001919;
+
+	--color-gray-50: var(--color-zinc-50);
+	--color-gray-100: var(--color-zinc-100);
+	--color-gray-200: var(--color-zinc-200);
+	--color-gray-300: var(--color-zinc-300);
+	--color-gray-400: var(--color-zinc-400);
+	--color-gray-500: var(--color-zinc-500);
+	--color-gray-600: var(--color-zinc-600);
+	--color-gray-700: var(--color-zinc-700);
+	--color-gray-800: var(--color-zinc-800);
+	--color-gray-900: var(--color-zinc-900);
+	--color-gray-950: var(--color-zinc-950);
+}
 
 aside [data-radix-scroll-area-viewport] button,
 aside [data-radix-scroll-area-viewport] a {
 	color: #0A0A0A;
+}
+
+.aside {
+	background: #FAFAFA;
+}
+
+.dark aside {
+	background: #18181A;
 }
 
 .dark aside [data-radix-scroll-area-viewport] button,

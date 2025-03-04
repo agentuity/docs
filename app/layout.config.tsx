@@ -8,15 +8,14 @@ export const baseOptions: BaseLayoutProps = {
 	nav: {
 		url: "/Introduction",
 		title: (
-			<div className="flex items-center gap-3 font-normal">
+			<div className="flex items-center gap-3 font-medium">
 				<svg
 					role="img"
 					aria-label="Agentuity"
-					className="fill-[#0FF]"
+					className="fill-cyan-700 dark:fill-cyan-500"
 					width="24"
 					height="22"
 					viewBox="0 0 24 22"
-					fill="currentColor"
 					xmlns="http://www.w3.org/2000/svg"
 				>
 					<title>Agentuity</title>
