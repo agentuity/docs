@@ -1,21 +1,22 @@
 import { source } from "@/lib/source";
+import { Popup, PopupContent, PopupTrigger } from "fumadocs-twoslash/ui";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+import defaultMdxComponents from "fumadocs-ui/mdx";
 import {
-	DocsPage,
 	DocsBody,
 	DocsDescription,
+	DocsPage,
 	DocsTitle,
 } from "fumadocs-ui/page";
-import { Tab, Tabs } from "fumadocs-ui/components/tabs";
-import { Code } from "../../../components/Code";
-import { Popup, PopupContent, PopupTrigger } from "fumadocs-twoslash/ui";
 import { notFound } from "next/navigation";
-import defaultMdxComponents from "fumadocs-ui/mdx";
+import { Code } from "../../../components/Code";
 
 export default async function Page(props: {
 	params: Promise<{ slug?: string[] }>;
 }) {
 	const params = await props.params;
 	const page = source.getPage(params.slug);
+
 	if (!page) notFound();
 
 	const MDX = page.data.body;
@@ -50,10 +51,14 @@ export async function generateMetadata(props: {
 }) {
 	const params = await props.params;
 	const page = source.getPage(params.slug);
+
 	if (!page) notFound();
 
 	return {
-		title: page.data.title,
+		title:
+			page.data.title && page.data.title !== "Agentuity"
+				? `${page.data.title} — Agentuity Docs`
+				: "Agentuity Docs",
 		description: page.data.description,
 	};
 }
