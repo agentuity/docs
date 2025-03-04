@@ -22,7 +22,16 @@ export default async function Page(props: {
 	const MDX = page.data.body;
 
 	return (
-		<DocsPage toc={page.data.toc} full={page.data.full}>
+		<DocsPage
+			toc={page.data.toc}
+			full={page.data.full}
+			editOnGithub={{
+				owner: "agentuity",
+				repo: "docs",
+				sha: "main",
+				path: `content/${page.file.path}`,
+			}}
+		>
 			<DocsTitle>{page.data.title}</DocsTitle>
 			<DocsDescription>{page.data.description}</DocsDescription>
 			<DocsBody>
