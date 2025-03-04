@@ -2,14 +2,16 @@
 title: Agentuity
 ---
 
-Agentuity is a cloud platform designed specifically for building, deploying, and scaling autonomous AI agents. It provides the infrastructure and tools necessary to manage agents built with any framework, such as CrewAI, LangChain, or custom code.
+Agentuity is a cloud platform designed specifically for building, deploying, and scaling 
+autonomous AI agents. It provides the infrastructure and tools necessary to manage agents 
+built with any framework, such as CrewAI, LangChain, or custom code.
 
 With Agentuity, you can:
-- Deploy agents with a single click
+- Deploy agents with a single command
 - Monitor real-time performance and analytics
 - Scale agents effortlessly
-- Connect agents to various channels (chat, webhooks, email, SMS, voice)
-- Integrate with any AI framework
+- Connect agents to various channels (API, chat, webhooks, email, SMS, voice)
+- Use any AI agent framework
 
 ## Getting Started
 
@@ -18,7 +20,7 @@ import { Step, Steps } from 'fumadocs-ui/components/steps';
 <Steps>
 <Step>
 ### Create an Account
-[Create an Agentuity account](/CloudPortal) or sign in to the Cloud Portal
+[Create an Agentuity account](https://app.agentuity.com/sign-up) or [Sign in](https://app.agentuity.com/sign-in) to the cloud portal.
 </Step>
 
 <Step>
@@ -26,7 +28,6 @@ import { Step, Steps } from 'fumadocs-ui/components/steps';
 ```bash
 brew tap agentuity/tap && brew install agentuity
 ```
-[More CLI installation options →](/CLI/installation)
 </Step>
 
 <Step>
@@ -34,7 +35,6 @@ brew tap agentuity/tap && brew install agentuity
 ```bash
 agentuity login
 ```
-[CLI authentication details →](/CLI/login)
 </Step>
 
 <Step>
@@ -43,7 +43,6 @@ agentuity login
 agentuity create project my-project
 cd my-project
 ```
-[Project creation guide →](/projects/creating)
 </Step>
 
 <Step>
@@ -51,7 +50,6 @@ cd my-project
 ```bash
 agentuity deploy
 ```
-[Deployment documentation →](/projects/deployment)
 </Step>
 </Steps>
 
@@ -60,17 +58,17 @@ agentuity deploy
 <Cards>
   <Card
     title="Cloud & Account"
-    href="/Cloud"
+    href="/Cloud/"
     description="Learn about Agentuity Cloud features, account management, and general platform information."
   />
   <Card
     title="Command Line Interface"
-    href="//CLI"
+    href="/CLI/installation"
     description="Get started with the Agentuity CLI for managing your agents and deployments from the terminal."
   />
   <Card
     title="Examples & Tutorials"
-    href="/Examples"
+    href="/Examples/helloworld"
     description="Explore sample projects, step-by-step tutorials, and implementation guides."
   />
   <Card
