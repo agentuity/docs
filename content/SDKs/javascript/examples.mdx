@@ -12,13 +12,7 @@ This section provides practical examples of using the Agentuity JavaScript SDK f
 Here's a complete example of a basic agent that processes JSON requests and returns JSON responses:
 
 ```typescript
-import { AgentHandler, AgentConfig } from '@agentuity/sdk';
-
-// Agent configuration
-export const config: AgentConfig = {
-  name: 'greeting-agent',
-  description: 'An agent that provides personalized greetings'
-};
+import { AgentHandler } from '@agentuity/sdk';
 
 // Agent handler function
 const handler: AgentHandler = async (request, response, context) => {
@@ -55,12 +49,7 @@ export default handler;
 This example demonstrates how to use the key-value storage API to store and retrieve user preferences:
 
 ```typescript
-import { AgentHandler, AgentConfig } from '@agentuity/sdk';
-
-export const config: AgentConfig = {
-  name: 'user-preferences',
-  description: 'Agent for managing user preferences'
-};
+import { AgentHandler } from '@agentuity/sdk';
 
 const handler: AgentHandler = async (request, response, context) => {
   const { action, userId, preferences } = request.json();
@@ -113,12 +102,7 @@ export default handler;
 This example demonstrates how to use the vector storage API for semantic search:
 
 ```typescript
-import { AgentHandler, AgentConfig } from '@agentuity/sdk';
-
-export const config: AgentConfig = {
-  name: 'product-search',
-  description: 'Semantic search for products'
-};
+import { AgentHandler } from '@agentuity/sdk';
 
 const handler: AgentHandler = async (request, response, context) => {
   const { action, query, products } = request.json();
@@ -201,12 +185,7 @@ export default handler;
 This example demonstrates how agents can communicate with each other:
 
 ```typescript
-import { AgentHandler, AgentConfig } from '@agentuity/sdk';
-
-export const config: AgentConfig = {
-  name: 'orchestrator',
-  description: 'Orchestrates multiple agents'
-};
+import { AgentHandler } from '@agentuity/sdk';
 
 const handler: AgentHandler = async (request, response, context) => {
   const { task, data } = request.json();
@@ -270,12 +249,7 @@ export default handler;
 This example demonstrates comprehensive error handling in an agent:
 
 ```typescript
-import { AgentHandler, AgentConfig } from '@agentuity/sdk';
-
-export const config: AgentConfig = {
-  name: 'robust-agent',
-  description: 'Agent with comprehensive error handling'
-};
+import { AgentHandler } from '@agentuity/sdk';
 
 // Custom error classes
 class ValidationError extends Error {
@@ -382,13 +356,8 @@ export default handler;
 This example demonstrates how to use OpenTelemetry for tracing and metrics:
 
 ```typescript
-import { AgentHandler, AgentConfig } from '@agentuity/sdk';
+import { AgentHandler } from '@agentuity/sdk';
 import { SpanStatusCode } from '@opentelemetry/api';
-
-export const config: AgentConfig = {
-  name: 'telemetry-agent',
-  description: 'Agent demonstrating OpenTelemetry usage'
-};
 
 const handler: AgentHandler = async (request, response, context) => {
   return context.tracer.startActiveSpan('process-request', async (span) => {
