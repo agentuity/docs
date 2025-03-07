@@ -9,18 +9,13 @@ The Agentuity JavaScript SDK provides a powerful framework for building AI agent
 
 ## Installation
 
-You can install the Agentuity JavaScript SDK using npm, yarn, or pnpm:
+When you create a project with Agentuity, you will automatically have access to the Agentuity JavaScript SDK.
 
 ```bash
-# Using npm
-npm install @agentuity/sdk
-
-# Using yarn
-yarn add @agentuity/sdk
-
-# Using pnpm
-pnpm add @agentuity/sdk
+agentuity new
 ```
+
+The SDK currently works with Bun and Node.js and the project will automatically install the correct dependencies.
 
 ## Prerequisites
 
@@ -43,36 +38,42 @@ curl -fsSL https://bun.sh/install | bash
 
 For more information, visit the [Bun installation documentation](https://bun.sh/docs/installation).
 
-## Environment Setup
 
-To use the Agentuity JavaScript SDK, you'll need to set up the following environment variables:
+## Development
 
-```bash
-# Required
-AGENTUITY_API_KEY=your_api_key
-AGENTUITY_CLOUD_PROJECT_ID=your_project_id
-
-# Optional
-AGENTUITY_CLOUD_ORG_ID=your_org_id
-AGENTUITY_CLOUD_DEPLOYMENT_ID=your_deployment_id
-AGENTUITY_CLOUD_RUN_ID=your_run_id
-AGENTUITY_SDK_DIR=path_to_your_agents_directory
-```
-
-## Building the SDK
-
-If you're working with the SDK source code, you can build it using the following commands:
+You can start your project by running the following command:
 
 ```bash
-# Using Bun
-bun run build
-
-# Using npm
-npm run build
+agentuity dev
 ```
+
+This will start your project in development mode and open a new browser window connecting your Agent to the Agentuity Console in Live Mode.
+
+You can also start your project in development mode without connecting to the Agentuity Console by running the following command:
+
+```bash
+npm start
+```
+
+Or for Bun:
+
+```bash
+bun start
+```
+
+If you would like to manually test your Agents locally, you can do so by running the following command:
+
+```bash
+curl -v http://localhost:3500/run/agent_ID --json '{"input": "Hello, world!"}'
+```
+
+Make sure you replace `agent_ID` with the ID of your Agent.
+
 
 ## Next Steps
 
 - [Core Concepts](./core-concepts.mdx) - Learn about the fundamental concepts of the Agentuity JavaScript SDK
+- [LLM](./llm.mdx) - Learn about the LLM integrations available in the Agentuity JavaScript SDK
+- [Frameworks](./frameworks.mdx) - Learn about using frameworks with the Agentuity JavaScript SDK
 - [API Reference](./api-reference.mdx) - Explore the detailed API documentation
 - [Examples](./examples.mdx) - See practical examples of using the SDK

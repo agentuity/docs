@@ -35,8 +35,6 @@ const handler: AgentHandler = async (request, response, context) => {
     return response.json({ 
       error: 'Failed to process request',
       message: error instanceof Error ? error.message : 'Unknown error'
-    }, { 
-      status: 400 
     });
   }
 };
@@ -90,7 +88,7 @@ const handler: AgentHandler = async (request, response, context) => {
     }
     
     default:
-      return response.json({ error: 'Invalid action' }, { status: 400 });
+      return response.json({ error: 'Invalid action' });
   }
 };
 
@@ -111,7 +109,7 @@ const handler: AgentHandler = async (request, response, context) => {
     case 'index': {
       // Index products in vector storage
       if (!Array.isArray(products) || products.length === 0) {
-        return response.json({ error: 'No products to index' }, { status: 400 });
+        return response.json({ error: 'No products to index' });
       }
       
       // Prepare documents for vector storage
@@ -137,7 +135,7 @@ const handler: AgentHandler = async (request, response, context) => {
     case 'search': {
       // Search for products
       if (!query) {
-        return response.json({ error: 'Query is required' }, { status: 400 });
+        return response.json({ error: 'Query is required' });
       }
       
       // Search vector storage
@@ -162,7 +160,7 @@ const handler: AgentHandler = async (request, response, context) => {
     case 'delete': {
       // Delete products from vector storage
       if (!Array.isArray(products) || products.length === 0) {
-        return response.json({ error: 'No product IDs to delete' }, { status: 400 });
+        return response.json({ error: 'No product IDs to delete' });
       }
       
       const count = await context.vector.delete('products', ...products);
@@ -173,7 +171,7 @@ const handler: AgentHandler = async (request, response, context) => {
     }
     
     default:
-      return response.json({ error: 'Invalid action' }, { status: 400 });
+      return response.json({ error: 'Invalid action' });
   }
 };
 
@@ -237,7 +235,7 @@ const handler: AgentHandler = async (request, response, context) => {
     }
     
     default:
-      return response.json({ error: 'Unknown task' }, { status: 400 });
+      return response.json({ error: 'Unknown task' });
   }
 };
 
@@ -297,8 +295,6 @@ const handler: AgentHandler = async (request, response, context) => {
       return response.json({ 
         error: 'Validation error',
         message: error.message
-      }, { 
-        status: 400 
       });
     }
     
@@ -307,8 +303,6 @@ const handler: AgentHandler = async (request, response, context) => {
       return response.json({ 
         error: 'Resource not found',
         message: error.message
-      }, { 
-        status: 404 
       });
     }
     
@@ -317,8 +311,6 @@ const handler: AgentHandler = async (request, response, context) => {
     return response.json({ 
       error: 'Internal server error',
       message: 'An unexpected error occurred'
-    }, { 
-      status: 500 
     });
   }
 };
@@ -419,8 +411,6 @@ const handler: AgentHandler = async (request, response, context) => {
       return response.json({
         error: 'Failed to process request',
         message: (error as Error).message
-      }, {
-        status: 500
       });
     } finally {
       // End the parent span

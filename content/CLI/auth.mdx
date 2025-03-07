@@ -19,7 +19,7 @@ Logs you into the Agentuity Cloud Platform.
 agentuity auth login
 ```
 
-This command will open a browser window where you can log in to your Agentuity account. After successful authentication, your credentials will be stored locally for future use.
+This command will print out a one-time code and open a browser window where you can log in to your Agentuity account and provide the one-time code. After successful authentication, your credentials will be stored locally for future use.  By default, the credentials and other configuration are stored in the following file: `$HOME/.config/agentuity/config.json`.
 
 ### Example
 
@@ -69,5 +69,13 @@ agentuity auth whoami
 
 ```bash
 $ agentuity auth whoami
-You are logged in with user id: user_2sj1EN9JfryK3FhRDzWJAuteCGz
+╭──────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                  │
+│ Currently logged in as                                                           │
+│                                                                                  │
+│ Name:           Jeff Haynie                    user_xsjDaYg0UsTcARJWa1BI5irsoB7  │
+│                                                                                  │
+│ Organization:   Jeff Team                       org_xsjDbpem0VT7QA9DupHGdE72HLQ  │
+│                                                                                  │
+╰──────────────────────────────────────────────────────────────────────────────────╯
 ```
