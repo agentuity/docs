@@ -16,5 +16,9 @@
 	},
 	"observability": {
 		"enabled": true
-	}
+	},
+	"routes": [
+		{ "pattern": "agentuity.dev", "custom_domain": true },
+		{ "pattern": "www.agentuity.dev", "custom_domain": true }
+	]
 }
