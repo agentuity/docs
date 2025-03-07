@@ -1,11 +1,11 @@
 ---
 title: Core Concepts
-description: Learn about the fundamental concepts of the Agentuity JavaScript SDK
+description: Learn about the fundamental concepts of the Agentuity Python SDK
 ---
 
 # Core Concepts
 
-The Agentuity JavaScript SDK is built around several key concepts that form the foundation of agent development. Understanding these concepts is essential for effectively using the SDK.
+The Agentuity Python SDK is built around several key concepts that form the foundation of agent development. Understanding these concepts is essential for effectively using the SDK.
 
 ## Agent Architecture
 
@@ -18,25 +18,20 @@ Agents in the Agentuity SDK are modular components that can process requests and
 
 The basic structure of an agent looks like this:
 
-```typescript
-import { AgentHandler } from '@agentuity/sdk';
+```python
+from agentuity import AgentRequest, AgentResponse, AgentContext
 
-// Agent handler function
-const handler: AgentHandler = async (request, response, context) => {
-  // Process the request
-  const data = request.json();
+# Agent handler function
+async def handler(request: AgentRequest, response: AgentResponse, context: AgentContext):
+  # Process the request
+  data = request.json()
   
-  // Use the context (logging, storage, etc.)
-  context.logger.info('Processing request', data);
+  # Use the context (logging, storage, etc.)
+  context.logger.info('Processing request', data)
   
-  // Return a response
-  return response.json({ message: 'Hello from my agent!' });
-};
-
-export default handler;
+  # Return a response
+  return response.json({ message: 'Hello from my agent!' })
 ```
-
-> **Note:** Agent configuration (name, description, etc.) is managed by the Agentuity CLI and stored in the project configuration file.
 
 ## Request and Response Handling
 
@@ -50,9 +45,8 @@ Requests contain information about the trigger event and payload data. The `Agen
 - `request.metadata` - Access metadata associated with the request
 - `request.trigger` - Get the trigger type (webhook, manual,cron, etc.)
 - `request.get(key, defval)` - Get a value from the request metadata
+- `request.text` - Get the payload as a string
 - `request.json()` - Get the payload as a JSON object
-- `request.object<T>()` - Get the payload as a JSON object and parse it as a specific type
-- `request.text()` - Get the payload as a string
 - `request.binary()` - Get the payload as an ArrayBuffer
 - Various media-specific methods (pdf(), png(), jpeg(), etc.)
 

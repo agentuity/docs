@@ -23,7 +23,7 @@ The Agentuity SDK provides a structured way to define and handle agents. An agen
 
 ### Agent Configuration
 
-Agent configuration is now managed by the Agentuity CLI and stored in the project configuration file. The `AgentConfig` interface is used internally by the CLI and SDK:
+Agent configuration is managed by the Agentuity CLI and stored in the project configuration file. The `AgentConfig` interface is used internally by the CLI and SDK:
 
 ```typescript
 interface AgentConfig {
@@ -41,8 +41,6 @@ interface AgentConfig {
   description?: string;
 }
 ```
-
-> **Note:** You no longer need to export a configuration object from your agent files. Agent configuration is managed through the Agentuity CLI using commands like `agentuity agent create`.
 
 ### Agent Handler
 
@@ -87,7 +85,7 @@ const handler: AgentHandler = async (request, response, context) => {
   } catch (error) {
     // Handle errors
     context.logger.error('Error processing request', error);
-    return response.json({ error: 'Failed to process request' }, { status: 400 });
+    return response.json({ error: 'Failed to process request' });
   }
 };
 
@@ -357,8 +355,6 @@ Returns an `AgentResponseType` object with the JSON data.
 return response.json({ 
   message: 'Success',
   data: { id: 123, name: 'Example' }
-}, {
-  status: 200
 });
 ```
 
@@ -380,7 +376,7 @@ Returns an `AgentResponseType` object with the text data.
 ##### Example
 
 ```typescript
-return response.text('Hello, world!', { status: 200 });
+return response.text('Hello, world!');
 ```
 
 ### Binary Responses
@@ -721,13 +717,3 @@ context.tracer.startActiveSpan('process-data', async (span) => {
   }
 });
 ```
-
-### Environment Variables
-
-The SDK uses the following environment variables for telemetry configuration:
-
-- `AGENTUITY_OTLP_URL`: The URL of the OpenTelemetry collector
-- `AGENTUITY_OTLP_BEARER_TOKEN`: The bearer token for authenticating with the collector
-- `AGENTUITY_ENVIRONMENT`: The environment (development, production, etc.)
-- `AGENTUITY_SDK_VERSION`: The version of the SDK
-- `AGENTUITY_CLI_VERSION`: The version of the CLI
