@@ -25,9 +25,22 @@ import { Step, Steps } from 'fumadocs-ui/components/steps';
 
 <Step>
 ### Install the CLI
-```bash
-brew tap agentuity/tap && brew install agentuity
-```
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+<Tabs items={['macOS', 'Linux / Windows (WSL)']}>
+  <Tab>
+    ```bash
+    brew tap agentuity/tap && brew install agentuity
+    ```
+  </Tab>
+  <Tab>
+    1. Visit the [Agentuity CLI releases page](https://github.com/agentuity/cli/releases)
+    2. Download the appropriate version for your operating system
+    3. Extract the downloaded file
+    4. Add the executable to your system PATH
+  </Tab>
+</Tabs>
 </Step>
 
 <Step>
