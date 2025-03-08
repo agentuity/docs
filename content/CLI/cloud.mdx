@@ -1,0 +1,73 @@
+---
+title: Cloud Commands
+description: Commands for deploying and managing projects in the Agentuity Cloud Platform
+---
+
+The `cloud` commands allow you to deploy and manage your projects in the Agentuity Cloud Platform.
+
+## cloud deploy
+
+Deploys a project to the Agentuity Cloud Platform.
+
+### Aliases
+
+`agentuity deploy` (shortcut for `agentuity cloud deploy`)
+
+### Usage
+
+```bash
+agentuity cloud deploy [flags]
+```
+
+### Flags
+
+| Flag | Description |
+| ---- | ----------- |
+| `--dir`, `-d` | The directory of the project to deploy |
+
+### Examples
+
+Deploy a project from the current directory:
+```bash
+$ agentuity cloud deploy
+✓ Project deployed successfully
+🚀 Your project is now live at: https://app.agentuity.com/projects/proj_123456
+```
+
+Deploy a project from a specific directory:
+```bash
+$ agentuity cloud deploy --dir ~/projects/my-project
+✓ Project deployed successfully
+🚀 Your project is now live at: https://app.agentuity.com/projects/proj_123456
+```
+
+## cloud status
+
+Checks the deployment status of a project.
+
+### Aliases
+
+`agentuity status` (shortcut for `agentuity cloud status`)
+
+### Usage
+
+```bash
+agentuity cloud status [flags]
+```
+
+### Flags
+
+| Flag | Description |
+| ---- | ----------- |
+| `--dir`, `-d` | The directory of the project to check |
+
+### Examples
+
+Check the status of a project in the current directory:
+```bash
+$ agentuity cloud status
+Project: my-project
+Status: deployed
+Last deployment: 2025-02-27T04:00:00Z
+URL: https://app.agentuity.com/projects/proj_123456
+```

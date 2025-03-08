@@ -1,0 +1,157 @@
+---
+title: Frameworks
+description: Framework integration for the Agentuity Python SDK
+---
+
+# Frameworks
+
+The Agentuity Python SDK provides a flexible and powerful way to integrate other frameworks with your Agent.
+
+The following frameworks are currently supported:
+
+- [LlamaIndex](https://www.llamaindex.ai/)
+- [LangChain](https://www.langchain.com/)
+- [CrewAI](https://www.crewai.com/)
+
+## Using Frameworks with Agentuity
+
+The use a framework with Agentuity, choose the framework template when creating a new project.
+
+```bash
+agentuity new
+```
+
+When you select one of the framework templates, the Agentuity CLI will install the necessary dependencies and create a new project with the framework already configured.
+
+## LlamaIndex
+
+Example Agent using LlamaIndex:
+
+```python
+from llama_index.core.agent.workflow import AgentWorkflow
+from llama_index.llms.openai import OpenAI
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+
+# Define a simple calculator tool
+def multiply(a: float, b: float) -> float:
+    """Useful for multiplying two numbers."""
+    return a * b
+
+
+# Create an agent workflow with our calculator tool
+agent = AgentWorkflow.from_tools_or_functions(
+    [multiply],
+    llm=OpenAI(model="gpt-4o-mini"),
+    system_prompt="You are a helpful assistant that can multiply two numbers.",
+)
+
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    result = await agent.run(request.text or "What is 1234 * 4567?")
+    return response.text(str(result))
+```
+
+## LangChain
+
+Example Agent using LangChain:
+
+```python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+
+llm = ChatOpenAI()
+
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are an expert in world knowledge and all things in general.",
+            ),
+            ("user", "{input}"),
+        ]
+    )
+    output_parser = StrOutputParser()
+    chain = prompt | llm | output_parser
+    result = chain.invoke({"input": request.text})
+
+    return response.text(result)
+```
+
+### CrewAI
+
+Example Agent using CrewAI:
+
+```python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+from agents.mycrew.crew import MyCrew
+
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    inputs = {"topic": request.text or "AI LLMs"}
+    result = MyCrew().crew().kickoff(inputs=inputs)
+    return response.text(str(result))
+```
+
+Then for your Crew, you might hvave the following:
+
+```python
+from crewai import Agent, Crew, Process, Task
+from crewai.project import CrewBase, agent, crew, task
+
+# If you want to run a snippet of code before or after the crew starts,
+# you can use the @before_kickoff and @after_kickoff decorators
+# https://docs.crewai.com/concepts/crews#example-crew-class-with-decorators
+
+
+@CrewBase
+class MyCrew:
+    """MyCrew crew"""
+
+    # Learn more about YAML configuration files here:
+    # Agents: https://docs.crewai.com/concepts/agents#yaml-configuration-recommended
+    # Tasks: https://docs.crewai.com/concepts/tasks#yaml-configuration-recommended
+    agents_config = "config/agents.yaml"
+    tasks_config = "config/tasks.yaml"
+
+    # If you would like to add tools to your agents, you can learn more about it here:
+    # https://docs.crewai.com/concepts/agents#agent-tools
+    @agent
+    def researcher(self) -> Agent:
+        return Agent(config=self.agents_config["researcher"], verbose=True)
+
+    @agent
+    def reporting_analyst(self) -> Agent:
+        return Agent(config=self.agents_config["reporting_analyst"], verbose=True)
+
+    # To learn more about structured task outputs,
+    # task dependencies, and task callbacks, check out the documentation:
+    # https://docs.crewai.com/concepts/tasks#overview-of-a-task
+    @task
+    def research_task(self) -> Task:
+        return Task(
+            config=self.tasks_config["research_task"],
+        )
+
+    @task
+    def reporting_task(self) -> Task:
+        return Task(config=self.tasks_config["reporting_task"], output_file="report.md")
+
+    @crew
+    def crew(self) -> Crew:
+        """Creates the MyagentCrew crew"""
+        # To learn how to add knowledge sources to your crew, check out the documentation:
+        # https://docs.crewai.com/concepts/knowledge#what-is-knowledge
+
+        return Crew(
+            agents=self.agents,  # Automatically created by the @agent decorator
+            tasks=self.tasks,  # Automatically created by the @task decorator
+            process=Process.sequential,
+            verbose=True,
+            # process=Process.hierarchical, # In case you wanna use that instead https://docs.crewai.com/how-to/Hierarchical/
+        )
+```
