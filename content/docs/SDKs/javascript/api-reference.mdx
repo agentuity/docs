@@ -5,9 +5,13 @@ description: Detailed API reference for the Agentuity JavaScript SDK
 
 # API Reference
 
+> Source: [SDK Types](https://github.com/agentuity/sdk-js/blob/main/src/types.ts)
+
 ## Types
 
 ### Data
+
+> Source: [Data Interface](https://github.com/agentuity/sdk-js/blob/main/src/router/request.ts#L10-L70)
 
 ```typescript
 interface Data {
@@ -25,6 +29,8 @@ The `Data` interface provides unified access to content in different formats.
 
 ### DataType
 
+> Source: [DataType Type](https://github.com/agentuity/sdk-js/blob/main/src/router/request.ts#L72-L80)
+
 ```typescript
 type DataType =
   | Buffer
@@ -41,6 +47,8 @@ type DataType =
 
 ### AgentRequest
 
+> Source: [AgentRequest Interface](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L442-L537)
+
 ```typescript
 interface AgentRequest {
   get trigger(): TriggerType;
@@ -53,6 +61,8 @@ interface AgentRequest {
 The `AgentRequest` interface provides access to request data.
 
 ### AgentResponse
+
+> Source: [AgentResponse Interface](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L539-L634)
 
 ```typescript
 interface AgentResponse {
@@ -72,6 +82,8 @@ The `AgentResponse` interface provides methods to create responses.
 
 ### AgentContext
 
+> Source: [AgentContext Interface](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L375-L440)
+
 ```typescript
 interface AgentContext {
   logger: Logger;
@@ -87,6 +99,8 @@ The `AgentContext` provides access to services and utilities.
 ## Functions
 
 ### AgentHandler
+
+> Source: [AgentHandler Type](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L639-L643)
 
 ```typescript
 type AgentHandler = (

@@ -5,7 +5,11 @@ description: Guide for migrating from previous versions of the Agentuity JavaScr
 
 # Migration Guide
 
+> Source: [SDK Types](https://github.com/agentuity/sdk-js/blob/main/src/types.ts) | [PR #17](https://github.com/agentuity/sdk-js/pull/17)
+
 ## Migrating to the New Type System
+
+> Source: [AgentRequest Interface](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L442-L537) | [AgentResponse Interface](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L539-L634)
 
 The Agentuity JavaScript SDK has undergone significant changes to its type system. This guide will help you migrate your existing agents to the new system.
 
@@ -72,6 +76,8 @@ return await response.handoff({ name: "another-agent" }, { data: payload });
 
 The new `Data` interface provides unified access to content in different formats:
 
+> Source: [Data Interface](https://github.com/agentuity/sdk-js/blob/main/src/router/request.ts#L10-L70)
+
 ```typescript
 // Access content type
 const contentType = request.data.contentType;
@@ -92,6 +98,8 @@ const binary = request.data.binary;
 ### Async Response Methods
 
 All response methods now return Promises and must be awaited:
+
+> Source: [AgentResponse Interface](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L539-L634)
 
 ```typescript
 // Before

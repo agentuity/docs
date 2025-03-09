@@ -5,7 +5,11 @@ description: Examples of using the Agentuity JavaScript SDK
 
 # Examples
 
+> Source: [SDK Types](https://github.com/agentuity/sdk-js/blob/main/src/types.ts) | [PR #17](https://github.com/agentuity/sdk-js/pull/17)
+
 ## Basic Agent
+
+> Source: [AgentHandler Type](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L639-L643)
 
 ```typescript
 import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
@@ -41,6 +45,8 @@ export default async function handler(
 ```
 
 ## Key-Value Storage
+
+> Source: [KeyValueStorage Interface](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L178-L210)
 
 ```typescript
 import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
@@ -92,6 +98,8 @@ export default async function handler(
 ```
 
 ## Agent Communication
+
+> Source: [RemoteAgent Interface](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L317-L351) | [AgentContext.getAgent](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L417)
 
 ```typescript
 import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";

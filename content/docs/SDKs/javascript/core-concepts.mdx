@@ -5,9 +5,13 @@ description: Understanding the core concepts of the Agentuity JavaScript SDK
 
 # Core Concepts
 
+> Source: [SDK Types](https://github.com/agentuity/sdk-js/blob/main/src/types.ts)
+
 ## Agents
 
 Agents are the core building blocks in Agentuity. An agent is a function that processes requests and returns responses.
+
+> Source: [AgentHandler Type](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L639-L643)
 
 ```typescript
 export default async function handler(
@@ -23,6 +27,8 @@ export default async function handler(
 ## Request Handling
 
 The `AgentRequest` interface provides access to request data:
+
+> Source: [AgentRequest Interface](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L442-L537)
 
 ```typescript
 // Access request data
@@ -51,6 +57,8 @@ const trigger = request.trigger;
 
 The `AgentResponse` interface provides methods to create responses:
 
+> Source: [AgentResponse Interface](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L539-L634)
+
 ```typescript
 // Return JSON response
 await response.json({ message: "Hello, world!" });
@@ -69,6 +77,8 @@ await response.handoff({ name: "another-agent" }, { data: "Hello from first agen
 
 The `Data` interface provides unified access to content in different formats:
 
+> Source: [Data Interface](https://github.com/agentuity/sdk-js/blob/main/src/router/request.ts#L10-L70)
+
 ```typescript
 // Data properties and methods
 data.contentType  // Content type (e.g., 'application/json', 'text/plain')
@@ -83,6 +93,8 @@ data.buffer       // Node.js Buffer representation
 ## Context
 
 The `AgentContext` provides access to services and utilities:
+
+> Source: [AgentContext Interface](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L375-L440)
 
 ```typescript
 // Logging
