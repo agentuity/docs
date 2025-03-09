@@ -1,0 +1,103 @@
+---
+title: Core Concepts
+description: Understanding the core concepts of the Agentuity JavaScript SDK
+---
+
+# Core Concepts
+
+## Agents
+
+Agents are the core building blocks in Agentuity. An agent is a function that processes requests and returns responses.
+
+```typescript
+export default async function handler(
+  request: AgentRequest,
+  response: AgentResponse,
+  context: AgentContext
+) {
+  // Agent logic here
+  return await response.json({ message: "Hello, world!" });
+}
+```
+
+## Request Handling
+
+The `AgentRequest` interface provides access to request data:
+
+```typescript
+// Access request data
+const data = request.data;
+
+// Access JSON data
+const jsonData = request.data.json;
+
+// Access text data
+const textData = request.data.text;
+
+// Access binary data
+const binaryData = request.data.binary;
+
+// Access metadata
+const metadata = request.metadata;
+
+// Get specific metadata value
+const value = request.get('key', defaultValue);
+
+// Get trigger type
+const trigger = request.trigger;
+```
+
+## Response Creation
+
+The `AgentResponse` interface provides methods to create responses:
+
+```typescript
+// Return JSON response
+await response.json({ message: "Hello, world!" });
+
+// Return text response
+await response.text("Hello, world!");
+
+// Return binary response
+await response.binary(binaryData);
+
+// Redirect to another agent
+await response.handoff({ name: "another-agent" }, { data: "Hello from first agent" });
+```
+
+## Data Interface
+
+The `Data` interface provides unified access to content in different formats:
+
+```typescript
+// Data properties and methods
+data.contentType  // Content type (e.g., 'application/json', 'text/plain')
+data.base64       // Base64-encoded string representation
+data.text         // Text representation
+data.json         // JSON representation
+data.object<T>()  // Typed object representation
+data.binary       // Binary representation (Uint8Array)
+data.buffer       // Node.js Buffer representation
+```
+
+## Context
+
+The `AgentContext` provides access to services and utilities:
+
+```typescript
+// Logging
+context.logger.info("Info message");
+context.logger.error("Error message");
+
+// Key-value storage
+await context.kv.get(namespace, key);
+await context.kv.set(namespace, key, value);
+
+// Vector storage
+await context.vector.upsert(namespace, id, vector, metadata);
+await context.vector.search(namespace, vector, limit);
+
+// Agent communication
+const agent = await context.getAgent({ name: "another-agent" });
+await agent.run({ data: "Hello" });
+```

@@ -1,0 +1,102 @@
+---
+title: Migration Guide
+description: Guide for migrating from previous versions of the Agentuity JavaScript SDK
+---
+
+# Migration Guide
+
+## Migrating to the New Type System
+
+The Agentuity JavaScript SDK has undergone significant changes to its type system. This guide will help you migrate your existing agents to the new system.
+
+### Request Handling Changes
+
+#### Before:
+
+```typescript
+// Accessing JSON data
+const data = request.json();
+
+// Accessing text data
+const text = request.text();
+
+// Accessing metadata
+const value = request.metadata('key');
+```
+
+#### After:
+
+```typescript
+// Accessing JSON data
+const data = request.data.json;
+
+// Accessing text data
+const text = request.data.text;
+
+// Accessing metadata
+const value = request.get('key');
+// or
+const metadata = request.metadata;
+const value = metadata.key;
+```
+
+### Response Creation Changes
+
+#### Before:
+
+```typescript
+// Returning JSON response
+return response.json({ message: "Hello, world!" });
+
+// Returning text response
+return response.text("Hello, world!");
+
+// Redirecting to another agent
+return response.redirect({ name: "another-agent" }, payload);
+```
+
+#### After:
+
+```typescript
+// Returning JSON response (now async)
+return await response.json({ message: "Hello, world!" });
+
+// Returning text response (now async)
+return await response.text("Hello, world!");
+
+// Redirecting to another agent (now called handoff)
+return await response.handoff({ name: "another-agent" }, { data: payload });
+```
+
+### Data Interface
+
+The new `Data` interface provides unified access to content in different formats:
+
+```typescript
+// Access content type
+const contentType = request.data.contentType;
+
+// Access as text
+const text = request.data.text;
+
+// Access as JSON
+const json = request.data.json;
+
+// Access as typed object
+const typedObject = request.data.object<MyType>();
+
+// Access as binary
+const binary = request.data.binary;
+```
+
+### Async Response Methods
+
+All response methods now return Promises and must be awaited:
+
+```typescript
+// Before
+return response.json({ message: "Hello, world!" });
+
+// After
+return await response.json({ message: "Hello, world!" });
+```

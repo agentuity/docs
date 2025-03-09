@@ -1,0 +1,54 @@
+---
+title: JavaScript SDK
+description: Documentation for the Agentuity JavaScript SDK
+---
+
+# JavaScript SDK
+
+The Agentuity JavaScript SDK enables you to build AI agents and multi-agent systems using JavaScript or TypeScript. It provides a simple yet powerful API for creating agents that can communicate with each other, process various content types, and leverage persistent storage.
+
+## Installation
+
+```bash
+npm install @agentuity/sdk
+```
+
+## Quick Start
+
+```typescript
+import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function handler(
+  request: AgentRequest,
+  response: AgentResponse,
+  context: AgentContext,
+) {
+  // Get the request data
+  const data = request.data.json;
+  
+  // Log the request
+  context.logger.info(`Received request: ${JSON.stringify(data)}`);
+  
+  // Return a response
+  return await response.json({
+    message: `Hello, ${data.name || 'World'}!`,
+    timestamp: new Date().toISOString()
+  });
+}
+```
+
+## Key Features
+
+- **Unified Data Handling**: Process various content types (JSON, text, binary, etc.) with a consistent API
+- **Agent Communication**: Enable agents to communicate with each other
+- **Persistent Storage**: Store and retrieve data using key-value and vector storage
+- **Observability**: Built-in logging and tracing capabilities
+- **Type Safety**: Comprehensive TypeScript definitions for better developer experience
+
+## Next Steps
+
+- [Core Concepts](./core-concepts.mdx)
+- [API Reference](./api-reference.mdx)
+- [Examples](./examples.mdx)
+- [Migration Guide](./migration-guide.mdx)
+```
