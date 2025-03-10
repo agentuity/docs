@@ -28,31 +28,3 @@ There are two ways to create a new vector instance:
 
 1. From the Memory > Vector page in the Cloud Console
 2. In code, using the Agentuity SDK
-
-
-### Using Vector Memory in Agents
-
-When working within an agent context, you can access vector memory storage directly through the context object:
-
-```javascript
-export default async function Agent(
-  req: AgentRequest,
-  resp: AgentResponse,
-  ctx: AgentContext,
-) {
-  // Store data in vector memory
-  const ids = await ctx.vector.upsert('my-vector-instance', {
-    text: 'This is some text to store',
-    metadata: { source: 'example' }
-  });
-  
-  // Search vector memory
-  const results = await ctx.vector.search('my-vector-instance', {
-    query: 'search query',
-    limit: 5
-  });
-  
-  // Delete vectors from vector memory
-  const deletedCount = await ctx.vector.delete('my-vector-instance', 'vector-id-1', 'vector-id-2');
-}
-```
