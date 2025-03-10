@@ -1,0 +1,111 @@
+---
+title: API Reference
+description: Detailed API reference for the Agentuity JavaScript SDK
+---
+
+# API Reference
+
+> Source: [SDK Types](https://github.com/agentuity/sdk-js/blob/main/src/types.ts)
+
+## Types
+
+### Data
+
+> Source: [Data Interface](https://github.com/agentuity/sdk-js/blob/main/src/router/request.ts#L10-L70)
+
+```typescript
+interface Data {
+  contentType: string;
+  base64: string;
+  text: string;
+  json: Json;
+  object<T>(): T;
+  binary: Uint8Array;
+  buffer: Buffer;
+}
+```
+
+The `Data` interface provides unified access to content in different formats.
+
+### DataType
+
+> Source: [DataType Type](https://github.com/agentuity/sdk-js/blob/main/src/router/request.ts#L72-L80)
+
+```typescript
+type DataType =
+  | Buffer
+  | Uint8Array
+  | ArrayBuffer
+  | string
+  | Json
+  | Blob
+  | ReadableStream
+  | Data;
+```
+
+`DataType` represents the different types of data that can be passed to an agent.
+
+### AgentRequest
+
+> Source: [AgentRequest Interface](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L442-L537)
+
+```typescript
+interface AgentRequest {
+  get trigger(): TriggerType;
+  get data(): Data;
+  get metadata(): JsonObject;
+  get(key: string, defaultValue?: Json): Json;
+}
+```
+
+The `AgentRequest` interface provides access to request data.
+
+### AgentResponse
+
+> Source: [AgentResponse Interface](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L539-L634)
+
+```typescript
+interface AgentResponse {
+  handoff(
+    agent: GetAgentRequestParams, 
+    args?: InvocationArguments
+  ): Promise<AgentRedirectResponse>;
+  
+  json(data: Json, metadata?: JsonObject): Promise<AgentResponseData>;
+  text(data: string, metadata?: JsonObject): Promise<AgentResponseData>;
+  binary(data: DataType, metadata?: JsonObject): Promise<AgentResponseData>;
+}
+```
+
+The `AgentResponse` interface provides methods to create responses.
+
+### AgentContext
+
+> Source: [AgentContext Interface](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L375-L440)
+
+```typescript
+interface AgentContext {
+  logger: Logger;
+  kv: KeyValueAPI;
+  vector: VectorAPI;
+  getAgent(params: GetAgentRequestParams): Promise<RemoteAgent>;
+}
+```
+
+The `AgentContext` provides access to services and utilities.
+
+## Functions
+
+### AgentHandler
+
+> Source: [AgentHandler Type](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L639-L643)
+
+```typescript
+type AgentHandler = (
+  request: AgentRequest,
+  response: AgentResponse,
+  context: AgentContext
+) => Promise<AgentResponseData>;
+```
+
+The `AgentHandler` is the main function type for implementing agents.

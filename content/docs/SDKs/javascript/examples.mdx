@@ -1,0 +1,159 @@
+---
+title: Examples
+description: Examples of using the Agentuity JavaScript SDK
+---
+
+# Examples
+
+> Source: [SDK Types](https://github.com/agentuity/sdk-js/blob/main/src/types.ts) | [PR #17](https://github.com/agentuity/sdk-js/pull/17)
+
+## Basic Agent
+
+> Source: [AgentHandler Type](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L639-L643)
+
+```typescript
+import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function handler(
+  request: AgentRequest,
+  response: AgentResponse,
+  context: AgentContext,
+) {
+  try {
+    // Get the request data
+    const data = request.data.json;
+    const name = data.name || 'Guest';
+    
+    // Log the request
+    context.logger.info(`Received greeting request for ${name}`);
+    
+    // Return a personalized greeting
+    return await response.json({
+      message: `Hello, ${name}! Welcome to Agentuity.`,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    // Handle errors
+    context.logger.error('Error processing request', error);
+    
+    return await response.json({ 
+      error: 'Failed to process request',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+}
+```
+
+## Key-Value Storage
+
+> Source: [KeyValueStorage Interface](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L178-L210)
+
+```typescript
+import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function handler(
+  request: AgentRequest,
+  response: AgentResponse,
+  context: AgentContext,
+) {
+  const { action, userId, preferences } = request.data.json;
+
+  switch (action) {
+    case 'get': {
+      // Retrieve user preferences
+      const data = await context.kv.get('user-preferences', userId);
+
+      if (!data) {
+        return await response.json({ message: 'No preferences found' });
+      }
+
+      // Convert ArrayBuffer to string and parse as JSON
+      const prefsString = new TextDecoder().decode(data);
+      const userPrefs = JSON.parse(prefsString);
+
+      return await response.json({ preferences: userPrefs });
+    }
+    case 'set': {
+      // Store user preferences
+      await context.kv.set(
+        'user-preferences',
+        userId,
+        JSON.stringify(preferences),
+        // Optional TTL (30 days in seconds)
+        60 * 60 * 24 * 30
+      );
+
+      return await response.json({ message: 'Preferences saved successfully!' });
+    }
+    case 'delete': {
+      // Delete user preferences
+      await context.kv.delete('user-preferences', userId);
+      
+      return await response.json({ message: 'Preferences deleted successfully!' });
+    }
+    default:
+      return await response.json({ error: 'Invalid action. Use "get", "set", or "delete".' });
+  }
+}
+```
+
+## Agent Communication
+
+> Source: [RemoteAgent Interface](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L317-L351) | [AgentContext.getAgent](https://github.com/agentuity/sdk-js/blob/main/src/types.ts#L417)
+
+```typescript
+import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function handler(
+  request: AgentRequest,
+  response: AgentResponse,
+  context: AgentContext,
+) {
+  const { action, message, agentId } = request.data.json;
+
+  switch (action) {
+    case 'send': {
+      // Send a message to another agent
+      if (!agentId) {
+        return await response.json({ error: 'Agent ID is required' });
+      }
+
+      if (!message) {
+        return await response.json({ error: 'Message is required' });
+      }
+
+      // Get the agent by ID
+      const agent = await context.getAgent({ id: agentId });
+      
+      // Send message to the specified agent
+      const result = await agent.run({ 
+        data: { 
+          message,
+          sender: context.agent.id,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+      return await response.json({
+        message: 'Message sent successfully',
+        result
+      });
+    }
+    case 'receive': {
+      // This is a handler for receiving messages from other agents
+      const data = request.data.json;
+      
+      context.logger.info(`Received message from agent ${data.sender}: ${data.message}`);
+      
+      // Process the received message
+      return await response.json({
+        message: 'Message received and processed',
+        echo: data.message,
+        receivedAt: new Date().toISOString()
+      });
+    }
+    default:
+      return await response.json({ error: 'Invalid action. Use "send" or "receive".' });
+  }
+}
+```
