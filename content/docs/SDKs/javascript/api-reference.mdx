@@ -74,7 +74,6 @@ interface AgentResponse {
   json(data: Json, metadata?: JsonObject): Promise<AgentResponseData>;
   text(data: string, metadata?: JsonObject): Promise<AgentResponseData>;
   binary(data: DataType, metadata?: JsonObject): Promise<AgentResponseData>;
-  // ... other methods
 }
 ```
 
@@ -90,7 +89,6 @@ interface AgentContext {
   kv: KeyValueAPI;
   vector: VectorAPI;
   getAgent(params: GetAgentRequestParams): Promise<RemoteAgent>;
-  // ... other properties
 }
 ```
 
