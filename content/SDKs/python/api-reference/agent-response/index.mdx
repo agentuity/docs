@@ -1,0 +1,107 @@
+---
+title: AgentResponse
+description: Agentuity Python SDK AgentResponse API Reference
+---
+
+# AgentResponse
+
+The `AgentResponse` class provides methods for constructing agent responses with various content types.
+
+## Properties
+
+### content_type
+
+The content type of the response.
+
+### payload
+
+The base64-encoded payload of the response.
+
+### metadata
+
+Additional metadata associated with the response.
+
+## Methods
+
+### empty
+
+```python
+def empty(self, metadata: Optional[dict] = None) -> AgentResponse
+```
+
+Creates an empty response.
+
+### text
+
+```python
+def text(self, data: str, metadata: Optional[dict] = None) -> AgentResponse
+```
+
+Creates a text response.
+
+### html
+
+```python
+def html(self, data: str, metadata: Optional[dict] = None) -> AgentResponse
+```
+
+Creates an HTML response.
+
+### json
+
+```python
+def json(self, data: dict, metadata: Optional[dict] = None) -> AgentResponse
+```
+
+Creates a JSON response.
+
+### binary
+
+```python
+def binary(self, data: bytes, content_type: str = "application/octet-stream", metadata: Optional[dict] = None) -> AgentResponse
+```
+
+Creates a binary response with the specified content type.
+
+### handoff
+
+```python
+async def handoff(
+    self, params: dict, args: Optional[dict] = None, metadata: Optional[dict] = None
+) -> "AgentResponse"
+```
+
+Hands off the request to another agent.
+
+## Media Type Helpers
+
+The `AgentResponse` class also provides helper methods for common media types:
+
+- `pdf(data: bytes, metadata: Optional[dict] = None)`
+- `png(data: bytes, metadata: Optional[dict] = None)`
+- `jpeg(data: bytes, metadata: Optional[dict] = None)`
+- `gif(data: bytes, metadata: Optional[dict] = None)`
+- `webp(data: bytes, metadata: Optional[dict] = None)`
+- `webm(data: bytes, metadata: Optional[dict] = None)`
+- `mp3(data: bytes, metadata: Optional[dict] = None)`
+- `mp4(data: bytes, metadata: Optional[dict] = None)`
+- `m4a(data: bytes, metadata: Optional[dict] = None)`
+- `wav(data: bytes, metadata: Optional[dict] = None)`
+- `ogg(data: bytes, metadata: Optional[dict] = None)`
+
+## Example
+
+```python
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    # Return a JSON response
+    return response.json({
+        "message": "Hello, world!",
+        "timestamp": context.now().isoformat()
+    })
+    
+    # Or hand off to another agent
+    return await response.handoff(
+        {"id": "another-agent"},
+        {"message": "Please handle this request"}
+    )
+```

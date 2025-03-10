@@ -1,0 +1,96 @@
+---
+title: Agentuity
+---
+
+Agentuity is a cloud platform designed specifically for building, deploying, and scaling 
+autonomous AI agents. It provides the infrastructure and tools necessary to manage agents 
+built with any framework, such as CrewAI, LangChain, or custom code.
+
+With Agentuity, you can:
+- Deploy agents with a single command
+- Monitor real-time performance and analytics
+- Scale agents effortlessly
+- Connect agents to various channels (API, chat, webhooks, email, SMS, voice)
+- Use any AI agent framework
+
+## Getting Started
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+<Steps>
+<Step>
+### Create an Account
+[Create an Agentuity account](https://app.agentuity.com/sign-up) or [Sign in](https://app.agentuity.com/sign-in) to the cloud portal.
+</Step>
+
+<Step>
+### Install the CLI
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+<Tabs items={['macOS', 'Linux / Windows (WSL)']}>
+  <Tab>
+    ```bash
+    brew tap agentuity/tap && brew install agentuity
+    ```
+  </Tab>
+  <Tab>
+    1. Visit the [Agentuity CLI releases page](https://github.com/agentuity/cli/releases)
+    2. Download the appropriate version for your operating system
+    3. Extract the downloaded file
+    4. Add the executable to your system PATH
+  </Tab>
+</Tabs>
+</Step>
+
+<Step>
+### Login to Agentuity
+```bash
+agentuity login
+```
+</Step>
+
+<Step>
+### Create Your First Project
+```bash
+agentuity create project my-project
+cd my-project
+```
+</Step>
+
+<Step>
+### Deploy Your Project
+```bash
+agentuity deploy
+```
+</Step>
+</Steps>
+
+## Documentation Sections
+
+<Cards>
+  <Card
+    title="Cloud & Account"
+    href="/Cloud/"
+    description="Learn about Agentuity Cloud features, account management, and general platform information."
+  />
+  <Card
+    title="Command Line Interface"
+    href="/CLI/installation"
+    description="Get started with the Agentuity CLI for managing your agents and deployments from the terminal."
+  />
+  <Card
+    title="Examples & Tutorials"
+    href="/Examples/"
+    description="Explore sample projects, step-by-step tutorials, and implementation guides."
+  />
+  <Card
+    title="SDKs & Integration"
+    href="/SDKs"
+    description="Integrate Agentuity Cloud into your applications using our SDKs and APIs."
+  />
+</Cards>
+
+## Need Help?
+
+Join our [Community Discord](https://discord.com/invite/vtn3hgUfuc) for assistance.

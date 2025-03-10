@@ -1,0 +1,4 @@
+{
+  "title": "CLI",
+  "pages": ["installation", "auth", "version", "project", "env", "io", "cloud", "dev", "bundle", "..."]
+}

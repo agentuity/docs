@@ -1,0 +1,87 @@
+---
+title: AgentContext
+description: Agentuity Python SDK AgentContext API Reference
+---
+
+# AgentContext
+
+The `AgentContext` class provides contextual information and services to agents during execution.
+
+## Properties
+
+### kv
+
+```python
+kv: KeyValueStore
+```
+
+The key-value storage service.
+
+### vector
+
+```python
+vector: VectorStore
+```
+
+The vector storage service.
+
+### logger
+
+```python
+logger: Logger
+```
+
+The logger for recording events.
+
+### tracer
+
+```python
+tracer: Tracer
+```
+
+The OpenTelemetry tracer for distributed tracing.
+
+### agent
+
+```python
+agent: AgentConfig
+```
+
+The configuration of the current agent.
+
+### agents
+
+```python
+agents: List[AgentConfig]
+```
+
+A list of all agents in the project.
+
+### Environment Information
+
+- `sdkVersion`: The version of the Agentuity SDK
+- `devmode`: Whether the agent is running in development mode
+- `orgId`: The organization ID of the Agentuity Cloud project
+- `projectId`: The project ID of the Agentuity Cloud project
+- `deploymentId`: The deployment ID of the Agentuity Cloud deployment
+- `cliVersion`: The version of the Agentuity CLI
+- `environment`: The environment of the Agentuity Cloud project
+
+## Example
+
+```python
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    # Log information
+    context.logger.info(f"Processing request in {context.environment} environment")
+    
+    # Use key-value storage
+    user_data = await context.kv.get("users", "user123")
+    
+    # Use vector storage
+    search_results = await context.vector.search("documents", "query text")
+    
+    # Access agent information
+    agent_id = context.agent.id
+    
+    return response.json({"message": f"Hello from agent {agent_id}"})
+```

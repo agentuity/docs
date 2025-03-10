@@ -1,0 +1,11 @@
+{
+	"title": "Agentuity Docs",
+	"pages": [
+		"Introduction",
+		"Cloud",
+		"CLI",
+		"SDKs",
+		"Examples",
+		"Troubleshooting"
+	]
+}

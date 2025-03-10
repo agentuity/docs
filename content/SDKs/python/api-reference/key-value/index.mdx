@@ -1,0 +1,77 @@
+---
+title: KeyValueStore
+description: Agentuity Python SDK KeyValueStore API Reference
+---
+
+# KeyValueStore
+
+The `KeyValueStore` class provides methods for storing and retrieving key-value pairs.
+
+## Methods
+
+### get
+
+```python
+async def get(self, name: str, key: str) -> DataResult
+```
+
+Gets a value from the key-value storage.
+
+- `name`: The name of the key-value collection
+- `key`: The key to retrieve
+- Returns: A `DataResult` object containing the retrieved data
+
+### set
+
+```python
+async def set(
+    self,
+    name: str,
+    key: str,
+    value: Union[str, int, float, bool, list, dict, bytes, Data],
+    params: Optional[dict] = None
+)
+```
+
+Sets a value in the key-value storage.
+
+- `name`: The name of the key-value collection
+- `key`: The key to set
+- `value`: The value to store
+- `params`: Optional parameters, such as TTL (time-to-live)
+
+### delete
+
+```python
+async def delete(self, name: str, key: str)
+```
+
+Deletes a value from the key-value storage.
+
+- `name`: The name of the key-value collection
+- `key`: The key to delete
+
+## Example
+
+```python
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    # Store a value
+    await context.kv.set(
+        "user-preferences",
+        "user123",
+        {"theme": "dark", "language": "en"},
+        {"ttl": 86400}  # 24 hours in seconds
+    )
+    
+    # Retrieve a value
+    result = await context.kv.get("user-preferences", "user123")
+    
+    if result.exists:
+        preferences = result.data.json
+        return response.json({"preferences": preferences})
+    else:
+        return response.json({"message": "No preferences found"})
+    
+    # Delete a value
+    await context.kv.delete("user-preferences", "user123")
+```
