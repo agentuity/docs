@@ -66,7 +66,9 @@ Creates a binary response with the specified content type.
 ### handoff
 
 ```python
-async def handoff(self, params: dict, args: Optional[dict] = None, metadata: Optional[dict] = None) -> AgentResponse
+async def handoff(
+    self, params: dict, args: Optional[dict] = None, metadata: Optional[dict] = None
+) -> "AgentResponse"
 ```
 
 Hands off the request to another agent.

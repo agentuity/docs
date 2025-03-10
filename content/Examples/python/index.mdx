@@ -13,6 +13,7 @@ A simple agent that returns a greeting.
 
 ```python
 from agentuity import AgentRequest, AgentResponse, AgentContext
+from datetime import datetime
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     # Get the request data
@@ -25,7 +26,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     # Return a personalized greeting
     return response.json({
         "message": f"Hello, {name}! Welcome to Agentuity.",
-        "timestamp": context.now().isoformat()
+        "timestamp": datetime.now().isoformat()
     })
 ```
 
