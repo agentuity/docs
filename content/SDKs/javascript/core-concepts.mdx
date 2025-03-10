@@ -24,7 +24,7 @@ import { AgentHandler } from '@agentuity/sdk';
 // Agent handler function
 const handler: AgentHandler = async (request, response, context) => {
   // Process the request
-  const data = request.json();
+  const data = request.data.json;
   
   // Use the context (logging, storage, etc.)
   context.logger.info('Processing request', data);
@@ -36,7 +36,11 @@ const handler: AgentHandler = async (request, response, context) => {
 export default handler;
 ```
 
-> **Note:** Agent configuration (name, description, etc.) is managed by the Agentuity CLI and stored in the project configuration file.
+<Callout type="warn" title="Document Status">
+  Agent configuration (name, description, etc.) is managed by the Agentuity CLI and stored in the project configuration file.
+  Use the `agentuity project` and `agentuity agent` commands to manage your configuration.
+</Callout>
+
 
 ## Request and Response Handling
 
@@ -46,15 +50,16 @@ The Agentuity SDK provides a structured way to handle requests and generate resp
 
 Requests contain information about the trigger event and payload data. The `AgentRequest` interface provides methods to access this data in various formats:
 
-- `request.contentType` - The content type (or mime type) of the request
 - `request.metadata` - Access metadata associated with the request
 - `request.trigger` - Get the trigger type (webhook, manual,cron, etc.)
 - `request.get(key, defval)` - Get a value from the request metadata
-- `request.json()` - Get the payload as a JSON object
-- `request.object<T>()` - Get the payload as a JSON object and parse it as a specific type
-- `request.text()` - Get the payload as a string
-- `request.binary()` - Get the payload as an ArrayBuffer
-- Various media-specific methods (pdf(), png(), jpeg(), etc.)
+- `request.data` - Get a Data object from the request
+- `request.data.contentType` - The content type (or mime type) of the request
+- `request.data.json` - Get the payload as a JSON object
+- `request.data.object<T>()` - Get the payload as a JSON object and parse it as a specific type
+- `request.data.text` - Get the payload as a string
+- `request.data.binary` - Get the payload as an ArrayBuffer
+
 
 ### Responses
 
@@ -66,7 +71,7 @@ Responses are created using the `AgentResponse` interface, which provides method
 - `response.html()` - Return an HTML response
 - `response.empty()` - Return an empty response
 - Various media-specific methods (pdf(), png(), jpeg(), etc.)
-- `response.redirect()` - Redirect to another agent
+- `response.handoff()` - Redirect to another agent
 
 ## Agent Context
 

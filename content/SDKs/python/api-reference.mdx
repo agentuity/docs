@@ -77,7 +77,7 @@ from agentuity import AgentRequest, AgentResponse, AgentContext
 async def handler(request: AgentRequest, response: AgentResponse, context: AgentContext):
     try:
         # Get the request data
-        data = request.json()
+        data = request.data.json
         name = data.get("name")
         
         # Log the request
@@ -595,7 +595,7 @@ Returns the request payload as a dictionary.
 ##### Example
 
 ```python
-data = request.json()
+data = request.data.json
 print(f"Request data: {data}")
 ```
 
@@ -610,7 +610,7 @@ Returns the request payload as a string.
 ##### Example
 
 ```python
-text = request.text()
+text = request.data.text
 print(f"Request text: {text}")
 ```
 

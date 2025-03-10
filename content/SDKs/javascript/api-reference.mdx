@@ -73,7 +73,7 @@ import { AgentHandler } from '@agentuity/sdk';
 const handler: AgentHandler = async (request, response, context) => {
   try {
     // Get the request data
-    const { name } = request.json();
+    const { name } = request.data.json;
     
     // Log the request
     context.logger.info(`Received greeting request for ${name}`);
@@ -520,7 +520,7 @@ Returns the request payload as a JSON object.
 ##### Example
 
 ```typescript
-const data = request.json();
+const data = request.data.json;
 console.log(`Request data: ${JSON.stringify(data)}`);
 ```
 
@@ -535,7 +535,7 @@ Returns the request payload as a string.
 ##### Example
 
 ```typescript
-const text = request.text();
+const text = request.data.text;
 console.log(`Request text: ${text}`);
 ```
 
