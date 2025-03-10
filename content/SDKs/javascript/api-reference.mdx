@@ -689,33 +689,6 @@ const requestLogger = context.logger.child({ requestId: '123', userId: '456' });
 requestLogger.info('Processing request'); // Includes requestId and userId
 ```
 
-## IO Schema
-
-The Agentuity SDK provides an `IOSchema` interface for defining the input and output schema of an agent.
-
-```typescript
-interface IOSchema {
-  source?: {
-    sms?: StandardSchemaV1;
-    voice?: StandardSchemaV1;
-    email?: StandardSchemaV1;
-    webhook?: StandardSchemaV1;
-    queue?: StandardSchemaV1;
-    agent?: StandardSchemaV1;
-    manual?: StandardSchemaV1;
-    cron?: StandardSchemaV1;
-  };
-  destination?: {
-    sms?: StandardSchemaV1;
-    voice?: StandardSchemaV1;
-    email?: StandardSchemaV1;
-    webhook?: StandardSchemaV1;
-    queue?: StandardSchemaV1;
-    agent?: StandardSchemaV1;
-  };
-}
-```
-
 ## Session
 
 The Agentuity SDK provides a `Session` interface that represents the current agent execution context.
