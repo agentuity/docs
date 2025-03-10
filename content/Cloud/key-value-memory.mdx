@@ -29,30 +29,3 @@ There are two ways to create a new key-value instance:
 
 1. From the Memory > Key-Value page in the Cloud Console
 2. In code, using the Agentuity SDK
-
-## Using Key-Value Memory in Applications
-
-Key-value memory storage can be integrated with your applications using the Agentuity SDK or 
-directly within an agent context. Note that inside agent projects, you will get access to 
-this storage with zero setup.  Just use it and go.
-
-### Using Key-Value Memory in Agents
-
-When working within an agent context, you can access key-value storage directly through the context object:
-
-```javascript
-export default async function Agent(
-  req: AgentRequest,
-  resp: AgentResponse,
-  ctx: AgentContext,
-) {
-  // Store data in key-value memory
-  await ctx.kv.set('my-key', 'my-value');
-  
-  // Retrieve data from key-value memory
-  const value = await ctx.kv.get('my-key');
-  
-  // Delete data from key-value memory
-  await ctx.kv.delete('my-key');
-}
-```
