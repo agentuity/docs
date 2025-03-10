@@ -1,9 +1,9 @@
 ---
-title: API Reference
-description: Comprehensive reference for the Agentuity Python SDK API
+title: Python SDK API Reference
+description: Complete reference documentation for the Agentuity Python SDK, including request handling, response types, data storage, and agent communication.
 ---
 
-# API Reference
+# Python SDK API Reference
 
 This section provides detailed documentation for the Agentuity Python SDK API, including method signatures, parameters, return values, and example usage.
 
@@ -11,11 +11,21 @@ This section provides detailed documentation for the Agentuity Python SDK API, i
 
 - [Agent Lifecycle](#agent-lifecycle)
 - [Storage APIs](#storage-apis)
+  - [Key-Value Storage](#key-value-storage)
+  - [Vector Storage](#vector-storage)
 - [Agent Communication](#agent-communication)
 - [Response Types](#response-types)
+  - [JSON Responses](#json-responses)
+  - [Text Responses](#text-responses)
+  - [Binary Responses](#binary-responses)
+  - [Media Type Responses](#media-type-responses)
+  - [HTML Responses](#html-responses)
+  - [Empty Responses](#empty-responses)
 - [Request Handling](#request-handling)
 - [Logging](#logging)
 - [Telemetry](#telemetry)
+
+> **Note:** This documentation applies to Agentuity Python SDK version 1.0 and above.
 
 ## Agent Lifecycle
 
@@ -87,15 +97,12 @@ async def handler(request: AgentRequest, response: AgentResponse, context: Agent
 
 The Agentuity SDK provides two storage APIs: Key-Value Storage and Vector Storage.
 
-<Callout title="Title" type="error">
-  The Python Storage APIs are currently in development and not yet available.
-</Callout>
 
 ### Key-Value Storage
 
 The Key-Value Storage API provides a simple way to store and retrieve data. It is accessed through the `context.kv` object.
 
-#### `async get(name: str, key: str) -> bytes | None`
+#### `async get(name: str, key: str) -> "DataResult"`
 
 Retrieves a value from the key-value storage.
 
@@ -106,22 +113,34 @@ Retrieves a value from the key-value storage.
 
 ##### Return Value
 
-Returns the value as bytes, or None if the key does not exist.
+Returns a DataResult object that has an `exists` property to check if the value exists and a `data` property with accessors like `data.json` and `data.text`.
 
 ##### Example
 
 ```python
-# Retrieve a value from key-value storage
-value = await context.kv.get("user-preferences", "user-123")
-if value:
-    # Convert bytes to string if needed
-    value_string = value.decode("utf-8")
-    print(f"User preferences: {value_string}")
-else:
-    print("User preferences not found")
+from agentuity.sdk import AgentContext
+
+# Retrieve a value from key-value storage with error handling
+try:
+    value = await context.kv.get("user-preferences", "user-123")
+    if value.exists:
+        # Access data using the appropriate accessor
+        user_prefs = value.data.json
+        context.logger.info(f"User preferences: {user_prefs}")
+        
+        # Or access as text if needed
+        # text_data = value.data.text
+        # context.logger.info(f"User preferences (text): {text_data}")
+    else:
+        context.logger.info("User preferences not found, using defaults")
+        user_prefs = {"theme": "light"}
+except Exception as e:
+    context.logger.error(f"Failed to retrieve user preferences: {str(e)}")
+    # Use default value or re-raise exception
+    user_prefs = {"theme": "light"}
 ```
 
-#### `async set(name: str, key: str, value: bytes | str | dict, ttl: int = None) -> None`
+#### `async set(name: str, key: str, value: Union[str, int, float, bool, list, dict, bytes, "Data"], params: Optional[dict] = None) -> None`
 
 Stores a value in the key-value storage.
 
@@ -129,8 +148,8 @@ Stores a value in the key-value storage.
 
 - `name`: The name of the key-value storage
 - `key`: The key to store the value under
-- `value`: The value to store (can be bytes, string, or dictionary)
-- `ttl` (optional): Time-to-live in seconds (minimum 60 seconds)
+- `value`: The value to store (Union[str, int, float, bool, list, dict, bytes, "Data"])
+- `params` (optional): Can have `ttl` (time-to-live in seconds)
 
 ##### Return Value
 
@@ -152,7 +171,7 @@ binary_data = bytes([1, 2, 3, 4])
 await context.kv.set("user-data", "user-123", binary_data)
 
 # Store a value with TTL (expires after 1 hour)
-await context.kv.set("session", "user-123", "active", ttl=3600)
+await context.kv.set("session", "user-123", "active", {"ttl":3600})
 ```
 
 #### `async delete(name: str, key: str) -> None`
@@ -195,6 +214,43 @@ Returns a list of string IDs for the upserted vectors.
 ##### Example
 
 ```python
+from agentuity.sdk import AgentContext
+from typing import List, Dict, Any
+
+async def index_products(context: AgentContext, products: List[Dict[str, Any]]) -> List[str]:
+    """
+    Index product descriptions in vector storage for semantic search.
+    
+    Args:
+        context: The agent context
+        products: List of product dictionaries with name, description, and category
+        
+    Returns:
+        List of vector IDs for the indexed products
+    """
+    # Prepare documents for vector storage
+    documents = []
+    for product in products:
+        documents.append({
+            "document": product["description"],
+            "metadata": {
+                "product_id": product["id"],
+                "name": product["name"],
+                "category": product["category"],
+                "price": product["price"]
+            }
+        })
+    
+    # Upsert documents to vector storage
+    try:
+        ids = await context.vector.upsert("product-descriptions", *documents)
+        context.logger.info(f"Indexed {len(ids)} products in vector storage")
+        return ids
+    except Exception as e:
+        context.logger.error(f"Failed to index products: {str(e)}")
+        raise
+
+# Simple example
 # Upsert documents with text
 ids = await context.vector.upsert(
     "product-descriptions",
@@ -226,18 +282,29 @@ Returns a list of search results, each containing an ID, metadata, and distance 
 ##### Example
 
 ```python
-# Search for similar products
-results = await context.vector.search("product-descriptions", {
-    "query": "comfortable office chair",
-    "limit": 5,
-    "similarity": 0.7,
-    "metadata": {"category": "furniture"}
-})
+from agentuity.sdk import AgentContext
+from typing import List, Dict, Any
 
-# Process search results
-for result in results:
-    print(f"Product ID: {result.id}, Similarity: {result.distance}")
-    print(f"Metadata: {result.metadata}")
+# Search for similar products with error handling
+try:
+    results = await context.vector.search("product-descriptions", {
+        "query": "comfortable office chair",
+        "limit": 5,
+        "similarity": 0.7,
+        "metadata": {"category": "furniture"}
+    })
+    
+    # Process search results
+    if results:
+        context.logger.info(f"Found {len(results)} matching products")
+        for result in results:
+            print(f"Product ID: {result.id}, Similarity: {result.distance}")
+            print(f"Metadata: {result.metadata}")
+    else:
+        context.logger.info("No matching products found")
+except Exception as e:
+    context.logger.error(f"Vector search failed: {str(e)}")
+    # Handle the error appropriately
 ```
 
 #### `async delete(name: str, *ids: str) -> int`
@@ -256,9 +323,15 @@ Returns the number of vectors that were deleted.
 ##### Example
 
 ```python
-# Delete vectors
-deleted_count = await context.vector.delete("product-descriptions", "id1", "id2", "id3")
-print(f"Deleted {deleted_count} vectors")
+from agentuity.sdk import AgentContext
+
+# Delete vectors with error handling
+try:
+    deleted_count = await context.vector.delete("product-descriptions", "id1", "id2", "id3")
+    context.logger.info(f"Deleted {deleted_count} vectors")
+except Exception as e:
+    context.logger.error(f"Failed to delete vectors: {str(e)}")
+    # Handle the error appropriately
 ```
 
 ## Agent Communication
@@ -280,6 +353,8 @@ Returns a `RemoteAgent` object that can be used to invoke the agent.
 #### Example
 
 ```python
+from agentuity.sdk import AgentContext, RemoteAgent
+
 # Get an agent by ID
 agent = await context.get_agent({"id": "agent-123"})
 
@@ -289,8 +364,14 @@ agent2 = await context.get_agent({
     "project_id": "project-456"
 })
 
-# Invoke the agent
-result = await agent.run({"data": "process this"}, "application/json")
+# Invoke the agent with error handling
+try:
+    result = await agent.run({"data": "process this"}, "application/json")
+    # Process the result
+    print(f"Agent response: {result}")
+except Exception as e:
+    context.logger.error(f"Failed to invoke agent: {str(e)}")
+    # Handle the error appropriately
 ```
 
 ### Agent Redirection
@@ -707,6 +788,9 @@ The SDK provides access to OpenTelemetry tracing through the `context.tracer` ob
 #### Example
 
 ```python
+from agentuity.sdk import AgentContext
+from opentelemetry.trace.status import Status, StatusCode
+
 # Create a span
 async with context.tracer.start_as_current_span("process-data") as span:
     try:
@@ -724,5 +808,6 @@ async with context.tracer.start_as_current_span("process-data") as span:
         # Record the error
         span.record_exception(error)
         span.set_status(Status(StatusCode.ERROR))
+        context.logger.error(f"Error processing data: {str(error)}")
         raise error
 ```
