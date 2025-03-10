@@ -299,13 +299,17 @@ const agent2 = await context.getAgent({
 const result = await agent.run({ data: 'process this' }, 'application/json');
 ```
 
-### Agent Redirection
+### Agent Handoff
 
-The `response.redirect()` method allows an agent to redirect a request to another agent.
+The `response.handoff()` method allows an agent to handoff the request to another agent.
 
-#### `redirect(agent: GetAgentRequestParams, payload?: Json | ArrayBuffer | string, contentType?: string, metadata?: Record<string, Json>): AgentRedirectResponse`
+#### `handoff(agent: GetAgentRequestParams, payload?: Json | ArrayBuffer | string, contentType?: string, metadata?: Record<string, Json>): AgentRedirectResponse`
 
 Redirects the current request to another agent.
+
+<Callout type="warn" title="Handoff">
+  Handoff is currently only supported for handoff to other agents in the same project. However, we are working on remote agent handoff and should have that working soon.
+</Callout>
 
 ##### Parameters
 
@@ -322,7 +326,7 @@ Returns an `AgentRedirectResponse` object.
 
 ```typescript
 // Redirect to another agent
-return response.redirect(
+return response.handoff(
   { name: 'data-processing-agent' },
   { data: 'process this' },
   'application/json',

@@ -224,9 +224,9 @@ const handler: AgentHandler = async (request, response, context) => {
       });
     }
     
-    case 'redirect': {
-      // Redirect to another agent
-      return response.redirect(
+    case 'handoff': {
+      // Handoff to another agent
+      return response.handoff(
         { name: 'data-processor' },
         { data },
         'application/json',

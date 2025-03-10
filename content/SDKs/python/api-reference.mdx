@@ -374,13 +374,17 @@ except Exception as e:
     # Handle the error appropriately
 ```
 
-### Agent Redirection
+### Agent Handoff
 
-The `response.redirect()` method allows an agent to redirect a request to another agent.
+The `response.handoff()` method allows an agent to handoff the request to another agent.
 
-#### `redirect(agent: GetAgentRequestParams, payload: dict | bytes | str = None, content_type: str = None, metadata: dict = None) -> AgentRedirectResponse`
+#### `handoff(agent: GetAgentRequestParams, payload: dict | bytes | str = None, content_type: str = None, metadata: dict = None) -> AgentRedirectResponse`
 
 Redirects the current request to another agent.
+
+<Callout type="warn" title="Handoff">
+  Handoff is currently only supported for handoff to other agents in the same project. However, we are working on remote agent handoff and should have that working soon.
+</Callout>
 
 ##### Parameters
 
@@ -396,8 +400,8 @@ Returns an `AgentRedirectResponse` object.
 ##### Example
 
 ```python
-# Redirect to another agent
-return response.redirect(
+# Handoff to another agent
+return response.handoff(
     {"name": "data-processing-agent"},
     {"data": "process this"},
     "application/json",
