@@ -28,10 +28,6 @@ Agent configuration is managed by the Agentuity CLI and stored in the project co
 ```typescript
 interface AgentConfig {
   /**
-   * the unique identifier of the agent
-   */
-  id: string;
-  /**
    * the name of the agent
    */
   name: string;
@@ -416,6 +412,9 @@ The SDK provides specialized methods for various media types:
 - `webp(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
 - `mp3(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
 - `mp4(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
+- `m4a(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
+- `m4p(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
+- `webm(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
 - `wav(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
 - `ogg(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
 
@@ -478,7 +477,7 @@ The Agentuity SDK provides various methods for accessing request data through th
 
 ### Accessing Request Data
 
-#### `trigger(): string`
+#### `get trigger(): string`
 
 Gets the trigger type of the request.
 
@@ -489,7 +488,7 @@ Returns a string representing the trigger type (webhook, cron, manual, agent, et
 ##### Example
 
 ```typescript
-const triggerType = request.trigger();
+const triggerType = request.trigger;
 console.log(`Request triggered by: ${triggerType}`);
 ```
 
@@ -568,6 +567,10 @@ The SDK provides specialized methods for various media types:
 - `gif(): ArrayBuffer`
 - `webp(): ArrayBuffer`
 - `mp3(): ArrayBuffer`
+- `mp4(): ArrayBuffer`
+- `m4a(): ArrayBuffer`
+- `m4p(): ArrayBuffer`
+- `webm(): ArrayBuffer`
 - `wav(): ArrayBuffer`
 - `ogg(): ArrayBuffer`
 
@@ -599,7 +602,7 @@ interface Logger {
   info(message: string, ...args: unknown[]): void;
   warn(message: string, ...args: unknown[]): void;
   error(message: string, ...args: unknown[]): void;
-  child(opts: Record<string, unknown>): Logger;
+  child(opts: Record<string, Json>): Logger;
 }
 ```
 
@@ -684,6 +687,17 @@ Returns a new `Logger` instance with the additional context.
 ```typescript
 const requestLogger = context.logger.child({ requestId: '123', userId: '456' });
 requestLogger.info('Processing request'); // Includes requestId and userId
+```
+
+## Session
+
+The Agentuity SDK provides a `Session` interface that represents the current agent execution context.
+
+```typescript
+interface Session {
+  request: AgentRequestType;
+  context: AgentContext;
+}
 ```
 
 ## Telemetry
