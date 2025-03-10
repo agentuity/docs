@@ -17,7 +17,7 @@ The most common error handling pattern is to use try-catch blocks in your agent 
 const handler: AgentHandler = async (request, response, context) => {
   try {
     // Process the request
-    const data = request.json();
+    const data = request.data.json;
     
     // Perform operations that might fail
     const result = await processData(data);
@@ -45,7 +45,7 @@ For more sophisticated error handling, you can classify errors and handle them d
 const handler: AgentHandler = async (request, response, context) => {
   try {
     // Process the request
-    const data = request.json();
+    const data = request.data.json;
     
     // Perform operations that might fail
     const result = await processData(data);
@@ -117,7 +117,7 @@ const handler: AgentHandler = async (request, response, context) => {
   return context.tracer.startActiveSpan('process-request', async (span) => {
     try {
       // Process the request
-      const data = request.json();
+      const data = request.data.json;
       
       // Perform operations that might fail
       const result = await processData(data);
@@ -205,7 +205,7 @@ Use the logger to help debug issues:
 // Set up detailed logging
 context.logger.debug('Request received', { 
   trigger: request.trigger,
-  payload: request.json()
+  payload: request.data.json
 });
 
 try {
