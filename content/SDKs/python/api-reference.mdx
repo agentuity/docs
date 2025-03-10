@@ -113,7 +113,7 @@ Retrieves a value from the key-value storage.
 
 ##### Return Value
 
-Returns the value as DataResult, or None if the key does not exist.
+Returns a DataResult object that has an `exists` property to check if the value exists and a `data` property with accessors like `data.json` and `data.text`.
 
 ##### Example
 
@@ -123,20 +123,21 @@ from agentuity.sdk import AgentContext
 # Retrieve a value from key-value storage with error handling
 try:
     value = await context.kv.get("user-preferences", "user-123")
-    if value:
-        # Convert bytes to string if needed
-        if isinstance(value, bytes):
-            value_string = value.decode("utf-8")
-            print(f"User preferences: {value_string}")
-        else:
-            print(f"User preferences: {value}")
+    if value.exists:
+        # Access data using the appropriate accessor
+        user_prefs = value.data.json
+        context.logger.info(f"User preferences: {user_prefs}")
+        
+        # Or access as text if needed
+        # text_data = value.data.text
+        # context.logger.info(f"User preferences (text): {text_data}")
     else:
         context.logger.info("User preferences not found, using defaults")
-        value = {"theme": "light"}
+        user_prefs = {"theme": "light"}
 except Exception as e:
     context.logger.error(f"Failed to retrieve user preferences: {str(e)}")
     # Use default value or re-raise exception
-    value = {"theme": "light"}
+    user_prefs = {"theme": "light"}
 ```
 
 #### `async set(name: str, key: str, value: Union[str, int, float, bool, list, dict, bytes, "Data"], params: Optional[dict] = None) -> None`
