@@ -5,7 +5,7 @@
 	"scripts": {
 		"build": "next build",
 		"build:worker": "opennextjs-cloudflare",
-		"dev": "next dev",
+		"dev": "PORT=3201 next dev",
 		"start": "next start",
 		"postinstall": "fumadocs-mdx",
 		"preview": "opennextjs-cloudflare && wrangler dev",
