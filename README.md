@@ -1,9 +1,14 @@
-# docs
+<div align="center">
+    <img src=".github/Agentuity.png" alt="Agentuity" width="100"/>
+</div>
 
-This is a Next.js application generated with
-[Create Fumadocs](https://github.com/fuma-nama/fumadocs).
+<br />
 
-Run development server:
+# Agentuity Docs Website
+
+This project contains the Agentuity documentation website, created using Fumadocs and running on NextJS 15.
+
+## Running
 
 ```bash
 npm run dev
@@ -12,8 +17,6 @@ pnpm dev
 # or
 yarn dev
 ```
-
-Open http://localhost:3000 with your browser to see the result.
 
 ## Learn More
 

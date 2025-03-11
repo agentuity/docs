@@ -1,0 +1,817 @@
+---
+title: API Reference
+description: Complete reference documentation for the Agentuity Python SDK, including request handling, response types, data storage, and agent communication.
+---
+
+# Python SDK API Reference
+
+This section provides detailed documentation for the Agentuity Python SDK API, including method signatures, parameters, return values, and example usage.
+
+## Table of Contents
+
+- [Agent Lifecycle](#agent-lifecycle)
+- [Storage APIs](#storage-apis)
+  - [Key-Value Storage](#key-value-storage)
+  - [Vector Storage](#vector-storage)
+- [Agent Communication](#agent-communication)
+- [Response Types](#response-types)
+  - [JSON Responses](#json-responses)
+  - [Text Responses](#text-responses)
+  - [Binary Responses](#binary-responses)
+  - [Media Type Responses](#media-type-responses)
+  - [HTML Responses](#html-responses)
+  - [Empty Responses](#empty-responses)
+- [Request Handling](#request-handling)
+- [Logging](#logging)
+- [Telemetry](#telemetry)
+
+> **Note:** This documentation applies to Agentuity Python SDK version 1.0 and above.
+
+## Agent Lifecycle
+
+The Agentuity SDK provides a structured way to define and handle agents. An agent consists of a handler function, with its configuration managed by the Agentuity CLI.
+
+
+### Agent Handler
+
+The agent handler is a function that processes requests and returns responses:
+
+```python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def agent_handler(
+    request: AgentRequest,
+    response: AgentResponse,
+    context: AgentContext
+) -> AgentResponseType:
+    """
+    Handler function for an agent.
+    
+    Args:
+        request: An AgentRequest object containing the request data
+        response: An AgentResponse object for creating responses
+        context: An AgentContext object providing access to various capabilities
+        
+    Returns:
+        An AgentResponseType object representing the response
+    """
+    return response.json({"message": "Hello, world!"})
+```
+
+#### Parameters
+
+- `request`: An `AgentRequest` object containing the request data
+- `response`: An `AgentResponse` object for creating responses
+- `context`: An `AgentContext` object providing access to various capabilities
+
+#### Return Value
+
+The handler function should return an `AgentResponseType` object.
+
+#### Example
+
+```python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+# Agent handler function
+async def handler(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    try:
+        # Get the request data
+        data = request.data.json
+        name = data.get("name")
+        
+        # Log the request
+        context.logger.info(f"Received greeting request for {name}")
+        
+        # Return a personalized greeting
+        return response.json({
+            "message": f"Hello, {name}! Welcome to Agentuity."
+        })
+    except Exception as error:
+        # Handle errors
+        context.logger.error("Error processing request", error)
+        return response.json({"error": "Failed to process request"})
+```
+
+## Storage APIs
+
+The Agentuity SDK provides two storage APIs: Key-Value Storage and Vector Storage.
+
+
+### Key-Value Storage
+
+The Key-Value Storage API provides a simple way to store and retrieve data. It is accessed through the `context.kv` object.
+
+#### `async get(name: str, key: str) -> "DataResult"`
+
+Retrieves a value from the key-value storage.
+
+##### Parameters
+
+- `name`: The name of the key-value storage
+- `key`: The key to retrieve the value for
+
+##### Return Value
+
+Returns a DataResult object that has an `exists` property to check if the value exists and a `data` property with accessors like `data.json` and `data.text`.
+
+##### Example
+
+```python
+from agentuity.sdk import AgentContext
+
+# Retrieve a value from key-value storage with error handling
+try:
+    value = await context.kv.get("user-preferences", "user-123")
+    if value.exists:
+        # Access data using the appropriate accessor
+        user_prefs = value.data.json
+        context.logger.info(f"User preferences: {user_prefs}")
+        
+        # Or access as text if needed
+        # text_data = value.data.text
+        # context.logger.info(f"User preferences (text): {text_data}")
+    else:
+        context.logger.info("User preferences not found, using defaults")
+        user_prefs = {"theme": "light"}
+except Exception as e:
+    context.logger.error(f"Failed to retrieve user preferences: {str(e)}")
+    # Use default value or re-raise exception
+    user_prefs = {"theme": "light"}
+```
+
+#### `async set(name: str, key: str, value: Union[str, int, float, bool, list, dict, bytes, "Data"], params: Optional[dict] = None) -> None`
+
+Stores a value in the key-value storage.
+
+##### Parameters
+
+- `name`: The name of the key-value storage
+- `key`: The key to store the value under
+- `value`: The value to store (Union[str, int, float, bool, list, dict, bytes, "Data"])
+- `params` (optional): Can have `ttl` (time-to-live in seconds)
+
+##### Return Value
+
+None
+
+##### Example
+
+```python
+import json
+
+# Store a string value
+await context.kv.set("user-preferences", "user-123", json.dumps({"theme": "dark"}))
+
+# Store a dictionary value (automatically serialized to JSON)
+await context.kv.set("user-preferences", "user-123", {"theme": "dark"})
+
+# Store binary data
+binary_data = bytes([1, 2, 3, 4])
+await context.kv.set("user-data", "user-123", binary_data)
+
+# Store a value with TTL (expires after 1 hour)
+await context.kv.set("session", "user-123", "active", {"ttl":3600})
+```
+
+#### `async delete(name: str, key: str) -> None`
+
+Deletes a value from the key-value storage.
+
+##### Parameters
+
+- `name`: The name of the key-value storage
+- `key`: The key to delete
+
+##### Return Value
+
+None
+
+##### Example
+
+```python
+# Delete a value
+await context.kv.delete("user-preferences", "user-123")
+```
+
+### Vector Storage
+
+The Vector Storage API provides a way to store and search for data using vector embeddings. It is accessed through the `context.vector` object.
+
+#### `async upsert(name: str, *documents: VectorUpsertParams) -> list[str]`
+
+Inserts or updates vectors in the vector storage.
+
+##### Parameters
+
+- `name`: The name of the vector storage
+- `documents`: One or more documents to upsert, each with either embeddings or text
+
+##### Return Value
+
+Returns a list of string IDs for the upserted vectors.
+
+##### Example
+
+```python
+from agentuity.sdk import AgentContext
+from typing import List, Dict, Any
+
+async def index_products(context: AgentContext, products: List[Dict[str, Any]]) -> List[str]:
+    """
+    Index product descriptions in vector storage for semantic search.
+    
+    Args:
+        context: The agent context
+        products: List of product dictionaries with name, description, and category
+        
+    Returns:
+        List of vector IDs for the indexed products
+    """
+    # Prepare documents for vector storage
+    documents = []
+    for product in products:
+        documents.append({
+            "document": product["description"],
+            "metadata": {
+                "product_id": product["id"],
+                "name": product["name"],
+                "category": product["category"],
+                "price": product["price"]
+            }
+        })
+    
+    # Upsert documents to vector storage
+    try:
+        ids = await context.vector.upsert("product-descriptions", *documents)
+        context.logger.info(f"Indexed {len(ids)} products in vector storage")
+        return ids
+    except Exception as e:
+        context.logger.error(f"Failed to index products: {str(e)}")
+        raise
+
+# Simple example
+# Upsert documents with text
+ids = await context.vector.upsert(
+    "product-descriptions",
+    {"document": "Ergonomic office chair with lumbar support", "metadata": {"category": "furniture"}},
+    {"document": "Wireless noise-cancelling headphones", "metadata": {"category": "electronics"}}
+)
+
+# Upsert documents with embeddings
+ids2 = await context.vector.upsert(
+    "product-embeddings",
+    {"embeddings": [0.1, 0.2, 0.3, 0.4], "metadata": {"productId": "123"}},
+    {"embeddings": [0.5, 0.6, 0.7, 0.8], "metadata": {"productId": "456"}}
+)
+```
+
+#### `async search(name: str, params: VectorSearchParams) -> list[VectorSearchResult]`
+
+Searches for vectors in the vector storage.
+
+##### Parameters
+
+- `name`: The name of the vector storage
+- `params`: Search parameters including query, limit, similarity threshold, and metadata filters
+
+##### Return Value
+
+Returns a list of search results, each containing an ID, metadata, and distance score.
+
+##### Example
+
+```python
+from agentuity.sdk import AgentContext
+from typing import List, Dict, Any
+
+# Search for similar products with error handling
+try:
+    results = await context.vector.search("product-descriptions", {
+        "query": "comfortable office chair",
+        "limit": 5,
+        "similarity": 0.7,
+        "metadata": {"category": "furniture"}
+    })
+    
+    # Process search results
+    if results:
+        context.logger.info(f"Found {len(results)} matching products")
+        for result in results:
+            print(f"Product ID: {result.id}, Similarity: {result.distance}")
+            print(f"Metadata: {result.metadata}")
+    else:
+        context.logger.info("No matching products found")
+except Exception as e:
+    context.logger.error(f"Vector search failed: {str(e)}")
+    # Handle the error appropriately
+```
+
+#### `async delete(name: str, *ids: str) -> int`
+
+Deletes vectors from the vector storage.
+
+##### Parameters
+
+- `name`: The name of the vector storage
+- `ids`: One or more IDs of vectors to delete
+
+##### Return Value
+
+Returns the number of vectors that were deleted.
+
+##### Example
+
+```python
+from agentuity.sdk import AgentContext
+
+# Delete vectors with error handling
+try:
+    deleted_count = await context.vector.delete("product-descriptions", "id1", "id2", "id3")
+    context.logger.info(f"Deleted {deleted_count} vectors")
+except Exception as e:
+    context.logger.error(f"Failed to delete vectors: {str(e)}")
+    # Handle the error appropriately
+```
+
+## Agent Communication
+
+The Agentuity SDK allows agents to communicate with each other through the `context.get_agent()` method and agent redirection.
+
+### `async get_agent(params: GetAgentRequestParams) -> RemoteAgent`
+
+Retrieves a handle to a remote agent that can be invoked.
+
+#### Parameters
+
+- `params`: Parameters to identify the agent, either by ID or by name and project ID
+
+#### Return Value
+
+Returns a `RemoteAgent` object that can be used to invoke the agent.
+
+#### Example
+
+```python
+from agentuity.sdk import AgentContext, RemoteAgent
+
+# Get an agent by ID
+agent = await context.get_agent({"id": "agent-123"})
+
+# Get an agent by name
+agent2 = await context.get_agent({
+    "name": "data-processing-agent",
+    "project_id": "project-456"
+})
+
+# Invoke the agent with error handling
+try:
+    result = await agent.run({"data": "process this"}, "application/json")
+    # Process the result
+    print(f"Agent response: {result}")
+except Exception as e:
+    context.logger.error(f"Failed to invoke agent: {str(e)}")
+    # Handle the error appropriately
+```
+
+### Agent Handoff
+
+The `response.handoff()` method allows an agent to handoff the request to another agent.
+
+#### `handoff(agent: GetAgentRequestParams, payload: dict | bytes | str = None, content_type: str = None, metadata: dict = None) -> AgentRedirectResponse`
+
+Redirects the current request to another agent.
+
+<Callout type="warn" title="Handoff">
+  Handoff is currently only supported for handoff to other agents in the same project. However, we are working on remote agent handoff and should have that working soon.
+</Callout>
+
+##### Parameters
+
+- `agent`: Parameters to identify the target agent
+- `payload` (optional): The payload to send to the target agent
+- `content_type` (optional): The content type of the payload
+- `metadata` (optional): Additional metadata to include with the request
+
+##### Return Value
+
+Returns an `AgentRedirectResponse` object.
+
+##### Example
+
+```python
+# Handoff to another agent
+return response.handoff(
+    {"name": "data-processing-agent"},
+    {"data": "process this"},
+    "application/json",
+    {"source": "web-agent"}
+)
+```
+
+## Response Types
+
+The Agentuity SDK provides various methods for creating different types of responses through the `response` object.
+
+### JSON Responses
+
+#### `json(data: dict, metadata: dict = None) -> AgentResponseType`
+
+Creates a JSON response.
+
+##### Parameters
+
+- `data`: The JSON data to include in the response
+- `metadata` (optional): Additional metadata to include with the response
+
+##### Return Value
+
+Returns an `AgentResponseType` object with the JSON data.
+
+##### Example
+
+```python
+return response.json({
+    "message": "Success",
+    "data": {"id": 123, "name": "Example"}
+})
+```
+
+### Text Responses
+
+#### `text(data: str, metadata: dict = None) -> AgentResponseType`
+
+Creates a text response.
+
+##### Parameters
+
+- `data`: The text to include in the response
+- `metadata` (optional): Additional metadata to include with the response
+
+##### Return Value
+
+Returns an `AgentResponseType` object with the text data.
+
+##### Example
+
+```python
+return response.text("Hello, world!")
+```
+
+### Binary Responses
+
+#### `binary(data: bytes, metadata: dict = None) -> AgentResponseType`
+
+Creates a binary response.
+
+##### Parameters
+
+- `data`: The binary data to include in the response
+- `metadata` (optional): Additional metadata to include with the response
+
+##### Return Value
+
+Returns an `AgentResponseType` object with the binary data.
+
+##### Example
+
+```python
+binary_data = bytes([1, 2, 3, 4])
+return response.binary(binary_data, {"filename": "data.bin"})
+```
+
+### Media Type Responses
+
+The SDK provides specialized methods for various media types:
+
+- `pdf(data: bytes, metadata: dict = None) -> AgentResponseType`
+- `png(data: bytes, metadata: dict = None) -> AgentResponseType`
+- `jpeg(data: bytes, metadata: dict = None) -> AgentResponseType`
+- `gif(data: bytes, metadata: dict = None) -> AgentResponseType`
+- `webp(data: bytes, metadata: dict = None) -> AgentResponseType`
+- `mp3(data: bytes, metadata: dict = None) -> AgentResponseType`
+- `mp4(data: bytes, metadata: dict = None) -> AgentResponseType`
+- `wav(data: bytes, metadata: dict = None) -> AgentResponseType`
+- `ogg(data: bytes, metadata: dict = None) -> AgentResponseType`
+
+Each method works similarly to the `binary()` method but sets the appropriate content type.
+
+#### Example
+
+```python
+# Return a PNG image
+return response.png(image_data, {"filename": "chart.png"})
+
+# Return an MP3 audio file
+return response.mp3(audio_data, {"duration": 120})
+```
+
+### HTML Responses
+
+#### `html(data: str, metadata: dict = None) -> AgentResponseType`
+
+Creates an HTML response.
+
+##### Parameters
+
+- `data`: The HTML content to include in the response
+- `metadata` (optional): Additional metadata to include with the response
+
+##### Return Value
+
+Returns an `AgentResponseType` object with the HTML content.
+
+##### Example
+
+```python
+return response.html("<h1>Hello, world!</h1><p>This is an HTML response.</p>")
+```
+
+### Empty Responses
+
+#### `empty(metadata: dict = None) -> AgentResponseType`
+
+Creates an empty response.
+
+##### Parameters
+
+- `metadata` (optional): Additional metadata to include with the response
+
+##### Return Value
+
+Returns an `AgentResponseType` object with no payload.
+
+##### Example
+
+```python
+return response.empty({"status": 204})
+```
+
+## Request Handling
+
+The Agentuity SDK provides various methods for accessing request data through the `request` object.
+
+### Accessing Request Data
+
+#### `trigger() -> str`
+
+Gets the trigger type of the request.
+
+##### Return Value
+
+Returns a string representing the trigger type (webhook, cron, manual, agent, etc.).
+
+##### Example
+
+```python
+trigger_type = request.trigger()
+print(f"Request triggered by: {trigger_type}")
+```
+
+#### `metadata(key: str, default_value = None) -> Any`
+
+Gets metadata associated with the request.
+
+##### Parameters
+
+- `key`: The metadata key to retrieve
+- `default_value` (optional): A default value to return if the key does not exist
+
+##### Return Value
+
+Returns the metadata value for the specified key, or the default value if the key does not exist.
+
+##### Example
+
+```python
+user_id = request.metadata("userId", "anonymous")
+print(f"User ID: {user_id}")
+```
+
+#### `json() -> dict`
+
+Gets the payload of the request as a JSON object.
+
+##### Return Value
+
+Returns the request payload as a dictionary.
+
+##### Example
+
+```python
+data = request.data.json
+print(f"Request data: {data}")
+```
+
+#### `text() -> str`
+
+Gets the payload of the request as a string.
+
+##### Return Value
+
+Returns the request payload as a string.
+
+##### Example
+
+```python
+text = request.data.text
+print(f"Request text: {text}")
+```
+
+#### `binary() -> bytes`
+
+Gets the payload of the request as bytes.
+
+##### Return Value
+
+Returns the request payload as bytes.
+
+##### Example
+
+```python
+binary_data = request.binary()
+print(f"Binary data size: {len(binary_data)} bytes")
+```
+
+### Media-Specific Methods
+
+The SDK provides specialized methods for various media types:
+
+- `pdf() -> bytes`
+- `png() -> bytes`
+- `jpeg() -> bytes`
+- `gif() -> bytes`
+- `webp() -> bytes`
+- `mp3() -> bytes`
+- `wav() -> bytes`
+- `ogg() -> bytes`
+
+Each method returns the request payload as bytes with the appropriate content type validation.
+
+#### Example
+
+```python
+# Get an image from the request
+image = request.png()
+# Process the image...
+
+# Get audio from the request
+audio = request.mp3()
+# Process the audio...
+```
+
+## Logging
+
+The Agentuity SDK provides logging functionality through the `context.logger` object.
+
+### Logger Interface
+
+The `Logger` class defines the following methods:
+
+```python
+class Logger:
+    """
+    Logger for agent execution.
+    """
+    def debug(self, message: str, *args, **kwargs) -> None:
+        """Log a debug message."""
+        pass
+        
+    def info(self, message: str, *args, **kwargs) -> None:
+        """Log an informational message."""
+        pass
+        
+    def warn(self, message: str, *args, **kwargs) -> None:
+        """Log a warning message."""
+        pass
+        
+    def error(self, message: str, *args, **kwargs) -> None:
+        """Log an error message."""
+        pass
+        
+    def child(self, **kwargs) -> 'Logger':
+        """Create a child logger with additional context."""
+        pass
+```
+
+### Logging Methods
+
+#### `debug(message: str, *args, **kwargs) -> None`
+
+Logs a debug message.
+
+##### Parameters
+
+- `message`: The message to log
+- `args`, `kwargs`: Additional arguments to include in the log
+
+##### Example
+
+```python
+context.logger.debug("Processing request", request_id="123")
+```
+
+#### `info(message: str, *args, **kwargs) -> None`
+
+Logs an informational message.
+
+##### Parameters
+
+- `message`: The message to log
+- `args`, `kwargs`: Additional arguments to include in the log
+
+##### Example
+
+```python
+context.logger.info("Request processed successfully", request_id="123")
+```
+
+#### `warn(message: str, *args, **kwargs) -> None`
+
+Logs a warning message.
+
+##### Parameters
+
+- `message`: The message to log
+- `args`, `kwargs`: Additional arguments to include in the log
+
+##### Example
+
+```python
+context.logger.warn("Resource not found", resource_id="456")
+```
+
+#### `error(message: str, *args, **kwargs) -> None`
+
+Logs an error message.
+
+##### Parameters
+
+- `message`: The message to log
+- `args`, `kwargs`: Additional arguments to include in the log
+
+##### Example
+
+```python
+try:
+    # Some code that might raise an exception
+    result = process_data()
+except Exception as e:
+    context.logger.error("Failed to process request", error=str(e))
+```
+
+### Creating Child Loggers
+
+#### `child(**kwargs) -> Logger`
+
+Creates a child logger with additional context.
+
+##### Parameters
+
+- `kwargs`: Additional context to include in all logs from the child logger
+
+##### Return Value
+
+Returns a new `Logger` instance with the additional context.
+
+##### Example
+
+```python
+request_logger = context.logger.child(request_id="123", user_id="456")
+request_logger.info("Processing request")  # Includes request_id and user_id
+```
+
+## Telemetry
+
+The Agentuity SDK integrates with OpenTelemetry for tracing and metrics.
+
+### Tracing
+
+The SDK provides access to OpenTelemetry tracing through the `context.tracer` object.
+
+#### Example
+
+```python
+from agentuity.sdk import AgentContext
+from opentelemetry.trace.status import Status, StatusCode
+
+# Create a span
+async with context.tracer.start_as_current_span("process-data") as span:
+    try:
+        # Add attributes to the span
+        span.set_attribute("userId", "123")
+        
+        # Perform some work
+        result = await process_data()
+        
+        # Add events to the span
+        span.add_event("data-processed", {"itemCount": len(result)})
+        
+        return result
+    except Exception as error:
+        # Record the error
+        span.record_exception(error)
+        span.set_status(Status(StatusCode.ERROR))
+        context.logger.error(f"Error processing data: {str(error)}")
+        raise error
+```

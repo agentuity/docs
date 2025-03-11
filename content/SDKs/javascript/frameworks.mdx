@@ -1,0 +1,45 @@
+---
+title: Frameworks
+description: Framework integration for the Agentuity JavaScript SDK
+---
+
+# Frameworks
+
+The Agentuity JavaScript SDK provides a flexible and powerful way to integrate other frameworks with your Agent.
+
+The following frameworks are currently supported:
+
+- [Vercel AI SDK](https://www.vercel.com/ai)
+
+## Using Frameworks with Agentuity
+
+The use a framework with Agentuity, choose the framework template when creating a new project.
+
+```bash
+agentuity new
+```
+
+When you select one of the framework templates, the Agentuity CLI will install the necessary dependencies and create a new project with the framework already configured.
+
+## Vercel AI SDK
+
+Example Agent using Vercel AI SDK:
+
+```typescript
+import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+import { generateText } from "ai";
+import { openai } from "@ai-sdk/openai";
+
+export default async function Agent(
+	req: AgentRequest,
+	resp: AgentResponse,
+	ctx: AgentContext,
+) {
+	const res = await generateText({
+		model: openai("gpt-4o"),
+		system: "You are a friendly assistant!",
+		prompt: req.text() ?? "Why is the sky blue?",
+	});
+	return resp.text(res.text);
+}
+```

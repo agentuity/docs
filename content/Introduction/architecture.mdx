@@ -1,0 +1,76 @@
+---
+title: Architecture Overview
+description: Understanding Agentuity's system architecture, components, and integration points
+---
+
+## System Architecture
+
+Agentuity is a cloud platform designed to run and scale AI agents with enterprise-grade reliability. 
+Our architecture follows a container-based approach, where each agent operates in its own specialized 
+environment.
+
+Unlike traditional serverless platforms, Agentuity ensures containers run for as long as agents need, 
+maintaining state and context throughout agent lifecycles. This long-running container approach is 
+optimal for complex AI workloads that may require extended processing time.
+
+The platform is fundamentally cross-platform, allowing you to run different agent frameworks 
+(CrewAI, Langchain, custom agents) side by side in the same ecosystem, with built-in communication 
+channels between them.
+
+## Core Components
+
+Agentuity consists of four primary components:
+
+1. **Container Runtime** - The execution environment where your agents run, providing:
+   - Isolated, secure container environments for each agent
+   - Automatic scaling based on workload
+   - Resource management and optimization
+   - Long-running container support for persistent agents
+
+2. **Command Line Interface (CLI)** - A developer tool that enables:
+   - Quick agent creation and initialization
+   - Local development and testing
+   - Deployment management to the Agentuity cloud
+   - Agent monitoring and troubleshooting
+
+3. **Software Development Kits (SDKs)** - Libraries that provide:
+   - Agent-native tools and services
+   - Runtime-specific optimizations for Python and JavaScript (Node and Bun)
+   - Integration capabilities with external systems
+   - Enhanced agent capabilities and extensions
+
+4. **Web Console** - A management interface offering:
+   - Real-time agent monitoring and metrics
+   - Deployment and configuration management
+   - Usage analytics and performance insights
+   - Team collaboration features
+
+## Data Flow
+
+Agent communication and data flow in Agentuity follow secure, encrypted channels:
+
+1. **Agent-to-Agent Communication** - Agents can communicate with each other through encrypted routing, 
+regardless of the underlying frameworks used.
+
+2. **External Integrations** - Agents can connect to external systems and data sources through managed 
+integration points.
+
+3. **Deployment Pipeline** - Your project code is packaged, containerized, and deployed to the Agentuity 
+cloud infrastructure with appropriate networking and routing configured automatically.
+
+## Scalability
+
+Agentuity is designed for enterprise-scale agent deployments:
+
+- **Horizontal Scaling** - Automatically provision additional resources as demand increases
+- **Framework Agnostic** - Scale any type of agent regardless of the underlying framework
+- **Load Balancing** - Distribute agent workloads efficiently across available resources
+- **Resource Optimization** - Intelligently allocate compute resources based on agent requirements
+
+## Security Architecture
+
+Security is foundational to Agentuity's design:
+
+- **Container Isolation** - Each agent operates in its own isolated environment
+- **Encrypted Communications** - All agent-to-agent communication is encrypted
+- **Secure Deployment** - Protected deployment pipeline from development to production

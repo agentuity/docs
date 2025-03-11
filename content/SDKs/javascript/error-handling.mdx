@@ -1,0 +1,256 @@
+---
+title: Error Handling
+description: Learn how to handle errors in the Agentuity JavaScript SDK
+---
+
+# Error Handling
+
+This section covers error handling strategies and common error types in the Agentuity JavaScript SDK.
+
+## Error Handling Patterns
+
+### Try-Catch Pattern
+
+The most common error handling pattern is to use try-catch blocks in your agent handlers:
+
+```typescript
+const handler: AgentHandler = async (request, response, context) => {
+  try {
+    // Process the request
+    const data = request.data.json;
+    
+    // Perform operations that might fail
+    const result = await processData(data);
+    
+    // Return successful response
+    return response.json({ result });
+  } catch (error) {
+    // Log the error
+    context.logger.error('Error processing request', error);
+    
+    // Return error response
+    return response.json({ 
+      error: 'Failed to process request',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+```
+
+### Error Classification
+
+For more sophisticated error handling, you can classify errors and handle them differently:
+
+```typescript
+const handler: AgentHandler = async (request, response, context) => {
+  try {
+    // Process the request
+    const data = request.data.json;
+    
+    // Perform operations that might fail
+    const result = await processData(data);
+    
+    // Return successful response
+    return response.json({ result });
+  } catch (error) {
+    // Log the error
+    context.logger.error('Error processing request', error);
+    
+    // Classify and handle different error types
+    if (error instanceof ValidationError) {
+      return response.json({ 
+        error: 'Validation error',
+        message: error.message
+      });
+    }
+    
+    if (error instanceof ResourceNotFoundError) {
+      return response.json({ 
+        error: 'Resource not found',
+        message: error.message
+      });
+    }
+    
+    // Handle unexpected errors
+    return response.json({ 
+      error: 'Internal server error',
+      message: 'An unexpected error occurred'
+    });
+  }
+};
+```
+
+### Custom Error Classes
+
+You can define custom error classes to make error handling more structured:
+
+```typescript
+// Custom error classes
+class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+class ResourceNotFoundError extends Error {
+  constructor(resourceId: string) {
+    super(`Resource not found: ${resourceId}`);
+    this.name = 'ResourceNotFoundError';
+  }
+}
+
+class AuthorizationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthorizationError';
+  }
+}
+```
+
+### Error Handling with OpenTelemetry
+
+You can use OpenTelemetry to record exceptions and set span status:
+
+```typescript
+const handler: AgentHandler = async (request, response, context) => {
+  return context.tracer.startActiveSpan('process-request', async (span) => {
+    try {
+      // Process the request
+      const data = request.data.json;
+      
+      // Perform operations that might fail
+      const result = await processData(data);
+      
+      // Set span status to OK
+      span.setStatus({ code: SpanStatusCode.OK });
+      
+      // Return successful response
+      return response.json({ result });
+    } catch (error) {
+      // Record exception in the span
+      span.recordException(error as Error);
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: (error as Error).message
+      });
+      
+      // Log the error
+      context.logger.error('Error processing request', error);
+      
+      // Return error response
+      return response.json({ 
+        error: 'Failed to process request',
+        message: (error as Error).message
+      });
+    } finally {
+      // End the span
+      span.end();
+    }
+  });
+};
+```
+
+## Error Handling for Storage APIs
+
+### Key-Value Storage Errors
+
+When working with the key-value storage API, handle potential errors:
+
+```typescript
+try {
+  // Attempt to get a value
+  const value = await context.kv.get('user-preferences', userId);
+  
+  // Process the value
+  if (value) {
+    const preferences = JSON.parse(new TextDecoder().decode(value));
+    // Use preferences...
+  }
+} catch (error) {
+  // Handle key-value storage errors
+  context.logger.error('Error accessing key-value storage', error);
+  // Implement fallback behavior or return error response
+}
+```
+
+### Vector Storage Errors
+
+When working with the vector storage API, handle potential errors:
+
+```typescript
+try {
+  // Attempt to search for vectors
+  const results = await context.vector.search('products', {
+    query: 'ergonomic chair',
+    limit: 5
+  });
+  
+  // Process the results
+  // ...
+} catch (error) {
+  // Handle vector storage errors
+  context.logger.error('Error searching vector storage', error);
+  // Implement fallback behavior or return error response
+}
+```
+
+## Debugging Techniques
+
+### Logging
+
+Use the logger to help debug issues:
+
+```typescript
+// Set up detailed logging
+context.logger.debug('Request received', { 
+  trigger: request.trigger,
+  payload: request.data.json
+});
+
+try {
+  // Operation that might fail
+  const result = await someOperation();
+  context.logger.debug('Operation result', result);
+} catch (error) {
+  context.logger.error('Operation failed', { 
+    error: error.message,
+    stack: error.stack
+  });
+}
+```
+
+### Tracing
+
+Use OpenTelemetry tracing to debug complex issues:
+
+```typescript
+context.tracer.startActiveSpan('operation-name', async (span) => {
+  // Add attributes to help with debugging
+  span.setAttribute('input.size', inputData.length);
+  span.setAttribute('operation.type', 'processing');
+  
+  // Add events to mark important points
+  span.addEvent('processing-started', { timestamp: Date.now() });
+  
+  try {
+    // Operation that might fail
+    const result = await someOperation();
+    
+    // Add event for successful completion
+    span.addEvent('processing-completed', { 
+      timestamp: Date.now(),
+      resultSize: result.length
+    });
+    
+    return result;
+  } catch (error) {
+    // Record the exception
+    span.recordException(error);
+    throw error;
+  } finally {
+    // Always end the span
+    span.end();
+  }
+});
+```
