@@ -9,6 +9,17 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 This page documents the release history of the [Agentuity CLI](https://github.com/agentuity/cli).
 
+## v0.0.54
+
+<Callout type="info">
+  Released: March 11, 2025
+</Callout>
+
+### Changes
+
+- Better error handling when using an invalid project_id and better handle dev mode shutdown ([#71](https://github.com/agentuity/cli/pull/71))
+- Self update should be tried before brew. Fix issue on project name exists check
+
 ## v0.0.53
 
 <Callout type="info">
@@ -17,7 +28,7 @@ This page documents the release history of the [Agentuity CLI](https://github.co
 
 ### Changes
 
-- Make sure we set the AGENTUITY_URL when running in dev mode (#70)
+- Make sure we set the AGENTUITY_URL when running in dev mode ([#70](https://github.com/agentuity/cli/pull/70))
 
 ## v0.0.52
 
@@ -27,7 +38,7 @@ This page documents the release history of the [Agentuity CLI](https://github.co
 
 ### Changes
 
-- Improve Error Handling from 400 Bad Request routes (#69)
+- Improve Error Handling from 400 Bad Request routes ([#69](https://github.com/agentuity/cli/pull/69))
 
 ## v0.0.51
 
@@ -37,11 +48,11 @@ This page documents the release history of the [Agentuity CLI](https://github.co
 
 ### Changes
 
-- Add cursor rules file for JavaScript SDK API reference (#67)
-- Fix YAML schema for templates validation (#65)
-- Fix cursor rules placement to use .cursor/rules instead of .cursorrules (#66)
-- Make sure all API calls use the APIClient and enhance the error system to send api error details to aide in debugging (#68)
-- Update Python logging format to use [LEVEL] message format (#64)
+- Add cursor rules file for JavaScript SDK API reference ([#67](https://github.com/agentuity/cli/pull/67))
+- Fix YAML schema for templates validation ([#65](https://github.com/agentuity/cli/pull/65))
+- Fix cursor rules placement to use .cursor/rules instead of .cursorrules ([#66](https://github.com/agentuity/cli/pull/66))
+- Make sure all API calls use the APIClient and enhance the error system to send api error details to aide in debugging ([#68](https://github.com/agentuity/cli/pull/68))
+- Update Python logging format to use [LEVEL] message format ([#64](https://github.com/agentuity/cli/pull/64))
 
 ## v0.0.50
 
@@ -51,7 +62,7 @@ This page documents the release history of the [Agentuity CLI](https://github.co
 
 ### Changes
 
-- Updated templates to match new SDK types (#59)
-- Fixed issue with template dependencies check not running (#62)
+- Updated templates to match new SDK types ([#59](https://github.com/agentuity/cli/pull/59))
+- Fixed issue with template dependencies check not running ([#62](https://github.com/agentuity/cli/pull/62))
 - Updated JavaScript templates to use `req.data.text` instead of `req.text()`
 - Updated Python template to import `autostart` from the main package
