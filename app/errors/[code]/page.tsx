@@ -1,6 +1,31 @@
 import { redirect } from 'next/navigation';
 import { notFound } from 'next/navigation';
 
+// Helper function to get heading suffix based on error code
+function getHeadingSuffix(prefix: string, number: string): string {
+  // Map common error codes to their title slugs
+  const errorTitles: Record<string, Record<string, string>> = {
+    'CLI': {
+      '0001': 'failed-to-delete-agents',
+      '0002': 'failed-to-create-project',
+      '0003': 'unable-to-authenticate-user',
+      '0004': 'environment-variables-not-set',
+      '0005': 'api-request-failed',
+      // Add more as needed
+    },
+    'AUTH': {
+      '001': 'invalid-credentials',
+      '002': 'token-expired',
+      '003': 'invalid-token',
+      // Add more as needed
+    },
+    // Add more prefixes as needed
+  };
+  
+  // Return the known title suffix if available, otherwise use a generic fallback
+  return errorTitles[prefix]?.[number] || 'error';
+}
+
 // This function maps error codes to their corresponding documentation pages
 function getErrorRedirectUrl(code: string): string | null {
   // Convert code to uppercase for consistency
@@ -40,11 +65,11 @@ function getErrorRedirectUrl(code: string): string | null {
       return null;
   }
   
-  // Format the anchor using just the error code
+  // Format the anchor using lowercase error code format (standard MDX heading ID generation)
   const paddedNumber = prefix === 'CLI' ? number.padStart(4, '0') : number.padStart(3, '0');
   
-  // Return the full URL path with case-sensitive anchor
-  return `/Troubleshooting/error-codes/${section}#${prefix}-${paddedNumber}`;
+  // Return the full URL path with standard MDX heading ID format
+  return `/Troubleshooting/error-codes/${section}#${prefix.toLowerCase()}-${paddedNumber}-${getHeadingSuffix(prefix, paddedNumber)}`;
 }
 
 export default async function ErrorRedirect({ params }: { params: { code: string } }) {
