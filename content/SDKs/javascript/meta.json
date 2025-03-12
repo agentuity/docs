@@ -1,0 +1,15 @@
+{
+  "title": "JavaScript SDK",
+  "pages": [
+    "index",
+    "changelog",
+    "api-reference",
+    "core-concepts",
+    "error-handling",
+    "examples",
+    "frameworks",
+    "llm",
+    "troubleshooting",
+    "vercel-ai-sdk"
+  ]
+}
