@@ -40,18 +40,15 @@ function getErrorRedirectUrl(code: string): string | null {
       return null;
   }
   
-  // Format the anchor based on the error code format
-  // For CLI errors, the format is cli-0001-failed-to-delete-agents
-  // For other errors, the format is auth-001-invalid-credentials
+  // Format the anchor using just the error code
   const paddedNumber = prefix === 'CLI' ? number.padStart(4, '0') : number.padStart(3, '0');
   
-  // Return the full URL path
+  // Return the full URL path with case-sensitive anchor
   return `/Troubleshooting/error-codes/${section}#${prefix}-${paddedNumber}`;
 }
 
-export default function ErrorRedirect({ params }: { params: { code: string } }) {
-  const { code } = params;
-  const redirectUrl = getErrorRedirectUrl(code);
+export default async function ErrorRedirect({ params }: { params: { code: string } }) {
+  const redirectUrl = getErrorRedirectUrl(params.code);
   
   if (!redirectUrl) {
     // If no matching error code is found, redirect to the error codes index
