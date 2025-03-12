@@ -490,7 +490,40 @@ const triggerType = request.trigger;
 console.log(`Request triggered by: ${triggerType}`);
 ```
 
+#### `get(key: string, defaultValue?: Json): Json`
+
+Gets a value from the request. The available properties depend on the trigger type.
+
+##### Parameters
+
+- `key`: The key to retrieve
+- `defaultValue` (optional): A default value to return if the key does not exist
+
+##### Return Value
+
+Returns the value for the specified key, or the default value if the key does not exist.
+
+##### Trigger-specific Properties
+
+Different trigger types provide different properties:
+
+- **Webhook**: Includes a `headers` property containing the HTTP headers from the webhook request.
+
+##### Example
+
+```typescript
+// For webhook triggers, access headers
+const headers = request.get('headers');
+// Access a specific header
+const githubSignature = headers['x-hub-signature'];
+
+// Get a user ID with a default value
+const userId = request.get('userId', 'anonymous');
+```
+
 #### `metadata(key: string, defaultValue?: Json): Json`
+
+**Note:** This method is deprecated. Use `get(key, defaultValue)` instead.
 
 Gets metadata associated with the request.
 
@@ -503,12 +536,6 @@ Gets metadata associated with the request.
 
 Returns the metadata value for the specified key, or the default value if the key does not exist.
 
-##### Example
-
-```typescript
-const userId = request.metadata('userId', 'anonymous');
-console.log(`User ID: ${userId}`);
-```
 
 #### `json(): Json`
 
