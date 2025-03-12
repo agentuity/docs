@@ -46,7 +46,7 @@ function getErrorRedirectUrl(code: string): string | null {
   const paddedNumber = prefix === 'CLI' ? number.padStart(4, '0') : number.padStart(3, '0');
   
   // Return the full URL path
-  return `/Troubleshooting/error-codes/${section}#${section.toLowerCase()}-${paddedNumber.toLowerCase()}`;
+  return `/Troubleshooting/error-codes/${section}#${prefix}-${paddedNumber}`;
 }
 
 export default function ErrorRedirect({ params }: { params: { code: string } }) {
