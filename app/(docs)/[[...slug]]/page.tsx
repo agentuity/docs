@@ -38,6 +38,24 @@ export default async function Page(props: {
 				<MDX
 					components={{
 						...defaultMdxComponents,
+						h2: (props) => {
+							const { children } = props;
+							// Check if heading contains an error code (format: XXX-000)
+							const text = String(children);
+							const match = text.match(/^([A-Z]+-\d+):/);
+							
+							if (match) {
+								// Extract the error code and use it as the anchor ID
+								const errorCode = match[1];
+								return (
+									<h2 id={errorCode} {...props}>
+										{children}
+									</h2>
+								);
+							}
+							// Default behavior for non-error-code headings
+							return defaultMdxComponents.h2(props);
+						},
 						Popup,
 						PopupContent,
 						PopupTrigger,
