@@ -17,7 +17,7 @@ Creates a new Agentuity project.
 ### Usage
 
 ```bash
-agentuity project create [name] [flags]
+agentuity project create [name] [description] [agent-name] [agent-description] [auth-type] [flags]
 ```
 
 ### Flags
@@ -26,6 +26,7 @@ agentuity project create [name] [flags]
 | ---- | ----------- |
 | `--dir`, `-d` | The directory to create the project in |
 | `--provider`, `-p` | The provider to use for the project |
+| `--template`, `-t` | The template to use for the project |
 
 ### Examples
 
@@ -47,6 +48,85 @@ Create a new project with a specific provider:
 ```bash
 $ agentuity project create my-project --provider javascript
 ✓ Project created successfully
+```
+
+## project list
+
+Lists all projects in your Agentuity account.
+
+### Aliases
+
+`agentuity project ls` (shortcut for `agentuity project list`)
+
+### Usage
+
+```bash
+agentuity project list
+```
+
+### Examples
+
+```bash
+$ agentuity project list
+Projects:
+  my-project (proj_123456)
+  test-project (proj_789012)
+  demo-app (proj_345678)
+```
+
+## project delete
+
+Deletes one or more projects from your Agentuity account.
+
+### Aliases
+
+`agentuity project rm` or `agentuity project del` (shortcuts for `agentuity project delete`)
+
+### Usage
+
+```bash
+agentuity project delete
+```
+
+This command will:
+1. Display a list of all projects in your account
+2. Allow you to select one or more projects to delete
+3. Ask for confirmation before deleting the selected projects
+
+### Examples
+
+```bash
+$ agentuity project delete
+Select one or more projects to delete:
+[ ] my-project (proj_123456)
+[x] test-project (proj_789012)
+[ ] demo-app (proj_345678)
+
+Are you sure you want to delete the selected projects? This action cannot be undone. [y/N] y
+✓ Project deleted successfully
+```
+
+## project import
+
+Imports an existing project into your Agentuity account.
+
+### Usage
+
+```bash
+agentuity project import [flags]
+```
+
+### Flags
+
+| Flag | Description |
+| ---- | ----------- |
+| `--dir`, `-d` | The directory for the project |
+
+### Examples
+
+```bash
+$ agentuity project import --dir ./my-existing-project
+✓ Project imported successfully
 ```
 
 ## project init
