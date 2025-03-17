@@ -430,3 +430,42 @@ async function processData(data: any, context: any) {
 
 export default handler;
 ```
+
+## OpenAI Streaming Example
+
+This example demonstrates how to stream responses from OpenAI models in your Agentuity agent. Streaming allows for a more responsive user experience by displaying the AI's response as it's being generated, rather than waiting for the entire response to complete.
+
+```javascript
+import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+import { streamText } from "ai";
+import { openai } from "@ai-sdk/openai";
+
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext,
+) {
+  const { textStream } = streamText({
+    model: openai("gpt-4o"),
+    prompt: "Invent a new holiday and describe its traditions.",
+  });
+
+  return resp.stream(textStream);
+}
+```
+
+### How It Works
+
+1. We import the necessary types from `@agentuity/sdk` and utilities from the Vercel AI SDK (`ai` and `@ai-sdk/openai`).
+2. The `streamText` function from the Vercel AI SDK creates a streaming text response from OpenAI.
+3. We configure the stream with the `gpt-4o` model and a prompt.
+4. The `textStream` object contains the streaming response from OpenAI.
+5. We return the stream using `resp.stream()`, which handles the streaming response in the Agentuity platform.
+
+### Dependencies
+
+To use this example, you'll need to install the following dependencies:
+
+```bash
+npm install ai @ai-sdk/openai
+```
