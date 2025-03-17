@@ -1,0 +1,78 @@
+---
+title: JavaScript SDK
+description: Documentation for the Agentuity JavaScript SDK
+---
+
+The [Agentuity JavaScript SDK](https://github.com/agentuity/sdk-js) provides a powerful framework for building AI agents in JavaScript and TypeScript. It offers a comprehensive set of tools for creating, deploying, and managing agents with features like key-value storage, vector storage, and OpenTelemetry integration.
+
+## Installation
+
+When you create a project with Agentuity, you will automatically have access to the Agentuity JavaScript SDK.
+
+```bash
+agentuity new
+```
+
+The SDK currently works with Bun and Node.js and the project will automatically install the correct dependencies.
+
+## Prerequisites
+
+Before using the Agentuity JavaScript SDK, ensure you have the following prerequisites installed:
+
+- **Node.js**: Version 22 or higher is required
+- **Bun** (optional): Version 1.2.4 or higher is required
+
+### Installing Node.js
+
+You can download and install Node.js from the [official website](https://nodejs.org/). Make sure to install version 22 or higher.
+
+### Installing Bun
+
+Bun is an optional but recommended runtime for the Agentuity SDK. You can install it using the following command:
+
+```bash
+curl -fsSL https://bun.sh/install | bash
+```
+
+For more information, visit the [Bun installation documentation](https://bun.sh/docs/installation).
+
+
+## Development
+
+You can start your project by running the following command:
+
+```bash
+agentuity dev
+```
+
+This will start your project in development mode and open a new browser window connecting your Agent to the Agentuity Console in Live Mode.
+
+You can also start your project in development mode without connecting to the Agentuity Console by running the following command:
+
+```bash
+npm start
+```
+
+Or for Bun:
+
+```bash
+bun start
+```
+
+If you would like to manually test your Agents locally, you can do so by running the following command:
+
+```bash
+curl -v http://localhost:3500/run/agent_ID --json '{"input": "Hello, world!"}'
+```
+
+Make sure you replace `agent_ID` with the ID of your Agent.
+
+
+## Next Steps
+
+- [Core Concepts](/SDKs/javascript/core-concepts) - Learn about the fundamental concepts of the Agentuity JavaScript SDK
+- [LLM](/SDKs/javascript/llm) - Learn about the LLM integrations available in the Agentuity JavaScript SDK
+- [Frameworks](/SDKs/javascript/frameworks) - Learn about using frameworks with the Agentuity JavaScript SDK
+- [API Reference](/SDKs/javascript/api-reference) - Explore the detailed API documentation
+- [Error Handling](/SDKs/javascript/error-handling) - Learn about the error handling in the Agentuity JavaScript SDK
+- [Examples](/SDKs/javascript/examples) - See practical examples of using the SDK

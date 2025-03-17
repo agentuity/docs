@@ -6,6 +6,17 @@ const withMDX = createMDX();
 const config = {
 	reactStrictMode: true,
 	serverExternalPackages: ["twoslash", "typescript"],
+	redirects: async () => [
+		{
+			source: "/",
+			destination: "/Introduction",
+			permanent: true,
+		},
+	],
 };
 
 export default withMDX(config);
+
+import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
+
+initOpenNextCloudflareForDev();

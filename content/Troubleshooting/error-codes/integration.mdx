@@ -1,0 +1,65 @@
+---
+title: Integration Errors
+description: Reference for integration-related error codes (INT-XXX)
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+<Callout type="warn" title="Document Status">
+  This document is being worked on, information may change a lot over the next few weeks.
+</Callout>
+
+## INT-001: Integration Not Found
+
+**Error Message**: Integration not found
+
+**Cause**: The specified integration does not exist or has been deleted.
+
+**Solution**: 
+- Verify the integration ID is correct
+- Check if the integration is still configured
+- Set up the integration again if necessary
+
+## INT-002: Invalid Webhook URL
+
+**Error Message**: Invalid webhook URL
+
+**Cause**: The webhook URL is not properly formatted or accessible.
+
+**Solution**: 
+- Verify the webhook URL is correct
+- Ensure the endpoint is publicly accessible
+- Check URL formatting and protocol
+
+## INT-003: Integration Authentication Failed
+
+**Error Message**: Integration authentication failed
+
+**Cause**: Unable to authenticate with the integrated service.
+
+**Solution**: 
+- Check integration credentials
+- Verify API keys or tokens
+- Ensure the integration service is available
+
+## INT-004: Integration Timeout
+
+**Error Message**: Integration request timeout
+
+**Cause**: The integrated service did not respond within the expected time.
+
+**Solution**: 
+- Check the integrated service status
+- Verify network connectivity
+- Adjust timeout settings if possible
+
+## INT-005: Invalid Integration Configuration
+
+**Error Message**: Invalid integration configuration
+
+**Cause**: The integration configuration is invalid or incomplete.
+
+**Solution**: 
+- Review integration settings
+- Complete all required configuration fields
+- Check integration documentation    

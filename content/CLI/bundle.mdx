@@ -1,0 +1,30 @@
+---
+title: Bundle Command
+description: Command for bundling Agentuity projects for deployment
+---
+
+The `bundle` command allows you to create a bundled version of your Agentuity project for deployment.
+
+## bundle
+
+Runs the build bundle process for an Agentuity project.
+
+### Aliases
+
+`agentuity build` (shortcut for `agentuity bundle`)
+
+### Usage
+
+```bash
+agentuity bundle [flags]
+```
+
+### Flags
+
+| Flag | Description |
+| ---- | ----------- |
+| `--dir`, `-d` | The directory of the project to bundle |
+| `--production`, `-p` | Bundle the project for production deployment |
+
+
+> You generally don't need to use this command as it is automatically called when you run `agentuity dev` or `agentuity start`.
