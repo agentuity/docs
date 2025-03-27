@@ -1,0 +1,108 @@
+---
+title: Cron Jobs
+description: Configure scheduled tasks with cron jobs in Agentuity Cloud
+---
+
+# Cron Jobs
+
+## Overview
+
+Cron jobs allow you to schedule automated tasks to run at specified intervals. In Agentuity Cloud, you can configure cron jobs to trigger your agents according to a schedule, enabling periodic execution without manual intervention.
+
+## Setting Up Cron Jobs
+
+To create a new cron job in Agentuity Cloud:
+
+1. Navigate to your project in the cloud console
+2. Go to **Settings** > **Integrations** > **Cron Configuration**
+3. Click **Create Cron Job**
+4. Configure the job settings:
+   - Select the agent to execute
+   - Set the schedule using cron syntax
+   - Choose the content type
+   - Define the payload
+   - Enable or disable the job
+5. Click **Save** to create the job
+
+## Cron Configuration Options
+
+### Schedule (Cron Expression)
+
+The schedule for your job is defined using standard cron syntax, which consists of five fields:
+
+```
+┌───────────── minute (0 - 59)
+│ ┌───────────── hour (0 - 23)
+│ │ ┌───────────── day of the month (1 - 31)
+│ │ │ ┌───────────── month (1 - 12)
+│ │ │ │ ┌───────────── day of the week (0 - 6) (Sunday to Saturday)
+│ │ │ │ │
+│ │ │ │ │
+* * * * *
+```
+
+### Content Type
+
+Select the content type for your payload:
+
+- `application/json` - JSON data
+- `text/plain` - Plain text
+- `application/x-www-form-urlencoded` - Form URL encoded data
+- `text/xml` - XML text
+- `application/xml` - XML application data
+- `multipart/form-data` - Binary file upload
+
+### Payload
+
+The data that will be sent to your agent when the cron job executes. Format your payload according to the selected content type.
+
+### Payload Size Limitations
+
+[Content coming soon - Information about payload size limitations]
+
+## Cron Expression Examples
+
+| Expression | Description |
+|------------|-------------|
+| `* * * * *` | Run every minute |
+| `0 * * * *` | Run every hour at minute 0 |
+| `0 0 * * *` | Run once a day at midnight |
+| `0 0 * * 0` | Run once a week on Sunday at midnight |
+| `0 0 1 * *` | Run once a month on the 1st at midnight |
+| `0 9-17 * * 1-5` | Run every hour from 9 AM to 5 PM, Monday through Friday |
+| `*/15 * * * *` | Run every 15 minutes |
+| `0 0 * * 1,3,5` | Run at midnight on Monday, Wednesday, and Friday |
+
+## Managing Cron Jobs
+
+Once you've created cron jobs, you can manage them from the Cron Configuration screen:
+
+### View Job Status
+
+The cron jobs table displays:
+- Schedule (cron expression)
+- Associated agent
+- Content type
+- Status (enabled/disabled)
+- Next scheduled run time
+
+### Available Actions
+
+For each cron job, you can:
+
+- **Manual Run**: Trigger the job immediately, outside of its scheduled time
+- **Pause/Resume**: Temporarily disable or re-enable the job
+- **Edit**: Modify any of the job's settings
+- **Delete**: Permanently remove the job
+
+## Example Projects Using Cron Jobs
+
+[Content coming soon - Examples of projects utilizing cron jobs]
+
+## Best Practices
+
+- Use descriptive payloads that follow the correct format for the selected content type
+- Test your cron jobs using the Manual Run feature before relying on the scheduled execution
+- Monitor job execution through the session logs to ensure they're running as expected
+- For time-sensitive operations, account for potential slight variations in execution time
+- Use the most specific schedule that meets your needs to avoid unnecessary executions
