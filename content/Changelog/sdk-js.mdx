@@ -1,0 +1,120 @@
+---
+title: JavaScript SDK Changelog
+description: Release notes and version history for the Agentuity JavaScript SDK
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+This page documents the release history of the [Agentuity JavaScript SDK](https://github.com/agentuity/sdk-js).
+
+## v0.0.89
+
+<Callout type="info">
+  Released: March 25, 2025
+</Callout>
+
+### Changes
+
+- Add the agentName to the log attributes ([PR #33](https://github.com/agentuity/sdk-js/pull/33))
+- Console Logger: show max depth for any objects ([PR #32](https://github.com/agentuity/sdk-js/pull/32))
+- When stream is requested but the response isn't a stream, chunk up the response data into chunks and smooth out as if streamed ([PR #31](https://github.com/agentuity/sdk-js/pull/31))
+- Fixed issue with buffer underrun getting sent and issue with json encoding ([PR #34](https://github.com/agentuity/sdk-js/pull/34))
+
+## v0.0.88
+
+<Callout type="info">
+  Released: March 21, 2025
+</Callout>
+
+### Changes
+
+- Improve loading project when using node or bun directly vs using start script or agentuity dev
+- Fix mismatch between local run vs remote run with HTTP headers as property of metadata vs the metadata object
+
+## v0.0.87
+
+<Callout type="info">
+  Released: March 18, 2025
+</Callout>
+
+### Changes
+
+- Slight improvement in location of when context.logger for agent is created
+
+## v0.0.86
+
+<Callout type="info">
+  Released: March 16, 2025
+</Callout>
+
+### Changes
+
+- Add support for agentId on context.logger
+- Fix issue with underrun on base64 stream
+
+## v0.0.85
+
+<Callout type="info">
+  Released: March 15, 2025
+</Callout>
+
+### Changes
+
+- Streaming Support including SSE
+
+## v0.0.84
+
+<Callout type="info">
+  Released: March 14, 2025
+</Callout>
+
+### Changes
+
+- Stream IO Input: add new facility to support stream io for input data ([PR #23](https://github.com/agentuity/sdk-js/pull/23))
+- Release with new transport model
+
+## v0.0.83
+
+<Callout type="info">
+  Released: March 12, 2025
+</Callout>
+
+### Changes
+
+- Fix devmode logging when devmode environment is set by live ([PR #24](https://github.com/agentuity/sdk-js/pull/24))
+
+## v0.0.82
+
+<Callout type="info">
+  Released: March 12, 2025
+</Callout>
+
+### Changes
+
+- KeyValue compression only on upload, not download ([PR #20](https://github.com/agentuity/sdk-js/pull/20))
+
+## v0.0.81
+
+<Callout type="info">
+  Released: March 11, 2025
+</Callout>
+
+### Changes
+
+- Add support for compressing keyvalue entries ([PR #19](https://github.com/agentuity/sdk-js/pull/19))
+- Better format log message if the first parameter is an object ([PR #18](https://github.com/agentuity/sdk-js/pull/18))
+
+## v0.0.80
+
+<Callout type="info">
+  Released: March 10, 2025
+</Callout>
+
+### Changes
+
+- Refactored the types to make it easier to use
+- Fixed various small issues
+
+## v0.0.79 and earlier
+
+For earlier versions, see the [CHANGELOG.md](https://github.com/agentuity/sdk-js/blob/main/CHANGELOG.md) file in the repository.

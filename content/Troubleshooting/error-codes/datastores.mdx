@@ -1,0 +1,65 @@
+---
+title: Datastore Errors
+description: Reference for datastore-related error codes (DATA-XXX)
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+<Callout type="warn" title="Document Status">
+  This document is being worked on, information may change a lot over the next few weeks.
+</Callout>
+
+## DATA-001: Datastore Not Found
+
+**Error Message**: Datastore not found
+
+**Cause**: The specified datastore ID does not exist or has been deleted.
+
+**Solution**: 
+- Verify the datastore ID is correct
+- Check if the datastore still exists in the project
+- Contact support if you believe this is an error
+
+## DATA-002: Invalid Datastore Configuration
+
+**Error Message**: Invalid datastore configuration
+
+**Cause**: The datastore configuration contains invalid or missing required fields.
+
+**Solution**: 
+- Review the datastore configuration
+- Ensure all required fields are provided
+- Validate the configuration format
+
+## DATA-003: Datastore Connection Error
+
+**Error Message**: Unable to connect to datastore
+
+**Cause**: The system cannot establish a connection to the datastore.
+
+**Solution**: 
+- Check the datastore connection settings
+- Verify the datastore is running and accessible
+- Check network connectivity
+
+## DATA-004: Datastore Capacity Exceeded
+
+**Error Message**: Datastore capacity exceeded
+
+**Cause**: The datastore has reached its storage capacity limit.
+
+**Solution**: 
+- Review current data usage
+- Delete unnecessary data
+- Upgrade storage capacity
+
+## DATA-005: Invalid Query
+
+**Error Message**: Invalid datastore query
+
+**Cause**: The query syntax or parameters are invalid.
+
+**Solution**: 
+- Check the query syntax
+- Verify parameter types and values
+- Review the query documentation    

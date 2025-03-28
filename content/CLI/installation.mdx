@@ -1,0 +1,65 @@
+---
+title: Installation
+description: Installation of Agentuity CLI
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+## Installation
+
+<Tabs items={['macOS', 'Linux / Windows (WSL)']}>
+  <Tab>
+    ### macOS Installation with Brew
+
+    ```bash
+    brew tap agentuity/tap && brew install agentuity
+    ```
+
+    ### Upgrading on macOS
+
+    To upgrade to the latest version of the Agentuity CLI using Brew:
+
+    ```bash
+    brew update && brew upgrade agentuity
+    ```
+  </Tab>
+  <Tab>
+    ### Linux / Windows (WSL) Installation
+
+    For Linux or Windows (WSL), you need to manually install the Agentuity CLI:
+
+    1. Visit the [Agentuity CLI releases page](https://github.com/agentuity/cli/releases)
+    2. Download the appropriate version for your operating system
+    3. Extract the downloaded file
+    4. Add the executable to your system PATH
+
+    For example, on Linux you might use:
+
+    ```bash
+    # Download the latest release (replace X.X.X with the version number)
+    curl -L https://github.com/agentuity/cli/releases/download/vX.X.X/agentuity-linux-amd64.tar.gz -o agentuity.tar.gz
+
+    # Extract the archive
+    tar -xzf agentuity.tar.gz
+
+    # Move the binary to a location in your PATH
+    sudo mv agentuity /usr/local/bin/
+
+    # Verify the installation
+    agentuity --version
+    ```
+  </Tab>
+</Tabs>
+
+## Manual Installation
+
+You can also manually download and install the Agentuity CLI from the [GitHub releases page](https://github.com/agentuity/cli/releases) for any platform:
+
+1. Visit the [Agentuity CLI releases page](https://github.com/agentuity/cli/releases)
+2. Download the appropriate version for your operating system
+3. Extract the downloaded file
+4. Add the executable to your system PATH
+
+## Source Code
+
+The source code for the Agentuity CLI is available on [GitHub](https://github.com/agentuity/cli).
