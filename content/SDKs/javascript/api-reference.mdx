@@ -415,8 +415,10 @@ The SDK provides specialized methods for various media types:
 - `webm(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
 - `wav(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
 - `ogg(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
+- `data(data: Json | ArrayBuffer | string, contentType: string, metadata?: Record<string, Json>): AgentResponseType`
+- `markdown(content: string, metadata?: Record<string, Json>): AgentResponseType`
 
-Each method works similarly to the `binary()` method but sets the appropriate content type.
+Each method works similarly to the `binary()` method but sets the appropriate content type. The `data` method allows setting specific data with an exact content type, while the `markdown` method provides a convenient way to return markdown content.
 
 #### Example
 
