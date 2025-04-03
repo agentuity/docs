@@ -491,8 +491,10 @@ The SDK provides specialized methods for various media types:
 - `mp4(data: bytes, metadata: dict = None) -> AgentResponseType`
 - `wav(data: bytes, metadata: dict = None) -> AgentResponseType`
 - `ogg(data: bytes, metadata: dict = None) -> AgentResponseType`
+- `data(data: Any, content_type: str, metadata: dict = None) -> AgentResponseType`
+- `markdown(content: str, metadata: dict = None) -> AgentResponseType`
 
-Each method works similarly to the `binary()` method but sets the appropriate content type.
+Each method works similarly to the `binary()` method but sets the appropriate content type. The `data` method allows setting specific data with an exact content type, while the `markdown` method provides a convenient way to return markdown content.
 
 #### Example
 
