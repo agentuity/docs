@@ -7,46 +7,65 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
 ## Installation
 
-<Tabs items={['macOS', 'Linux / Windows (WSL)']}>
+<Tabs items={['macOS', 'Linux', 'Windows (WSL)', 'Windows (Powershell)']}>
   <Tab>
-    ### macOS Installation with Brew
+    ### macOS Installation
 
     ```bash
-    brew tap agentuity/tap && brew install agentuity
+    curl -sSL https://get.agentuity.com/install.sh | sh
     ```
 
     ### Upgrading on macOS
 
-    To upgrade to the latest version of the Agentuity CLI using Brew:
+    To upgrade to the latest version of the Agentuity CLI:
 
     ```bash
-    brew update && brew upgrade agentuity
+    agentuity upgrade
     ```
   </Tab>
   <Tab>
-    ### Linux / Windows (WSL) Installation
-
-    For Linux or Windows (WSL), you need to manually install the Agentuity CLI:
-
-    1. Visit the [Agentuity CLI releases page](https://github.com/agentuity/cli/releases)
-    2. Download the appropriate version for your operating system
-    3. Extract the downloaded file
-    4. Add the executable to your system PATH
-
-    For example, on Linux you might use:
+    ### Linux Installation
 
     ```bash
-    # Download the latest release (replace X.X.X with the version number)
-    curl -L https://github.com/agentuity/cli/releases/download/vX.X.X/agentuity-linux-amd64.tar.gz -o agentuity.tar.gz
+    curl -sSL https://get.agentuity.com/install.sh | sh
+    ```
 
-    # Extract the archive
-    tar -xzf agentuity.tar.gz
+    ### Upgrading on Linux
 
-    # Move the binary to a location in your PATH
-    sudo mv agentuity /usr/local/bin/
+    To upgrade to the latest version of the Agentuity CLI:
 
-    # Verify the installation
-    agentuity --version
+    ```bash
+    agentuity upgrade
+    ```
+  </Tab>
+  <Tab>
+    ### Windows (WSL) Installation
+
+    ```bash
+    curl -sSL https://get.agentuity.com/install.sh | sh
+    ```
+
+    ### Upgrading on Windows (WSL)
+
+    To upgrade to the latest version of the Agentuity CLI:
+
+    ```bash
+    agentuity upgrade
+    ```
+  </Tab>
+  <Tab>
+    ### Windows (Powershell) Installation
+
+    ```bash
+    iwr https://agentuity.sh/install.ps1 -useb | iex
+    ```
+
+    ### Upgrading on Windows (Powershell)
+
+    To upgrade to the latest version of the Agentuity CLI:
+
+    ```bash
+    agentuity upgrade
     ```
   </Tab>
 </Tabs>

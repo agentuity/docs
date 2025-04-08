@@ -28,17 +28,34 @@ import { Step, Steps } from 'fumadocs-ui/components/steps';
 
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
-<Tabs items={['macOS', 'Linux / Windows (WSL)']}>
+<Tabs items={['macOS', 'Linux', 'Windows (WSL)', 'Windows (Powershell)']}>
   <Tab>
+    ### macOS Installation
+
     ```bash
-    brew tap agentuity/tap && brew install agentuity
+    curl -sSL https://get.agentuity.com/install.sh | sh
     ```
   </Tab>
   <Tab>
-    1. Visit the [Agentuity CLI releases page](https://github.com/agentuity/cli/releases)
-    2. Download the appropriate version for your operating system
-    3. Extract the downloaded file
-    4. Add the executable to your system PATH
+    ### Linux Installation
+
+    ```bash
+    curl -sSL https://get.agentuity.com/install.sh | sh
+    ```
+  </Tab>
+  <Tab>
+    ### Windows (WSL) Installation
+
+    ```bash
+    curl -sSL https://get.agentuity.com/install.sh | sh
+    ```
+  </Tab>
+  <Tab>
+    ### Windows (Powershell) Installation
+
+    ```bash
+    iwr https://agentuity.sh/install.ps1 -useb | iex
+    ```
   </Tab>
 </Tabs>
 </Step>
@@ -53,8 +70,7 @@ agentuity login
 <Step>
 ### Create Your First Project
 ```bash
-agentuity create project my-project
-cd my-project
+agentuity new
 ```
 </Step>
 
