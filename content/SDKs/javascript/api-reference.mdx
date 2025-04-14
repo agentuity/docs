@@ -727,7 +727,7 @@ export interface AgentWelcomePrompt {
   /**
    * The data to display to the user
    */
-  data: string | Json | ArrayBuffer;
+  data: Buffer | Uint8Array | ArrayBuffer | string | Json | Blob | ReadableStream | Data;
   /**
    * The content type of the data
    */
