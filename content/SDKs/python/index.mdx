@@ -65,6 +65,48 @@ def run(request, response, context):
     return response.text("Hello, World!")
 ```
 
+### Real-World Example
+
+Here's a more comprehensive example inspired by the React Miami 2025 Concierge template:
+
+```python
+# concierge_agent.py
+import base64
+
+def welcome():
+    return {
+        "welcome": "Welcome to the Python Concierge! How can I help you today?",
+        "prompts": [
+            {
+                "data": base64.b64encode("Where should I go for dinner in Miami, tonight?".encode()).decode(),
+                "contentType": "text/plain"
+            },
+            {
+                "data": base64.b64encode("What sessions about Python are happening today?".encode()).decode(),
+                "contentType": "text/plain"
+            },
+            {
+                "data": base64.b64encode("Tell me more about the conference speakers".encode()).decode(),
+                "contentType": "text/plain"
+            },
+            {
+                "data": base64.b64encode("I'm looking for good restaurants near the venue".encode()).decode(),
+                "contentType": "text/plain"
+            },
+            {
+                "data": base64.b64encode("What is Agentuity all about?".encode()).decode(),
+                "contentType": "text/plain"
+            }
+        ]
+    }
+
+def run(request, response, context):
+    # Agent logic implementation
+    return response.text("Hello, I'm your Python Concierge!")
+```
+
+Note that in Python, you need to use `base64.b64encode()` to encode the prompt data and then convert it to a string using `.decode()` since `b64encode()` returns bytes.
+
 This will customize the DevMode interface when users interact with your agent, displaying your welcome message and providing example prompts that users can click on to quickly start a conversation.
 
 ## Development
