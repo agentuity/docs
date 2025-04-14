@@ -36,6 +36,65 @@ curl -fsSL https://bun.sh/install | bash
 
 For more information, visit the [Bun installation documentation](https://bun.sh/docs/installation).
 
+## Welcome Function
+
+The SDK allows you to customize the initial appearance of DevMode when it starts interacting with your agents by exporting a `welcome()` function. This function returns an `AgentWelcomeResult` object that includes a welcome message and optional example prompts.
+
+### AgentWelcomeResult Interface
+
+```typescript
+export interface AgentWelcomeResult {
+  /**
+   * The welcome prompt to display to the user
+   */
+  welcome: string;
+  /**
+   * The example prompts to display to the user
+   */
+  prompts?: {
+    /**
+     * The data in base64 format
+     */
+    data: string;
+    /**
+     * The data format
+     */
+    contentType: string;
+  }[];
+}
+```
+
+### Example Implementation
+
+```typescript
+// agent.ts
+import type { AgentHandler, AgentWelcomeResult } from '@agentuity/sdk';
+
+export const welcome = (): AgentWelcomeResult => {
+  return {
+    welcome: "Welcome to my Agent! How can I help you today?",
+    prompts: [
+      {
+        data: Buffer.from("What can you do?").toString("base64"),
+        contentType: "text/plain",
+      },
+      {
+        data: Buffer.from("Tell me about yourself").toString("base64"),
+        contentType: "text/plain",
+      }
+    ],
+  };
+};
+
+const handler: AgentHandler = async (request, response, context) => {
+  // Agent logic
+  return response.text('Hello, World!');
+};
+
+export default handler;
+```
+
+This will customize the DevMode interface when users interact with your agent, displaying your welcome message and providing example prompts that users can click on to quickly start a conversation.
 
 ## Development
 

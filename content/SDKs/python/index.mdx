@@ -35,6 +35,37 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 For more information, visit the [UV installation documentation](https://docs.astral.sh/uv/getting-started/installation/).
 
+## Welcome Function
+
+The SDK allows you to customize the initial appearance of DevMode when it starts interacting with your agents by defining a `welcome()` function in your agent module. This function should return a dictionary containing a welcome message and optional example prompts.
+
+### Example Implementation
+
+```python
+# agent.py
+import base64
+
+def welcome():
+    return {
+        "welcome": "Welcome to my Python Agent! How can I help you today?",
+        "prompts": [
+            {
+                "data": base64.b64encode("What can you do?".encode()).decode(),
+                "contentType": "text/plain"
+            },
+            {
+                "data": base64.b64encode("Tell me about yourself".encode()).decode(),
+                "contentType": "text/plain"
+            }
+        ]
+    }
+
+def run(request, response, context):
+    # Agent logic
+    return response.text("Hello, World!")
+```
+
+This will customize the DevMode interface when users interact with your agent, displaying your welcome message and providing example prompts that users can click on to quickly start a conversation.
 
 ## Development
 
