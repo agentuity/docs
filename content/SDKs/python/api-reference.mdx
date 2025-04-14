@@ -25,6 +25,50 @@ This section provides detailed documentation for the Agentuity Python SDK API, i
 
 > **Note:** This documentation applies to Agentuity Python SDK version 1.0 and above.
 
+## Welcome Function
+
+The Agentuity SDK allows you to customize the initial appearance of DevMode when it starts interacting with your agents by defining a `welcome()` function in your agent module. This function should return a dictionary containing a welcome message and optional example prompts.
+
+### welcome()
+
+Defines a welcome message and optional example prompts for DevMode.
+
+#### Return Value
+
+Returns a dictionary with a welcome message and optional prompts.
+
+```python
+def welcome():
+    return {
+        "welcome": "Welcome message to display",
+        "prompts": [
+            {
+                "data": "base64_encoded_prompt_text",
+                "contentType": "text/plain"
+            }
+        ]
+    }
+```
+
+#### Example
+
+```python
+import base64
+
+def welcome():
+    return {
+        "welcome": "Welcome to my Python Agent! How can I help you today?",
+        "prompts": [
+            {
+                "data": base64.b64encode("What can you do?".encode()).decode(),
+                "contentType": "text/plain"
+            }
+        ]
+    }
+```
+
+> **Note:** In Python, you need to use `base64.b64encode()` to encode the prompt data and then convert it to a string using `.decode()` since `b64encode()` returns bytes.
+
 ## Agent Lifecycle
 
 The Agentuity SDK provides a structured way to define and handle agents. An agent consists of a handler function, with its configuration managed by the Agentuity CLI.

@@ -716,6 +716,60 @@ const requestLogger = context.logger.child({ requestId: '123', userId: '456' });
 requestLogger.info('Processing request'); // Includes requestId and userId
 ```
 
+## Welcome Function
+
+The Agentuity SDK allows you to customize the initial appearance of DevMode when it starts interacting with your agents by exporting a `welcome()` function. This function returns an `AgentWelcomeResult` object that includes a welcome message and optional example prompts.
+
+### AgentWelcomeResult Interface
+
+```typescript
+export interface AgentWelcomeResult {
+  /**
+   * The welcome prompt to display to the user
+   */
+  welcome: string;
+  /**
+   * The example prompts to display to the user
+   */
+  prompts?: {
+    /**
+     * The data in base64 format
+     */
+    data: string;
+    /**
+     * The data format
+     */
+    contentType: string;
+  }[];
+}
+```
+
+### welcome()
+
+Defines a welcome message and optional example prompts for DevMode.
+
+#### Return Value
+
+Returns an `AgentWelcomeResult` object with a welcome message and optional prompts.
+
+#### Example
+
+```typescript
+export const welcome = (): AgentWelcomeResult => {
+  return {
+    welcome: "Welcome to my Agent! How can I help you today?",
+    prompts: [
+      {
+        data: Buffer.from("What can you do?").toString("base64"),
+        contentType: "text/plain",
+      }
+    ],
+  };
+};
+```
+
+> **Note:** The use of `Buffer.from()` for base64 encoding is temporary and will be changed in a future update.
+
 ## Session
 
 The Agentuity SDK provides a `Session` interface that represents the current agent execution context.

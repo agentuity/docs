@@ -73,6 +73,74 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         return response.json({"error": 'Invalid action. Use "get", "set", or "delete".'})
 ```
 
+## Welcome Function Example
+
+This example demonstrates how to customize the initial appearance of DevMode when it starts interacting with your agents:
+
+```python
+# agent.py
+import base64
+
+def welcome():
+    return {
+        "welcome": "Welcome to my Python Agent! How can I help you today?",
+        "prompts": [
+            {
+                "data": base64.b64encode("What can you do?".encode()).decode(),
+                "contentType": "text/plain"
+            },
+            {
+                "data": base64.b64encode("Tell me about yourself".encode()).decode(),
+                "contentType": "text/plain"
+            }
+        ]
+    }
+
+def run(request, response, context):
+    # Agent logic
+    return response.text("Hello, World!")
+```
+
+### Real-World Example
+
+Here's a more comprehensive example inspired by the React Miami 2025 Concierge template:
+
+```python
+# concierge_agent.py
+import base64
+
+def welcome():
+    return {
+        "welcome": "Welcome to the Python Concierge! How can I help you today?",
+        "prompts": [
+            {
+                "data": base64.b64encode("Where should I go for dinner in Miami, tonight?".encode()).decode(),
+                "contentType": "text/plain"
+            },
+            {
+                "data": base64.b64encode("What sessions about Python are happening today?".encode()).decode(),
+                "contentType": "text/plain"
+            },
+            {
+                "data": base64.b64encode("Tell me more about the conference speakers".encode()).decode(),
+                "contentType": "text/plain"
+            },
+            {
+                "data": base64.b64encode("I'm looking for good restaurants near the venue".encode()).decode(),
+                "contentType": "text/plain"
+            },
+            {
+                "data": base64.b64encode("What is Agentuity all about?".encode()).decode(),
+                "contentType": "text/plain"
+            }
+        ]
+    }
+
+def run(request, response, context):
+    # Agent logic implementation
+    return response.text("Hello, I'm your Python Concierge!")
+```
+
 ## Vector Storage
 
 An agent that uses vector storage for semantic search.
