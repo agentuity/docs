@@ -36,6 +36,108 @@ curl -fsSL https://bun.sh/install | bash
 
 For more information, visit the [Bun installation documentation](https://bun.sh/docs/installation).
 
+## Welcome Function
+
+The SDK allows you to customize the initial appearance of DevMode when it starts interacting with your agents by exporting a `welcome()` function. This function returns an `AgentWelcomeResult` object that includes a welcome message and optional example prompts.
+
+### AgentWelcomeResult Interface
+
+```typescript
+export interface AgentWelcomeResult {
+  /**
+   * The welcome prompt to display to the user
+   */
+  welcome: string;
+  /**
+   * The example prompts to display to the user
+   */
+  prompts?: {
+    /**
+     * The data in base64 format
+     */
+    data: string;
+    /**
+     * The data format
+     */
+    contentType: string;
+  }[];
+}
+```
+
+### Example Implementation
+
+```typescript
+// agent.ts
+import type { AgentHandler, AgentWelcomeResult } from '@agentuity/sdk';
+
+export const welcome = (): AgentWelcomeResult => {
+  return {
+    welcome: "Welcome to my Agent! How can I help you today?",
+    prompts: [
+      {
+        data: Buffer.from("What can you do?").toString("base64"),
+        contentType: "text/plain",
+      },
+      {
+        data: Buffer.from("Tell me about yourself").toString("base64"),
+        contentType: "text/plain",
+      }
+    ],
+  };
+};
+
+const handler: AgentHandler = async (request, response, context) => {
+  // Agent logic
+  return response.text('Hello, World!');
+};
+
+export default handler;
+```
+
+### Real-World Example
+
+Here's a more comprehensive example from the React Miami 2025 Concierge template:
+
+```typescript
+// ConciergeHost/index.ts
+import type { AgentWelcomeResult } from "@agentuity/sdk";
+
+export const welcome = (): AgentWelcomeResult => {
+  return {
+    welcome: "Welcome to the React Miami 2025 Concierge! How can I help you today?",
+    prompts: [
+      {
+        data: Buffer.from("Where should I go for dinner in Miami, tonight?").toString("base64"),
+        contentType: "text/plain",
+      },
+      {
+        data: "What sessions about React hooks are happening today?",
+        contentType: "text/plain",
+      },
+      {
+        data: "Tell me more about [Speaker Name]'s background",
+        contentType: "text/plain",
+      },
+      {
+        data: "I'm hungry and looking for Cuban food near the conference",
+        contentType: "text/plain",
+      },
+      {
+        data: "What is Agentuity all about?",
+        contentType: "text/plain",
+      },
+      {
+        data: "What can I do?",
+        contentType: "text/plain",
+      },
+    ],
+  };
+};
+```
+
+Note that in this example, some prompts use plain text directly while others use base64 encoding. Both approaches work, but using base64 encoding is recommended for consistency.
+
+This will customize the DevMode interface when users interact with your agent, displaying your welcome message and providing example prompts that users can click on to quickly start a conversation.
 
 ## Development
 
