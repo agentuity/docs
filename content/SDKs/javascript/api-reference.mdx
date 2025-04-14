@@ -723,6 +723,17 @@ The Agentuity SDK allows you to customize the initial appearance of DevMode when
 ### AgentWelcomeResult Interface
 
 ```typescript
+export interface AgentWelcomePrompt {
+  /**
+   * The data to display to the user
+   */
+  data: string | Json | ArrayBuffer;
+  /**
+   * The content type of the data
+   */
+  contentType: string;
+}
+
 export interface AgentWelcomeResult {
   /**
    * The welcome prompt to display to the user
@@ -731,16 +742,7 @@ export interface AgentWelcomeResult {
   /**
    * The example prompts to display to the user
    */
-  prompts?: {
-    /**
-     * The data in base64 format
-     */
-    data: string;
-    /**
-     * The data format
-     */
-    contentType: string;
-  }[];
+  prompts?: AgentWelcomePrompt[];
 }
 ```
 
@@ -760,7 +762,7 @@ export const welcome = (): AgentWelcomeResult => {
     welcome: "Welcome to my Agent! How can I help you today?",
     prompts: [
       {
-        data: Buffer.from("What can you do?").toString("base64"),
+        data: "What can you do?",
         contentType: "text/plain",
       }
     ],
@@ -768,7 +770,7 @@ export const welcome = (): AgentWelcomeResult => {
 };
 ```
 
-> **Note:** The use of `Buffer.from()` for base64 encoding is temporary and will be changed in a future update.
+
 
 ## Session
 
