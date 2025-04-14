@@ -43,7 +43,7 @@ def welcome():
         "welcome": "Welcome message to display",
         "prompts": [
             {
-                "data": "base64_encoded_prompt_text",
+                "data": "Example prompt text",
                 "contentType": "text/plain"
             }
         ]
@@ -53,21 +53,17 @@ def welcome():
 #### Example
 
 ```python
-import base64
-
 def welcome():
     return {
         "welcome": "Welcome to my Python Agent! How can I help you today?",
         "prompts": [
             {
-                "data": base64.b64encode("What can you do?".encode()).decode(),
+                "data": "What can you do?",
                 "contentType": "text/plain"
             }
         ]
     }
 ```
-
-> **Note:** In Python, you need to use `base64.b64encode()` to encode the prompt data and then convert it to a string using `.decode()` since `b64encode()` returns bytes.
 
 ## Agent Lifecycle
 

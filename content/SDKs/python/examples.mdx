@@ -79,18 +79,17 @@ This example demonstrates how to customize the initial appearance of DevMode whe
 
 ```python
 # agent.py
-import base64
 
 def welcome():
     return {
         "welcome": "Welcome to my Python Agent! How can I help you today?",
         "prompts": [
             {
-                "data": base64.b64encode("What can you do?".encode()).decode(),
+                "data": "What can you do?",
                 "contentType": "text/plain"
             },
             {
-                "data": base64.b64encode("Tell me about yourself".encode()).decode(),
+                "data": "Tell me about yourself",
                 "contentType": "text/plain"
             }
         ]
@@ -107,30 +106,29 @@ Here's a more comprehensive example inspired by the React Miami 2025 Concierge t
 
 ```python
 # concierge_agent.py
-import base64
 
 def welcome():
     return {
         "welcome": "Welcome to the Python Concierge! How can I help you today?",
         "prompts": [
             {
-                "data": base64.b64encode("Where should I go for dinner in Miami, tonight?".encode()).decode(),
+                "data": "Where should I go for dinner in Miami, tonight?",
                 "contentType": "text/plain"
             },
             {
-                "data": base64.b64encode("What sessions about Python are happening today?".encode()).decode(),
+                "data": "What sessions about Python are happening today?",
                 "contentType": "text/plain"
             },
             {
-                "data": base64.b64encode("Tell me more about the conference speakers".encode()).decode(),
+                "data": "Tell me more about the conference speakers",
                 "contentType": "text/plain"
             },
             {
-                "data": base64.b64encode("I'm looking for good restaurants near the venue".encode()).decode(),
+                "data": "I'm looking for good restaurants near the venue",
                 "contentType": "text/plain"
             },
             {
-                "data": base64.b64encode("What is Agentuity all about?".encode()).decode(),
+                "data": "What is Agentuity all about?",
                 "contentType": "text/plain"
             }
         ]
