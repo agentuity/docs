@@ -43,6 +43,17 @@ The SDK allows you to customize the initial appearance of DevMode when it starts
 ### AgentWelcomeResult Interface
 
 ```typescript
+export interface AgentWelcomePrompt {
+  /**
+   * The data to display to the user
+   */
+  data: Buffer | Uint8Array | ArrayBuffer | string | Json | Blob | ReadableStream | Data;
+  /**
+   * The content type of the data
+   */
+  contentType: string;
+}
+
 export interface AgentWelcomeResult {
   /**
    * The welcome prompt to display to the user
@@ -51,16 +62,7 @@ export interface AgentWelcomeResult {
   /**
    * The example prompts to display to the user
    */
-  prompts?: {
-    /**
-     * The data in base64 format
-     */
-    data: string;
-    /**
-     * The data format
-     */
-    contentType: string;
-  }[];
+  prompts?: AgentWelcomePrompt[];
 }
 ```
 
@@ -75,11 +77,11 @@ export const welcome = (): AgentWelcomeResult => {
     welcome: "Welcome to my Agent! How can I help you today?",
     prompts: [
       {
-        data: Buffer.from("What can you do?").toString("base64"),
+        data: "What can you do?",
         contentType: "text/plain",
       },
       {
-        data: Buffer.from("Tell me about yourself").toString("base64"),
+        data: "Tell me about yourself",
         contentType: "text/plain",
       }
     ],
@@ -107,7 +109,7 @@ export const welcome = (): AgentWelcomeResult => {
     welcome: "Welcome to the React Miami 2025 Concierge! How can I help you today?",
     prompts: [
       {
-        data: Buffer.from("Where should I go for dinner in Miami, tonight?").toString("base64"),
+        data: "Where should I go for dinner in Miami, tonight?",
         contentType: "text/plain",
       },
       {
