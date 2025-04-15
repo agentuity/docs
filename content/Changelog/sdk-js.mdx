@@ -7,6 +7,81 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 This page documents the release history of the [Agentuity JavaScript SDK](https://github.com/agentuity/sdk-js).
 
+## v0.0.100
+
+<Callout type="info">
+  Released: April 15, 2025
+</Callout>
+
+### Changes
+
+- Add permissions
+- Add more otel trace context headers, remove old trace provider ([PR #72](https://github.com/agentuity/sdk-js/pull/72))
+- Automatically base64 encode welcome prompts ([PR #73](https://github.com/agentuity/sdk-js/pull/73))
+- Fix NodeJS issue where the buffer isn't correctly sending the blob but works fine in Bun version ([PR #74](https://github.com/agentuity/sdk-js/pull/74))
+- Debug github workflow git tag issue
+
+## v0.0.99
+
+<Callout type="info">
+  Released: April 14, 2025
+</Callout>
+
+### Changes
+
+- More debug for github workflow
+
+## v0.0.98
+
+<Callout type="info">
+  Released: April 13, 2025
+</Callout>
+
+### Changes
+
+- More debug for github release tags
+
+## v0.0.97
+
+<Callout type="info">
+  Released: April 12, 2025
+</Callout>
+
+### Changes
+
+- Attempt to fix issue with github workflow not pushing tag after release
+
+## v0.0.96
+
+<Callout type="info">
+  Released: April 11, 2025
+</Callout>
+
+### Changes
+
+- Fix issue with node keyvalue not correctly handling the buffer upload
+
+## v0.0.95
+
+<Callout type="info">
+  Released: April 10, 2025
+</Callout>
+
+### Changes
+
+- Add more otel trace context headers, remove old trace provider
+- Base64 encode the welcome prompts
+
+## v0.0.94
+
+<Callout type="info">
+  Released: April 8, 2025
+</Callout>
+
+### Changes
+
+- Fix regression in otel traces missing for AI SDK by change in opentelemetry-api version change
+
 ## v0.0.93
 
 <Callout type="info">
