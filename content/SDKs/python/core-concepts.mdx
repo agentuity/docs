@@ -1,0 +1,93 @@
+---
+title: Core Concepts
+description: Learn about the fundamental concepts of the Agentuity Python SDK
+---
+
+The Agentuity Python SDK is built around several key concepts that form the foundation of agent development. Understanding these concepts is essential for effectively using the SDK.
+
+## Agent Architecture
+
+Agents in the Agentuity SDK are modular components that can process requests and generate responses. Each agent:
+
+- Has a unique identifier and name
+- Can be triggered by various events (webhooks, cron jobs, manual invocation, etc.)
+- Processes requests through a handler function
+- Has access to a context object with various capabilities
+
+The basic structure of an agent looks like this:
+
+```python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+# Agent handler function
+async def handler(request: AgentRequest, response: AgentResponse, context: AgentContext):
+  # Process the request
+  data = request.data.json
+  
+  # Use the context (logging, storage, etc.)
+  context.logger.info('Processing request', data)
+  
+  # Return a response
+  return response.json({ message: 'Hello from my agent!' })
+```
+
+<Callout type="warn" title="Configuration">
+  Agent configuration (name, description, etc.) is managed by the Agentuity CLI and stored in the project configuration file.
+  Use the `agentuity project` and `agentuity agent` commands to manage your configuration.
+</Callout>
+
+## Request and Response Handling
+
+The Agentuity SDK provides a structured way to handle requests and generate responses:
+
+### Requests
+
+Requests contain information about the trigger event and payload data. The `AgentRequest` interface provides methods to access this data in various formats:
+
+- `request.trigger` - Get the trigger type (webhook, manual,cron, etc.)
+- `request.metadata` - Access metadata associated with the request
+- `request.get(key, defval)` - Get a value from the request metadata
+- `request.data` - Get a Data object from the request
+- `request.data.contentType` - The content type (or mime type) of the request
+- `request.data.text` - Get the payload as a string
+- `request.data.json` - Get the payload as a JSON object
+- `request.data.binary` - Get the payload as a binary object
+- `request.data.base64` - Get the payload as a base64 encoded string
+
+### Responses
+
+Responses are created using the `AgentResponse` interface, which provides methods for different response types:
+
+- `response.json()` - Return a JSON response
+- `response.text()` - Return a text response
+- `response.binary()` - Return a binary response
+- `response.html()` - Return an HTML response
+- `response.empty()` - Return an empty response
+- Various media-specific methods (pdf(), png(), jpeg(), etc.)
+- `response.handoff()` - Redirect to another agent
+
+## Agent Context
+
+The context object provides access to various capabilities and services:
+
+- `context.logger` - Logging functionality
+- `context.kv` - Key-value storage
+- `context.vector` - Vector storage
+- `context.get_agent()` - Access to other agents both locally and remotely
+- `context.tracer` - OpenTelemetry tracing
+- Metadata about the current execution (runId, projectId, etc.)
+
+## Triggers and Event Types
+
+Agents can be triggered by various event types:
+
+- `webhook` - HTTP webhook calls
+- `cron` - Scheduled cron jobs
+- `manual` - Manual invocation
+- `agent` - Calls from other agents
+- `sms` - SMS messages
+- `queue` - Queue processing
+- `voice` - Voice calls
+- `email` - Email messages
+
+Each trigger type may provide different metadata and payload formats, which can be accessed through the request object.

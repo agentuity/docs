@@ -1,0 +1,84 @@
+---
+title: MCP Commands
+description: Documentation for the Model Context Protocol (MCP) integration in Agentuity CLI
+---
+
+## Overview
+
+The Agentuity CLI implements the Model Context Protocol (MCP), which allows integration with AI-powered code editors and tools. This integration enhances the capabilities of AI agents inside supported clients.
+
+For more information on the MCP protocol, see [https://modelcontextprotocol.io/](https://modelcontextprotocol.io/)
+
+## Commands
+
+### mcp
+
+The base command for all MCP-related operations.
+
+```bash
+agentuity mcp
+```
+
+**Aliases:** None
+
+**Examples:**
+```bash
+agentuity mcp install
+agentuity mcp uninstall
+agentuity mcp list
+```
+
+### mcp install
+
+Installs the Agentuity CLI as an MCP server, enabling integration with supported MCP clients.
+
+```bash
+agentuity mcp install
+```
+
+**Aliases:** `i`, `add`
+
+**Examples:**
+```bash
+agentuity mcp install
+```
+
+### mcp uninstall
+
+Uninstalls the Agentuity CLI as an MCP server, removing integration with MCP clients.
+
+```bash
+agentuity mcp uninstall
+```
+
+**Aliases:** `rm`, `delete`, `del`, `remove`
+
+**Examples:**
+```bash
+agentuity mcp uninstall
+```
+
+### mcp list
+
+Lists all MCP server configurations detected on the machine, showing which clients are configured.
+
+```bash
+agentuity mcp list
+```
+
+**Aliases:** `ls`
+
+**Examples:**
+```bash
+agentuity mcp list
+```
+
+## Manual Installation
+
+If you need to manually configure an MCP client, you can use the following command:
+
+```bash
+agentuity mcp run --stdio
+```
+
+This command is typically used for advanced configuration scenarios.

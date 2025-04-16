@@ -1,0 +1,68 @@
+---
+title: Python SDK
+description: Documentation for the Agentuity Python SDK
+---
+
+The [Agentuity Python SDK](https://github.com/agentuity/sdk-py) provides a powerful framework for building AI agents in Python. It offers a comprehensive set of tools for creating, deploying, and managing agents with features like key-value storage, vector storage, and OpenTelemetry integration.
+
+## Installation
+
+When you create a project with Agentuity, you will automatically have access to the Agentuity Python SDK.
+
+```bash
+agentuity new
+```
+
+The SDK currently works with Python and the project will automatically install the correct dependencies.
+
+## Prerequisites
+
+Before using the Agentuity Python SDK, ensure you have the following prerequisites installed:
+
+- **Python**: Version 3.10 or higher is required
+
+### Installing Python
+
+You can download and install Python from the [official website](https://www.python.org/). Make sure to install version 3.10 or higher.
+
+### Installing UV
+
+[UV](https://docs.astral.sh/uv/) is an optional but recommended package manager for Python. You can install it using the following command:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+For more information, visit the [UV installation documentation](https://docs.astral.sh/uv/getting-started/installation/).
+
+## Development
+
+You can start your project by running the following command:
+
+```bash
+agentuity dev
+```
+
+This will start your project in development mode and open a new browser window connecting your Agent to the Agentuity Console in Live Mode.
+
+You can also start your project in development mode without connecting to the Agentuity Console by running the following command:
+
+```bash
+uv run server.py
+```
+
+If you would like to manually test your Agents locally, you can do so by running the following command:
+
+```bash
+curl -v http://localhost:3500/run/agent_ID --json '{"input": "Hello, world!"}'
+```
+
+Make sure you replace `agent_ID` with the ID of your Agent.
+
+
+## Next Steps
+
+- [Core Concepts](/SDKs/python/core-concepts) - Learn about the fundamental concepts of the Agentuity Python SDK
+- [LLM](/SDKs/python/llm) - Learn about the LLM integrations available in the Agentuity Python SDK
+- [Frameworks](/SDKs/python/frameworks) - Learn about using frameworks with the Agentuity Python SDK
+- [API Reference](/SDKs/python/api-reference) - Explore the detailed API documentation
