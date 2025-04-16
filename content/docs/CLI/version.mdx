@@ -1,0 +1,46 @@
+---
+title: Version Command
+description: Command for checking the version of the Agentuity CLI
+---
+
+The `version` command allows you to check, display, and upgrade the Agentuity CLI version.
+
+## Basic Usage
+
+```bash
+# Display the current version
+agentuity version
+
+# Display detailed version information
+agentuity version --long
+```
+
+The basic command displays the current version number. Using the `--long` flag provides more detailed information including the commit hash and build date.
+
+## Check Subcommand
+
+```bash
+# Check if you're using the latest version
+agentuity version check
+
+# Check and upgrade to the latest version
+agentuity version check --upgrade
+```
+
+The `check` subcommand verifies if you're using the latest version of the CLI, and notifies you if an update is available.
+
+## Upgrade Subcommand
+
+```bash
+# Upgrade to the latest version
+agentuity version upgrade
+
+# Force upgrade even if already on the latest version
+agentuity version upgrade --force
+```
+
+The `upgrade` subcommand (also available as `agentuity upgrade`) updates your CLI to the latest version. It creates a backup of the current binary before installing the new version.
+
+If the CLI was installed using Homebrew on macOS, it will use Homebrew to perform the upgrade.
+
+The `--force` flag allows you to reinstall even if you're already on the latest version.
