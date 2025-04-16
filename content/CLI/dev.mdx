@@ -5,18 +5,18 @@ description: Commands for local development of Agentuity projects
 
 The `dev` commands allow you to run and test your Agentuity projects locally during development.
 
-## dev run
+## dev
 
 Runs a development server for local testing and development.
 
 ### Aliases
 
-`agentuity run` (shortcut for `agentuity dev run`)
+`agentuity run` (shortcut for `agentuity dev`)
 
 ### Usage
 
 ```bash
-agentuity dev run [flags]
+agentuity dev [flags]
 ```
 
 ### Flags
@@ -30,21 +30,21 @@ agentuity dev run [flags]
 
 Run a development server for a project in the current directory:
 ```bash
-$ agentuity dev run
+$ agentuity dev
 ✓ Development server started
 🔗 Local URL: http://localhost:3000
 ```
 
 Run a development server for a project in a specific directory:
 ```bash
-$ agentuity dev run --dir ~/projects/my-project
+$ agentuity dev --dir ~/projects/my-project
 ✓ Development server started
 🔗 Local URL: http://localhost:3000
 ```
 
 Run a development server with a specific WebSocket room ID:
 ```bash
-$ agentuity dev run --websocket-id room_123456
+$ agentuity dev --websocket-id room_123456
 ✓ Development server started
 🔗 Local URL: http://localhost:3000
 🔌 WebSocket connected: room_123456
