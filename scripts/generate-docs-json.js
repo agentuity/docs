@@ -35,7 +35,7 @@ async function main() {
 		});
 	}
 
-	await fs.writeFile(outputFile, JSON.stringify(docs, null, 2));
+	await fs.writeFile(outputFile, JSON.stringify({ docs }, null, 2));
 
 	console.log(`Wrote ${docs.length} docs to ${outputFile}`);
 }

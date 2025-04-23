@@ -6,7 +6,7 @@ interface Doc {
 
 import docsJson from "@/content/docs.json";
 
-const docs = docsJson as Doc[];
+const docs = docsJson.docs as Doc[];
 
 export const revalidate = false;
 
