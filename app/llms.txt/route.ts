@@ -1,11 +1,18 @@
-import fg from "fast-glob";
-import matter from "gray-matter";
-import * as fs from "node:fs/promises";
+interface Doc {
+	file: string;
+	meta: Record<string, unknown>;
+	content: string;
+}
+
+import docsJson from "@/content/docs.json";
+
+const docs = docsJson as Doc[];
 
 export const revalidate = false;
 
 export async function GET() {
-	const preamble = `# Agentuity Documentation
+	try {
+		const preamble = `# Agentuity Documentation
 
 ## About
 This is the official documentation for Agentuity, a cloud  platform designed specifically for building, deploying, and scaling autonomous AI agents. It provides the infrastructure and tools necessary to manage agents built with any framework, such as CrewAI, LangChain, or custom code.
@@ -38,26 +45,19 @@ When interacting with this documentation:
 5. Examples & Tutorials - Sample projects, step-by-step tutorials, and implementation guides
 6. Troubleshooting - Common issues and solutions\n\n`;
 
-	const files = await fg([
-		"./content/Introduction/index.mdx",
-		"./content/Introduction/*.mdx",
-		"./content/Cloud/*/*.mdx",
-		"./content/CLI/*.mdx",
-		"./content/SDKs/*.mdx",
-		"./content/Examples/*.mdx",
-		"./content/**/*.mdx", // everything else
-	]);
+		const scanned = docs.map((doc) => {
+			return `file: ${doc.file}\nmeta: ${JSON.stringify(doc.meta, null, 2)}\n${doc.content}`;
+		});
 
-	const scan = files.map(async (file) => {
-		const fileContent = await fs.readFile(file);
-		const { content, data } = matter(fileContent.toString());
+		return new Response(preamble + scanned.join("\n\n"), {
+			headers: { "Content-Type": "text/plain" }
+		});
+	} catch (error) {
+		console.error('Error in GET route:', error);
 
-		return `file: ${file}
-meta: ${JSON.stringify(data, null, 2)}
-${content}`;
-	});
-
-	const scanned = await Promise.all(scan);
-
-	return new Response(preamble + scanned.join("\n\n"));
+		return new Response(JSON.stringify({ error: 'Failed to process content', details: error instanceof Error ? error.message : String(error) }), {
+			status: 500,
+			headers: { 'Content-Type': 'application/json' }
+		});
+	}
 }
