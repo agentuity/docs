@@ -16,7 +16,7 @@ import { AgentHandler } from '@agentuity/sdk';
 const handler: AgentHandler = async (request, response, context) => {
   try {
     // Get the request data
-    const data = request.data.json;
+    const data = await request.data.json();
     const name = data.name || 'Guest';
     
     // Log the request
@@ -48,7 +48,7 @@ This example demonstrates how to use the key-value storage API to store and retr
 import { AgentHandler } from '@agentuity/sdk';
 
 const handler: AgentHandler = async (request, response, context) => {
-  const { action, userId, preferences } = request.data.json;
+  const { action, userId, preferences } = await request.data.json();
   
   switch (action) {
     case 'get': {
@@ -101,7 +101,7 @@ This example demonstrates how to use the vector storage API for semantic search:
 import { AgentHandler } from '@agentuity/sdk';
 
 const handler: AgentHandler = async (request, response, context) => {
-  const { action, query, products } = request.data.json;
+  const { action, query, products } = await request.data.json();
   
   switch (action) {
     case 'index': {
@@ -184,7 +184,7 @@ This example demonstrates how agents can communicate with each other:
 import { AgentHandler } from '@agentuity/sdk';
 
 const handler: AgentHandler = async (request, response, context) => {
-  const { task, data } = request.data.json;
+  const { task, data } = await request.data.json();
   
   // Log the incoming request
   context.logger.info(`Received task: ${task}`);
@@ -265,7 +265,7 @@ class ResourceNotFoundError extends Error {
 const handler: AgentHandler = async (request, response, context) => {
   try {
     // Get the request data
-    const data = request.data.json;
+    const data = await request.data.json();
     
     // Validate the request
     if (!data.resourceId) {
@@ -356,7 +356,7 @@ const handler: AgentHandler = async (request, response, context) => {
       span.setAttribute('trigger', request.trigger());
       
       // Get the request data
-      const data = request.data.json;
+      const data = await request.data.json();
       span.setAttribute('data.type', typeof data);
       
       // Create a child span for data processing
