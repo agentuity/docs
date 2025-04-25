@@ -40,6 +40,18 @@ For example, to get the request data as JSON, you need to make the following cha
 
 See the following documentation [Pull Request](https://github.com/agentuity/docs/pull/92) for specific SDK changes.
 
+If you're using an Agentic code editor (such as Cursor, Windsurf, etc.), you can use this prompt to update your code with these changes:
+
+```
+The agents in the agents folder use an older version of the Agentuity SDK which assume the req.data object has properties on it like req.data.json
+
+The new way to do this is with a promise. eg. `await req.data.json()`
+
+The breaking change is here:  https://github.com/agentuity/sdk-js/pull/87
+
+Review this PR, make a plan to change the agents to the latest agentuity SDK with async await support, and execute on it.
+```
+
 ## v0.0.105
 
 <Callout type="info">
