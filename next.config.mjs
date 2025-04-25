@@ -12,11 +12,16 @@ const config = {
 			destination: "/Introduction",
 			permanent: true,
 		},
+		{
+			source: "/docs",
+			destination: "/",
+			permanent: true,
+		},
 	],
 };
 
 export default withMDX(config);
 
-import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 initOpenNextCloudflareForDev();
