@@ -22,7 +22,7 @@ import { AgentHandler } from '@agentuity/sdk';
 // Agent handler function
 const handler: AgentHandler = async (request, response, context) => {
   // Process the request
-  const data = request.data.json;
+  const data = await request.data.json();
   
   // Use the context (logging, storage, etc.)
   context.logger.info('Processing request', data);
@@ -53,10 +53,10 @@ Requests contain information about the trigger event and payload data. The `Agen
 - `request.get(key, defval)` - Get a value from the request metadata
 - `request.data` - Get a Data object from the request
 - `request.data.contentType` - The content type (or mime type) of the request
-- `request.data.json` - Get the payload as a JSON object
-- `request.data.object<T>()` - Get the payload as a JSON object and parse it as a specific type
-- `request.data.text` - Get the payload as a string
-- `request.data.binary` - Get the payload as an ArrayBuffer
+- `request.data.json()` - Get the payload as a JSON object (async, requires await)
+- `request.data.object<T>()` - Get the payload as a JSON object and parse it as a specific type (async, requires await)
+- `request.data.text()` - Get the payload as a string (async, requires await)
+- `request.data.binary()` - Get the payload as an ArrayBuffer (async, requires await)
 
 
 ### Responses
@@ -80,6 +80,7 @@ The context object provides access to various capabilities and services:
 - `context.vector` - Vector storage
 - `context.getAgent()` - Access to other agents both locally and remotely
 - `context.tracer` - OpenTelemetry tracing
+- `context.scope` - The scope of the agent invocation ('local' or 'remote')
 - Metadata about the current execution (runId, projectId, etc.)
 
 ## Triggers and Event Types

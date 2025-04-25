@@ -67,7 +67,7 @@ import { AgentHandler } from '@agentuity/sdk';
 const handler: AgentHandler = async (request, response, context) => {
   try {
     // Get the request data
-    const { name } = request.data.json;
+    const { name } = await request.data.json();
     
     // Log the request
     context.logger.info(`Received greeting request for ${name}`);
@@ -539,79 +539,79 @@ Gets metadata associated with the request.
 Returns the metadata value for the specified key, or the default value if the key does not exist.
 
 
-#### `json(): Json`
+#### `json(): Promise<Json>`
 
 Gets the payload of the request as a JSON object.
 
 ##### Return Value
 
-Returns the request payload as a JSON object.
+Returns a Promise that resolves to the request payload as a JSON object.
 
 ##### Example
 
 ```typescript
-const data = request.data.json;
+const data = await request.data.json();
 console.log(`Request data: ${JSON.stringify(data)}`);
 ```
 
-#### `text(): string`
+#### `text(): Promise<string>`
 
 Gets the payload of the request as a string.
 
 ##### Return Value
 
-Returns the request payload as a string.
+Returns a Promise that resolves to the request payload as a string.
 
 ##### Example
 
 ```typescript
-const text = request.data.text;
+const text = await request.data.text();
 console.log(`Request text: ${text}`);
 ```
 
-#### `binary(): ArrayBuffer`
+#### `binary(): Promise<ArrayBuffer>`
 
 Gets the payload of the request as an ArrayBuffer.
 
 ##### Return Value
 
-Returns the request payload as an ArrayBuffer.
+Returns a Promise that resolves to the request payload as an ArrayBuffer.
 
 ##### Example
 
 ```typescript
-const binaryData = request.binary();
+const binaryData = await request.data.binary();
 console.log(`Binary data size: ${binaryData.byteLength} bytes`);
 ```
 
 ### Media-Specific Methods
 
-The SDK provides specialized methods for various media types:
+The SDK provides specialized methods for various media types, all of which now return Promises:
 
-- `pdf(): ArrayBuffer`
-- `png(): ArrayBuffer`
-- `jpeg(): ArrayBuffer`
-- `gif(): ArrayBuffer`
-- `webp(): ArrayBuffer`
-- `mp3(): ArrayBuffer`
-- `mp4(): ArrayBuffer`
-- `m4a(): ArrayBuffer`
-- `m4p(): ArrayBuffer`
-- `webm(): ArrayBuffer`
-- `wav(): ArrayBuffer`
-- `ogg(): ArrayBuffer`
+- `pdf(): Promise<ArrayBuffer>`
+- `png(): Promise<ArrayBuffer>`
+- `jpeg(): Promise<ArrayBuffer>`
+- `gif(): Promise<ArrayBuffer>`
+- `webp(): Promise<ArrayBuffer>`
+- `mp3(): Promise<ArrayBuffer>`
+- `mp4(): Promise<ArrayBuffer>`
+- `m4a(): Promise<ArrayBuffer>`
+- `m4p(): Promise<ArrayBuffer>`
+- `webm(): Promise<ArrayBuffer>`
+- `wav(): Promise<ArrayBuffer>`
+- `ogg(): Promise<ArrayBuffer>`
 
-Each method returns the request payload as an ArrayBuffer with the appropriate content type validation.
+Each method returns a Promise that resolves to the request payload as an ArrayBuffer with the appropriate content type validation.
 
 #### Example
 
 ```typescript
 // Get an image from the request
-const image = request.png();
+const image = await request.png();
 // Process the image...
 
 // Get audio from the request
-const audio = request.mp3();
+const audio = await request.mp3();
 // Process the audio...
 ```
 
@@ -818,3 +818,42 @@ context.tracer.startActiveSpan('process-data', async (span) => {
   }
 });
 ```
+
+## Breaking Changes
+
+### Data API
+
+In version X.X.X, the Data API was refactored to use async methods instead of static properties to better support streaming capabilities:
+
+#### Before:
+```typescript
+// Accessing data properties directly
+const jsonData = request.data.json;
+const textData = request.data.text;
+const base64Data = request.data.base64;
+```
+
+#### After:
+```typescript
+// Using async methods to access data
+const jsonData = await request.data.json();
+const textData = await request.data.text();
+const base64Data = await request.data.base64();
+```
+
+This change affects all methods on the `Data` interface:
+- `data.base64` → `data.base64()`
+- `data.text` → `data.text()`
+- `data.json` → `data.json()`
+- `data.object<T>()` → `data.object<T>()`
+- `data.binary` → `data.binary()`
+- `data.buffer` → `data.buffer()`
+- `data.stream` → `data.stream()`
+
+
+## Deprecated Features
+
+### `/run/:id` Route
+
+The `/run/:id` route is now deprecated as it provides the same functionality as `/:id`. Applications should update their code to use the `/:id` route instead.
+
