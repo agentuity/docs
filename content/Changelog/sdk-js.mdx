@@ -7,6 +7,24 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 This page documents the release history of the [Agentuity JavaScript SDK](https://github.com/agentuity/sdk-js).
 
+## v0.0.106-next.1
+
+<Callout type="info">
+  Released: April 25, 2025
+</Callout>
+
+### Changes
+
+- **BREAKING**: Refactor the data API to have async methods instead of static properties to fully take advantage of streaming capabilities
+- **Deprecated**: The /run/:id route is now deprecated
+- Fixed issue with attempting to read stream more than once
+- Fixed multiple reads of the stream, ensure streams are only read once
+- Fixed trigger issue
+- Updated instructions for default route
+- Simplified codebase
+- Removed unused code and console logs
+- Prerelease breaking SDK changes for production testing
+
 ## v0.0.105
 
 <Callout type="info">
