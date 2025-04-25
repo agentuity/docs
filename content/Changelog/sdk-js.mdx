@@ -7,6 +7,39 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 This page documents the release history of the [Agentuity JavaScript SDK](https://github.com/agentuity/sdk-js).
 
+## v0.0.106
+
+<Callout type="info">
+  Released: April 25, 2025
+</Callout>
+
+### Changes
+
+- Add support for streaming data to and from agents.  This includes streaming data to the agent via the `data` object and streaming data from the agent via the `stream` property of the `AgentResponse` object.
+- The `trigger` property of the `AgentRequest` object will have the value `agent` when the request is invoked by another agent.
+- The `AgentContext` object now has a `scope` property that will have the value of `local` when the context is local or `remote` when agent is being invoked by another agent remotely. In the case of agent-to-agent invocation or handoff within the same project, the scope will be `local`.
+- Deprecated the local `/run/:agentId` route since the updated `/:agentId` route now supports streaming data to and from the agent directly. This route will be removed in a near future release.
+
+### ⚠️ Breaking Changes
+
+The `data` object of `AgentRequest` has changed to support fully streaming data and this required a breaking change. Most of the property accessors are now async functions to support the streaming use case.  You can read more about this change in [Pull Request #87](https://github.com/agentuity/sdk-js/pull/87).
+
+For example, the following code changes are required to get the request data as text:
+
+```diff
+- const text = req.data.text;
++ const text = await req.data.text();
+```
+
+For example, to get the request data as JSON, you need to make the following changes:
+
+```diff
+- const json = req.data.json;
++ const json = await req.data.json();
+```
+
+See the following documentation [Pull Request](https://github.com/agentuity/docs/pull/92) for specific SDK changes.
+
 ## v0.0.105
 
 <Callout type="info">
@@ -15,7 +48,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
 
 ### Changes
 
-- Add support for remote agent handoff ([PR #85](https://github.com/agentuity/sdk-js/pull/85))
+- Add support for remote agent handoff ([PR #85](https://github.com/agentuity/sdk-js/pull/85)). This means you can now handoff the request to another agent outside of your current project in the same organization or even outside of your organization if the Agent is public.  The agent-to-agent invocation is secured automatically and doesn't require any additional configuration or authentication.  Internally, the SDK will request a one-time authorization token to invoke the agent on your agent's behalf.
 
 ## v0.0.104
 
@@ -25,7 +58,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
 
 ### Changes
 
-- Add support for remote agent-to-agent invocation ([PR #83](https://github.com/agentuity/sdk-js/pull/83))
+- Add support for remote agent-to-agent invocation ([PR #83](https://github.com/agentuity/sdk-js/pull/83)). This means you can now invoke another agent outside of your current project in the same organization or even outside of your organization if the Agent is public.  The agent-to-agent invocation is secured automatically and doesn't require any additional configuration or authentication.  Internally, the SDK will request a one-time authorization token to invoke the agent on your agent's behalf.
 
 ## v0.0.103
 
