@@ -1,0 +1,34 @@
+---
+title: Troubleshooting
+description: Common issues and solutions when working with the Agentuity JavaScript SDK
+---
+
+This section covers common issues you might encounter when working with the Agentuity JavaScript SDK and provides solutions to help you resolve them.
+
+### Node.js Version Issues
+
+**Issue**: Errors related to unsupported JavaScript features or syntax.
+
+**Solution**:
+1. Verify your Node.js version meets the minimum requirement (v22+):
+   ```bash
+   node --version
+   ```
+2. If you're using an older version, upgrade Node.js:
+   ```bash
+   # Using nvm (recommended)
+   nvm install 22
+   nvm use 22
+   
+   # Or download from nodejs.org
+   ```
+3. If you can't upgrade Node.js, consider using a transpiler like Babel to support newer syntax in older environments.
+
+
+## Getting Additional Help
+
+If you're still experiencing issues after trying the troubleshooting steps above:
+
+1. Check the [Agentuity documentation](https://agentuity.dev) for updates and additional information.
+2. Join the [Agentuity Discord](https://discord.com/invite/vtn3hgUfuc) to ask questions and get help from other developers.
+4. File an issue on the [GitHub repository](https://github.com/agentuity/sdk-js/issues) if you believe you've found a bug.

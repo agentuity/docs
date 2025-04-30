@@ -1,0 +1,167 @@
+---
+title: Agent Commands
+description: Commands for managing agents in your Agentuity project
+---
+
+The `agent` commands allow you to create, list, delete, and manage agents in your Agentuity project.
+
+## agent create
+
+Creates a new agent in your project.
+
+### Aliases
+
+`agentuity agent new` (shortcut for `agentuity agent create`)
+
+### Usage
+
+```bash
+agentuity agent create [name] [description] [auth_type]
+```
+
+**Arguments:**
+- `name` - The name of the agent
+- `description` - A description of what the agent does
+- `auth_type` - Authentication method for the agent (API Key or None)
+
+**Flags:**
+- `-d, --dir string` - The project directory
+
+This command will prompt you for:
+- The name of the agent
+- A description of what the agent does
+- Authentication type (API Key or None)
+
+After providing this information, the command will:
+1. Create the agent in the Agentuity Cloud
+2. Set up the necessary local files for the agent
+3. Update your project configuration to include the new agent
+
+### Example
+
+```bash
+$ agentuity agent create
+What should we name the agent? MyNewAgent
+How should we describe what the MyNewAgent agent does? This agent processes customer support requests
+✓ Agent created successfully
+```
+
+## agent list
+
+Lists all agents in your project.
+
+### Aliases
+
+`agentuity agent ls` (shortcut for `agentuity agent list`)
+
+### Usage
+
+```bash
+agentuity agent list
+```
+
+**Flags:**
+- `-d, --dir string` - The project directory
+
+This command will display a list of all agents in your project, including:
+- Agent name
+- Agent ID
+- Agent description
+- Status (whether the agent exists locally, remotely, or both)
+
+### Example
+
+```bash
+$ agentuity agent list
+src/agents
+├── MyFirstAgent
+│  ├── ID: 3c4c0b692533d7807cf0f649ef425dfa29b58bcc99be03e208e52749107fca2e
+│  └── Description: A simple agent that can generate text
+│
+└── MyNewAgent
+   ├── ID: 7a8b9c0d1e2f3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3a4b5c6d7e8f
+   └── Description: This agent processes customer support requests
+```
+
+## agent delete
+
+Deletes one or more agents from your project.
+
+### Aliases
+
+`agentuity agent rm` or `agentuity agent del` (shortcuts for `agentuity agent delete`)
+
+### Usage
+
+```bash
+agentuity agent delete
+```
+
+**Flags:**
+- `-d, --dir string` - The project directory
+
+This command will:
+1. Display a list of all agents in your project
+2. Allow you to select one or more agents to delete
+3. Ask for confirmation before deleting the selected agents
+4. Delete the selected agents from both the Agentuity Cloud and your local project
+
+### Example
+
+```bash
+$ agentuity agent delete
+Select one or more agents to delete:
+[ ] MyFirstAgent 3c4c0b692533d7807cf0f649ef425dfa29b58bcc99be03e208e52749107fca2e
+[x] MyNewAgent 7a8b9c0d1e2f3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3a4b5c6d7e8f
+
+Are you sure you want to delete the selected agents? This action cannot be undone. [y/N] y
+✓ Agent deleted successfully
+```
+
+## agent apikey
+
+Gets the API key for an agent.
+
+### Aliases
+
+`agentuity agent key` (shortcut for `agentuity agent apikey`)
+
+### Usage
+
+```bash
+agentuity agent apikey [agent_name]
+```
+
+**Arguments:**
+- `agent_name` - The name or ID of the agent (optional)
+
+**Flags:**
+- `-d, --dir string` - The project directory
+
+This command will:
+1. If an agent name is provided, retrieve the API key for that agent
+2. If no agent name is provided and there's only one agent in the project, retrieve the API key for that agent
+3. If no agent name is provided and there are multiple agents, display a list of agents to select from
+
+### Example
+
+```bash
+# Get API key for a specific agent
+$ agentuity agent apikey MyFirstAgent
+Agent MyFirstAgent API key: [API KEY WILL BE DISPLAYED HERE]
+
+# Get API key interactively
+$ agentuity agent apikey
+Select an Agent:
+> MyFirstAgent 3c4c0b692533d7807cf0f649ef425dfa29b58bcc99be03e208e52749107fca2e
+  MyNewAgent 7a8b9c0d1e2f3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3a4b5c6d7e8f
+
+Agent MyFirstAgent API key: [API KEY WILL BE DISPLAYED HERE]
+```
+
+## Global Flags
+
+These flags apply to all agent commands:
+
+- `--config string` - Config file (default is $HOME/.config/agentuity/config.yaml)
+- `--log-level string` - The log level to use (default "info")

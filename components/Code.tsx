@@ -1,6 +1,5 @@
 import React from "react";
 import { CodeBlock, Pre } from "fumadocs-ui/components/codeblock";
-import { createStyleTransformer } from "fumadocs-core/server";
 import { transformerTwoslash } from "fumadocs-twoslash";
 import { Popup, PopupContent, PopupTrigger } from "fumadocs-twoslash/ui";
 import { getSingletonHighlighter, bundledLanguages } from "shiki";
@@ -27,7 +26,6 @@ export async function Code({
 		},
 		defaultColor: false,
 		transformers: [
-			createStyleTransformer(),
 			transformerTwoslash({
 				explicitTrigger: false,
 			}),

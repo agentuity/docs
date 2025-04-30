@@ -1,0 +1,374 @@
+---
+title: JavaScript SDK Changelog
+description: Release notes and version history for the Agentuity JavaScript SDK
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+This page documents the release history of the [Agentuity JavaScript SDK](https://github.com/agentuity/sdk-js).
+
+## v0.0.110
+
+<Callout type="info">
+  Released: April 29, 2025
+</Callout>
+
+### Changes
+
+- In cloud we must bind to all addresses ([PR #96](https://github.com/agentuity/sdk-js/pull/96))
+
+## v0.0.109
+
+<Callout type="info">
+  Released: April 29, 2025
+</Callout>
+
+### Changes
+
+- Add the ability for an agent to return a Response object directly to provide more flexibility to integrate with existing APIs and protocols ([PR #93](https://github.com/agentuity/sdk-js/pull/93))
+- Bind explicitly to ipv4 when creating server ([PR #94](https://github.com/agentuity/sdk-js/pull/94))
+
+## v0.0.108
+
+<Callout type="info">
+  Released: April 25, 2025
+</Callout>
+
+### Changes
+
+- Fixed issue when the keyvalue returns a gzip encoded value ([PR #92](https://github.com/agentuity/sdk-js/pull/92))
+
+## v0.0.107
+
+<Callout type="info">
+  Released: April 25, 2025
+</Callout>
+
+### Changes
+
+- Fix issue with chunking and streaming text not matching in some cases ([PR #91](https://github.com/agentuity/sdk-js/pull/91))
+## v0.0.106
+
+<Callout type="info">
+  Released: April 25, 2025
+</Callout>
+
+### Changes
+
+- Add support for streaming data to and from agents.  This includes streaming data to the agent via the `data` object and streaming data from the agent via the `stream` property of the `AgentResponse` object.
+- The `trigger` property of the `AgentRequest` object will have the value `agent` when the request is invoked by another agent.
+- The `AgentContext` object now has a `scope` property that will have the value of `local` when the context is local or `remote` when agent is being invoked by another agent remotely. In the case of agent-to-agent invocation or handoff within the same project, the scope will be `local`.
+- Deprecated the local `/run/:agentId` route since the updated `/:agentId` route now supports streaming data to and from the agent directly. This route will be removed in a near future release.
+
+### ⚠️ Breaking Changes
+
+The `data` object of `AgentRequest` has changed to support fully streaming data and this required a breaking change. Most of the property accessors are now async functions to support the streaming use case.  You can read more about this change in [Pull Request #87](https://github.com/agentuity/sdk-js/pull/87).
+
+For example, the following code changes are required to get the request data as text:
+
+```diff
+- const text = req.data.text;
++ const text = await req.data.text();
+```
+
+For example, to get the request data as JSON, you need to make the following changes:
+
+```diff
+- const json = req.data.json;
++ const json = await req.data.json();
+```
+
+See the following documentation [Pull Request](https://github.com/agentuity/docs/pull/92) for specific SDK changes.
+
+If you're using an Agentic code editor (such as Cursor, Windsurf, etc.), you can use this prompt to update your code with these changes:
+
+```
+The agents in the agents folder use an older version of the Agentuity SDK which assume the req.data object has properties on it like req.data.json
+
+The new way to do this is with a promise. eg. `await req.data.json()`
+
+The breaking change is here:  https://github.com/agentuity/sdk-js/pull/87
+
+Review this PR, make a plan to change the agents to the latest agentuity SDK with async await support, and execute on it.
+```
+
+## v0.0.105
+
+<Callout type="info">
+  Released: April 23, 2025
+</Callout>
+
+### Changes
+
+- Add support for remote agent handoff ([PR #85](https://github.com/agentuity/sdk-js/pull/85)). This means you can now handoff the request to another agent outside of your current project in the same organization or even outside of your organization if the Agent is public.  The agent-to-agent invocation is secured automatically and doesn't require any additional configuration or authentication.  Internally, the SDK will request a one-time authorization token to invoke the agent on your agent's behalf.
+
+## v0.0.104
+
+<Callout type="info">
+  Released: April 23, 2025
+</Callout>
+
+### Changes
+
+- Add support for remote agent-to-agent invocation ([PR #83](https://github.com/agentuity/sdk-js/pull/83)). This means you can now invoke another agent outside of your current project in the same organization or even outside of your organization if the Agent is public.  The agent-to-agent invocation is secured automatically and doesn't require any additional configuration or authentication.  Internally, the SDK will request a one-time authorization token to invoke the agent on your agent's behalf.
+
+## v0.0.103
+
+<Callout type="info">
+  Released: April 23, 2025
+</Callout>
+
+### Changes
+
+- Refactor to support binary streams instead of intermediate JSON protocol ([PR #81](https://github.com/agentuity/sdk-js/pull/81))
+- Improved handling of HTTP native protocol
+- Added support for passing in the runId
+- Better handling of stream data and binary content
+
+## v0.0.102
+
+<Callout type="info">
+  Released: April 16, 2025
+</Callout>
+
+### Changes
+
+- Fix issue where the child span had the wrong parent on outbound requests for agent-to-agent ([PR #79](https://github.com/agentuity/sdk-js/pull/79))
+
+## v0.0.101
+
+<Callout type="info">
+  Released: April 18, 2025
+</Callout>
+
+### Changes
+
+- Add agent context to console logger when running inside agent scope ([PR #77](https://github.com/agentuity/sdk-js/pull/77))
+
+## v0.0.100
+
+<Callout type="info">
+  Released: April 15, 2025
+</Callout>
+
+### Changes
+
+- Add permissions
+- Add more otel trace context headers, remove old trace provider ([PR #72](https://github.com/agentuity/sdk-js/pull/72))
+- Automatically base64 encode welcome prompts ([PR #73](https://github.com/agentuity/sdk-js/pull/73))
+- Fix NodeJS issue where the buffer isn't correctly sending the blob but works fine in Bun version ([PR #74](https://github.com/agentuity/sdk-js/pull/74))
+- Debug github workflow git tag issue
+
+## v0.0.99
+
+<Callout type="info">
+  Released: April 14, 2025
+</Callout>
+
+### Changes
+
+- More debug for github workflow
+
+## v0.0.98
+
+<Callout type="info">
+  Released: April 13, 2025
+</Callout>
+
+### Changes
+
+- More debug for github release tags
+
+## v0.0.97
+
+<Callout type="info">
+  Released: April 12, 2025
+</Callout>
+
+### Changes
+
+- Attempt to fix issue with github workflow not pushing tag after release
+
+## v0.0.96
+
+<Callout type="info">
+  Released: April 11, 2025
+</Callout>
+
+### Changes
+
+- Fix issue with node keyvalue not correctly handling the buffer upload
+
+## v0.0.95
+
+<Callout type="info">
+  Released: April 10, 2025
+</Callout>
+
+### Changes
+
+- Add more otel trace context headers, remove old trace provider
+- Base64 encode the welcome prompts
+
+## v0.0.94
+
+<Callout type="info">
+  Released: April 8, 2025
+</Callout>
+
+### Changes
+
+- Fix regression in otel traces missing for AI SDK by change in opentelemetry-api version change
+
+## v0.0.93
+
+<Callout type="info">
+  Released: April 7, 2025
+</Callout>
+
+### Changes
+
+- Add support for agent inspection discovery ([PR #70](https://github.com/agentuity/sdk-js/pull/70))
+
+## v0.0.92
+
+<Callout type="info">
+  Released: April 5, 2025
+</Callout>
+
+### Changes
+
+- Add data and markdown methods to AgentResponse interface and implementation
+
+## v0.0.91
+
+<Callout type="info">
+  Released: April 3, 2025
+</Callout>
+
+### Changes
+
+- Use new agentuity sdk api
+- Add GitHub workflow for npm package release triggered by version tags ([PR #53](https://github.com/agentuity/sdk-js/pull/53))
+
+## v0.0.90
+
+<Callout type="info">
+  Released: April 1, 2025
+</Callout>
+
+### Changes
+
+- Fix Vector delete api
+
+## v0.0.89
+
+<Callout type="info">
+  Released: March 25, 2025
+</Callout>
+
+### Changes
+
+- Add the agentName to the log attributes ([PR #33](https://github.com/agentuity/sdk-js/pull/33))
+- Console Logger: show max depth for any objects ([PR #32](https://github.com/agentuity/sdk-js/pull/32))
+- When stream is requested but the response isn't a stream, chunk up the response data into chunks and smooth out as if streamed ([PR #31](https://github.com/agentuity/sdk-js/pull/31))
+- Fixed issue with buffer underrun getting sent and issue with json encoding ([PR #34](https://github.com/agentuity/sdk-js/pull/34))
+
+## v0.0.88
+
+<Callout type="info">
+  Released: March 21, 2025
+</Callout>
+
+### Changes
+
+- Improve loading project when using node or bun directly vs using start script or agentuity dev
+- Fix mismatch between local run vs remote run with HTTP headers as property of metadata vs the metadata object
+
+## v0.0.87
+
+<Callout type="info">
+  Released: March 18, 2025
+</Callout>
+
+### Changes
+
+- Slight improvement in location of when context.logger for agent is created
+
+## v0.0.86
+
+<Callout type="info">
+  Released: March 16, 2025
+</Callout>
+
+### Changes
+
+- Add support for agentId on context.logger
+- Fix issue with underrun on base64 stream
+
+## v0.0.85
+
+<Callout type="info">
+  Released: March 15, 2025
+</Callout>
+
+### Changes
+
+- Streaming Support including SSE
+
+## v0.0.84
+
+<Callout type="info">
+  Released: March 14, 2025
+</Callout>
+
+### Changes
+
+- Stream IO Input: add new facility to support stream io for input data ([PR #23](https://github.com/agentuity/sdk-js/pull/23))
+- Release with new transport model
+
+## v0.0.83
+
+<Callout type="info">
+  Released: March 12, 2025
+</Callout>
+
+### Changes
+
+- Fix devmode logging when devmode environment is set by live ([PR #24](https://github.com/agentuity/sdk-js/pull/24))
+
+## v0.0.82
+
+<Callout type="info">
+  Released: March 12, 2025
+</Callout>
+
+### Changes
+
+- KeyValue compression only on upload, not download ([PR #20](https://github.com/agentuity/sdk-js/pull/20))
+
+## v0.0.81
+
+<Callout type="info">
+  Released: March 11, 2025
+</Callout>
+
+### Changes
+
+- Add support for compressing keyvalue entries ([PR #19](https://github.com/agentuity/sdk-js/pull/19))
+- Better format log message if the first parameter is an object ([PR #18](https://github.com/agentuity/sdk-js/pull/18))
+
+## v0.0.80
+
+<Callout type="info">
+  Released: March 10, 2025
+</Callout>
+
+### Changes
+
+- Refactored the types to make it easier to use
+- Fixed various small issues
+
+## v0.0.79 and earlier
+
+For earlier versions, see the [CHANGELOG.md](https://github.com/agentuity/sdk-js/blob/main/CHANGELOG.md) file in the repository.
