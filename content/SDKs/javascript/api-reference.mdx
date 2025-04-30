@@ -1,0 +1,859 @@
+---
+title: API Reference
+description: Comprehensive reference for the Agentuity JavaScript SDK API
+---
+
+This section provides detailed documentation for the Agentuity JavaScript SDK API, including method signatures, parameters, return values, and example usage.
+
+## Table of Contents
+
+- [Agent Lifecycle](#agent-lifecycle)
+- [Storage APIs](#storage-apis)
+- [Agent Communication](#agent-communication)
+- [Response Types](#response-types)
+- [Request Handling](#request-handling)
+- [Logging](#logging)
+- [Telemetry](#telemetry)
+
+## Agent Lifecycle
+
+The Agentuity SDK provides a structured way to define and handle agents. An agent consists of a handler function, with its configuration managed by the Agentuity CLI.
+
+### Agent Configuration
+
+Agent configuration is managed by the Agentuity CLI and stored in the project configuration file. The `AgentConfig` interface is used internally by the CLI and SDK:
+
+```typescript
+interface AgentConfig {
+  /**
+   * the name of the agent
+   */
+  name: string;
+  /**
+   * the description of the agent
+   */
+  description?: string;
+}
+```
+
+### Agent Handler
+
+The `AgentHandler` type defines the handler function for an agent:
+
+```typescript
+type AgentHandler = (
+  request: AgentRequest,
+  response: AgentResponse,
+  context: AgentContext
+) => Promise<AgentResponseType>;
+```
+
+#### Parameters
+
+- `request`: An `AgentRequest` object containing the request data
+- `response`: An `AgentResponse` object for creating responses
+- `context`: An `AgentContext` object providing access to various capabilities
+
+#### Return Value
+
+The handler function should return a Promise that resolves to an `AgentResponseType` object.
+
+#### Example
+
+```typescript
+import { AgentHandler } from '@agentuity/sdk';
+
+// Agent handler function
+const handler: AgentHandler = async (request, response, context) => {
+  try {
+    // Get the request data
+    const { name } = await request.data.json();
+    
+    // Log the request
+    context.logger.info(`Received greeting request for ${name}`);
+    
+    // Return a personalized greeting
+    return response.json({
+      message: `Hello, ${name}! Welcome to Agentuity.`
+    });
+  } catch (error) {
+    // Handle errors
+    context.logger.error('Error processing request', error);
+    return response.json({ error: 'Failed to process request' });
+  }
+};
+
+export default handler;
+```
+
+## Storage APIs
+
+The Agentuity SDK provides two storage APIs: Key-Value Storage and Vector Storage.
+
+
+### Key-Value Storage
+
+The Key-Value Storage API provides a simple way to store and retrieve data. It is accessed through the `context.kv` object.
+
+#### `get(name: string, key: string): Promise<ArrayBuffer | null>`
+
+Retrieves a value from the key-value storage.
+
+##### Parameters
+
+- `name`: The name of the key-value storage
+- `key`: The key to retrieve the value for
+
+##### Return Value
+
+Returns a Promise that resolves to an ArrayBuffer containing the value, or null if the key does not exist.
+
+##### Example
+
+```typescript
+// Retrieve a value from key-value storage
+const value = await context.kv.get('user-preferences', 'user-123');
+if (value) {
+  // Convert ArrayBuffer to string if needed
+  const valueString = new TextDecoder().decode(value);
+  console.log(`User preferences: ${valueString}`);
+} else {
+  console.log('User preferences not found');
+}
+```
+
+#### `set(name: string, key: string, value: ArrayBuffer | string | Json, ttl?: number): Promise<void>`
+
+Stores a value in the key-value storage.
+
+##### Parameters
+
+- `name`: The name of the key-value storage
+- `key`: The key to store the value under
+- `value`: The value to store (can be an ArrayBuffer, string, or JSON object)
+- `ttl` (optional): Time-to-live in seconds (minimum 60 seconds)
+
+##### Return Value
+
+Returns a Promise that resolves when the value has been stored.
+
+##### Example
+
+```typescript
+// Store a string value
+await context.kv.set('user-preferences', 'user-123', JSON.stringify({ theme: 'dark' }));
+
+// Store a JSON value
+await context.kv.set('user-preferences', 'user-123', { theme: 'dark' });
+
+// Store a binary value
+const binaryData = new Uint8Array([1, 2, 3, 4]).buffer;
+await context.kv.set('user-data', 'user-123', binaryData);
+
+// Store a value with TTL (expires after 1 hour)
+await context.kv.set('session', 'user-123', 'active', 3600);
+```
+
+#### `delete(name: string, key: string): Promise<void>`
+
+Deletes a value from the key-value storage.
+
+##### Parameters
+
+- `name`: The name of the key-value storage
+- `key`: The key to delete
+
+##### Return Value
+
+Returns a Promise that resolves when the value has been deleted.
+
+##### Example
+
+```typescript
+// Delete a value
+await context.kv.delete('user-preferences', 'user-123');
+```
+
+### Vector Storage
+
+The Vector Storage API provides a way to store and search for data using vector embeddings. It is accessed through the `context.vector` object.
+
+#### `upsert(name: string, ...documents: VectorUpsertParams[]): Promise<string[]>`
+
+Inserts or updates vectors in the vector storage.
+
+##### Parameters
+
+- `name`: The name of the vector storage
+- `documents`: One or more documents to upsert, each with either embeddings or text
+
+##### Return Value
+
+Returns a Promise that resolves to an array of string IDs for the upserted vectors.
+
+##### Example
+
+```typescript
+// Upsert documents with text
+const ids = await context.vector.upsert(
+  'product-descriptions',
+  { document: 'Ergonomic office chair with lumbar support', metadata: { category: 'furniture' } },
+  { document: 'Wireless noise-cancelling headphones', metadata: { category: 'electronics' } }
+);
+
+// Upsert documents with embeddings
+const ids2 = await context.vector.upsert(
+  'product-embeddings',
+  { embeddings: [0.1, 0.2, 0.3, 0.4], metadata: { productId: '123' } },
+  { embeddings: [0.5, 0.6, 0.7, 0.8], metadata: { productId: '456' } }
+);
+```
+
+#### `search(name: string, params: VectorSearchParams): Promise<VectorSearchResult[]>`
+
+Searches for vectors in the vector storage.
+
+##### Parameters
+
+- `name`: The name of the vector storage
+- `params`: Search parameters including query, limit, similarity threshold, and metadata filters
+
+##### Return Value
+
+Returns a Promise that resolves to an array of search results, each containing an ID, metadata, and distance score.
+
+##### Example
+
+```typescript
+// Search for similar products
+const results = await context.vector.search('product-descriptions', {
+  query: 'comfortable office chair',
+  limit: 5,
+  similarity: 0.7,
+  metadata: { category: 'furniture' }
+});
+
+// Process search results
+for (const result of results) {
+  console.log(`Product ID: ${result.id}, Similarity: ${result.distance}`);
+  console.log(`Metadata: ${JSON.stringify(result.metadata)}`);
+}
+```
+
+#### `delete(name: string, ...ids: string[]): Promise<number>`
+
+Deletes vectors from the vector storage.
+
+##### Parameters
+
+- `name`: The name of the vector storage
+- `ids`: One or more IDs of vectors to delete
+
+##### Return Value
+
+Returns a Promise that resolves to the number of vectors that were deleted.
+
+##### Example
+
+```typescript
+// Delete vectors
+const deletedCount = await context.vector.delete('product-descriptions', 'id1', 'id2', 'id3');
+console.log(`Deleted ${deletedCount} vectors`);
+```
+
+## Agent Communication
+
+The Agentuity SDK allows agents to communicate with each other through the `context.getAgent()` method and agent redirection.
+
+### `getAgent(params: GetAgentRequestParams): Promise<RemoteAgent>`
+
+Retrieves a handle to a remote agent that can be invoked.
+
+#### Parameters
+
+- `params`: Parameters to identify the agent, either by ID or by name and project ID
+
+#### Return Value
+
+Returns a Promise that resolves to a `RemoteAgent` object that can be used to invoke the agent.
+
+#### Example
+
+```typescript
+// Get an agent by ID
+const agent = await context.getAgent({ id: 'agent-123' });
+
+// Get an agent by name
+const agent2 = await context.getAgent({ 
+  name: 'data-processing-agent',
+  projectId: 'project-456'
+});
+
+// Invoke the agent
+const result = await agent.run({ data: 'process this' }, 'application/json');
+```
+
+### Agent Handoff
+
+The `response.handoff()` method allows an agent to handoff the request to another agent.
+
+#### `handoff(agent: GetAgentRequestParams, payload?: Json | ArrayBuffer | string, contentType?: string, metadata?: Record<string, Json>): AgentRedirectResponse`
+
+Redirects the current request to another agent.
+
+<Callout type="info" title="Handoff">
+  Handoff is supported for both agents in the same project and remote agents in different projects.
+</Callout>
+
+##### Parameters
+
+- `agent`: Parameters to identify the target agent
+- `payload` (optional): The payload to send to the target agent
+- `contentType` (optional): The content type of the payload
+- `metadata` (optional): Additional metadata to include with the request
+
+##### Return Value
+
+Returns an `AgentRedirectResponse` object.
+
+##### Example
+
+```typescript
+// Redirect to another agent
+return response.handoff(
+  { name: 'data-processing-agent' },
+  { data: 'process this' },
+  'application/json',
+  { source: 'web-agent' }
+);
+```
+
+## Response Types
+
+The Agentuity SDK provides various methods for creating different types of responses through the `response` object.
+
+### JSON Responses
+
+#### `json(data: Json, metadata?: Record<string, Json>): AgentResponseType`
+
+Creates a JSON response.
+
+##### Parameters
+
+- `data`: The JSON data to include in the response
+- `metadata` (optional): Additional metadata to include with the response
+
+##### Return Value
+
+Returns an `AgentResponseType` object with the JSON data.
+
+##### Example
+
+```typescript
+return response.json({ 
+  message: 'Success',
+  data: { id: 123, name: 'Example' }
+});
+```
+
+### Text Responses
+
+#### `text(data: string, metadata?: Record<string, Json>): AgentResponseType`
+
+Creates a text response.
+
+##### Parameters
+
+- `data`: The text to include in the response
+- `metadata` (optional): Additional metadata to include with the response
+
+##### Return Value
+
+Returns an `AgentResponseType` object with the text data.
+
+##### Example
+
+```typescript
+return response.text('Hello, world!');
+```
+
+### Binary Responses
+
+#### `binary(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
+
+Creates a binary response.
+
+##### Parameters
+
+- `data`: The binary data to include in the response
+- `metadata` (optional): Additional metadata to include with the response
+
+##### Return Value
+
+Returns an `AgentResponseType` object with the binary data.
+
+##### Example
+
+```typescript
+const binaryData = new Uint8Array([1, 2, 3, 4]).buffer;
+return response.binary(binaryData, { filename: 'data.bin' });
+```
+
+### Media Type Responses
+
+The SDK provides specialized methods for various media types:
+
+- `pdf(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
+- `png(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
+- `jpeg(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
+- `gif(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
+- `webp(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
+- `mp3(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
+- `mp4(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
+- `m4a(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
+- `m4p(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
+- `webm(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
+- `wav(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
+- `ogg(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
+- `data(data: Json | ArrayBuffer | string, contentType: string, metadata?: Record<string, Json>): AgentResponseType`
+- `markdown(content: string, metadata?: Record<string, Json>): AgentResponseType`
+
+Each method works similarly to the `binary()` method but sets the appropriate content type. The `data` method allows setting specific data with an exact content type, while the `markdown` method provides a convenient way to return markdown content.
+
+#### Example
+
+```typescript
+// Return a PNG image
+return response.png(imageData, { filename: 'chart.png' });
+
+// Return an MP3 audio file
+return response.mp3(audioData, { duration: 120 });
+```
+
+### HTML Responses
+
+#### `html(data: string, metadata?: Record<string, Json>): AgentResponseType`
+
+Creates an HTML response.
+
+##### Parameters
+
+- `data`: The HTML content to include in the response
+- `metadata` (optional): Additional metadata to include with the response
+
+##### Return Value
+
+Returns an `AgentResponseType` object with the HTML content.
+
+##### Example
+
+```typescript
+return response.html('<h1>Hello, world!</h1><p>This is an HTML response.</p>');
+```
+
+### Empty Responses
+
+#### `empty(metadata?: Record<string, Json>): AgentResponseType`
+
+Creates an empty response.
+
+##### Parameters
+
+- `metadata` (optional): Additional metadata to include with the response
+
+##### Return Value
+
+Returns an `AgentResponseType` object with no payload.
+
+##### Example
+
+```typescript
+return response.empty({ status: 204 });
+```
+
+## Request Handling
+
+The Agentuity SDK provides various methods for accessing request data through the `request` object.
+
+### Accessing Request Data
+
+#### `get trigger(): string`
+
+Gets the trigger type of the request.
+
+##### Return Value
+
+Returns a string representing the trigger type (webhook, cron, manual, agent, etc.).
+
+##### Example
+
+```typescript
+const triggerType = request.trigger;
+console.log(`Request triggered by: ${triggerType}`);
+```
+
+#### `get(key: string, defaultValue?: Json): Json`
+
+Gets a value from the request. The available properties depend on the trigger type.
+
+##### Parameters
+
+- `key`: The key to retrieve
+- `defaultValue` (optional): A default value to return if the key does not exist
+
+##### Return Value
+
+Returns the value for the specified key, or the default value if the key does not exist.
+
+##### Trigger-specific Properties
+
+Different trigger types provide different properties:
+
+- **Webhook**: Includes a `headers` property containing the HTTP headers from the webhook request.
+
+##### Example
+
+```typescript
+// For webhook triggers, access headers
+const headers = request.get('headers');
+// Access a specific header
+const githubSignature = headers['x-hub-signature'];
+
+// Get a user ID with a default value
+const userId = request.get('userId', 'anonymous');
+```
+
+#### `metadata(key: string, defaultValue?: Json): Json`
+
+**Note:** This method is deprecated. Use `get(key, defaultValue)` instead.
+
+Gets metadata associated with the request.
+
+##### Parameters
+
+- `key`: The metadata key to retrieve
+- `defaultValue` (optional): A default value to return if the key does not exist
+
+##### Return Value
+
+Returns the metadata value for the specified key, or the default value if the key does not exist.
+
+
+#### `json(): Promise<Json>`
+
+Gets the payload of the request as a JSON object.
+
+##### Return Value
+
+Returns a Promise that resolves to the request payload as a JSON object.
+
+##### Example
+
+```typescript
+const data = await request.data.json();
+console.log(`Request data: ${JSON.stringify(data)}`);
+```
+
+#### `text(): Promise<string>`
+
+Gets the payload of the request as a string.
+
+##### Return Value
+
+Returns a Promise that resolves to the request payload as a string.
+
+##### Example
+
+```typescript
+const text = await request.data.text();
+console.log(`Request text: ${text}`);
+```
+
+#### `binary(): Promise<ArrayBuffer>`
+
+Gets the payload of the request as an ArrayBuffer.
+
+##### Return Value
+
+Returns a Promise that resolves to the request payload as an ArrayBuffer.
+
+##### Example
+
+```typescript
+const binaryData = await request.data.binary();
+console.log(`Binary data size: ${binaryData.byteLength} bytes`);
+```
+
+### Media-Specific Methods
+
+The SDK provides specialized methods for various media types, all of which now return Promises:
+
+- `pdf(): Promise<ArrayBuffer>`
+- `png(): Promise<ArrayBuffer>`
+- `jpeg(): Promise<ArrayBuffer>`
+- `gif(): Promise<ArrayBuffer>`
+- `webp(): Promise<ArrayBuffer>`
+- `mp3(): Promise<ArrayBuffer>`
+- `mp4(): Promise<ArrayBuffer>`
+- `m4a(): Promise<ArrayBuffer>`
+- `m4p(): Promise<ArrayBuffer>`
+- `webm(): Promise<ArrayBuffer>`
+- `wav(): Promise<ArrayBuffer>`
+- `ogg(): Promise<ArrayBuffer>`
+
+Each method returns a Promise that resolves to the request payload as an ArrayBuffer with the appropriate content type validation.
+
+#### Example
+
+```typescript
+// Get an image from the request
+const image = await request.png();
+// Process the image...
+
+// Get audio from the request
+const audio = await request.mp3();
+// Process the audio...
+```
+
+## Logging
+
+The Agentuity SDK provides logging functionality through the `context.logger` object.
+
+### Logger Interface
+
+The `Logger` interface defines the following methods:
+
+```typescript
+interface Logger {
+  debug(message: string, ...args: unknown[]): void;
+  info(message: string, ...args: unknown[]): void;
+  warn(message: string, ...args: unknown[]): void;
+  error(message: string, ...args: unknown[]): void;
+  child(opts: Record<string, Json>): Logger;
+}
+```
+
+### Logging Methods
+
+#### `debug(message: string, ...args: unknown[]): void`
+
+Logs a debug message.
+
+##### Parameters
+
+- `message`: The message to log
+- `args`: Additional arguments to include in the log
+
+##### Example
+
+```typescript
+context.logger.debug('Processing request', { requestId: '123' });
+```
+
+#### `info(message: string, ...args: unknown[]): void`
+
+Logs an informational message.
+
+##### Parameters
+
+- `message`: The message to log
+- `args`: Additional arguments to include in the log
+
+##### Example
+
+```typescript
+context.logger.info('Request processed successfully', { requestId: '123' });
+```
+
+#### `warn(message: string, ...args: unknown[]): void`
+
+Logs a warning message.
+
+##### Parameters
+
+- `message`: The message to log
+- `args`: Additional arguments to include in the log
+
+##### Example
+
+```typescript
+context.logger.warn('Resource not found', { resourceId: '456' });
+```
+
+#### `error(message: string, ...args: unknown[]): void`
+
+Logs an error message.
+
+##### Parameters
+
+- `message`: The message to log
+- `args`: Additional arguments to include in the log
+
+##### Example
+
+```typescript
+context.logger.error('Failed to process request', error);
+```
+
+### Creating Child Loggers
+
+#### `child(opts: Record<string, unknown>): Logger`
+
+Creates a child logger with additional context.
+
+##### Parameters
+
+- `opts`: Additional context to include in all logs from the child logger
+
+##### Return Value
+
+Returns a new `Logger` instance with the additional context.
+
+##### Example
+
+```typescript
+const requestLogger = context.logger.child({ requestId: '123', userId: '456' });
+requestLogger.info('Processing request'); // Includes requestId and userId
+```
+
+## Welcome Function
+
+The Agentuity SDK allows you to customize the initial appearance of DevMode when it starts interacting with your agents by exporting a `welcome()` function. This function returns an `AgentWelcomeResult` object that includes a welcome message and optional example prompts.
+
+### AgentWelcomeResult Interface
+
+```typescript
+export interface AgentWelcomePrompt {
+  /**
+   * The data to display to the user
+   */
+  data: Buffer | Uint8Array | ArrayBuffer | string | Json | Blob | ReadableStream | Data;
+  /**
+   * The content type of the data
+   */
+  contentType: string;
+}
+
+export interface AgentWelcomeResult {
+  /**
+   * The welcome prompt to display to the user
+   */
+  welcome: string;
+  /**
+   * The example prompts to display to the user
+   */
+  prompts?: AgentWelcomePrompt[];
+}
+```
+
+### welcome()
+
+Defines a welcome message and optional example prompts for DevMode.
+
+#### Return Value
+
+Returns an `AgentWelcomeResult` object with a welcome message and optional prompts.
+
+#### Example
+
+```typescript
+export const welcome = (): AgentWelcomeResult => {
+  return {
+    welcome: "Welcome to my Agent! How can I help you today?",
+    prompts: [
+      {
+        data: "What can you do?",
+        contentType: "text/plain",
+      }
+    ],
+  };
+};
+```
+
+
+
+## Session
+
+The Agentuity SDK provides a `Session` interface that represents the current agent execution context.
+
+```typescript
+interface Session {
+  request: AgentRequestType;
+  context: AgentContext;
+}
+```
+
+## Telemetry
+
+The Agentuity SDK integrates with OpenTelemetry for tracing and metrics.
+
+### Tracing
+
+The SDK provides access to OpenTelemetry tracing through the `context.tracer` object.
+
+#### Example
+
+```typescript
+// Create a span
+context.tracer.startActiveSpan('process-data', async (span) => {
+  try {
+    // Add attributes to the span
+    span.setAttribute('userId', '123');
+    
+    // Perform some work
+    const result = await processData();
+    
+    // Add events to the span
+    span.addEvent('data-processed', { itemCount: result.length });
+    
+    // End the span
+    span.end();
+    
+    return result;
+  } catch (error) {
+    // Record the error
+    span.recordException(error);
+    span.setStatus({ code: SpanStatusCode.ERROR });
+    throw error;
+  }
+});
+```
+
+## Breaking Changes
+
+### Data API
+
+In version X.X.X, the Data API was refactored to use async methods instead of static properties to better support streaming capabilities:
+
+#### Before:
+```typescript
+// Accessing data properties directly
+const jsonData = request.data.json;
+const textData = request.data.text;
+const base64Data = request.data.base64;
+```
+
+#### After:
+```typescript
+// Using async methods to access data
+const jsonData = await request.data.json();
+const textData = await request.data.text();
+const base64Data = await request.data.base64();
+```
+
+This change affects all methods on the `Data` interface:
+- `data.base64` → `data.base64()`
+- `data.text` → `data.text()`
+- `data.json` → `data.json()`
+- `data.object<T>()` → `data.object<T>()`
+- `data.binary` → `data.binary()`
+- `data.buffer` → `data.buffer()`
+- `data.stream` → `data.stream()`
+
+
+## Deprecated Features
+
+### `/run/:id` Route
+
+The `/run/:id` route is now deprecated as it provides the same functionality as `/:id`. Applications should update their code to use the `/:id` route instead.
+
