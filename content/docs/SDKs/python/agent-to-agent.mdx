@@ -14,12 +14,10 @@ You can easily communicate between agents running in the same process:
 ```python
 async def run(request, response, context):
     # Call another agent by ID
-    result = await response.handoff({"id": "other_agent_id"})
-    return result
+    return await response.handoff({"id": "other_agent_id"})
     
     # Or call by name
-    # result = await response.handoff({"name": "OtherAgentName"})
-    # return result
+    # return response.handoff({"name": "OtherAgentName"})
 ```
 
 ## Remote Agent Communication
