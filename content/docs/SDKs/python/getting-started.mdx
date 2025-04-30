@@ -1,0 +1,73 @@
+---
+title: Getting Started with Python SDK
+description: Learn how to get started with the Agentuity Python SDK
+---
+
+# Getting Started with Python SDK
+
+This guide will help you quickly set up and create your first agent using the Agentuity Python SDK.
+
+## Prerequisites
+
+- [Python](https://www.python.org/) (3.10 or 3.11)
+- [uv](https://docs.astral.sh/uv/) (latest version recommended)
+
+## Installation
+
+First, install the Agentuity CLI:
+
+```bash
+curl -sSL https://agentuity.sh/install.sh | bash
+```
+
+Then create a new project:
+
+```bash
+agentuity new
+```
+
+## Creating Your First Agent
+
+Create a minimal `agentuity.yaml` file in your project root:
+
+```yaml
+project_id: proj_mv0w67c4851eX0oTglYLzP3OgS2BjN54
+name: test
+agents:
+  - id: agent_HaDpiH67c4851eISzbAWfZqwLtnpguW6
+    name: myfirstagent
+```
+
+Next, create your agent file:
+
+```bash
+mkdir -p agents/myfirstagent
+touch agents/myfirstagent/agent.py
+```
+
+Add the following code to your agent file:
+
+```python
+def run(request, response, context):
+    return response.text("Hello, world")
+```
+
+## Running Your Agent
+
+Start the local development server:
+
+```bash
+uv run test.py
+```
+
+Test your agent by sending a request:
+
+```bash
+curl -v http://localhost:3500/agent_HaDpiH67c4851eISzbAWfZqwLtnpguW6 --json '{"hello":"world"}'
+```
+
+## Next Steps
+
+- Learn about the [Async API](/docs/SDKs/python/async-api)
+- Explore [Agent-to-Agent Communication](/docs/SDKs/python/agent-to-agent)
+- Understand [Data Handling](/docs/SDKs/python/data-handling)
