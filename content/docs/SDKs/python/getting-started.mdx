@@ -26,29 +26,22 @@ Then create a new project:
 agentuity new
 ```
 
+This will create a new project with a default `agentuity.yaml` configuration file and agent structure.
+
 ## Creating Your First Agent
 
-Create a minimal `agentuity.yaml` file in your project root:
-
-```yaml
-project_id: proj_mv0w67c4851eX0oTglYLzP3OgS2BjN54
-name: test
-agents:
-  - id: agent_HaDpiH67c4851eISzbAWfZqwLtnpguW6
-    name: myfirstagent
-```
-
-Next, create your agent file:
+Navigate to the agent file created by the CLI:
 
 ```bash
-mkdir -p agents/myfirstagent
-touch agents/myfirstagent/agent.py
+cd agents/myfirstagent
 ```
 
-Add the following code to your agent file:
+Edit the `agent.py` file and add the following code:
 
 ```python
-def run(request, response, context):
+from agentuity.server import AgentRequest, AgentResponse, AgentContext
+
+def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     return response.text("Hello, world")
 ```
 
@@ -57,14 +50,10 @@ def run(request, response, context):
 Start the local development server:
 
 ```bash
-uv run test.py
+agentuity dev
 ```
 
-Test your agent by sending a request:
-
-```bash
-curl -v http://localhost:3500/agent_HaDpiH67c4851eISzbAWfZqwLtnpguW6 --json '{"hello":"world"}'
-```
+When the server starts, you'll see a local URL in the console output. Open this URL in your browser to access the Agentuity development UI, where you can test your agent and view the responses.
 
 ## Next Steps
 
