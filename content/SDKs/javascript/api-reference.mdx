@@ -301,10 +301,6 @@ The `response.handoff()` method allows an agent to handoff the request to anothe
 
 Redirects the current request to another agent.
 
-<Callout type="warn" title="Handoff">
-  Handoff is currently only supported for handoff to other agents in the same project. However, we are working on remote agent handoff and should have that working soon.
-</Callout>
-
 ##### Parameters
 
 - `agent`: Parameters to identify the target agent
@@ -316,10 +312,26 @@ Redirects the current request to another agent.
 
 Returns an `AgentRedirectResponse` object.
 
-##### Example
+##### Examples
 
 ```typescript
-// Redirect to another agent
+// By ID
+return response.handoff({
+  id: 'agent_9e478ebc1b6b58f921725e2f6f0025ab',
+});
+
+// By Name
+return response.handoff({
+  name: 'my agent',
+});
+
+// By Name Scoped to a Project
+return response.handoff({
+  name: 'my agent',
+  projectId: 'proj_fc9a68c544c486cebf982c9843b9032b',
+});
+
+// With payload and metadata
 return response.handoff(
   { name: 'data-processing-agent' },
   { data: 'process this' },
