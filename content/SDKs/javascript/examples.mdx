@@ -544,3 +544,45 @@ To use this example, you'll need to install the following dependencies:
 ```bash
 npm install ai @ai-sdk/openai
 ```
+
+## Agent-to-Agent Streaming Example
+
+This example demonstrates how to call another agent and stream its response back to the client. This is useful for creating agent workflows where one agent processes a request and streams the response through another agent.
+
+```typescript
+import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function Agent(
+	req: AgentRequest,
+	resp: AgentResponse,
+	ctx: AgentContext,
+) {
+	// Setup to talk to another agent
+	const agent = await ctx.getAgent({
+		name: 'StreamAgent1',
+	});
+
+	// Invoke the agent
+	const agentResponse = await agent.run({
+		data: 'What engine did a P-51D Mustang use?',
+	});
+
+	// Get the stream from the agent
+	const stream = await agentResponse.data.stream();
+
+	// Return the stream to the client
+	return resp.stream(stream);
+}
+```
+
+### How It Works
+
+1. We use `ctx.getAgent()` to get a reference to another agent named 'StreamAgent1'.
+2. We invoke the agent with `agent.run()`, passing the data we want to process.
+3. We retrieve the stream from the agent's response using `agentResponse.data.stream()`.
+4. Finally, we return the stream to the client using `resp.stream()`, which passes the streaming response through our agent.
+
+This pattern allows you to:
+- Chain multiple agents together in a workflow
+- Maintain a streaming experience end-to-end
+- Process or transform streaming data between agents
