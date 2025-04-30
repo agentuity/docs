@@ -577,7 +577,7 @@ export default async function Agent(
 
 ### How It Works
 
-1. We use `ctx.getAgent()` to get a reference to another agent named 'StreamAgent1'.
+1. We use `ctx.getAgent()` to get a reference to another agent named 'HistoryExpert'.
 2. We invoke the agent with `agent.run()`, passing the data we want to process.
 3. We retrieve the stream from the agent's response using `agentResponse.data.stream()`.
 4. Finally, we return the stream to the client using `resp.stream()`, which passes the streaming response through our agent.
@@ -586,3 +586,10 @@ This pattern allows you to:
 - Chain multiple agents together in a workflow
 - Maintain a streaming experience end-to-end
 - Process or transform streaming data between agents
+
+### Learn More About Streaming
+
+For more information about agent streaming, check out these resources:
+
+- [Agents just want to have streams](https://agentuity.com/blog/agent-streaming) - Blog post explaining the importance and implementation of streaming in agents
+- [Streams for agents!](https://youtu.be/HN_ElBfsWtE) - YouTube video demonstration of agent streaming capabilities
