@@ -1,0 +1,89 @@
+---
+title: Agent-to-Agent Communication
+description: Enable communication between agents in the Agentuity Python SDK
+---
+
+# Agent-to-Agent Communication
+
+The Agentuity Python SDK enables seamless communication between agents, whether they are running locally or in different environments.
+
+## Local Agent Communication
+
+You can easily communicate between agents running in the same process:
+
+```python
+async def run(request, response, context):
+    # Call another agent by ID
+    return await response.handoff({"id": "other_agent_id"})
+    
+    # Or call by name
+    # return response.handoff({"name": "OtherAgentName"})
+```
+
+## Remote Agent Communication
+
+The SDK now supports communication with agents running in different environments:
+
+```python
+async def run(request, response, context):
+    # Resolve an agent (local or remote)
+    agent = context.get_agent({"id": "remote_agent_id"})
+    
+    # Create data for the remote agent
+    from agentuity.server.data import Data, StringStreamReader
+    data = Data("text/plain", StringStreamReader("Hello from another agent"))
+    
+    # Call the remote agent
+    result = await agent.run(data, metadata={"key": "value"})
+    
+    # Process the response
+    text = await result.data.text()
+    return response.text(f"Got response: {text}")
+```
+
+## Agent Resolution
+
+The `AgentContext` provides methods for resolving agents, whether they are local or remote:
+
+```python
+async def run(request, response, context):
+    # Resolve by ID
+    agent = context.get_agent({"id": "agent_id"})
+    
+    # Resolve by name
+    agent = context.get_agent({"name": "AgentName"})
+    
+    # Resolve by name in a specific project
+    agent = context.get_agent({"name": "AgentName", "projectId": "proj_123"})
+    
+    # Call the resolved agent
+    result = await agent.run(request.data)
+    return result
+```
+
+## Agent Context
+
+The `AgentContext` class provides methods for agent resolution and management:
+
+```python
+async def run(request, response, context):
+    # Get agent information
+    current_agent = context.agent
+    all_agents = context.agents
+    
+    # Get the current scope (local or remote)
+    scope = context.scope
+    
+    # Get the current run ID
+    run_id = context.runId
+    
+    # Use key-value store
+    await context.kv.set("key", "value")
+    value = await context.kv.get("key")
+    
+    # Use vector store
+    await context.vector.add("collection", "id", [0.1, 0.2, 0.3], {"metadata": "value"})
+    results = await context.vector.search("collection", [0.1, 0.2, 0.3], 5)
+    
+    return response.text("Agent context example")
+```

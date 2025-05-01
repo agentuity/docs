@@ -1,0 +1,75 @@
+---
+title: Python SDK
+description: Agentuity Python SDK Documentation
+---
+
+# Agentuity Python SDK
+
+The Agentuity Python SDK is a powerful toolkit for building, deploying, and managing AI agents in Python environments. This SDK provides developers with a comprehensive set of tools to create intelligent agents that can process various types of content, communicate with each other, and integrate with external systems.
+
+## Prerequisites
+
+- [Python](https://www.python.org/) (3.10 or 3.11)
+- [uv](https://docs.astral.sh/uv/) (latest version recommended)
+
+## Installation
+
+First, install the Agentuity CLI:
+
+```bash
+curl -sSL https://agentuity.sh/install.sh | bash
+```
+
+Then create a new project:
+
+```bash
+agentuity new
+```
+
+This will create a new project with a default `agentuity.yaml` configuration file and agent structure.
+
+## Creating Your First Agent
+
+Navigate to the agent file created by the CLI:
+
+```bash
+cd agents/myfirstagent
+```
+
+Edit the `agent.py` file and add the following code:
+
+```python
+from agentuity.server import AgentRequest, AgentResponse, AgentContext
+
+def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    return response.text("Hello, world")
+```
+
+## Running Your Agent
+
+Start the local development server:
+
+```bash
+agentuity dev
+```
+
+When the server starts, you'll see a local URL in the console output. Open this URL in your browser to access the Agentuity development UI, where you can test your agent and view the responses.
+
+## Key Features
+
+<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', padding: '1rem' }}>
+  <Card href="/docs/SDKs/python/async-api">
+    <h3>Async API</h3>
+    <p>Work with fully asynchronous agents</p>
+  </Card>
+  
+  <Card href="/docs/SDKs/python/agent-to-agent">
+    <h3>Agent-to-Agent Communication</h3>
+    <p>Enable communication between local and remote agents</p>
+  </Card>
+  
+  <Card href="/docs/SDKs/python/data-handling">
+    <h3>Data Handling</h3>
+    <p>Work with various data types and streaming capabilities</p>
+  </Card>
+</div>

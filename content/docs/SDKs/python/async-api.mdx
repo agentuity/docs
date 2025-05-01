@@ -1,0 +1,86 @@
+---
+title: Async API
+description: Working with Asynchronous Agents in the Agentuity Python SDK
+---
+
+# Async API
+
+The Agentuity Python SDK now supports fully asynchronous operations, enabling more efficient handling of concurrent requests and streaming responses.
+
+## Agent Request
+
+The `AgentRequest` class now uses async patterns to handle incoming data:
+
+```python
+from agentuity.server import AgentRequest
+
+async def run(request: AgentRequest, response, context):
+    # Access request data asynchronously
+    data = await request.data.text()
+    
+    # Access request metadata
+    metadata = request.metadata
+    
+    # Get the trigger type
+    trigger = request.trigger
+    
+    # Return a response
+    return response.text(f"Received: {data}")
+```
+
+## Agent Response
+
+The `AgentResponse` class supports async streaming and iteration:
+
+```python
+from agentuity.server import AgentResponse
+
+async def run(request, response: AgentResponse, context):
+    # Stream response data
+    async def data_generator():
+        for i in range(5):
+            yield f"Data chunk {i}\n"
+    
+    # Return a streaming response
+    return response.stream(data_generator(), contentType="text/plain")
+```
+
+### Async Iteration
+
+Responses can be iterated over asynchronously:
+
+```python
+async def process_response(response):
+    async for chunk in response:
+        print(chunk)
+```
+
+## Data Streaming
+
+The SDK provides several specialized stream readers for different data types:
+
+```python
+from agentuity.server.data import (
+    StringStreamReader,
+    BytesStreamReader,
+    EmptyDataReader
+)
+
+# Create a stream from a string
+string_stream = StringStreamReader("Hello, world!")
+
+# Create a stream from bytes
+bytes_stream = BytesStreamReader(b"Binary data")
+
+# Create an empty stream
+empty_stream = EmptyDataReader()
+```
+
+## Performance Benefits
+
+The async implementation provides several advantages:
+
+- Efficient handling of concurrent requests
+- Streaming of large data payloads without blocking
+- Reduced memory usage for processing large files
+- Better integration with modern async Python applications
