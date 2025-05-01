@@ -27,7 +27,7 @@ The SDK now supports communication with agents running in different environments
 ```python
 async def run(request, response, context):
     # Resolve an agent (local or remote)
-    agent = context.get_agent("remote_agent_id")
+    agent = context.get_agent({"id": "remote_agent_id"})
     
     # Create data for the remote agent
     from agentuity.server.data import Data, StringStreamReader
@@ -43,20 +43,18 @@ async def run(request, response, context):
 
 ## Agent Resolution
 
-The `resolve_agent` function automatically determines whether to create a local or remote agent instance:
+The `AgentContext` provides methods for resolving agents, whether they are local or remote:
 
 ```python
-from agentuity.server.agent import resolve_agent
-
 async def run(request, response, context):
     # Resolve by ID
-    agent = resolve_agent(context, "agent_id")
+    agent = context.get_agent({"id": "agent_id"})
     
     # Resolve by name
-    agent = resolve_agent(context, {"name": "AgentName"})
+    agent = context.get_agent({"name": "AgentName"})
     
     # Resolve by name in a specific project
-    agent = resolve_agent(context, {"name": "AgentName", "projectId": "proj_123"})
+    agent = context.get_agent({"name": "AgentName", "projectId": "proj_123"})
     
     # Call the resolved agent
     result = await agent.run(request.data)
