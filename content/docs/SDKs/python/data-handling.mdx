@@ -54,9 +54,6 @@ async def run(request, response, context):
     # Text response
     return response.text("Hello, world!")
     
-    # HTML response
-    return response.html("<h1>Hello, world!</h1>")
-    
     # JSON response
     return response.json({"message": "Hello, world!"})
     
@@ -65,9 +62,6 @@ async def run(request, response, context):
     
     # Binary response
     return response.binary(b"\x00\x01\x02\x03", "application/octet-stream")
-    
-    # Empty response with metadata
-    return response.empty({"status": "processed"})
 ```
 
 ## Media Type Helpers
