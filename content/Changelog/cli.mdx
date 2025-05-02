@@ -7,6 +7,34 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 This page documents the release history of the [Agentuity CLI](https://github.com/agentuity/cli).
 
+## v0.0.115
+
+<Callout type="info">
+  Released: May 2, 2025
+</Callout>
+
+**Changes:**
+- **Added**: Added mono repofix ([#267](https://github.com/agentuity/cli/pull/267))
+- **Changed**: Add flags for deployment data overwrite from github action ([#266](https://github.com/agentuity/cli/pull/266))
+- **Fixed**: Allow non-admin users to uninstall CLI without admin privileges ([#264](https://github.com/agentuity/cli/pull/264))
+
+## v0.0.114
+
+<Callout type="info">
+  Released: May 1, 2025
+</Callout>
+
+**Changes:**
+- **Fixed**: Don't call close handler if conn is nil ([#255](https://github.com/agentuity/cli/pull/255))
+- **Fixed**: Fix 'text file busy' error during CLI updates ([#254](https://github.com/agentuity/cli/pull/254))
+- **Fixed**: Windows: improve the output for windows upgrade ([#253](https://github.com/agentuity/cli/pull/253))
+- **Fixed**: Fix PowerShell installation issues in install.ps1 ([#257](https://github.com/agentuity/cli/pull/257))
+- **Fixed**: DevMode: Make sure to terminate child processes ([#259](https://github.com/agentuity/cli/pull/259))
+- **Fixed**: Don't error if deliberate restart ([#260](https://github.com/agentuity/cli/pull/260))
+- **Fixed**: Set ALLUSERS=0 for non-admin installations to ensure proper installation to AppData/Local/Agentuity ([#261](https://github.com/agentuity/cli/pull/261))
+- **Added**: Update install.sh to support /home/ubuntu/.bin and prompt for shell reload ([#258](https://github.com/agentuity/cli/pull/258))
+- **Added**: Add breaking change for new Python SDK ([#256](https://github.com/agentuity/cli/pull/256))
+
 ## v0.0.113
 
 <Callout type="info">
