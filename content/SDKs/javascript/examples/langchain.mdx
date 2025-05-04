@@ -1,0 +1,76 @@
+---
+title: Langchain/LangGraph
+description: Examples of using the Agentuity JavaScript SDK with Langchain (LangGraph)
+---
+
+## Simple LangGraph Agent with structured output
+
+Below is an example of how you can take a LangGraph example, empower it with Agentuity's SDK, 
+and deploy it to Agentuity, all in one go.
+
+<div className="my-6 aspect-w-16 aspect-h-9">
+  <iframe
+    width="100%"
+    height="400"
+    src="https://www.youtube.com/embed/lxoeD9VJJjs"
+    title="LangGraph Agent with structured output"
+    frameBorder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowFullScreen
+  ></iframe>
+</div>
+
+```typescript
+// Example borrowed from https://langchain-ai.github.io/langgraphjs/how-tos/react-return-structured-output/
+
+import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+import { ChatOpenAI } from "@langchain/openai";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
+
+// Tools for the agent
+const weatherTool = tool(
+	async (input): Promise<string> => {
+		if (input.city === "nyc") {
+			return "It might be cloudy in nyc";
+		} else if (input.city === "sf") {
+			return "It's always sunny in sf";
+		} else {
+			throw new Error("Unknown city");
+		}
+	},
+	{
+		name: "get_weather",
+		description: "Use this to get weather information.",
+		schema: z.object({
+			city: z.enum(["nyc", "sf"]).describe("The city to get weather for"),
+		}),
+	}
+);
+
+const langGraphAgent = createReactAgent({
+	llm: new ChatOpenAI({ model: "gpt-4o", temperature: 0 }),
+	tools: [weatherTool],
+	responseFormat: z.object({
+		conditions: z.string().describe("Weather conditions"),
+	}),
+});
+
+export default async function AgentHandler(
+	req: AgentRequest,
+	resp: AgentResponse,
+	ctx: AgentContext,
+) {
+	const response = await langGraphAgent.invoke({
+		messages: [
+			{
+				role: "user",
+				content: (await req.data.text()) ?? "What's the weather in NYC?",
+			},
+		],
+	})
+
+	return resp.json(response.structuredResponse);
+}	
+```
