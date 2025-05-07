@@ -5,11 +5,81 @@ description: Setting up and managing webhooks with Agentuity
 
 ## Overview
 
-[Content coming soon - Overview of webhook functionality]
+Webhooks provide a way to send data to your Agentuity agents or receive data from them. This guide covers how to set up, configure, and use webhooks with your Agentuity agents.
 
-## Setting Up Webhooks
+## Setting Up Inbound Webhooks
 
-[Content coming soon - Step-by-step webhook setup guide]
+Inbound webhooks allow external systems to send data to your Agentuity agents.
+
+### Accessing Webhook Configuration
+
+1. Navigate to your agent's dashboard in the Agentuity Cloud Console
+2. Click on the "Connections" tab or the webhook icon in the I/O visualization
+3. In the "Inbound Webhook" modal, you'll see the webhook URL and configuration options
+
+### Webhook URL
+
+The webhook URL is the endpoint that external systems will use to send data to your agent. It typically looks like:
+
+```
+https://agent-id.agentuity.cloud/webhook
+```
+
+### Authorization Types
+
+You can configure the authorization type for your webhook to control access:
+
+1. **Public**: The webhook is publicly accessible without authentication
+   - This setting makes your webhook accessible to anyone who knows the URL
+   - Use this for non-sensitive integrations or testing
+
+2. **Bearer Token**: Requires a bearer token for authentication
+   - Clients must include an `Authorization: Bearer <token>` header
+   - Provides improved security over public webhooks
+
+3. **API Key**: Requires an API key for authentication
+   - Clients must include an API key in the request headers
+   - Recommended for production deployments
+
+### Enabling/Disabling Webhooks
+
+You can enable or disable webhook access to your agent using the toggle switch in the webhook configuration modal:
+
+1. Toggle the switch to "Enabled" to activate the webhook
+2. Toggle the switch to "Disabled" to deactivate the webhook without losing your configuration
+
+### Making Requests to Webhooks
+
+To call an agent using its webhook, send an HTTP POST request to the webhook URL.
+
+#### Example: Public Webhook
+
+```bash
+curl -X POST \
+  https://agent-id.agentuity.cloud/webhook \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Hello, agent!"}'
+```
+
+#### Example: Bearer Token Authentication
+
+```bash
+curl -X POST \
+  https://agent-id.agentuity.cloud/webhook \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -d '{"message": "Hello, agent!"}'
+```
+
+#### Example: API Key Authentication
+
+```bash
+curl -X POST \
+  https://agent-id.agentuity.cloud/webhook \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY_HERE" \
+  -d '{"message": "Hello, agent!"}'
+```
 
 ## Webhook Events
 
@@ -17,7 +87,12 @@ description: Setting up and managing webhooks with Agentuity
 
 ## Security
 
-[Content coming soon - Webhook security best practices]
+When setting up webhooks, consider the following security best practices:
+
+- Use authentication (Bearer Token or API Key) for production deployments
+- Regularly rotate authentication credentials
+- Only expose the minimum required data through your webhooks
+- Monitor webhook access logs for unusual activity
 
 ## Testing
 
@@ -25,4 +100,4 @@ description: Setting up and managing webhooks with Agentuity
 
 ## Troubleshooting
 
-[Content coming soon - Common webhook issues and solutions]  
+[Content coming soon - Common webhook issues and solutions]    
