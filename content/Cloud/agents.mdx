@@ -1,0 +1,44 @@
+---
+title: Agent Dashboard
+description: Overview of the agent dashboard in Agentuity Cloud
+---
+
+## Agent Dashboard Overview
+
+The agent dashboard provides a comprehensive view of your deployed agent and its performance. This page helps you monitor your agent's status, usage metrics, and recent activity.
+
+## Dashboard Sections
+
+### Agent Information
+The top section of the dashboard displays essential information about your agent:
+- Agent status (Active/Inactive)
+- Creation date
+- Last updated and deployment dates
+- LLM models being used by the agent
+
+### Cost & Usage Tracking
+This section provides detailed metrics about your agent's usage:
+- Total cost accumulated
+- LLM cost (portion of the total cost spent on language model calls)
+- Input tokens processed
+- Output tokens generated
+
+### Recent Activity
+The activity section shows a table of recent sessions for your agent, including:
+- Session status (Pending, Completed, Error)
+- Duration of each session
+- Cost per session
+- When the session started
+
+### I/O Visualization
+The I/O visualization shows how your agent connects to various inputs and outputs. This visual representation helps you understand the flow of data through your agent.
+
+## Calling Your Agent
+
+To call your deployed agent from external applications:
+
+1. In the I/O visualization, click on the webhook icon or the plus button to add a webhook
+2. View the webhook configuration modal to get your agent's webhook URL
+3. Use this URL to send requests to your agent from your applications
+
+For detailed information about using webhooks with your agent, see the [Webhooks](/Integrations/webhooks) documentation.
