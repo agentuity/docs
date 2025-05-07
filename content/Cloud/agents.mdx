@@ -1,26 +1,16 @@
 ---
-title: Managing Agents
-description: Learn how to create, configure, and manage agents in Agentuity Cloud
+title: Agent Dashboard
+description: Overview of the agent dashboard in Agentuity Cloud
 ---
 
-## Creating Agents
+## Agent Dashboard Overview
 
-[Content coming soon - Agent creation and configuration]
+The agent dashboard provides a comprehensive view of your deployed agent and its performance. This page helps you monitor your agent's status, usage metrics, and recent activity.
 
-## Agent Types
-
-[Content coming soon - Different types of agents and their use cases]
-
-## Agent Configuration
-
-[Content coming soon - Agent settings and parameters]
-
-## Agent Dashboard
-
-The agent dashboard provides a comprehensive overview of your agent, including status, creation date, deployment information, LLM models in use, and cost tracking.
+## Dashboard Sections
 
 ### Agent Information
-The top section of the dashboard displays:
+The top section of the dashboard displays essential information about your agent:
 - Agent status (Active/Inactive)
 - Creation date
 - Last updated and deployment dates
@@ -43,63 +33,12 @@ The activity section shows a table of recent sessions for your agent, including:
 ### I/O Visualization
 The I/O visualization shows how your agent connects to various inputs and outputs. This visual representation helps you understand the flow of data through your agent.
 
-## Calling Deployed Agents
+## Calling Your Agent
 
-Once you've deployed an agent to Agentuity Cloud, you can integrate it with your applications by calling it via webhooks.
+To call your deployed agent from external applications:
 
-### Finding Your Agent's Webhook URL
+1. In the I/O visualization, click on the webhook icon or the plus button to add a webhook
+2. View the webhook configuration modal to get your agent's webhook URL
+3. Use this URL to send requests to your agent from your applications
 
-1. Navigate to your agent's dashboard in the Agentuity Cloud Console
-2. Click on the "Connections" tab or the webhook icon in the I/O visualization
-3. In the "Inbound Webhook" modal, you'll find the webhook URL for your agent
-
-### Authorization Types
-
-When configuring your webhook, you can choose from the following authorization types:
-
-- **Public**: The webhook is publicly accessible without authentication
-- **Bearer Token**: Requires a bearer token for authentication
-- **API Key**: Requires an API key for authentication
-
-### Enabling/Disabling Webhooks
-
-You can enable or disable webhook access to your agent using the toggle switch in the "Inbound Webhook" modal.
-
-### Example: Calling an Agent with cURL
-
-For a publicly accessible webhook:
-
-```bash
-curl -X POST \
-  https://agent-url.agentuity.cloud/webhook \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Hello from cURL!"}'
-```
-
-With bearer token authentication:
-
-```bash
-curl -X POST \
-  https://agent-url.agentuity.cloud/webhook \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
-  -d '{"message": "Hello from cURL!"}'
-```
-
-With API key authentication:
-
-```bash
-curl -X POST \
-  https://agent-url.agentuity.cloud/webhook \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: YOUR_API_KEY_HERE" \
-  -d '{"message": "Hello from cURL!"}'
-```
-
-## Monitoring and Logs
-
-[Content coming soon - Agent monitoring and logging]
-
-## Best Practices
-
-[Content coming soon - Agent management best practices]
+For detailed information about using webhooks with your agent, see the [Webhooks](/Integrations/webhooks) documentation.
