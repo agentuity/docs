@@ -7,12 +7,12 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
 ## Installation
 
-<Tabs items={['macOS', 'Linux', 'Windows (WSL)', 'Windows (Powershell)']}>
+<Tabs items={['macOS', 'Linux', 'Windows (WSL)']}>
   <Tab>
     ### macOS Installation
 
     ```bash
-    curl -sSL https://agentuity.sh/install.sh | bash
+    curl -sSL https://agentuity.sh/install.sh | sh
     ```
 
     ### Upgrading on macOS
@@ -27,7 +27,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
     ### Linux Installation
 
     ```bash
-    curl -sSL https://agentuity.sh/install.sh | bash
+    curl -sSL https://agentuity.sh/install.sh | sh
     ```
 
     ### Upgrading on Linux
@@ -41,26 +41,16 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
   <Tab>
     ### Windows (WSL) Installation
 
+    <Callout type="warning">
+      The install script for Windows only works in the <strong>WSL (Windows Subsystem for Linux)</strong> environment.<br/>
+      <strong>There is currently no support for a native Windows installer.</strong>
+    </Callout>
+
     ```bash
-    curl -sSL https://agentuity.sh/install.sh | bash
+    curl -sSL https://agentuity.sh/install.sh | sh
     ```
 
     ### Upgrading on Windows (WSL)
-
-    To upgrade to the latest version of the Agentuity CLI:
-
-    ```bash
-    agentuity upgrade
-    ```
-  </Tab>
-  <Tab>
-    ### Windows (Powershell) Installation
-
-    ```bash
-    iwr https://agentuity.sh/install.ps1 -useb | iex
-    ```
-
-    ### Upgrading on Windows (Powershell)
 
     To upgrade to the latest version of the Agentuity CLI:
 
