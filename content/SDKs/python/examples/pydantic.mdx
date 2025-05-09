@@ -1,0 +1,198 @@
+---
+title: Pydantic AI Agent
+description: Examples of using the Agentuity Python SDK with Pydantic
+---
+
+## Basic Pydantic AI Agent
+
+Example taken from: https://ai.pydantic.dev/agents/#introduction
+
+
+```python
+import random # Added for random number generation
+from pydantic_ai import Agent, RunContext
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+# A pydantic agent
+roulette_agent = Agent(
+    'openai:gpt-4o',
+    deps_type=int,
+    output_type=bool,
+    system_prompt=(
+        'Use the `roulette_wheel` function to see if the '
+        'customer has won based on the number they provide.'
+    ),
+)
+
+# A tool for the pydantic agent
+@roulette_agent.tool
+async def roulette_wheel(ctx: RunContext[int], square: int) -> str:
+    """check if the square is a winner"""
+    return 'winner' if square == ctx.deps else 'loser'
+
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+		# Spin that wheel!
+    success_number = random.randint(0, 20)  
+
+		# Pull out the user query from the request
+    user_query = await request.data.text()
+    if not user_query:
+        user_query = random.randint(0, 20)
+
+    context.logger.info("User query: %s, Winning number: %s", user_query, success_number)
+
+    try:
+        context.logger.info("Calling PydanticAI roulette agent with query: '%s' and deps: %s", user_query, success_number)
+        
+        pydantic_ai_result = await roulette_agent.run(
+            user_query,
+            deps=success_number
+        )
+        context.logger.info("PydanticAI result output: %s", pydantic_ai_result.output)
+
+        return response.json({
+            "won": pydantic_ai_result.output, 
+            "details": "Bet processed by PydanticAI roulette agent.",
+            "user_query": user_query,
+            "success_number": success_number
+        })
+
+    except Exception as e:
+        context.logger.error("Error running PydanticAI agent: %s", e)
+        return response.json({"error": str(e)}, status_code=500)
+
+```
+
+## More advanced Pydantic AI agent - Bank support agent
+
+Taken from: https://ai.pydantic.dev/examples/bank-support/#example-code
+
+
+```python
+from dataclasses import dataclass
+from pydantic import BaseModel, Field
+from pydantic_ai import Agent, RunContext
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+class DatabaseConn:
+    """This is a fake database for example purposes.
+
+    In reality, you'd be connecting to an external database
+    (e.g. PostgreSQL) to get information about customers.
+    """
+
+    @classmethod
+    async def customer_name(cls, *, id: int) -> str | None:
+        if id == 123:
+            return "John"
+        # Return None or raise an error for other IDs if needed
+        return None
+
+    @classmethod
+    async def customer_balance(cls, *, id: int, include_pending: bool) -> float:
+        if (
+            id == 123
+        ):  # and include_pending: # Example always shows balance if id is 123
+            return 123.45
+        else:
+            # PydanticAI example raises ValueError, which is fine for tools
+            # if the LLM is expected to handle/retry based on it.
+            raise ValueError("Customer not found or query parameters invalid")
+
+
+@dataclass
+class SupportDependencies:
+    customer_id: int
+    db: DatabaseConn
+
+
+class SupportOutput(BaseModel):
+    support_advice: str = Field(description="Advice returned to the customer")
+    block_card: bool = Field(description="Whether to block their card or not")
+    risk: int = Field(description="Risk level of query", ge=0, le=10)
+
+
+# --- PydanticAI Agent Definition (from Example) ---
+
+support_agent = Agent(
+    "openai:gpt-4o",  # Or your preferred LLM
+    deps_type=SupportDependencies,
+    output_type=SupportOutput,
+    system_prompt=(
+        "You are a support agent in our bank, give the "
+        "customer support and judge the risk level of their query. "
+        "Reply using the customer's name."
+    ),
+)
+
+
+@support_agent.system_prompt
+async def add_customer_name(ctx: RunContext[SupportDependencies]) -> str:
+    customer_name = await ctx.deps.db.customer_name(id=ctx.deps.customer_id)
+    if customer_name:
+        return f"The customer's name is {customer_name!r}."
+    return "The customer's name could not be determined."
+
+
+@support_agent.tool
+async def customer_balance(
+    ctx: RunContext[SupportDependencies], include_pending: bool
+) -> str:
+    """Returns the customer's current account balance."""
+    try:
+        balance = await ctx.deps.db.customer_balance(
+            id=ctx.deps.customer_id,
+            include_pending=include_pending,
+        )
+        return f"${balance:.2f}"
+    except ValueError as e:
+        # Let the LLM know the tool failed and why
+        return f"Could not retrieve balance: {e}"
+
+
+# --- Agentuity Agent Entry Point ---
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    context.logger.info("BankSupport agent initiated.")
+
+    user_query = await request.data.text()
+    if not user_query:
+        user_query = "What is my balance?"  # Default query
+        context.logger.info("No user query provided, using default: '%s'", user_query)
+
+    # For this example, we'll use a hardcoded customer ID and instantiate the DB.
+    # In a real scenario, customer_id might come from the request or session.
+    customer_id = 123
+    db_instance = DatabaseConn()
+
+    dependencies = SupportDependencies(customer_id=customer_id, db=db_instance)
+
+    context.logger.info(
+        "Calling PydanticAI support_agent with query: '%s' for customer_id: %s",
+        user_query,
+        customer_id,
+    )
+
+    try:
+        pydantic_ai_result = await support_agent.run(user_query, deps=dependencies)
+
+        output_data = pydantic_ai_result.output
+        context.logger.info("PydanticAI support_agent output: %s", output_data)
+
+        return response.json(output_data.model_dump())
+
+    except Exception as e:
+        context.logger.error(
+            "Error running PydanticAI support_agent: %s", e, exc_info=True
+        )
+        return response.json(
+            {
+                "error": str(e),
+                "details": "An unexpected error occurred in the BankSupport agent.",
+            },
+            status_code=500,
+        )
+
+```
+
+
