@@ -12,7 +12,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
     ### macOS Installation
 
     ```bash
-    curl -sSL https://agentuity.sh/install.sh | sh
+    curl -fsS https://agentuity.sh | sh
     ```
 
     ### Upgrading on macOS
@@ -27,7 +27,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
     ### Linux Installation
 
     ```bash
-    curl -sSL https://agentuity.sh/install.sh | sh
+    curl -fsS https://agentuity.sh | sh
     ```
 
     ### Upgrading on Linux
@@ -47,7 +47,7 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
     </Callout>
 
     ```bash
-    curl -sSL https://agentuity.sh/install.sh | sh
+    curl -fsS https://agentuity.sh | sh
     ```
 
     ### Upgrading on Windows (WSL)
@@ -81,13 +81,12 @@ The Agentuity CLI provides shell completions for bash, zsh, fish, and PowerShell
 
 When you install the CLI using the installer scripts, completions are automatically set up for:
 - **Bash and Zsh** on macOS and Linux (when you have write permissions to the completion directories)
-- **PowerShell** on Windows
 
 ### Manual Setup
 
 You can manually set up completions for any supported shell using the `agentuity completion` command.
 
-<Tabs items={['Bash', 'Zsh', 'Fish', 'PowerShell']}>
+<Tabs items={['Bash', 'Zsh', 'Fish']}>
   <Tab>
     To load completions in your current bash session:
 
@@ -145,32 +144,6 @@ You can manually set up completions for any supported shell using the `agentuity
 
     ```bash
     agentuity completion fish > ~/.config/fish/completions/agentuity.fish
-    ```
-  </Tab>
-  <Tab>
-    To load completions in your current PowerShell session:
-
-    ```powershell
-    agentuity completion powershell | Out-String | Invoke-Expression
-    ```
-
-    To load completions for every new session, add the output of the above command to your PowerShell profile:
-
-    ```powershell
-    # Create completion directory if it doesn't exist
-    $profileDir = Split-Path -Parent $PROFILE
-    $completionDir = Join-Path -Path $profileDir -ChildPath "Completion"
-    if (-not (Test-Path -Path $completionDir)) {
-        New-Item -Path $completionDir -ItemType Directory -Force
-    }
-
-    # Generate completion script
-    agentuity completion powershell > "$completionDir/agentuity.ps1"
-
-    # Add to profile if not already there
-    if (-not (Select-String -Path $PROFILE -Pattern "agentuity.ps1" -SimpleMatch -Quiet)) {
-        Add-Content -Path $PROFILE -Value "`n# Agentuity CLI completion`n. '$completionDir/agentuity.ps1'"
-    }
     ```
   </Tab>
 </Tabs>
