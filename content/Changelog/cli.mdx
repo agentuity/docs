@@ -28,13 +28,6 @@ This version includes breaking changes that require updates to your JavaScript a
 - **JavaScript SDK**: Update to v0.0.115 or later for compatibility with the new agent communications protocol. See the [JavaScript SDK Changelog](https://agentuity.dev/Changelog/sdk-js#v00115) for upgrade instructions.
 - **Python SDK**: Update to v0.0.84 or later to support the new project key feature. See the [Python SDK Changelog](https://agentuity.dev/Changelog/sdk-py#v0084) for upgrade instructions.
 
-For the JavaScript SDK, the environment variable `AGENTUITY_API_KEY` has been renamed to `AGENTUITY_SDK_KEY` for better clarity and consistency. You will need to update your environment variables and code references accordingly:
-
-```diff
-- process.env.AGENTUITY_API_KEY
-+ process.env.AGENTUITY_SDK_KEY
-```
-
 If you're using an Agentic code editor (such as Cursor, Windsurf, etc.), you can use this prompt to update your code with these changes:
 
 ```
