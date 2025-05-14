@@ -74,3 +74,119 @@ Security is foundational to Agentuity's design:
 - **Container Isolation** - Each agent operates in its own isolated environment
 - **Encrypted Communications** - All agent-to-agent communication is encrypted
 - **Secure Deployment** - Protected deployment pipeline from development to production
+
+## Project Conventions
+
+Agentuity projects follow specific conventions that enable seamless development, testing, and deployment. Understanding these conventions helps you work with existing projects or create new ones from scratch.
+
+### Project Structure
+
+Every Agentuity project requires the following core components:
+
+1. **agentuity.yaml** - The central configuration file that defines:
+   - Project metadata (name, ID, description)
+   - Development settings (port, watch patterns)
+   - Deployment configuration (resources, scaling)
+   - Bundler settings (language, runtime)
+   - Agent definitions and routing
+
+2. **Environment Variables** - Stored in a `.env` file:
+   - `AGENTUITY_SDK_KEY` - Authenticates SDK requests to the platform
+   - `AGENTUITY_PROJECT_KEY` - Identifies your project to the platform
+   - Additional provider-specific keys (OpenAI, Anthropic, etc.)
+
+3. **Agent Directory** - Specified in `bundler.agents.dir` (typically `src/agents`):
+   - Each agent has its own subdirectory
+   - Language-specific entry points (index.ts/js for JavaScript, agent.py for Python)
+   - Agent-specific configuration and dependencies
+
+### Language-Specific Conventions
+
+#### JavaScript/TypeScript Projects
+
+```
+my-project/
+├── agentuity.yaml        # Project configuration
+├── .env                  # Environment variables
+├── package.json          # Dependencies and scripts
+└── src/
+    └── agents/           # Agent directory (configurable)
+        └── my-agent/     # Individual agent
+            └── index.ts  # Agent entry point
+```
+
+- Each agent must export a handler function that processes requests
+- TypeScript is recommended but JavaScript is fully supported
+- Supported runtimes: Node.js and Bun
+
+#### Python Projects
+
+```
+my-project/
+├── agentuity.yaml        # Project configuration
+├── .env                  # Environment variables
+├── pyproject.toml        # Dependencies and configuration
+└── src/
+    └── agents/           # Agent directory (configurable)
+        └── my-agent/     # Individual agent
+            └── agent.py  # Agent entry point
+```
+
+- Each agent must define a `run()` function that processes requests
+- Supported runtimes: Python and uv (for dependency management)
+
+### Configuration File (agentuity.yaml)
+
+The `agentuity.yaml` file is the heart of your project, defining how it behaves in development and production:
+
+```yaml
+version: ">=0.0.0"         # Minimum CLI version required
+project_id: "proj_..."     # Unique project identifier
+name: "My Project"         # Human-readable project name
+description: "..."         # Optional project description
+
+# Development configuration
+development:
+  port: 3000               # Local development server port
+  watch:
+    enabled: true          # Auto-reload on file changes
+    files: ["src/**/*.ts"] # Files to watch
+
+# Deployment configuration
+deployment:
+  resources:
+    memory: "1Gi"          # Memory allocation
+    cpu: "1000m"           # CPU allocation
+
+# Bundler configuration
+bundler:
+  language: "javascript"   # Programming language (javascript or python)
+  runtime: "nodejs"        # Runtime environment (nodejs, bunjs, python, uv)
+  agents:
+    dir: "src/agents"      # Directory where agents are located
+
+# Agents configuration
+agents:
+  - id: "agent_..."        # Unique agent identifier
+    name: "My Agent"       # Human-readable agent name
+    description: "..."     # Optional agent description
+```
+
+### Why These Conventions Matter
+
+These conventions enable several key capabilities:
+
+1. **Consistent Development Experience** - Standardized structure makes it easier to work across projects
+2. **Automated Deployment** - The CLI can package and deploy your project without additional configuration
+3. **Framework Flexibility** - Use any agent framework while maintaining compatibility with the platform
+4. **Team Collaboration** - Common patterns make it easier for teams to work together
+
+### Importing Existing Projects
+
+If you have an existing agent project, you can adapt it to Agentuity by:
+
+1. Creating an `agentuity.yaml` file with your project configuration
+2. Organizing your agents according to the conventions above
+3. Running `agentuity project import` to register with the platform
+
+The CLI will validate your project structure, generate necessary IDs, and set up API keys automatically.
