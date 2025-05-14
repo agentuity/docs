@@ -17,6 +17,19 @@ This page documents the release history of the [Agentuity Python SDK](https://gi
 
 - Added AGENTUITY_SDK_KEY ([#42](https://github.com/agentuity/sdk-py/pull/42))
 
+### ⚠️ Breaking Changes
+
+The environment variable for API authentication has changed from `AGENTUITY_API_KEY` to `AGENTUITY_SDK_KEY`. You will need to update any references to this environment variable in your code and deployment configurations.
+
+For example, the following changes are required:
+
+```diff
+- os.environ["AGENTUITY_API_KEY"] = "your-api-key"
++ os.environ["AGENTUITY_SDK_KEY"] = "your-api-key"
+```
+
+When using the Agentuity CLI, it will detect this change and ask if you would like assistance migrating your code automatically.
+
 ## v0.0.83
 
 <Callout type="info">
