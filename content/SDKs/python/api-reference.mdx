@@ -685,8 +685,9 @@ The SDK provides specialized methods for various media types:
 - `mp3() -> bytes`
 - `wav() -> bytes`
 - `ogg() -> bytes`
+- `email() -> Email`
 
-Each method returns the request payload as bytes with the appropriate content type validation.
+Each method returns the request payload as bytes with the appropriate content type validation, except for `email()` which returns an `Email` object.
 
 #### Example
 
@@ -698,6 +699,133 @@ image = request.png()
 # Get audio from the request
 audio = request.mp3()
 # Process the audio...
+```
+
+#### `email() -> Email`
+
+Gets the payload of the request as an Email object. This method validates that the content type is `message/rfc822` before parsing.
+
+##### Return Value
+
+Returns an `Email` object with parsed email data and accessor methods.
+
+##### Example
+
+```python
+# Get email from the request (content type must be message/rfc822)
+email = await request.data.email()
+
+# Access email properties
+print(f"Subject: {email.subject}")
+print(f"From: {email.from_name} <{email.from_email}>")
+print(f"To: {email.to}")
+print(f"Date: {email.date}")
+print(f"Message ID: {email.messageId}")
+
+# Access email content
+print(f"Text content: {email.text}")
+print(f"HTML content: {email.html}")
+
+# Access attachments
+for attachment in email.attachments:
+    print(f"Attachment: {attachment}")
+
+# Convert to dictionary
+email_dict = email.to_dict()
+```
+
+## Email Class
+
+The `Email` class provides comprehensive email parsing capabilities and is returned by the `email()` method on request data.
+
+### Email Properties
+
+All email properties are accessible as attributes on the Email object:
+
+#### `subject -> str`
+
+Returns the subject line of the email.
+
+#### `from_email -> str | None`
+
+Returns the sender's email address. Handles both simple email strings and tuple formats like `('Name', 'email@domain.com')`.
+
+#### `from_name -> str | None`
+
+Returns the sender's display name if available.
+
+#### `to -> str | None`
+
+Returns the recipient's email address. Handles both simple email strings and tuple formats.
+
+#### `date -> datetime | None`
+
+Returns the email date as a datetime object.
+
+#### `messageId -> str`
+
+Returns the unique message ID of the email.
+
+#### `headers -> dict`
+
+Returns all email headers as a dictionary.
+
+#### `text -> str`
+
+Returns the plain text content of the email.
+
+#### `html -> str`
+
+Returns the HTML content of the email.
+
+#### `attachments -> list`
+
+Returns a list of email attachments.
+
+### Email Methods
+
+#### `to_dict() -> dict`
+
+Converts the Email object to a dictionary containing all email data.
+
+##### Return Value
+
+Returns a dictionary with keys: subject, from_email, from_name, to, date, messageId, headers, text, html, attachments.
+
+##### Example
+
+```python
+email_data = email.to_dict()
+print(email_data)
+# {
+#   "subject": "Welcome to Agentuity",
+#   "from_email": "support@agentuity.com",
+#   "from_name": "Agentuity Support",
+#   "to": "user@example.com",
+#   "date": "2025-05-24T10:30:00Z",
+#   "messageId": "<abc123@agentuity.com>",
+#   "headers": {...},
+#   "text": "Welcome to our platform...",
+#   "html": "<html>...</html>",
+#   "attachments": []
+# }
+```
+
+### Dictionary-Style Access
+
+The Email object also supports dictionary-style access to its properties:
+
+```python
+# Access via dictionary notation
+subject = email["subject"]
+from_email = email["from_email"]
+
+# Iterate over email data
+for key, value in email.items():
+    print(f"{key}: {value}")
+
+# Get available keys
+keys = email.keys()
 ```
 
 ## Logging
