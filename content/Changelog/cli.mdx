@@ -5,6 +5,40 @@ description: Release notes and version history for the Agentuity CLI
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
+This page documents the release history of the [Agentuity CLI](https://github.com/agentuity/cli).
+
+## v0.0.139
+
+<Callout type="info">
+  Released: May 24, 2025
+</Callout>
+
+**Changes:**
+- **Fixed**: Fixed Bun sourcemap shim issue to improve source map support for projects using the "bunjs" runtime ([#346](https://github.com/agentuity/cli/pull/346))
+
+## v0.0.138
+
+<Callout type="info">
+  Released: May 23, 2025
+</Callout>
+
+**Changes:**
+- **Changed**: DevMode: Removed TUI (Terminal User Interface) in favor of a simpler logging approach ([#344](https://github.com/agentuity/cli/pull/344))
+- **Fixed**: Fixed prepareStackTrace error handling and improved DevMode logging ([#343](https://github.com/agentuity/cli/pull/343))
+- **Fixed**: Added better handling for Ctrl+C in DevMode ([#343](https://github.com/agentuity/cli/pull/343))
+
+## v0.0.137
+
+<Callout type="info">
+  Released: May 23, 2025
+</Callout>
+
+**Changes:**
+- **Changed**: Updated Discord community invite links across the CLI, TUI, README, and error system ([#339](https://github.com/agentuity/cli/pull/339))
+- **Changed**: Modified prompt in environment handling to separate informational messages from interactive questions ([#339](https://github.com/agentuity/cli/pull/339))
+- **Changed**: Updated dependency `github.com/agentuity/go-common` from v1.0.60 to v1.0.64 ([#339](https://github.com/agentuity/cli/pull/339))
+- **Fixed**: Fixed DevMode: Removed "server" and "force" flags and all related logic, including environment file processing ([#339](https://github.com/agentuity/cli/pull/339))
+
 ## v0.0.136
 
 <Callout type="info">
