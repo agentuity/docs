@@ -612,8 +612,9 @@ The SDK provides specialized methods for various media types, all of which now r
 - `webm(): Promise<ArrayBuffer>`
 - `wav(): Promise<ArrayBuffer>`
 - `ogg(): Promise<ArrayBuffer>`
+- `email(): Promise<Email>`
 
-Each method returns a Promise that resolves to the request payload as an ArrayBuffer with the appropriate content type validation.
+Each method returns a Promise that resolves to the request payload as an ArrayBuffer with the appropriate content type validation, except for `email()` which returns an Email object.
 
 #### Example
 
@@ -625,6 +626,181 @@ const image = await request.png();
 // Get audio from the request
 const audio = await request.mp3();
 // Process the audio...
+
+// Get email from the request (for message/rfc822 content type)
+const email = await request.data.email();
+// Process the email...
+```
+
+## Email Processing
+
+The Agentuity SDK provides an `Email` class for parsing and processing inbound email data when the content type is `message/rfc822`.
+
+### Email Class
+
+The `Email` class represents a parsed email message with methods to access various email properties.
+
+#### `date(): Date | null`
+
+Returns the date of the email.
+
+##### Return Value
+
+Returns a `Date` object representing the email's date, or `null` if no date is available.
+
+##### Example
+
+```typescript
+const email = await request.data.email();
+const emailDate = email.date();
+console.log('Email received on:', emailDate);
+```
+
+#### `messageId(): string | null`
+
+Returns the message ID of the email.
+
+##### Return Value
+
+Returns a string containing the email's message ID, or `null` if no message ID is available.
+
+##### Example
+
+```typescript
+const email = await request.data.email();
+const msgId = email.messageId();
+console.log('Message ID:', msgId);
+```
+
+#### `headers(): Headers`
+
+Returns the headers of the email.
+
+##### Return Value
+
+Returns a `Headers` object containing all email headers.
+
+##### Example
+
+```typescript
+const email = await request.data.email();
+const headers = email.headers();
+console.log('Email headers:', headers);
+```
+
+#### `to(): string | null`
+
+Returns the email address of the recipient(s).
+
+##### Return Value
+
+Returns a string containing the recipient email address. If there are multiple recipients, they are comma-separated. Returns `null` if no recipient is available.
+
+##### Example
+
+```typescript
+const email = await request.data.email();
+const recipients = email.to();
+console.log('Recipients:', recipients);
+```
+
+#### `fromEmail(): string | null`
+
+Returns the email address of the sender.
+
+##### Return Value
+
+Returns a string containing the sender's email address, or `null` if no sender email is available.
+
+##### Example
+
+```typescript
+const email = await request.data.email();
+const senderEmail = email.fromEmail();
+console.log('From email:', senderEmail);
+```
+
+#### `fromName(): string | null`
+
+Returns the name of the sender.
+
+##### Return Value
+
+Returns a string containing the sender's name, or `null` if no sender name is available.
+
+##### Example
+
+```typescript
+const email = await request.data.email();
+const senderName = email.fromName();
+console.log('From name:', senderName);
+```
+
+#### `subject(): string | null`
+
+Returns the subject of the email.
+
+##### Return Value
+
+Returns a string containing the email subject, or `null` if no subject is available.
+
+##### Example
+
+```typescript
+const email = await request.data.email();
+const subject = email.subject();
+console.log('Subject:', subject);
+```
+
+#### `text(): string | null`
+
+Returns the plain text body of the email.
+
+##### Return Value
+
+Returns a string containing the plain text body, or `null` if no plain text body is available.
+
+##### Example
+
+```typescript
+const email = await request.data.email();
+const textBody = email.text();
+console.log('Text content:', textBody);
+```
+
+#### `html(): string | null`
+
+Returns the HTML body of the email.
+
+##### Return Value
+
+Returns a string containing the HTML body, or `null` if no HTML body is available.
+
+##### Example
+
+```typescript
+const email = await request.data.email();
+const htmlBody = email.html();
+console.log('HTML content:', htmlBody);
+```
+
+#### `attachments(): Attachment[]`
+
+Returns the attachments of the email.
+
+##### Return Value
+
+Returns an array of `Attachment` objects. Returns an empty array if there are no attachments.
+
+##### Example
+
+```typescript
+const email = await request.data.email();
+const attachments = email.attachments();
+console.log('Attachments:', attachments.length);
+attachments.forEach(attachment => {
+  console.log('Attachment:', attachment.filename, attachment.contentType);
+});
 ```
 
 ## Logging
