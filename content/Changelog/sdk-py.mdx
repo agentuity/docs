@@ -13,12 +13,13 @@ This page documents the release history of the [Agentuity Python SDK](https://gi
   Released: May 24, 2025
 </Callout>
 
-### Added
-
-- **Email Support**: Added comprehensive email parsing capabilities with new `Email` class and `email()` method on request data ([#48](https://github.com/agentuity/sdk-py/pull/48))
-- Email class provides access to subject, sender, recipient, date, message ID, headers, text content, HTML content, and attachments
-- Dictionary-style access and JSON serialization support for email data
-- Content type validation ensures proper email format (`message/rfc822`)
+**Changes:**
+- **Added:** Email class for parsing inbound email messages with support for extracting subject, sender, recipients, and attachments
+- **Added:** Async email() method to Data class for parsing RFC822 email content  
+- **Added:** mail-parser dependency for email parsing functionality
+- **Changed:** Updated AgentResponse.handoff() to accept DataLike types instead of only dict for improved flexibility
+- **Changed:** Enhanced JSON serialization in AgentResponse.json() with better error handling and fallback for objects with __dict__
+- **Fixed:** Fixed duplicate variable assignment in RemoteAgent.run() method
 
 ## v0.0.85
 
