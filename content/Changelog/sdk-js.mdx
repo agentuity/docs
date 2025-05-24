@@ -7,7 +7,7 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 This page documents the release history of the [Agentuity JavaScript SDK](https://github.com/agentuity/sdk-js).
 
-## v0.0.118
+## v0.0.120
 
 <Callout type="info">
   Released: May 24, 2025
@@ -15,15 +15,33 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
 
 ### Changes
 
-- **New Feature**: Added support for handling inbound email triggers with new `Email` class and `email()` method ([PR #117](https://github.com/agentuity/sdk-js/pull/117))
-  - New `email()` method on the Data interface for parsing email content when content type is `message/rfc822`
-  - New `Email` class with methods to access email properties: `date()`, `messageId()`, `headers()`, `to()`, `fromEmail()`, `fromName()`, `subject()`, `text()`, `html()`, and `attachments()`
-  - Added `mailparser` library dependency for email parsing functionality
+- **Added**: Support for handling inbound email trigger type ([PR #117](https://github.com/agentuity/sdk-js/pull/117))
+
+## v0.0.119
+
+<Callout type="info">
+  Released: May 21, 2025
+</Callout>
+
+### Changes
+
+- Logger message arg accepts number type ([PR #113](https://github.com/agentuity/sdk-js/pull/113))
+- Prevent multiple logs for the same exception ([PR #115](https://github.com/agentuity/sdk-js/pull/115))
+
+## v0.0.118
+
+<Callout type="info">
+  Released: May 19, 2025
+</Callout>
+
+### Changes
+
+- Improve error handling ([PR #111](https://github.com/agentuity/sdk-js/pull/111))
 
 ## v0.0.117
 
 <Callout type="info">
-  Released: May 21, 2025
+  Released: May 19, 2025
 </Callout>
 
 ### Changes
