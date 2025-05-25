@@ -1,17 +1,17 @@
 ---
-title: Architecture Overview
-description: Understanding Agentuity's system architecture and components
+title: Overview
+description: Understanding Agentuity
 ---
 
-## System Architecture
+## Agentuity Overview
 
 Agentuity is a cloud platform designed to run and scale AI agents with enterprise-grade reliability. 
 Our architecture follows a container-based approach, where each agent operates in its own specialized 
 environment.
 
-Unlike traditional serverless platforms, Agentuity ensures containers run for as long as agents need, 
-maintaining state and context throughout agent lifecycles. This long-running container approach is 
-optimal for complex AI workloads that may require extended processing time.
+Unlike traditional serverless platforms, Agentuity ensures agents run for as long as needed,
+maintaining state and context throughout agent lifecycles. This long-running approach is
+optimal for complex agent workloads that may require extended processing time, access to storage, or other resources.
 
 The platform is fundamentally cross-platform, allowing you to run different agent frameworks 
 (CrewAI, Langchain, custom agents) side by side in the same ecosystem, with built-in communication 
