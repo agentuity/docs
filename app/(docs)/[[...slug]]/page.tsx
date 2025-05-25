@@ -17,6 +17,7 @@ import { Sparkle } from "@/components/Sparkle";
 import { CodeExample } from "@/components/CodeExample";
 import { Mermaid } from "@/components/Mermaid";
 import { CLICommand } from "@/components/CLICommand";
+import { TypingAnimation } from "@/components/TypingAnimation";
 
 export default async function Page(props: {
 	params: Promise<{ slug?: string[] }>;
@@ -57,6 +58,7 @@ export default async function Page(props: {
 						Tab,
 						Tabs,
 						ThemeImage,
+						TypingAnimation,
 					}}
 				/>
 				<div className="mt-12 border p-4 bg-gray-200 dark:bg-gray-950 rounded-lg dark:border-cyan-800 border-cyan-700">

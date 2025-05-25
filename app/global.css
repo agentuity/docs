@@ -139,3 +139,7 @@ code span.line > span {
 .dark .prose hr {
 	border-color: var(--color-cyan-800);
 }
+
+article > p {
+	margin-bottom: 1rem;
+}
