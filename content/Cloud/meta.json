@@ -7,6 +7,6 @@
 		"vector-memory",
 		"key-value-memory",
 		"ai-gateway",
-		"api-keys"
+		"settings"
 	]
 }
