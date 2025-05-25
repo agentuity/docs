@@ -2,6 +2,7 @@
 	"title": "Agentuity Docs",
 	"pages": [
 		"Introduction",
+		"Guides",
 		"Cloud",
 		"CLI",
 		"SDKs",

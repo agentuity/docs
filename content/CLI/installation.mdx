@@ -7,58 +7,25 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
 ## Installation
 
-<Tabs items={['macOS', 'Linux', 'Windows (WSL)']}>
-  <Tab>
-    ### macOS Installation
+```bash
+curl -fsS https://agentuity.sh | sh
+```
 
-    ```bash
-    curl -fsS https://agentuity.sh | sh
-    ```
+<Callout type="warn">
+  The install script for Windows only works in the <strong>WSL (Windows Subsystem for Linux)</strong> environment
+</Callout>
 
-    ### Upgrading on macOS
+<Callout type="info">
+  On MacOS, if you have Homebrew installed, the install script will automatically use brew for installation.
+</Callout>
 
-    To upgrade to the latest version of the Agentuity CLI:
+    ### Upgrading
 
-    ```bash
-    agentuity upgrade
-    ```
-  </Tab>
-  <Tab>
-    ### Linux Installation
+To upgrade to the latest version of the Agentuity CLI:
 
-    ```bash
-    curl -fsS https://agentuity.sh | sh
-    ```
-
-    ### Upgrading on Linux
-
-    To upgrade to the latest version of the Agentuity CLI:
-
-    ```bash
-    agentuity upgrade
-    ```
-  </Tab>
-  <Tab>
-    ### Windows (WSL) Installation
-
-    <Callout type="warning">
-      The install script for Windows only works in the <strong>WSL (Windows Subsystem for Linux)</strong> environment.<br/>
-      <strong>There is currently no support for a native Windows installer.</strong>
-    </Callout>
-
-    ```bash
-    curl -fsS https://agentuity.sh | sh
-    ```
-
-    ### Upgrading on Windows (WSL)
-
-    To upgrade to the latest version of the Agentuity CLI:
-
-    ```bash
-    agentuity upgrade
-    ```
-  </Tab>
-</Tabs>
+```bash
+agentuity upgrade
+```
 
 ## Manual Installation
 

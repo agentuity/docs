@@ -1,0 +1,47 @@
+---
+title: AI Gateway
+description: Learn how to view and manage the AI Gateway usage in the Agentuity Cloud Console
+---
+
+## Understanding the AI Gateway
+
+
+<ThemeImage baseName="aigateway" alt="AI Gateway" width={3680} height={ 2382} />
+
+## Viewing Your Session Usage
+
+When you navigate to the AI Gateway > Sessions page in the Cloud Console, you'll see a table listing all your sessions with the following information:
+
+- **Agent**: The name of your agent
+- **Provider**: The AI provider used for the session
+- **Model**: The model used for the session
+- **LLM Cost**: The cost of the LLM used for the session
+- **Timestamp**: The session timestamp
+
+You can filter the list of sessions using the search box at the top of the table to quickly find specific specific sessions or filter by properties such as provider.
+
+## Session Detail
+
+You can select a key value instance to view and manage its data.
+
+<ThemeImage baseName="aigateway-detail" alt="AI Gateway Session Detail"/>
+
+
+## AI Gateway Usage
+
+By default, when your agent is not configured to use a specific AI provider using the override, it will use the AI Gateway to route requests to the appropriate providera automatically.
+
+To override using the AI Gateway, use the AI provider specific environment variables to configure them. 
+
+For example, to use the OpenAI API and use your own API key, you can set the provider API Gateway in the `.env` file of your agent project:
+
+
+```
+OPENAI_API_KEY=your-api-key
+```
+
+When you deploy your agent projet, your agent will use the OpenAI API directly instead of the AI Gateway.
+
+<Callout type="info">
+Each AI Provider uses their own API Key and configuration. Please consult the documentation for your specific provider to learn how to set up the API Key.
+</Callout>
