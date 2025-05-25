@@ -1,12 +1,15 @@
 ---
 title: Installation
-description: Installation of Agentuity CLI
+description: Insructions for installing the CLI
 ---
-
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
-## Installation
 
+The Agentuity CLI is a command line tool for managing your Agentuity projects. It's a cross-platform tool that can be used on Windows (using WSL), MacOS, and Linux.
+
+### Install Script
+
+The easiest way to install the Agentuity CLI is to use the install script. This script will automatically detect your operating system and install the appropriate version of the CLI.
 
 <CLICommand command="curl -fsS https://agentuity.sh | sh" />
 
@@ -18,11 +21,28 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
   On MacOS, if you have Homebrew installed, the install script will automatically use brew for installation.
 </Callout>
 
+    ### Version
+
+To print the version of the Agentuity CLI:
+
+<CLICommand command="agentuity version" />
+
+You can also use the `-v` flag to print the version:
+
+<CLICommand command="agentuity -v" />
+
+To check if you have the latest version of the Agentuity CLI:
+
+<CLICommand command="agentuity version check" />
+
+
     ### Upgrading
 
 To upgrade to the latest version of the Agentuity CLI:
 
 <CLICommand command="agentuity upgrade" />
+
+For more details on the `version` command, see the [CLI Version Commands](/CLI/version).
 
 
 ## Manual Installation

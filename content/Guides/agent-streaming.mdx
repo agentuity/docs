@@ -7,23 +7,24 @@ description: How to use streaming in your agents
 
 ## Why Streaming?
 
-- **Latency hiding [wait] -> >>** Start showing results instantly instead of after the whole response is ready.
-- **Long outputs** without hitting payload limits.
+- **Latency hiding** by showing results instantly instead of after the whole response is ready.
+- **Large inputs and outputs** without hitting payload limits.
 - **Agent chains** can forward chunks to the next agent as soon as they arrive.
-- **Snappier UX.** Users see progress in milliseconds instead of waiting for the full payload.
-- **Resource efficiency.** No need to hold entire responses in memory; chunks flow straight through.
-- **Composable pipelines.** Agents, functions, and external services can hand off work in a continuous stream.
+- **Snappier UX** so users see progress in milliseconds instead of waiting for the full payload.
+- **Resource efficiency** by not holding entire responses in memory; chunks flow straight through.
+- **Composable pipelines** by allowing agents, functions, and external services to hand off work in a continuous stream.
 
 
+**A simple visualization of the difference between traditional request/response and streaming:**
 
-```
-┌─────────────── traditional request/response ───────────────┐
-|  client waiting...   ███████████  full payload   display    |
-└─────────────────────────────────────────────────────────────┘
+```bash
+┌─────────────────────────── traditional request/response ───────────────────────────────────┐
+|  client waiting ...   ██████████████████████████████████████████  full payload   display   |
+└────────────────────────────────────────────────────────────────────────────────────────────┘
 
-┌────────────────── streaming request/response ──────────────┐
-|  c  l  i  e  n  t  r  e  a  d  s  c  h  u  n  k  s  …     |
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────── streaming request/response ─────────────────────────────────────┐
+|  c  l  i  e  n  t  r  e  a  d  s  c  h  u  n  k  1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 … |
+└────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 #### Real-World Use Cases
@@ -41,14 +42,14 @@ description: How to use streaming in your agents
    - A ReadableStream
    - Another agent's stream
 2. **Inbound:** `await request.data.stream()` – consume the client's incoming stream.
-3. Under the hood Agentuity uses SSE in dev and multiplexed HTTP/WS in prod; you don't have to care.
+3. Under the hood Agentuity handles the details of the streaming input and output for you.
 
----
+### OpenAI Streaming Example
 
-## JavaScript Quick-Start
+In this example, we use the OpenAI SDK to stream the response from the OpenAI API back to the caller.
 
-```ts
-import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+<CodeExample js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
 import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 
@@ -63,45 +64,7 @@ export default async function Agent(
   });
 
   return resp.stream(textStream);
-}
-```
-
-### What's happening?
-
-*We hand the OpenAI stream straight to `resp.stream()`; Agentuity pipes it to the browser chunk-by-chunk.*
-
----
-
-## Agent-to-Agent Streaming
-
-```ts
-import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
-
-export default async function Agent(
-  req: AgentRequest,
-  resp: AgentResponse,
-  ctx: AgentContext,
-) {
-  // [1] Call another agent
-  const expert = await ctx.getAgent({ name: "HistoryExpert" });
-  const expertResp = await expert.run({ data: "What engine did a P-51D Mustang use?" });
-
-  // [2] Grab its stream
-  const stream = await expertResp.data.stream();
-
-  // [3] Pipe straight through
-  return resp.stream(stream);
-}
-```
-
-Chain as many agents as you like; each one can inspect, transform, or just relay the chunks.
-
----
-
-## Python Quick-Start
-
-```py
-from openai import OpenAI
+}`} py={`from openai import OpenAI
 from agentuity import AgentRequest, AgentResponse, AgentContext
 
 client = OpenAI()
@@ -116,16 +79,42 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         stream=True,
     )
     return response.stream(chat_completion, lambda chunk: chunk.choices[0].delta.content)
+`} />
+
+
+
+### Agent-to-Agent Streaming
+
+In this example, we use the Agentuity SDK to stream the response from one agent to another.
+
+
+```ts
+import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext,
+) {
+  // [1] Call another agent
+  const expert = await ctx.getAgent({ name: "HistoryExpert" });
+  const expertResp = await expert.run({ prompt: "What engine did a P-51D Mustang use?" });
+
+  // [2] Grab its stream
+  const stream = await expertResp.data.stream();
+
+  // [3] Pipe straight through
+  return resp.stream(stream);
+}
 ```
+
+Chain as many agents as you like; each one can inspect, transform, or just relay the chunks.
 
 ---
 
 ## Further Reading
 
-- Blog post: [Agents just want to have streams](https://agentuity.com/blog/agent-streaming)
-- SDK examples: [JavaScript](/SDKs/javascript/examples#openai-streaming-example) · [Python](/SDKs/python/examples#streaming-responses-from-openai)
-- Video demo: [Watch on YouTube](https://youtu.be/HN_ElBfsWtE)
+- Blog Post: [Agents just want to have streams](https://agentuity.com/blog/agent-streaming)
+- SDK Examples: [JavaScript](/SDKs/javascript/examples#openai-streaming-example) · [Python](/SDKs/python/examples#streaming-responses-from-openai)
+- Streaming Video Demo: [Watch on YouTube](https://youtu.be/HN_ElBfsWtE)
 
-```text
-──────────────  END OF STREAM ▄▄▄  ──────────────
-```
