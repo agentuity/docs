@@ -2,3 +2,76 @@
 title: What is an Agent?
 description: How we define an Agent
 ---
+
+> But aren't agents just smart chat bots? 🤖
+
+## Understanding the Difference Between an API and an Agent
+
+APIs (Application Programming Interfaces) are like vending machines—you make a specific request, and they return exactly what you asked for. They're great for performing defined tasks, but you have to know exactly what you want and when to ask.
+
+Agents, on the other hand, are more like smart assistants. Instead of just waiting for instructions, agents can reason, plan, and act independently. They understand goals, adapt to changing conditions, and even decide what to do next based on context — not just what you explicitly told them. They don't just respond to commands; they can proactively get things done.
+
+While APIs are passive and require constant human coordination, agents are active participants in your digital world. They orchestrate actions, learn over time, and collaborate with other systems or agents to solve complex problems — automatically.
+
+## What makes building Agents different?
+
+APIs and agents may both act as intermediaries between users and systems, but the way they operate—and what they enable—are profoundly different.
+
+1. **Passive Interfaces vs. Autonomous Actors**
+
+APIs are passive. They expose a fixed set of functions or data. You must explicitly tell them what to do, how to do it, and when to do it—often in exact, rigid terms. There is no built-in understanding or reasoning.
+
+Agents, by contrast, are autonomous actors. They have the ability to decide how to achieve a goal, not just execute a specific instruction. They can operate continuously, respond to changing context, and coordinate complex tasks—without being told every step.
+
+2. **Determinism vs. Non-Determinism**
+
+Traditional APIs are deterministic: given the same input, they always return the same output. This predictability is useful for low-level tasks but limits flexibility and adaptability.
+
+Agents exhibit non-deterministic behavior. This isn't randomness—it's contextual decision-making. Given a broad prompt or task, an agent might take different actions based on what it knows, what it's learned, or what it perceives in real time. That's what gives agents the power to handle complexity and nuance.
+
+3. **Logic-Driven vs. Intent-Driven**
+
+In API-driven development, every behavior is explicitly programmed. Developers must anticipate every possible use case and encode it in logic. If you want to add a new feature, you need to modify the code. If the user is trying to perform a task that was not anticipated, the API will not be able to handle it.
+
+Agents, especially those built on language models, operate in an intent-driven paradigm. Instead of encoding every rule, you use natural language prompts to guide behavior. The agent interprets these prompts and autonomously figures out what to do and how to do it. This allows you to build flexible systems with far less code and far more adaptability.
+
+4. **Data Pipelines vs. Prompt-Orchestrated Workflows**
+
+APIs typically act on structured data passed through predefined pipelines—data in, response out.
+
+Agents can transform unstructured inputs into structured actions using prompts, models, and memory. For example, you can prompt an agent to “summarize this customer support thread and update the CRM” without hard-coding every transformation step. The agent parses, reasons, and executes—like a junior team member, not a tool.
+
+## The Agent Paradigm Shift
+The emergence of agents marks a shift from programming behavior to designing intent and outcomes. With the Agentuity platform, you're not building step-by-step logic—you're defining objectives and letting agents determine how best to fulfill them. This unlocks:
+
+- **Adaptive workflows** that evolve in real-time
+
+- **Conversational interfaces** that feel truly intelligent
+
+- **Less brittle systems** that aren't tied to rigid, pre-defined rules
+
+Agents aren't just a new abstraction — they're a new operational model for software. They bring reasoning, flexibility, and decision-making into the core of your systems.
+
+##Why a Traditional Chatbot Isn't an AI Agent
+
+A traditional chatbot is like a scripted receptionist—it follows predefined rules, matches keywords, and responds with canned answers. It can handle simple, repetitive tasks, but it doesn't understand context, adapt to new situations, or make decisions.
+
+An AI agent, on the other hand, is more like a smart collaborator. It can interpret intent, reason through complex tasks, take independent actions, and adapt in real time. It's not limited to conversation—it can plan, orchestrate workflows, and interact with systems to get things done autonomously.
+
+In short: a chatbot talks; an agent thinks and acts.
+
+## Why do Agents need an Agent-Native Cloud?
+
+**Think about today's cloud computing paradigm:**
+
+We have optimized cloud computing largely by moving the compute to the edge, focusing on horizontal scaling and cost efficiency through serverless or virtualized workloads.  We are obsessed with low latency and sessionless architectures that deliver apps and APIs to our users as fast as possible, often distributed globally.
+
+**Enter agents:**
+
+Agents demands a new paradigm.  Agents aren't focused on low latency, they are focused on long-running, complex tasks that require a lot of context and coordination.  They are not sessionless, they are stateful and both short and long term memory is required.  They are not distributed, they are centralized — often close to the data resources or as close to low latency, high bandwith GPU clusters.
+
+Learn more about the [Agent-Native Cloud](/Guides/agent-native-cloud).
+
+----
+
+If you're a software engineer and you need to build agents, you need to think like an [Agent Builder](/Guides/agent-engineering).

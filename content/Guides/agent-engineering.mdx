@@ -1,0 +1,129 @@
+---
+title: Agent Engineering
+description: Effective software engineering in an agentic future
+---
+
+## Thinking Like an Agent Builder: A Shift for Software Engineers
+
+Traditional software engineering is built around deterministic logic, tightly scoped inputs and outputs, and rigid control flows. When you start building agents, you're no longer programming every behavior—you're designing systems that can interpret goals, reason about context, and act autonomously.
+
+> 🤔 Not sure what an agent is? Check out [What is an Agent?](/Guides/what-is-an-agent)
+
+Building agents isn't just about writing code—it's about shaping intelligent behavior.
+
+This shift requires a new mindset:
+
+### Key Mindset Shifts and Tips for Engineers
+
+1. Design for Intent, Not Implementation
+
+Old way: Define every step in a process explicitly.
+
+New way: Focus on what outcome you want the agent to achieve, and give it the tools and context to figure out how.
+
+> ✅ Tip: Practice writing clear prompts and goal descriptions instead of hard-coded workflows.
+
+2. Embrace Non-Determinism
+
+Agents may behave differently based on context, input phrasing, or new knowledge.
+
+This variability isn't a bug—it's a feature that enables adaptation and learning.
+
+> ✅ Tip: Use guardrails, feedback loops, and observability tools to manage unpredictability rather than eliminate it.
+
+3. Think in Terms of Capabilities, Not Functions
+
+Agents aren't bound by one task—they're modular, extensible entities that can take on roles.
+
+You compose capabilities (retrieval, summarization, API calls, etc.) instead of defining one static purpose.
+
+> ✅ Tip: Start building with reusable "skills" or tools that agents can invoke as needed.
+
+4. Develop and Debug Through Simulation and Prompt Testing
+
+You won't always have step-by-step logic to trace. You'll be tuning prompts, memory, and planning behavior.
+
+> ✅ Tip: Set up sandboxes or scenarios to simulate tasks, iterate on prompt engineering, and observe agent decisions.
+
+5. Trust the Model—But Verify
+
+Leverage the power of foundation models, but don't assume perfection.
+
+Validation, fallback logic, and human-in-the-loop design are still critical.
+
+> ✅ Tip: Use confidence scoring, output evaluation, and error-handling strategies just like you would for user input in traditional apps.
+
+----
+
+### Can you show me a practical example of this?
+
+In traditional software engineering, you would build a function that takes a user's input and returns a response.
+
+For example, let's say you have input JSON and your API takes a specific data shape.
+
+```json
+{"firstName":"Jeff","lastName":"Bezos"}
+```
+
+Traditionally, you would build a function that takes this input, parses it, transforms it and then invokes the API.  There are significant products that have been built to do this.
+
+In an agentic approach, you could just ask the AI to do this for you with a prompt like this:
+
+```ansi
+<INSTRUCTIONS>
+convert the following JSON to the following to the appropriate 
+format for the JSON schema found below:
+</INSTRUCTIONS>
+
+<INPUT>
+{"firstName":"Jeff","lastName":"Bezos"}
+</INPUT>
+
+<JSON_SCHEMA>
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Person",
+  "type": "object",
+  "properties": {
+    "first_name": {
+      "type": "string",
+      "description": "The person's first name"
+    },
+    "last_name": {
+      "type": "string",
+      "description": "The person's last name"
+    }
+  },
+  "required": ["first_name", "last_name"],
+  "additionalProperties": false
+}
+</JSON_SCHEMA>
+
+<RULES>
+- The output should be in a JSON format that validates against the JSON schema.
+</RULES>
+```
+
+The AI would respond with something like this:
+
+```ansi
+To convert the given JSON input to match the specified JSON schema, you need to change
+the keys fromfirstName and lastName to first_name and last_name, respectively.
+
+{"first_name": "Jeff","last_name": "Bezos"}
+
+This output adheres to the schema by:
+
+- Using snake_case property names (first_name and last_name)
+- Providing required string values
+- Avoiding any additional properties beyond those defined in the schema.
+
+```
+
+As you can see, the AI has not only converted the JSON to the correct format, but it has also validated that the output matches the schema for you. Agentic software engineering requires you to approach programming with a much different mindset before!
+
+Modern AI can also not only return output, it can return structured output too (such as providing a JSON for the AI to conform).  In addition, AIs can now use tool calling to call back to your agent to ask it to perform a specific task that you define to help the AI further reason about the task at hand.
+
+----
+
+Agents represent a new abstraction layer—between human goals and system actions. As an engineer, your job shifts from building every bridge to empowering an intelligent system to build those bridges for you. That's not just a technical challenge—it's a creative one.

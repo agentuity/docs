@@ -3,6 +3,8 @@
 	"pages": [
 		"index",
 		"what-is-an-agent",
+		"agent-native-cloud",
+		"agent-engineering",
 		"...",
 		"ai-gateway",
 		"key-value",
