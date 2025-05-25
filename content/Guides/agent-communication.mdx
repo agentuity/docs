@@ -2,3 +2,179 @@
 title: Agent Communication
 description: Agent-to-Agent communication patterns, usage and best practices
 ---
+
+
+import Image from "next/image";
+
+<Image src="/images/agent-to-agent.png" alt="Agent-to-AgentCommunication" width={640} height={640} />
+
+### How do agents communicate with each other?
+
+In mose advanced agentic scenarios, agents need to communicate with other agents to achieve their goals.
+
+In fact, our recommendation is that you build agents with highly specialized roles and skills and use agent-to-agent communication to achieve the overall goal.
+
+There are a number of ways to achieve agent-to-agent communication natively in Agentuity.
+
+#### Communication Types
+
+Agents can communicate with each other in a number of ways in the Agentuity platform.  The following are the different types of communication that are supported:
+
+| Type      | Description |
+|-----------|-------------|
+| **Intra Project** | Agents within the same project can communicate with each locally without leaving local network |
+| **Inter Project** | Agents can communicate with each other across projects within the same organization |
+| **Inter Organization** | Agents can communicate with each other across organizations |
+
+##### Intra Project
+
+Intra project communication is the simplest form of agent-to-agent communication.  Agents within the same project can communicate with each other locally without leaving the local network.
+
+##### Inter Project
+
+Inter project communication is a more advanced form of agent-to-agent communication.  Agents can communicate with each other across projects within the same organization.
+
+##### Inter Organization
+
+Inter organization communication is the most advanced form of agent-to-agent communication.  Agents can communicate with each other across organizations. Currently, Agentuity only supports inter organization agent communication if the target agent is public and the source agent has been given the agent ID by the other organization.
+
+#### Communication Methods
+
+Agents has two primary methods of communication with other agents:
+
+| Type      | Description |
+|-----------|-------------|
+| Handoff | Agents can handoff a request to another agent to complete |
+| Invocation | Agents can invoke another agent to complete a task and wait for the result |
+
+##### Handoff
+
+When an agent needs to handoff a request to another agent, it can do so by using the SDK `handoff` method.  The `handoff` method will send the request to another agent and the other agent will be responsible for completing the request.
+
+For handoff, the source agent can modify the original request data or simply pass the request as is.  The target agent will receive the request and can complete the request as if it was the original request.
+
+A trivial example of a handoff:
+
+<Tabs items={['TypeScript', 'Python']}>
+  <Tab value="TypeScript">
+```typescript
+import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
+
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext
+) {
+	return resp.handoff({name: 'My Other Agent'});
+}
+```
+  </Tab>
+  <Tab value="Python">
+```python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+	return response.handoff({"name":"My Other Agent"})
+```
+  </Tab>
+</Tabs>
+
+In the above example, the source agent is sending a request to the `My Other Agent` agent.  The `My Other Agent` agent will receive the request and can complete the request as if it was the original request.
+
+Calling another agent is a common pattern in agentic workflows.  It is often used to delegate a task to another agent or to get the result of a task from another agent.
+
+In another trivial example, the source agent is sending a request to the `My Other Agent` agent and passing a message to the other agent.  The `My Other Agent` agent will receive the request and can complete the request as if it was the original request. Since we are passing a String type, the other agent will receive the message as a string and with content type `text/plain`.
+
+<Tabs items={['TypeScript', 'Python']}>
+  <Tab value="TypeScript">
+```typescript
+import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
+
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext
+) {
+	return resp.handoff({name: 'My Other Agent'}, "would you please do this?");
+}
+```
+  </Tab>
+  <Tab value="Python">
+```python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+	return response.handoff({"name":"My Other Agent"}, "would you please do this?")
+```
+  </Tab>
+</Tabs>
+
+#### Agent Resolution
+
+How do we resolve the target agent?  There are two main ways to do this:
+
+| Type      | Description |
+|-----------|-------------|
+| Agent ID | The agent ID is a unique identifier for an agent.  It is a string that is assigned to an agent when it is created. |
+| Agent Name | The agent name is a human readable name for an agent.  It is a string that was used for the agent's name. |
+| Project ID | The agent project ID is specified to disambiguate agents with the same name in different projects. |
+
+##### Intra Project Resolution
+
+When calling an agent within the same project, the agent name is usually the easiest way to resolve the target agent.  The agent name is a human readable name for an agent.  It is a string that was used for the agent's name.
+
+##### Inter Project Resolution
+
+When calling an agent across projects within the same organization, the agent ID is typically the most reliable way to resolve the target agent.  The agent ID is a unique identifier for an agent.
+
+However, if the agent name is not unique across projects, the agent project ID can be used to disambiguate the target agent.  The agent project ID is a unique identifier for an agent's project.
+
+
+A trivial example of a handoff:
+
+<Tabs items={['TypeScript', 'Python']}>
+  <Tab value="TypeScript">
+```typescript
+import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
+
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext
+) {
+	return resp.handoff({
+		id: 'agent_123456789abcedef',
+		projectId: 'project_123456789abcedef',
+	});
+}
+```
+  </Tab>
+  <Tab value="Python">
+```python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+	return response.handoff({
+		"id":"agent_123456789abcedef",
+		"projectId":"project_123456789abcedef"
+	})
+```
+  </Tab>
+</Tabs>
+
+##### Inter Organization Resolution
+
+Currently, Agentuity only supports inter organization agent communication if the target agent is public and the source agent has been given the agent ID by the other organization. When using inter organization communication, only the agent ID is required to resolve the target agent.
+
+
+#### Communication Authorization
+
+When communicating with other agents outside the local project, Agentuity will automatically generate a one-time use authorization token with a short expiration.  This token is used to authenticate the source agent to the target agent automatically without the need for the source agent to pass the token to the target agent.
+
+
+## @jhaynie TODO:
+
+- agent invoke
+- parallel agents
+- passing data between agents (examples)
+
