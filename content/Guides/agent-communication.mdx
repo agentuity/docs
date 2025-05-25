@@ -22,9 +22,9 @@ Agents can communicate with each other in a number of ways in the Agentuity plat
 
 | Type      | Description |
 |-----------|-------------|
-| **Intra Project** | Agents within the same project can communicate with each locally without leaving local network |
-| **Inter Project** | Agents can communicate with each other across projects within the same organization |
-| **Inter Organization** | Agents can communicate with each other across organizations |
+| **Intra Project** | Agents within the same project can communicate with each other locally without leaving the local network |
+| **Inter Project** | Agents can communicate with each other across projects within the same organization across the internal network |
+| **Inter Organization** | Agents can communicate with each other across organizations across the internal network |
 
 ##### Intra Project
 
@@ -32,11 +32,11 @@ Intra project communication is the simplest form of agent-to-agent communication
 
 ##### Inter Project
 
-Inter project communication is a more advanced form of agent-to-agent communication.  Agents can communicate with each other across projects within the same organization.
+Inter project communication is a more advanced form of agent-to-agent communication.  Agents can communicate with each other across projects within the same organization but will communicate over the internal network.
 
 ##### Inter Organization
 
-Inter organization communication is the most advanced form of agent-to-agent communication.  Agents can communicate with each other across organizations. Currently, Agentuity only supports inter organization agent communication if the target agent is public and the source agent has been given the agent ID by the other organization.
+Inter organization communication is the most advanced form of agent-to-agent communication.  Agents can communicate with each other across organizations. Currently, Agentuity only supports inter organization agent communication if the target agent is public and the source agent has been given the agent ID by the other organization. For inter organization communication, the source agent will communicate over the internal network.
 
 #### Communication Methods
 
@@ -109,6 +109,92 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
   </Tab>
 </Tabs>
 
+##### Invocation
+
+When an agent needs to invoke another agent to complete a task and wants to wait for the result, it can do so by using the SDK `getAgents` method on `AgentContext`.  The `getAgents` will perform resolution to determine the target agent location and return a handle to the target agent that can be used to `run` the target agent.
+
+If the target agent is local (intra project), the `getAgents` method will return a handle to an internal agent which can be used to `run` the target agent.
+
+If the target agent is remote (inter project or inter organization), the `getAgents` method will return a handle to an external agent which can be used to `run` the target agent.  In addition, the SDK internally will use the authorization token to authenticate the source agent to the target agent.
+
+A trivial example of an invocation:
+
+<Tabs items={['TypeScript', 'Python']}>
+  <Tab value="TypeScript">
+```typescript
+import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
+
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext
+) {
+  const agent = await ctx.getAgent({name: 'My Other Agent'});
+  const agentResponse = await agent.run({name: 'My Other Agent'}, "would you please do this?");
+  const text = await agentResponse.data.text();
+  return resp.text(text);
+}
+```
+  </Tab>
+  <Tab value="Python">
+```python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+	agent = await context.getAgent({"name":"My Other Agent"})
+	agent_response = await agent.run({"name":"My Other Agent"}, "would you please do this?")
+	text = await agent_response.data.text()
+	return response.text(text)
+```
+  </Tab>
+</Tabs>
+
+In this trivial example above, the functionality is similar to the handoff example above.  The source agent is sending a request to the `My Other Agent` agent and passing a message to the other agent.  The `My Other Agent` agent will receive the request, perform an operation and return the result to the source agent. The source agent will simply return the result as a text result.
+
+In a real life scenario, you'll likely want to pass the appropriate data types to the target agent and wait for the result and then use the result in your own agent to perform additional tasks.
+
+###### Parallel Execution
+
+Sometimes you want to send a request to multiple agents at the same time. This is an example of parallel execution.
+
+<Tabs items={['TypeScript', 'Python']}>
+  <Tab value="TypeScript">
+```typescript
+import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
+
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext
+) {
+  await Promise.all([
+    ctx.getAgent({name: 'My First Agent'}),
+    ctx.getAgent({name: 'My Second Agent'}),
+  ]);
+  return resp.text('OK');
+}
+```
+  </Tab>
+  <Tab value="Python">
+```python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+import asyncio
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+	await asyncio.gather(
+    context.getAgent({"name":"My First Agent"}),
+    context.getAgent({"name":"My Second Agent"}),
+  )
+	return response.text('OK')
+```
+  </Tab>
+</Tabs>
+
+In this example, the source agent is sending a request to two different agents at the same time.  The source agent will wait for both agents to complete their tasks before returning.
+
+In a real life scenario, you'll likely want to pass the appropriate data types to the target agents and wait for the results and process them before continuing.
+
+
 #### Agent Resolution
 
 How do we resolve the target agent?  There are two main ways to do this:
@@ -171,10 +257,4 @@ Currently, Agentuity only supports inter organization agent communication if the
 
 When communicating with other agents outside the local project, Agentuity will automatically generate a one-time use authorization token with a short expiration.  This token is used to authenticate the source agent to the target agent automatically without the need for the source agent to pass the token to the target agent.
 
-
-## @jhaynie TODO:
-
-- agent invoke
-- parallel agents
-- passing data between agents (examples)
 
