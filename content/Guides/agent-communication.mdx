@@ -55,29 +55,19 @@ For handoff, the source agent can modify the original request data or simply pas
 
 A trivial example of a handoff:
 
-<Tabs items={['TypeScript', 'Python']}>
-  <Tab value="TypeScript">
-```typescript
-import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
+<CodeExample js={`import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
 
 export default async function Agent(
-  req: AgentRequest,
-  resp: AgentResponse,
-  ctx: AgentContext
+   req: AgentRequest,
+   resp: AgentResponse,
+   ctx: AgentContext
 ) {
-	return resp.handoff({name: 'My Other Agent'});
-}
-```
-  </Tab>
-  <Tab value="Python">
-```python
-from agentuity import AgentRequest, AgentResponse, AgentContext
+    return resp.handoff({name: 'My Other Agent'});
+}`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-	return response.handoff({"name":"My Other Agent"})
-```
-  </Tab>
-</Tabs>
+    return response.handoff({"name":"My Other Agent"})
+`}/>
 
 In the above example, the source agent is sending a request to the `My Other Agent` agent.  The `My Other Agent` agent will receive the request and can complete the request as if it was the original request.
 
@@ -85,29 +75,19 @@ Calling another agent is a common pattern in agentic workflows.  It is often use
 
 In another trivial example, the source agent is sending a request to the `My Other Agent` agent and passing a message to the other agent.  The `My Other Agent` agent will receive the request and can complete the request as if it was the original request. Since we are passing a String type, the other agent will receive the message as a string and with content type `text/plain`.
 
-<Tabs items={['TypeScript', 'Python']}>
-  <Tab value="TypeScript">
-```typescript
-import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
+<CodeExample js={`import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
 
 export default async function Agent(
-  req: AgentRequest,
-  resp: AgentResponse,
-  ctx: AgentContext
+   req: AgentRequest,
+   resp: AgentResponse,
+   ctx: AgentContext
 ) {
-	return resp.handoff({name: 'My Other Agent'}, "would you please do this?");
-}
-```
-  </Tab>
-  <Tab value="Python">
-```python
-from agentuity import AgentRequest, AgentResponse, AgentContext
+    return resp.handoff({name: 'My Other Agent'}, "would you please do this?");
+}`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-	return response.handoff({"name":"My Other Agent"}, "would you please do this?")
-```
-  </Tab>
-</Tabs>
+    return response.handoff({"name":"My Other Agent"}, "would you please do this?")
+`} />
 
 ##### Invocation
 
@@ -117,37 +97,36 @@ If the target agent is local (intra project), the `getAgents` method will return
 
 If the target agent is remote (inter project or inter organization), the `getAgents` method will return a handle to an external agent which can be used to `run` the target agent.  In addition, the SDK internally will use the authorization token to authenticate the source agent to the target agent.
 
+<Mermaid chart="
+sequenceDiagram
+  actor Agent Source
+  actor Agentuity
+  actor Agent Target
+  Agent Source->>Agentuity: Get Agent
+  Agent Source->>Agent Target: Run
+"/>
+
 A trivial example of an invocation:
 
-<Tabs items={['TypeScript', 'Python']}>
-  <Tab value="TypeScript">
-```typescript
-import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
+<CodeExample js={`import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
 
 export default async function Agent(
-  req: AgentRequest,
-  resp: AgentResponse,
-  ctx: AgentContext
+   req: AgentRequest,
+   resp: AgentResponse,
+   ctx: AgentContext
 ) {
-  const agent = await ctx.getAgent({name: 'My Other Agent'});
-  const agentResponse = await agent.run({name: 'My Other Agent'}, "would you please do this?");
-  const text = await agentResponse.data.text();
-  return resp.text(text);
-}
-```
-  </Tab>
-  <Tab value="Python">
-```python
-from agentuity import AgentRequest, AgentResponse, AgentContext
+    const agent = await ctx.getAgent({name: 'My Other Agent'});
+    const agentResponse = await agent.run({name: 'My Other Agent'}, "would you please do this?");
+    const text = await agentResponse.data.text();
+    return resp.text(text);
+}`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-	agent = await context.getAgent({"name":"My Other Agent"})
-	agent_response = await agent.run({"name":"My Other Agent"}, "would you please do this?")
-	text = await agent_response.data.text()
-	return response.text(text)
-```
-  </Tab>
-</Tabs>
+    agent = await context.getAgent({"name":"My Other Agent"})
+    agent_response = await agent.run({"name":"My Other Agent"}, "would you please do this?")
+    text = await agent_response.data.text()
+    return response.text(text)
+`} />
 
 In this trivial example above, the functionality is similar to the handoff example above.  The source agent is sending a request to the `My Other Agent` agent and passing a message to the other agent.  The `My Other Agent` agent will receive the request, perform an operation and return the result to the source agent. The source agent will simply return the result as a text result.
 
@@ -157,42 +136,51 @@ In a real life scenario, you'll likely want to pass the appropriate data types t
 
 Sometimes you want to send a request to multiple agents at the same time. This is an example of parallel execution.
 
-<Tabs items={['TypeScript', 'Python']}>
-  <Tab value="TypeScript">
-```typescript
-import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
+<CodeExample js={`import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
 
 export default async function Agent(
-  req: AgentRequest,
-  resp: AgentResponse,
-  ctx: AgentContext
+   req: AgentRequest,
+   resp: AgentResponse,
+   ctx: AgentContext
 ) {
+  const agent1 = await ctx.getAgent({name: 'My First Agent'});
+  const agent2 = await ctx.getAgent({name: 'My Second Agent'});
   await Promise.all([
-    ctx.getAgent({name: 'My First Agent'}),
-    ctx.getAgent({name: 'My Second Agent'}),
+    agent1.run({task: 'My First Task'}),
+    agent2.run({task: 'My Second Task'}),
   ]);
   return resp.text('OK');
-}
-```
-  </Tab>
-  <Tab value="Python">
-```python
-from agentuity import AgentRequest, AgentResponse, AgentContext
+}`}  py={`from agentuity import AgentRequest, AgentResponse, AgentContext
 import asyncio
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-	await asyncio.gather(
-    context.getAgent({"name":"My First Agent"}),
-    context.getAgent({"name":"My Second Agent"}),
-  )
-	return response.text('OK')
-```
-  </Tab>
-</Tabs>
+
+    agent1 = await context.getAgent({"name":"My First Agent"})
+    agent2 = await context.getAgent({"name":"My Second Agent"})
+
+    await asyncio.gather(
+      agent1.run({"task":"My First Task"}),
+      agent2.run({"task":"My Second Task"}),
+    )
+
+    return response.text('OK')
+`} />
 
 In this example, the source agent is sending a request to two different agents at the same time.  The source agent will wait for both agents to complete their tasks before returning.
 
 In a real life scenario, you'll likely want to pass the appropriate data types to the target agents and wait for the results and process them before continuing.
+
+<Mermaid chart="
+sequenceDiagram
+  actor Agent 1
+  actor Agentuity
+  actor Agent 2
+  actor Agent 3
+  Agent 1-->>Agentuity: Get Agent 1
+  Agent 1-->>Agentuity: Get Agent 2
+  Agent 1->>Agent 2: Run
+  Agent 1->>Agent 3: Run
+"/>
 
 
 #### Agent Resolution
@@ -218,35 +206,26 @@ However, if the agent name is not unique across projects, the agent project ID c
 
 A trivial example of a handoff:
 
-<Tabs items={['TypeScript', 'Python']}>
-  <Tab value="TypeScript">
-```typescript
-import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
+<CodeExample js={`import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
 
 export default async function Agent(
-  req: AgentRequest,
-  resp: AgentResponse,
-  ctx: AgentContext
+   req: AgentRequest,
+   resp: AgentResponse,
+   ctx: AgentContext
 ) {
-	return resp.handoff({
-		id: 'agent_123456789abcedef',
-		projectId: 'project_123456789abcedef',
-	});
-}
-```
-  </Tab>
-  <Tab value="Python">
-```python
+    return resp.handoff({
+       id: 'agent_123456789abcedef',
+       projectId: 'project_123456789abcedef',
+    });
+}`} py={`
 from agentuity import AgentRequest, AgentResponse, AgentContext
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-	return response.handoff({
-		"id":"agent_123456789abcedef",
-		"projectId":"project_123456789abcedef"
-	})
-```
-  </Tab>
-</Tabs>
+    return response.handoff({
+      "id": "agent_123456789abcedef",
+      "projectId": "project_123456789abcedef"
+    })
+`} />
 
 ##### Inter Organization Resolution
 

@@ -9,12 +9,13 @@ import {
 	DocsTitle,
 } from "fumadocs-ui/page";
 import { notFound } from "next/navigation";
-import { Code } from "../../../components/Code";
 import { CommunityButton } from "../../../components/Community";
 import { NavButton } from "../../../components/NavButton";
 import { XButton } from "@/components/XButton";
 import { ThemeImage } from "@/components/ThemeImage";
 import { Sparkle } from "@/components/Sparkle";
+import { CodeExample } from "@/components/CodeExample";
+import { Mermaid } from "@/components/Mermaid";
 
 export default async function Page(props: {
 	params: Promise<{ slug?: string[] }>;
@@ -46,8 +47,9 @@ export default async function Page(props: {
 						Popup,
 						PopupContent,
 						PopupTrigger,
-						Code,
+						CodeExample,
 						CommunityButton,
+						Mermaid,
 						NavButton,
 						Sparkle,
 						Tab,
@@ -55,19 +57,19 @@ export default async function Page(props: {
 						ThemeImage,
 					}}
 				/>
-				<div className="mt-12 border p-4 bg-gray-200 dark:bg-gray-800 rounded-lg">
+				<div className="mt-12 border p-4 bg-gray-200 dark:bg-gray-950 rounded-lg dark:border-cyan-800">
 					<h3 className="mt-1 text-cyan-800 dark:text-cyan-700">Need Help?</h3>
 					<p>
 						Join our <CommunityButton noBorder /> for assistance or just to hang
 						with other humans building agents.
 					</p>
 					<p>
-						You can also send us an email at{" "}
+						Send us an email at{" "}
 						<a href="mailto:hi@agentuity.com">hi@agentuity.com</a> if you&apos;d
 						like to get in touch.
 					</p>
 					<p className="flex items-center gap-2">
-						You can also <XButton follow noBorder />
+						Please <XButton follow noBorder />
 					</p>
 				</div>
 			</DocsBody>
