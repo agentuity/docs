@@ -57,7 +57,7 @@ export default async function Page(props: {
 						ThemeImage,
 					}}
 				/>
-				<div className="mt-12 border p-4 bg-gray-200 dark:bg-gray-950 rounded-lg dark:border-cyan-800">
+				<div className="mt-12 border p-4 bg-gray-200 dark:bg-gray-950 rounded-lg dark:border-cyan-800 border-cyan-700">
 					<h3 className="mt-1 text-cyan-800 dark:text-cyan-700">Need Help?</h3>
 					<p>
 						Join our <CommunityButton noBorder /> for assistance or just to hang
@@ -70,6 +70,11 @@ export default async function Page(props: {
 					</p>
 					<p className="flex items-center gap-2">
 						Please <XButton follow noBorder />
+					</p>
+					<p>
+						If you haven&apos;t already, please{" "}
+						<a href="https://app.agentuity.com/sign-up">Signup</a> for your free
+						account now and start building your first agent!
 					</p>
 				</div>
 			</DocsBody>

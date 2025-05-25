@@ -28,7 +28,6 @@ export function Mermaid({ chart }: { chart: string }) {
 					securityLevel: "loose",
 					fontFamily: "inherit",
 					themeCSS: "margin: 1.5rem auto 0;",
-					look: "handDrawn",
 					theme: _theme,
 					darkMode: _theme === "dark",
 				});

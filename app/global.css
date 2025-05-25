@@ -115,3 +115,26 @@ code span.line > span {
 .mermaid .messageLine1 {
 	stroke: #099 !important;
 }
+
+.prose blockquote {
+	border: 2px solid var(--color-cyan-600);
+	background-color: var(--color-cyan-50);
+	font-style: normal;
+}
+
+.dark .prose blockquote {
+	border: 2px solid var(--color-cyan-800);
+	background-color: var(--color-gray-950);
+}
+
+.prose {
+	:where(blockquote p:first-of-type):not(
+			:where([class~="not-prose"], [class~="not-prose"] *)
+		)::before {
+		content: "";
+	}
+}
+
+.dark .prose hr {
+	border-color: var(--color-cyan-800);
+}
