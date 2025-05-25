@@ -1,9 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
-import "react-medium-image-zoom/dist/styles.css";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import ImageZoom from "react-medium-image-zoom";
+import "react-medium-image-zoom/dist/styles.css";
 
 const placeholder =
 	"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
