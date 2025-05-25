@@ -13,9 +13,7 @@ The following frameworks are currently supported:
 
 The use a framework with Agentuity, choose the framework template when creating a new project.
 
-```bash
-agentuity new
-```
+<CLICommand command="agentuity new" />
 
 When you select one of the framework templates, the Agentuity CLI will install the necessary dependencies and create a new project with the framework already configured.
 
@@ -36,7 +34,7 @@ export default async function Agent(
 	const res = await generateText({
 		model: openai("gpt-4o"),
 		system: "You are a friendly assistant!",
-		prompt: req.text() ?? "Why is the sky blue?",
+		prompt: await req.text() ?? "Why is the sky blue?",
 	});
 	return resp.text(res.text);
 }

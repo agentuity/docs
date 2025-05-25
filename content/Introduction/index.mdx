@@ -51,11 +51,9 @@ If you already have the Agentuity CLI installed, you can skip this step and sign
 <Step>
 ### Install the CLI
 
-The [Agentuity CLI](/CLI/installation) is a cross-platform command-line tool for working with Agentuity Cloud. It supports Windows (using WSL), macOS, and Linux.
+The [Agentuity CLI](/CLI/installation) is a cross-platform command-line tool for working with Agentuity Cloud. It supports Windows (using WSL), MacOS, and Linux.
 
-```bash
-curl -fsS https://agentuity.sh | sh
-```
+<CLICommand command="curl -fsS https://agentuity.sh | sh" />
 </Step>
 
 <Step>
@@ -63,9 +61,7 @@ curl -fsS https://agentuity.sh | sh
 
 You can sign up for a free account using the CLI or skip this step if you already have an account.
 
-```bash
-agentuity auth signup
-```
+<CLICommand command="agentuity auth signup" />
 </Step>
 
 <Step>
@@ -73,9 +69,7 @@ agentuity auth signup
 
 You can skip this step if you used the CLI to sign up for an account, otherwise you must login to your account using the CLI.
 
-```bash
-agentuity login
-```
+<CLICommand command="agentuity login" />
 </Step>
 
 <Step>
@@ -83,9 +77,7 @@ agentuity login
 
 You can select a template to get started quickly.
 
-```bash
-agentuity new
-```
+<CLICommand command="agentuity new" />
 </Step>
 
 <Step>
@@ -93,9 +85,7 @@ agentuity new
 
 You can run your agent locally to test it out before you deploy it to the cloud.
 
-```bash
-agentuity dev
-```
+<CLICommand command="agentuity dev" />
 </Step>
 
 <Step>
@@ -103,9 +93,7 @@ agentuity dev
 
 Deploy your agent to the cloud and start using it! 🚀
 
-```bash
-agentuity deploy
-```
+<CLICommand command="agentuity deploy" />
 
 <Callout type="info">
 If you're using an Agentic Code Editor such as [Cursor](https://www.cursor.com), just tell your agent to deploy your project to the cloud such as "Deploy my project to the cloud" and it will do it for you.

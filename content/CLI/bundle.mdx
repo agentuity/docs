@@ -9,22 +9,17 @@ The `bundle` command allows you to create a bundled version of your Agentuity pr
 
 Runs the build bundle process for an Agentuity project.
 
-### Aliases
-
-`agentuity build` (shortcut for `agentuity bundle`)
+**Aliases:** build
 
 ### Usage
 
-```bash
-agentuity bundle [flags]
-```
+<CLICommand command="agentuity bundle" />
 
-### Flags
+**Flags:**
+- `--deploy` - Whether to deploy after bundling
+- `-d, --dir string` - The directory to the project (default ".")
+- `-h, --help` - help for bundle
+- `-i, --install` - Whether to install dependencies before bundling
+- `-p, --production` - Whether to bundle for production
 
-| Flag | Description |
-| ---- | ----------- |
-| `--dir`, `-d` | The directory of the project to bundle |
-| `--production`, `-p` | Bundle the project for production deployment |
-
-
-> You generally don't need to use this command as it is automatically called when you run `agentuity dev` or `agentuity start`.
+> You generally don't need to use this command as it is automatically called when you run `agentuity dev` or `agentuity deploy`.

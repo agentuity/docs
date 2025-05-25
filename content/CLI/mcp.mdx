@@ -15,70 +15,54 @@ For more information on the MCP protocol, see [https://modelcontextprotocol.io/]
 
 The base command for all MCP-related operations.
 
-```bash
-agentuity mcp
-```
+<CLICommand command="agentuity mcp" />
 
 **Aliases:** None
 
 **Examples:**
-```bash
-agentuity mcp install
-agentuity mcp uninstall
-agentuity mcp list
-```
+
+<CLICommand command="agentuity mcp install" />
+<CLICommand command="agentuity mcp uninstall" />
+<CLICommand command="agentuity mcp list" />
 
 ### mcp install
 
 Installs the Agentuity CLI as an MCP server, enabling integration with supported MCP clients.
 
-```bash
-agentuity mcp install
-```
+<CLICommand command="agentuity mcp install" />
 
-**Aliases:** `i`, `add`
+**Aliases:** i, add
 
 **Examples:**
-```bash
-agentuity mcp install
-```
+<CLICommand command="agentuity mcp install" />
 
 ### mcp uninstall
 
 Uninstalls the Agentuity CLI as an MCP server, removing integration with MCP clients.
 
-```bash
-agentuity mcp uninstall
-```
+<CLICommand command="agentuity mcp uninstall" />
 
-**Aliases:** `rm`, `delete`, `del`, `remove`
+**Aliases:** rm, delete, del, remove
 
 **Examples:**
-```bash
-agentuity mcp uninstall
-```
+<CLICommand command="agentuity mcp uninstall" />
 
 ### mcp list
 
 Lists all MCP server configurations detected on the machine, showing which clients are configured.
 
-```bash
-agentuity mcp list
-```
+<CLICommand command="agentuity mcp list" />
 
-**Aliases:** `ls`
+**Aliases:** ls
 
 **Examples:**
-```bash
-agentuity mcp list
-```
+
+<CLICommand command="agentuity mcp list" />
 
 ## Manual Installation
 
 If you need to manually configure an MCP client, you can use the following command:
 
-```bash
-agentuity mcp run --stdio
-```
+<CLICommand command="agentuity mcp run --stdio" />
 
 This command is typically used for advanced configuration scenarios.

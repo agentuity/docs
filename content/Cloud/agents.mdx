@@ -103,11 +103,7 @@ When using the Bearer, Basic or Header authentication methods, you can specify t
 
 To trigger a webhook using curl with a required Bearer token authentication, you can use the following command:
 
-```bash
-curl -X POST https://agentuity.ai/webhook/agent_1234567890abcdef \
-  -H "Authorization: Bearer <token>" \
-  --json '{"some":"data"}'
-```
+<CLICommand command={`curl https://agentuity.ai/webhook/agent_1234567890abcdef \\\n\t-H 'Authorization: Bearer <token>' \\\n\t--json '{"some":"data"}'`} />
 
 <Callout type="info">
   Make sure to use the correct agent ID in the webhook URL.
@@ -139,11 +135,7 @@ When you plan on using the API source, it is recommended that you stream data to
 
 To invoke an API using curl with a required Bearer token authentication, you can use the following command:
 
-```bash
-curl -X POST https://agentuity.ai/api/agent_1234567890abcdef \
-  -H "Authorization: Bearer <token>" \
-  --json '{"some":"data"}'
-```
+<CLICommand command={`curl https://agentuity.ai/api/agent_1234567890abcdef \\\n\t-H 'Authorization: Bearer <token>' \\\n\t--json '{"some":"data"}'`} />
 
 <Callout type="info">
   Make sure to use the correct agent ID in the webhook URL.
@@ -226,9 +218,7 @@ You can also directly use the [Agentuity GitHub Actions](https://github.com/agen
 You can also manually deploy your agents to the Agentuity Platform with the CLI using the following command:
 
 
-```bash
-agentuity deploy
-```
+<CLICommand command="agentuity deploy" />
 
 By default, the CLI will use the `latest` tag to deploy your agents. You can specify one or more tags to deploy by using the `--tag` flag.  The active deployment will only be used for agent requests based on the `latest` tag.
 
@@ -236,19 +226,13 @@ You can test new versions of your agents by using the `--tag` flag to specify a 
 
 For example, if you have a tag called `v1.0.0`, you can use the following command to deploy it:
 
-```bash
-agentuity deploy --tag v1.0.0
-```
+<CLICommand command="agentuity deploy --tag v1.0.0" />
 
 This will tag the deployment with the `v1.0.0` tag but not make it the active deployment.
 
 You can the invoke the agent with the `v1.0.0` tag by using curl with the following command:
 
-```bash
-curl -X POST https://agentuity.ai/api/agent_1234567890abcdef/v1.0.0 \
-  -H "Authorization: Bearer <token>" \
-  --json '{"some":"data"}'
-```
+<CLICommand command={`curl https://agentuity.ai/api/agent_1234567890abcdef/v1.0.0 \\\n\t-H 'Authorization: Bearer <token>' \\\n\t--json '{"some":"data"}'`} />
 
 <Callout type="info">
   Make sure to use the correct agent ID and tag in the API URL. Also, make sure to use the correct authentication token and that you have configured the API source.
@@ -258,9 +242,7 @@ curl -X POST https://agentuity.ai/api/agent_1234567890abcdef/v1.0.0 \
 
 You can rollback to a previous deployment by using the CLI with the following command:
 
-```bash
-agentuity rollback
-```
+<CLICommand command="agentuity rollback" />
 
 If you would like to delete the deployment in addition to rolling back, you can use the `--delete` flag.
 
@@ -298,8 +280,6 @@ If you select a specific span, a session span trace detail will be displayed wit
 
 You can use the CLI to manage your agents using the following command:
 
-```bash
-agentuity agent
-```
+<CLICommand command="agentuity agent" />
 
 See the [CLI documentation](/CLI/agent) for more information on specific command usage and flags.

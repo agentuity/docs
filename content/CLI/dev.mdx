@@ -3,49 +3,37 @@ title: Development Commands
 description: Commands for local development of Agentuity projects
 ---
 
-The `dev` commands allow you to run and test your Agentuity projects locally during development.
+The `dev` commands allow you to run and test your Agentuity projects locally during development using DevMode.
 
 ## dev
 
 Runs a development server for local testing and development.
 
-### Aliases
+**Aliases:** run
 
-`agentuity run` (shortcut for `agentuity dev`)
 
 ### Usage
 
-```bash
-agentuity dev [flags]
-```
+<CLICommand command="agentuity dev" />
 
-### Flags
-
-| Flag | Description |
-| ---- | ----------- |
-| `--dir`, `-d` | The directory of the project to run |
-| `--websocket-id` | Specify a WebSocket room ID for real-time communication |
+**Flags:**
+- `-d, --dir string` - The directory to run the development server in (default ".")
+- `-h, --help` - help for dev
+- `--port int` - The port to run the development server on (uses project default if not provided)
 
 ### Examples
 
 Run a development server for a project in the current directory:
-```bash
-$ agentuity dev
+
+<CLICommand command="agentuity dev">
 ✓ Development server started
-🔗 Local URL: http://localhost:3000
-```
+</CLICommand>
 
 Run a development server for a project in a specific directory:
-```bash
-$ agentuity dev --dir ~/projects/my-project
-✓ Development server started
-🔗 Local URL: http://localhost:3000
-```
 
-Run a development server with a specific WebSocket room ID:
-```bash
-$ agentuity dev --websocket-id room_123456
+<CLICommand command="agentuity dev --dir ~/projects/my-project">
 ✓ Development server started
-🔗 Local URL: http://localhost:3000
-🔌 WebSocket connected: room_123456
-```
+</CLICommand>
+
+
+> See the [DevMode](/Guides/devmode) documentation for more information on how to use DevMode.

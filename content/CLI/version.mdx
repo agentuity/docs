@@ -1,5 +1,5 @@
 ---
-title: Version Command
+title: Version Commands
 description: Command for checking the version of the Agentuity CLI
 ---
 
@@ -9,37 +9,29 @@ The `version` command allows you to check, display, and upgrade the Agentuity CL
 
 Displays the version of the Agentuity CLI.
 
-### Aliases
-
-`agentuity -v`, `agentuity --version` (shortcuts for `agentuity version`)
+**Aliases:** -v, --version
 
 ### Usage
 
-```bash
-agentuity version [flags]
-```
+<CLICommand command="agentuity version" />
 
-### Flags
-
-| Flag | Description |
-| ---- | ----------- |
-| `--long` | Display detailed version information including commit hash and build date |
+**Flags:**
+- `-h, --help` - help for version
+- `--long` - Print the long version
 
 ### Examples
 
 Basic version information:
-```bash
-$ agentuity version
-1.0.0
-```
+<CLICommand command="agentuity version">
+0.0.139
+</CLICommand>
 
 Detailed version information:
-```bash
-$ agentuity version --long
-Version: 1.0.0
-Commit: abc123
-Date: 2025-02-27
-```
+<CLICommand command="agentuity version --long">
+Version: 0.0.139
+Commit: 1633cea4fa7c0841605f3d4d501425e4068fae79
+Date: 2025-05-24T03:41:26Z
+</CLICommand>
 
 ## check
 
@@ -47,30 +39,25 @@ Checks if you're using the latest version of the Agentuity CLI.
 
 ### Usage
 
-```bash
-agentuity version check [flags]
-```
+<CLICommand command="agentuity version check" />
 
-### Flags
-
-| Flag | Description |
-| ---- | ----------- |
-| `--upgrade` | Upgrade to the latest version if a newer version is available |
+**Flags:**
+- `-h, --help` - help for check
+- `--upgrade` - Upgrade to the latest version if possible
 
 ### Examples
 
 Check if you're using the latest version:
-```bash
-$ agentuity version check
-You are using the latest version (1.0.0) of the Agentuity CLI.
-```
+
+<CLICommand command="agentuity version check">
+ ✓ You are using the latest version (0.0.139) of the Agentuity CLI.
+</CLICommand>
 
 Check and upgrade to the latest version:
-```bash
-$ agentuity version check --upgrade
-A new version (1.1.0) of the Agentuity CLI is available. Upgrading...
-Successfully upgraded to version 1.1.0.
-```
+<CLICommand command="agentuity version check --upgrade">
+ ✓ A new version (0.0.139) of the Agentuity CLI is available. Upgrading...
+ ✓ Successfully upgraded to version 0.0.139.
+</CLICommand>
 
 ## upgrade
 
@@ -78,32 +65,28 @@ Upgrades the Agentuity CLI to the latest version. This command is also available
 
 ### Usage
 
-```bash
-agentuity version upgrade [flags]
-```
+<CLICommand command="agentuity version upgrade" />
 
-### Flags
+**Aliases:** upgrade, update
 
-| Flag | Description |
-| ---- | ----------- |
-| `--force` | Force upgrade even if already on the latest version |
+**Flags:**
+- `--force` - Force upgrade even if already on the latest version
+- `-h, --help` - help for upgrade
 
 ### Examples
 
 Upgrade to the latest version:
-```bash
-$ agentuity version upgrade
-Checking for updates...
-A new version (1.1.0) is available. Upgrading...
-Creating backup of current binary...
-Successfully upgraded to version 1.1.0.
-```
+<CLICommand command="agentuity version upgrade">
+ ✓ Checking for updates...
+ ✓ A new version (0.0.139) is available. Upgrading...
+ ✓ Creating backup of current binary...
+ ✓ Successfully upgraded to version 0.0.139.
+</CLICommand>
 
 Force upgrade:
-```bash
-$ agentuity version upgrade --force
-Creating backup of current binary...
-Successfully upgraded to version 1.1.0.
-```
+<CLICommand command="agentuity version upgrade --force">
+ ✓ Creating backup of current binary...
+ ✓ Successfully upgraded to version 0.0.139.
+</CLICommand>
 
-On macOS, if the CLI was installed using Homebrew, it will use Homebrew to perform the upgrade.
+> On MacOS, if the CLI was installed using Homebrew, it will use Homebrew to perform the upgrade.

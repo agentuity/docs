@@ -9,84 +9,63 @@ The `project` commands allow you to create and manage Agentuity projects.
 
 Creates a new Agentuity project.
 
-### Aliases
-
-`agentuity create` (shortcut for `agentuity project create`)
-`agentuity project new`
+**Aliases:** create, new
 
 ### Usage
 
-```bash
-agentuity project create [name] [description] [agent-name] [agent-description] [auth-type] [flags]
-```
+<CLICommand command="agentuity project create" />
 
-### Flags
-
-| Flag | Description |
-| ---- | ----------- |
-| `--dir`, `-d` | The directory to create the project in |
-| `--provider`, `-p` | The provider to use for the project |
-| `--template`, `-t` | The template to use for the project |
+**Flags:**
+- `--action string` - The action to take for the project (github-action, github-app, none) (default "github-app")
+- `--auth string` - The authentication type for the agent (project, webhook, or none) (default "project")
+- `-d, --dir string` - The directory for the project
+- `--force` - Force the project to be created even if the directory already exists
+- `--format string` - The format to use for the output. Can be either 'text' or 'json' (default "text")
+- `-h, --help` - help for create
+- `--org-id string` - The organization to create the project in
+- `-r, --runtime string` - The runtime to use for the project
+- `-t, --template string` - The template to use for the project
+- `--templates-dir string` - The directory to load the templates. Defaults to loading them from the github.com/agentuity/templates repository
 
 ### Examples
 
 Create a new project with interactive prompts:
-```bash
-$ agentuity project create my-project
+
+<CLICommand command="agentuity project create my-project">
 ✓ Project created successfully
+</CLICommand>
 
-Next steps:
-
-1. Switch into the project directory at ~/my-project
-2. Run agentuity run to run the project locally in development mode
-3. Run agentuity deploy to deploy the project to the Agentuity Agent Cloud
-
-🏠 Access your project at https://app.agentuity.com/projects/proj_123456
-```
-
-Create a new project with a specific provider:
-```bash
-$ agentuity project create my-project --provider javascript
-✓ Project created successfully
-```
 
 ## project list
 
 Lists all projects in your Agentuity account.
 
-### Aliases
 
-`agentuity project ls` (shortcut for `agentuity project list`)
+**Aliases:** ls
 
 ### Usage
 
-```bash
-agentuity project list
-```
+<CLICommand command="agentuity project list" />
+
 
 ### Examples
 
-```bash
-$ agentuity project list
+<CLICommand command="agentuity project list">
 Projects:
   my-project (proj_123456)
   test-project (proj_789012)
   demo-app (proj_345678)
-```
+</CLICommand>
 
 ## project delete
 
 Deletes one or more projects from your Agentuity account.
 
-### Aliases
-
-`agentuity project rm` or `agentuity project del` (shortcuts for `agentuity project delete`)
+**Aliases**: rm, del
 
 ### Usage
 
-```bash
-agentuity project delete
-```
+<CLICommand command="agentuity project delete" />
 
 This command will:
 1. Display a list of all projects in your account
@@ -95,8 +74,7 @@ This command will:
 
 ### Examples
 
-```bash
-$ agentuity project delete
+<CLICommand command="agentuity project delete">
 Select one or more projects to delete:
 [ ] my-project (proj_123456)
 [x] test-project (proj_789012)
@@ -104,27 +82,24 @@ Select one or more projects to delete:
 
 Are you sure you want to delete the selected projects? This action cannot be undone. [y/N] y
 ✓ Project deleted successfully
-```
+</CLICommand>
+
 
 ## project import
 
-Imports an existing project into your Agentuity account.
+Imports an existing Agentuity project into your Agentuity account.
 
 ### Usage
 
-```bash
-agentuity project import [flags]
-```
+<CLICommand command="agentuity project import" />
 
-### Flags
-
-| Flag | Description |
-| ---- | ----------- |
-| `--dir`, `-d` | The directory for the project |
+**Flags:**
+- `-d, --dir string` - The directory for the project
+- `--force` - Force the processing of environment files
+- `-h, --help` - help for import
 
 ### Examples
 
-```bash
-$ agentuity project import --dir ./my-existing-project
+<CLICommand command="agentuity project import --dir ./my-existing-project">
 ✓ Project imported successfully
-```
+</CLICommand>

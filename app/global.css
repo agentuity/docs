@@ -120,10 +120,11 @@ code span.line > span {
 	border: 2px solid var(--color-cyan-600);
 	background-color: var(--color-cyan-50);
 	font-style: normal;
+	border-radius: 0.5rem;
 }
 
 .dark .prose blockquote {
-	border: 2px solid var(--color-cyan-800);
+	border: 1px solid var(--color-cyan-800);
 	background-color: var(--color-gray-950);
 }
 

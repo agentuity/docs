@@ -16,6 +16,7 @@ import { ThemeImage } from "@/components/ThemeImage";
 import { Sparkle } from "@/components/Sparkle";
 import { CodeExample } from "@/components/CodeExample";
 import { Mermaid } from "@/components/Mermaid";
+import { CLICommand } from "@/components/CLICommand";
 
 export default async function Page(props: {
 	params: Promise<{ slug?: string[] }>;
@@ -48,6 +49,7 @@ export default async function Page(props: {
 						PopupContent,
 						PopupTrigger,
 						CodeExample,
+						CLICommand,
 						CommunityButton,
 						Mermaid,
 						NavButton,
