@@ -43,7 +43,7 @@ You compose capabilities (retrieval, summarization, API calls, etc.) instead of 
 
 You won't always have step-by-step logic to trace. You'll be tuning prompts, memory, and planning behavior.
 
-> ✅ Tip: Set up sandboxes or scenarios to simulate tasks, iterate on prompt engineering, and observe agent decisions.
+> ✅ Tip: Set up scenarios to simulate tasks, iterate on prompt engineering, and observe agent decisions.
 
 5. Trust the Model—But Verify
 
@@ -55,31 +55,30 @@ Validation, fallback logic, and human-in-the-loop design are still critical.
 
 ----
 
-### Can you show me a practical example of this?
+### Can you show me a practical example of the difference?
 
-In traditional software engineering, you would build a function that takes a user's input and returns a response.
+In traditional software engineering, you might build a function that takes a user's input in a specific format and data shape and then sends that data to another system (say a database or CRM system).
 
-For example, let's say you have input JSON and your API takes a specific data shape.
+For example, let's say you have input JSON and your API takes a specific data shape such as:
 
 ```json
 {"firstName":"Jeff","lastName":"Bezos"}
 ```
 
-Traditionally, you would build a function that takes this input, parses it, transforms it and then invokes the API.  There are significant products that have been built to do this.
+Traditionally, you would build a function that takes this input, parses it, transforms it and then invokes the other system with the transformed data.  _There are significant products that have been built to tackle this problem_.
 
 In an agentic approach, you could just ask the AI to do this for you with a prompt like this:
 
-```ansi
+```xml title="AI Prompt"
 <INSTRUCTIONS>
-convert the following JSON to the following to the appropriate 
-format for the JSON schema found below:
+convert the input to an output using the JSON schema
 </INSTRUCTIONS>
 
 <INPUT>
 {"firstName":"Jeff","lastName":"Bezos"}
 </INPUT>
 
-<JSON_SCHEMA>
+<SCHEMA>
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Person",
@@ -94,19 +93,19 @@ format for the JSON schema found below:
       "description": "The person's last name"
     }
   },
-  "required": ["first_name", "last_name"],
-  "additionalProperties": false
+  "required": ["first_name", "last_name"]
 }
-</JSON_SCHEMA>
+</SCHEMA>
 
 <RULES>
 - The output should be in a JSON format that validates against the JSON schema.
+- If the input is not valid, the output should be an error message.
 </RULES>
 ```
 
 The AI would respond with something like this:
 
-```ansi
+```ansi title="AI Response"
 To convert the given JSON input to match the specified JSON schema, you need to change
 the keys fromfirstName and lastName to first_name and last_name, respectively.
 
