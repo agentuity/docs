@@ -107,7 +107,7 @@ The AI would respond with something like this:
 
 ```ansi title="AI Response"
 To convert the given JSON input to match the specified JSON schema, you need to change
-the keys fromfirstName and lastName to first_name and last_name, respectively.
+the keys from firstName and lastName to first_name and last_name, respectively.
 
 {"first_name": "Jeff","last_name": "Bezos"}
 
@@ -115,14 +115,18 @@ This output adheres to the schema by:
 
 - Using snake_case property names (first_name and last_name)
 - Providing required string values
-- Avoiding any additional properties beyond those defined in the schema.
+- Avoiding any additional properties beyond those defined in the schema
 
 ```
 
-As you can see, the AI has not only converted the JSON to the correct format, but it has also validated that the output matches the schema for you. Agentic software engineering requires you to approach programming with a much different mindset before!
+As you can see, the AI has not only converted the JSON to the correct format, but it has also validated that the output matches the schema for you.
+
+> 💫 **Agentic software engineering requires you to approach tasks with a much different mindset than you have before!**
 
 Modern AI can also not only return output, it can return structured output too (such as providing a JSON for the AI to conform).  In addition, AIs can now use tool calling to call back to your agent to ask it to perform a specific task that you define to help the AI further reason about the task at hand.
 
 ----
 
 Agents represent a new abstraction layer—between human goals and system actions. As an engineer, your job shifts from building every bridge to empowering an intelligent system to build those bridges for you. That's not just a technical challenge—it's a creative one.
+
+Make sure you understand the differences between today's cloud computing paradigm and the [Agent-Native Cloud](/Guides/agent-native-cloud).
