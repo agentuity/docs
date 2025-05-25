@@ -1,4 +1,12 @@
 {
 	"title": "Guides",
-	"pages": ["index", "what-is-an-agent", "...", "security"]
+	"pages": [
+		"index",
+		"what-is-an-agent",
+		"...",
+		"ai-gateway",
+		"key-value",
+		"vector-db",
+		"security"
+	]
 }
