@@ -64,11 +64,14 @@ For Webhook sources, you can require authorization to access the webhook.  This 
 
 The following authentication methods are supported:
 
-- **Project**: Project API Key (the webhook will be authenticated using the project API key)
-- **Public**: No Authentication is required and the webhook will be accessible to the public
-- **Bearer**: The webhook will be authenticated using a Bearer Token using the HTTP header `Authorization: Bearer <token>`
-- **Basic**: The webhook will be authenticated using a Basic Authentication using the HTTP header `Authorization: Basic <username>:<password>`
-- **Header**: The webhook will be authenticated using a custom header using the HTTP header `<key>: <value>`
+| Type    | Description |
+|---------|-------------|
+| Project | Authenticated using the project API Key |
+| Public  | No authentication required - webhook is publicly accessible |
+| Bearer  | Authenticated using Bearer Token via `Authorization: Bearer <token>` header |
+| Basic   | Authenticated using Basic Auth via `Authorization: Basic <username>:<password>` header |
+| Header  | Authenticated using custom header via `<key>: <value>` header |
+
 
 When using the Bearer, Basic or Header authentication methods, you can specify the authentication values for each agent.
 
@@ -96,11 +99,13 @@ For API sources, you can require authorization to access the API.  This is usefu
 
 The following authentication methods are supported:
 
-- **Project**: Project API Key (the webhook will be authenticated using the project API key)
-- **Public**: No Authentication is required and the webhook will be accessible to the public
-- **Bearer**: The webhook will be authenticated using a Bearer Token using the HTTP header `Authorization: Bearer <token>`
-- **Basic**: The webhook will be authenticated using a Basic Authentication using the HTTP header `Authorization: Basic <username>:<password>`
-- **Header**: The webhook will be authenticated using a custom header using the HTTP header `<key>: <value>`
+| Type    | Description |
+|---------|-------------|
+| Project | Authenticated using the project API Key |
+| Public  | No authentication required - webhook is publicly accessible |
+| Bearer  | Authenticated using Bearer Token via `Authorization: Bearer <token>` header |
+| Basic   | Authenticated using Basic Auth via `Authorization: Basic <username>:<password>` header |
+| Header  | Authenticated using custom header via `<key>: <value>` header |
 
 When using the Bearer, Basic or Header authentication methods, you can specify the authentication values for each agent.
 
