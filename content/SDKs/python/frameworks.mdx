@@ -7,76 +7,18 @@ The Agentuity Python SDK provides a flexible and powerful way to integrate other
 
 The following frameworks are currently supported:
 
-- [LlamaIndex](https://www.llamaindex.ai/)
-- [LangChain](https://www.langchain.com/)
 - [CrewAI](https://www.crewai.com/)
+- [LangChain](https://www.langchain.com/)
+- [LlamaIndex](https://www.llamaindex.ai/)
+- [Pydantic](https://pydantic.dev/)
 
 ## Using Frameworks with Agentuity
 
-The use a framework with Agentuity, choose the framework template when creating a new project.
+To use a framework with Agentuity, choose the framework template when creating a new project.
 
-<CLICommand command="agentuity new" />
+<CLICommand command="agentuity create" />
 
 When you select one of the framework templates, the Agentuity CLI will install the necessary dependencies and create a new project with the framework already configured.
-
-## LlamaIndex
-
-Example Agent using LlamaIndex:
-
-```python
-from llama_index.core.agent.workflow import AgentWorkflow
-from llama_index.llms.openai import OpenAI
-from agentuity import AgentRequest, AgentResponse, AgentContext
-
-
-# Define a simple calculator tool
-def multiply(a: float, b: float) -> float:
-    """Useful for multiplying two numbers."""
-    return a * b
-
-
-# Create an agent workflow with our calculator tool
-agent = AgentWorkflow.from_tools_or_functions(
-    [multiply],
-    llm=OpenAI(model="gpt-4o-mini"),
-    system_prompt="You are a helpful assistant that can multiply two numbers.",
-)
-
-
-async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    result = await agent.run(request.text or "What is 1234 * 4567?")
-    return response.text(str(result))
-```
-
-## LangChain
-
-Example Agent using LangChain:
-
-```python
-from agentuity import AgentRequest, AgentResponse, AgentContext
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-
-llm = ChatOpenAI()
-
-
-async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "You are an expert in world knowledge and all things in general.",
-            ),
-            ("user", "{input}"),
-        ]
-    )
-    output_parser = StrOutputParser()
-    chain = prompt | llm | output_parser
-    result = chain.invoke({"input": request.text})
-
-    return response.text(result)
-```
 
 ### CrewAI
 
@@ -84,70 +26,168 @@ Example Agent using CrewAI:
 
 ```python
 from agentuity import AgentRequest, AgentResponse, AgentContext
-from agents.mycrew.crew import MyCrew
+from agents.Concierge.crew import Concierge
 
+async def run(
+    request: AgentRequest,
+    response: AgentResponse,
+    context: AgentContext,
+):
+    prompt = await request.data.text() or "Recommend dinner spots in Austin, TX"
 
-async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    inputs = {"topic": request.text or "AI LLMs"}
-    result = MyCrew().crew().kickoff(inputs=inputs)
+    concierge = Concierge()
+    crew = concierge.crew(prompt)
+    result = crew.kickoff()
+    
     return response.text(str(result))
 ```
 
-Then for your Crew, you might hvave the following:
+Then for your Crew, you might have the following:
 
 ```python
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 
-# If you want to run a snippet of code before or after the crew starts,
-# you can use the @before_kickoff and @after_kickoff decorators
-# https://docs.crewai.com/concepts/crews#example-crew-class-with-decorators
-
-
 @CrewBase
-class MyCrew:
-    """MyCrew crew"""
+class Concierge:
+    """Concierge crew"""
 
-    # Learn more about YAML configuration files here:
-    # Agents: https://docs.crewai.com/concepts/agents#yaml-configuration-recommended
-    # Tasks: https://docs.crewai.com/concepts/tasks#yaml-configuration-recommended
     agents_config = "config/agents.yaml"
     tasks_config = "config/tasks.yaml"
 
-    # If you would like to add tools to your agents, you can learn more about it here:
-    # https://docs.crewai.com/concepts/agents#agent-tools
     @agent
-    def researcher(self) -> Agent:
-        return Agent(config=self.agents_config["researcher"], verbose=True)
+    def intent_analyzer(self) -> Agent:
+        return Agent(config=self.agents_config["intent_analyzer"], verbose=True)
 
     @agent
-    def reporting_analyst(self) -> Agent:
-        return Agent(config=self.agents_config["reporting_analyst"], verbose=True)
-
-    # To learn more about structured task outputs,
-    # task dependencies, and task callbacks, check out the documentation:
-    # https://docs.crewai.com/concepts/tasks#overview-of-a-task
-    @task
-    def research_task(self) -> Task:
-        return Task(
-            config=self.tasks_config["research_task"],
-        )
+    def local_guide(self) -> Agent:
+        return Agent(config=self.agents_config["local_guide"], verbose=True)
 
     @task
-    def reporting_task(self) -> Task:
-        return Task(config=self.tasks_config["reporting_task"], output_file="report.md")
+    def local_guide_task(self, query: str = "") -> Task:
+        config = self.tasks_config["local_guide_task"].copy()
+        config["description"] = config["description"].format(query=query)
+        
+        return Task(config=config)
 
     @crew
-    def crew(self) -> Crew:
-        """Creates the MyagentCrew crew"""
-        # To learn how to add knowledge sources to your crew, check out the documentation:
-        # https://docs.crewai.com/concepts/knowledge#what-is-knowledge
-
+    def crew(self, query: str) -> Crew:
         return Crew(
-            agents=self.agents,  # Automatically created by the @agent decorator
-            tasks=self.tasks,  # Automatically created by the @task decorator
-            process=Process.sequential,
+            agents=[self.local_guide()],
+            tasks=[self.local_guide_task(query)],
+            process=Process.hierarchical,
+            manager_agent=self.intent_analyzer(),
             verbose=True,
-            # process=Process.hierarchical, # In case you wanna use that instead https://docs.crewai.com/how-to/Hierarchical/
         )
+```
+
+### LangChain
+
+Example Agent using LangChain:
+
+```python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+from langchain_anthropic import ChatAnthropic
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    prompt = await request.data.text() or "Recommend dinner spots in Austin, TX"
+
+    # Get user intent
+    template = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                """You serve as a central hub that routes user requests to the right
+                AI agent based on the user's intent. Classify the user's intent and
+                select the best agent to handle it: for now, just LocalGuide.
+                Respond ONLY with the agent name."""
+            ),
+            ("user", "{input}"),
+        ]
+    )
+    llm = ChatAnthropic(model="claude-3-7-sonnet-latest", max_retries=5)
+    output_parser = StrOutputParser()
+    chain = template | llm | output_parser
+    
+    user_intent = await chain.ainvoke({"input": prompt})
+
+    # Route to appropriate agent based on intent
+    if user_intent == "LocalGuide":
+        return await response.handoff(
+            { "name": "LocalGuide" },
+            prompt
+        )
+    else:
+        return response.text("Sorry, I don't know how to help with that.")
+```
+
+### LlamaIndex
+
+Example Agent using LlamaIndex:
+
+```python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+from llama_index.core.agent.workflow import AgentWorkflow
+from llama_index.llms.anthropic import Anthropic
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    prompt = await request.data.text() or "Recommend dinner spots in Austin, TX"
+
+    # Get user intent
+    agent = AgentWorkflow.from_tools_or_functions(
+        [],
+        llm=Anthropic(model="claude-3-7-sonnet-latest", max_retries=3),
+        system_prompt="""You serve as a central hub that routes user requests to the right
+            AI agent based on the user's intent. Classify the user's intent and
+            select the best agent to handle it: for now, just LocalGuide.
+            Respond ONLY with the agent name.""",
+    )
+    
+    user_intent = await agent.run(prompt)
+
+    # Route to appropriate agent based on intent
+    if str(user_intent) == "LocalGuide":
+        return await response.handoff(
+            { "name": "LocalGuide" },
+            prompt
+        )
+    else:
+        return response.text("Sorry, I don't know how to help with that.")
+```
+
+### Pydantic
+
+Example Agent using Pydantic:
+
+```python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+from pydantic_ai import Agent
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    prompt = await request.data.text() or "Recommend dinner spots in Austin, TX"
+        
+    # Get user intent
+    agent = Agent(
+        "claude-3-7-sonnet-latest",
+        output_type=str,
+        system_prompt=(
+            """You serve as a central hub that routes user requests to the right
+            AI agent based on the user's intent. Classify the user's intent and
+            select the best agent to handle it: for now, just LocalGuide.
+            Respond ONLY with the agent name."""
+        ),
+    )
+
+    intent_result = await agent.run(prompt)
+
+    # Route to appropriate agent based on intent
+    if intent_result.output == "LocalGuide":
+        return await response.handoff(
+            { "name": "LocalGuide" },
+            prompt
+        )
+    else:
+        return response.text("Sorry, I don't know how to help with that.")
 ```
