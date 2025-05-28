@@ -7,6 +7,19 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 This page documents the release history of the [Agentuity CLI](https://github.com/agentuity/cli).
 
+## v0.0.140
+
+<Callout type="info">
+  Released: May 27, 2025
+</Callout>
+
+**Changes:**
+- **Added**: [AGENT-122] Added logs command with filtering and streaming capabilities including tail option, flexible duration parsing, and customizable output formatting ([#342](https://github.com/agentuity/cli/pull/342))
+- **Added**: Added tag and description options to the bundle command for deployment metadata ([#351](https://github.com/agentuity/cli/pull/351))
+- **Added**: Added --org-id filter to project list and delete commands for organization-specific operations ([#350](https://github.com/agentuity/cli/pull/350))
+- **Fixed**: Fixed mono repository support by improving SDK resolution process with better logging for directory traversal ([#352](https://github.com/agentuity/cli/pull/352))
+- **Fixed**: DevMode: Fixed sourcemap resolution when node_modules is outside the project directory ([#348](https://github.com/agentuity/cli/pull/348))
+
 ## v0.0.139
 
 <Callout type="info">
