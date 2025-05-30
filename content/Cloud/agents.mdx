@@ -98,7 +98,6 @@ The following authentication methods are supported:
 | Basic   | Authenticated using Basic Auth via `Authorization: Basic <username>:<password>` header |
 | Header  | Authenticated using custom header via `<key>: <value>` header |
 
-
 When using the Bearer, Basic or Header authentication methods, you can specify the authentication values for each agent.
 
 To trigger a webhook using curl with a required Bearer token authentication, you can use the following command:
@@ -140,7 +139,6 @@ To invoke an API using curl with a required Bearer token authentication, you can
 <Callout type="info">
   Make sure to use the correct agent ID in the webhook URL.
 </Callout>
-
 
 #### Agent Email Source
 
@@ -202,7 +200,6 @@ You can see all the projects that are connected to your GitHub account in the Se
 
 From here you can disconnect a specific project from your GitHub account or disconnect Agentuity from your GitHub account.
 
-
 #### GitHub Actions Workflow
 
 The GitHub Actions workflow is a native integration that allows you to deploy your agents to the Agentuity Platform from your GitHub repository using GitHub Actions.
@@ -216,7 +213,6 @@ You can also directly use the [Agentuity GitHub Actions](https://github.com/agen
 #### Manual Deployment
 
 You can also manually deploy your agents to the Agentuity Platform with the CLI using the following command:
-
 
 <CLICommand command="agentuity deploy" />
 

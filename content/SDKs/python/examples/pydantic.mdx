@@ -7,7 +7,6 @@ description: Examples of using the Agentuity Python SDK with Pydantic
 
 Example taken from: https://ai.pydantic.dev/agents/#introduction
 
-
 ```python
 import random # Added for random number generation
 from pydantic_ai import Agent, RunContext
@@ -29,7 +28,6 @@ roulette_agent = Agent(
 async def roulette_wheel(ctx: RunContext[int], square: int) -> str:
     """check if the square is a winner"""
     return 'winner' if square == ctx.deps else 'loser'
-
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
 		# Spin that wheel!
@@ -68,7 +66,6 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
 
 Taken from: https://ai.pydantic.dev/examples/bank-support/#example-code
 
-
 ```python
 from dataclasses import dataclass
 from pydantic import BaseModel, Field
@@ -100,18 +97,15 @@ class DatabaseConn:
             # if the LLM is expected to handle/retry based on it.
             raise ValueError("Customer not found or query parameters invalid")
 
-
 @dataclass
 class SupportDependencies:
     customer_id: int
     db: DatabaseConn
 
-
 class SupportOutput(BaseModel):
     support_advice: str = Field(description="Advice returned to the customer")
     block_card: bool = Field(description="Whether to block their card or not")
     risk: int = Field(description="Risk level of query", ge=0, le=10)
-
 
 # --- PydanticAI Agent Definition (from Example) ---
 
@@ -126,14 +120,12 @@ support_agent = Agent(
     ),
 )
 
-
 @support_agent.system_prompt
 async def add_customer_name(ctx: RunContext[SupportDependencies]) -> str:
     customer_name = await ctx.deps.db.customer_name(id=ctx.deps.customer_id)
     if customer_name:
         return f"The customer's name is {customer_name!r}."
     return "The customer's name could not be determined."
-
 
 @support_agent.tool
 async def customer_balance(
@@ -149,7 +141,6 @@ async def customer_balance(
     except ValueError as e:
         # Let the LLM know the tool failed and why
         return f"Could not retrieve balance: {e}"
-
 
 # --- Agentuity Agent Entry Point ---
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
@@ -194,5 +185,3 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         )
 
 ```
-
-

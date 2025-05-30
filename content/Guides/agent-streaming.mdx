@@ -14,7 +14,6 @@ description: How to use streaming in your agents
 - **Resource efficiency** by not holding entire responses in memory; chunks flow straight through.
 - **Composable pipelines** by allowing agents, functions, and external services to hand off work in a continuous stream.
 
-
 **A simple visualization of the difference between traditional request/response and streaming:**
 
 ```bash
@@ -34,7 +33,6 @@ description: How to use streaming in your agents
 - **Streaming search results.** Show the first relevant hits immediately while the rest are still processing.
 - **Agent chains.** One agent can translate, the next can summarize, the third can analyze – all in a single flowing stream.
 
-
 ## How Streaming Works in Agentuity
 
 1. **Outbound:** `resp.stream(source)` – where `source` can be:
@@ -47,7 +45,6 @@ description: How to use streaming in your agents
 ### OpenAI Streaming Example
 
 In this example, we use the OpenAI SDK to stream the response from the OpenAI API back to the caller.
-
 
 <CodeExample js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
 import { streamText } from "ai";
@@ -81,12 +78,9 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     return response.stream(chat_completion, lambda chunk: chunk.choices[0].delta.content)
 `} />
 
-
-
 ### Agent-to-Agent Streaming
 
 In this example, we use the Agentuity SDK to stream the response from one agent to another.
-
 
 ```ts
 import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";

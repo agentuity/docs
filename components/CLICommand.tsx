@@ -7,7 +7,7 @@ export interface CLICommandProps {
 
 export function CLICommand({ command, children }: CLICommandProps) {
 	return (
-		<CodeBlock lang="bash" className="p-2 pt-4">
+		<CodeBlock lang="bash" className="p-2">
 			<span className="flex items-start justify-start gap-2">
 				<span className="text-cyan-700 dark:text-cyan-700 select-none">$</span>{" "}
 				<pre>{command}</pre>

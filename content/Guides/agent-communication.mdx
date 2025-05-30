@@ -3,7 +3,6 @@ title: Agent Communication
 description: Agent-to-Agent communication patterns, usage and best practices
 ---
 
-
 import Image from "next/image";
 
 <Image src="/images/agent-to-agent.png" alt="Agent-to-AgentCommunication" width={640} height={640} />
@@ -182,7 +181,6 @@ sequenceDiagram
   Agent 1->>Agent 3: Run
 "/>
 
-
 #### Agent Resolution
 
 How do we resolve the target agent?  There are two main ways to do this:
@@ -202,7 +200,6 @@ When calling an agent within the same project, the agent name is usually the eas
 When calling an agent across projects within the same organization, the agent ID is typically the most reliable way to resolve the target agent.  The agent ID is a unique identifier for an agent.
 
 However, if the agent name is not unique across projects, the agent project ID can be used to disambiguate the target agent.  The agent project ID is a unique identifier for an agent's project.
-
 
 A trivial example of a handoff:
 
@@ -230,7 +227,6 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
 ##### Inter Organization Resolution
 
 Currently, Agentuity only supports inter organization agent communication if the target agent is public and the source agent has been given the agent ID by the other organization. When using inter organization communication, only the agent ID is required to resolve the target agent.
-
 
 #### Communication Authorization
 

@@ -90,7 +90,6 @@ export default handler;
 
 The Agentuity SDK provides two storage APIs: Key-Value Storage and Vector Storage.
 
-
 ### Key-Value Storage
 
 The Key-Value Storage API provides a simple way to store and retrieve data. It is accessed through the `context.kv` object.
@@ -550,7 +549,6 @@ Gets metadata associated with the request.
 
 Returns the metadata value for the specified key, or the default value if the key does not exist.
 
-
 #### `json(): Promise<Json>`
 
 Gets the payload of the request as a JSON object.
@@ -958,8 +956,6 @@ export const welcome = (): AgentWelcomeResult => {
 };
 ```
 
-
-
 ## Session
 
 The Agentuity SDK provides a `Session` interface that represents the current agent execution context.
@@ -1037,7 +1033,6 @@ This change affects all methods on the `Data` interface:
 - `data.binary` → `data.binary()`
 - `data.buffer` → `data.buffer()`
 - `data.stream` → `data.stream()`
-
 
 ## Deprecated Features
 

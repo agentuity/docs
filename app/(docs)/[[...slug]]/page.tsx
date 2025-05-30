@@ -1,3 +1,10 @@
+import { CLICommand } from "@/components/CLICommand";
+import { CodeExample } from "@/components/CodeExample";
+import { Mermaid } from "@/components/Mermaid";
+import { Sparkle } from "@/components/Sparkle";
+import { ThemeImage } from "@/components/ThemeImage";
+import { TypingAnimation } from "@/components/TypingAnimation";
+import { XButton } from "@/components/XButton";
 import { source } from "@/lib/source";
 import { Popup, PopupContent, PopupTrigger } from "fumadocs-twoslash/ui";
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
@@ -11,13 +18,6 @@ import {
 import { notFound } from "next/navigation";
 import { CommunityButton } from "../../../components/Community";
 import { NavButton } from "../../../components/NavButton";
-import { XButton } from "@/components/XButton";
-import { ThemeImage } from "@/components/ThemeImage";
-import { Sparkle } from "@/components/Sparkle";
-import { CodeExample } from "@/components/CodeExample";
-import { Mermaid } from "@/components/Mermaid";
-import { CLICommand } from "@/components/CLICommand";
-import { TypingAnimation } from "@/components/TypingAnimation";
 
 export default async function Page(props: {
 	params: Promise<{ slug?: string[] }>;
@@ -61,8 +61,8 @@ export default async function Page(props: {
 						TypingAnimation,
 					}}
 				/>
-				<div className="mt-12 border p-4 bg-gray-200 dark:bg-gray-950 rounded-lg dark:border-cyan-800 border-cyan-700">
-					<h3 className="mt-1 text-cyan-800 dark:text-cyan-700">Need Help?</h3>
+				<div className="mt-12 border p-4 rounded-lg bg-fd-card">
+					<h3 className="mt-1 text-fd-foreground">Need Help?</h3>
 					<p>
 						Join our <CommunityButton noBorder /> for assistance or just to hang
 						with other humans building agents.

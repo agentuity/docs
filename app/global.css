@@ -31,30 +31,68 @@
 	--color-gray-800: var(--color-zinc-800);
 	--color-gray-900: var(--color-zinc-900);
 	--color-gray-950: var(--color-zinc-950);
+
+	--shadow-md: none;
+
+	--color-fd-background: var(--color-white);
+	--color-fd-foreground: var(--color-cyan-900);
+	--color-fd-muted: var(--color-cyan-100);
+	--color-fd-muted-foreground: var(--color-cyan-700);
+	--color-fd-popover: var(--color-cyan-50);
+	--color-fd-popover-foreground: var(--color-cyan-900);
+	--color-fd-card: var(--color-white);
+	--color-fd-card-foreground: var(--color-cyan-900);
+	--color-fd-border: var(--color-gray-200);
+	--color-fd-primary: var(--color-cyan-700);
+	--color-fd-primary-foreground: var(--color-cyan-50);
+	--color-fd-secondary: var(--color-cyan-100);
+	--color-fd-secondary-foreground: var(--color-cyan-900);
+	--color-fd-accent: var(--color-cyan-100);
+	--color-fd-accent-foreground: var(--color-cyan-900);
+	--color-fd-ring: var(--color-cyan-500);
+}
+  
+.dark {
+	--color-fd-background: var(--color-cyan-900);
+	--color-fd-foreground: var(--color-white);
+	--color-fd-muted: var(--color-cyan-900);
+	--color-fd-muted-foreground: var(--color-gray-400);
+	--color-fd-popover: var(--color-cyan-900);
+	--color-fd-popover-foreground: var(--color-cyan-50);
+	--color-fd-card: var(--color-black);
+	--color-fd-card-foreground: var(--color-cyan-50);
+	--color-fd-border: var(--color-cyan-900);
+	--color-fd-primary: var(--color-cyan-200);
+	--color-fd-primary-foreground: var(--color-cyan-900);
+	--color-fd-secondary: var(--color-cyan-900);
+	--color-fd-secondary-foreground: var(--color-cyan-100);
+	--color-fd-accent: var(--color-cyan-900);
+	--color-fd-accent-foreground: var(--color-cyan-100);
+	--color-fd-ring: var(--color-cyan-300);
 }
 
 .dark body,
 .dark main {
-	background-color: var(--color-cyan-950);
+	background-color: #011;
 }
 
 aside [data-radix-scroll-area-viewport] button,
 aside [data-radix-scroll-area-viewport] a {
-	color: #0a0a0a;
+	color: #0A0A0A;
 }
 
 .aside {
-	background: #fafafa;
+	background: #FAFAFA;
 }
 
 .dark aside,
 .dark header {
-	background: var(--color-cyan-950);
+	background: #011;
 }
 
 .dark aside [data-radix-scroll-area-viewport] button,
 .dark aside [data-radix-scroll-area-viewport] a {
-	color: #fff;
+	color: #FFF;
 }
 
 /* make sure empty lines are rendered */
@@ -67,7 +105,7 @@ code span.line > span {
 }
 
 .code-example > div[role="tablist"] {
-	background-color: #eee;
+	background-color: #EEE;
 }
 
 .dark .code-example > div[role="tablist"] {
@@ -75,7 +113,7 @@ code span.line > span {
 }
 
 .mermaid .cluster rect {
-	fill: #fff !important;
+	fill: #FFF !important;
 	stroke: #099 !important;
 }
 
@@ -100,7 +138,7 @@ code span.line > span {
 }
 
 .dark .mermaid .nodeLabel {
-	color: #fff !important;
+	color: #FFF !important;
 }
 
 .mermaid text.actor > tspan {

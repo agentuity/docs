@@ -1,14 +1,21 @@
+import { cn } from "fumadocs-ui/utils/cn";
 import { NavButton } from "./NavButton";
 
 export function XButton({
 	follow = false,
 	noBorder = false,
+	className,
 }: {
 	follow?: boolean;
 	noBorder?: boolean;
+	className?: string;
 }) {
 	return (
-		<NavButton href="https://x.com/agentuity" noBorder={noBorder}>
+		<NavButton
+			href="https://x.com/agentuity"
+			noBorder={noBorder}
+			className={cn("align-bottom", className)}
+		>
 			{follow && <span>Follow us on</span>}
 			<svg
 				aria-hidden="true"
