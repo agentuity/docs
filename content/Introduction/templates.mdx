@@ -1,0 +1,60 @@
+---
+title: Agent Templates
+description: Pre-configured agent configurations
+---
+
+## Overview
+
+Templates are pre-configured agent configurations that can be used to quickly deploy and configure Agentuity for popular agent frameworks, AI providers and runtimes.
+
+When you create a new Agent project, you can select a template to use as a starting point.
+
+### Python Frameworks
+
+The following Python Agent frameworks are supported out-of-the-box:
+
+| Framework    | More Information                    |
+| ------------ | ----------------------------------- |
+| CrewAI       | https://www.crewai.com/             |
+| LlamaIndex   | https://www.llamaindex.ai/          |
+| LangChain    | https://www.langchain.com/          |
+| LangGraph    | https://www.langchain.com/langgraph |
+| Pydantic AI  | https://ai.pydantic.dev/            |
+
+The following Python AI providers are supported out-of-the-box:
+
+| Provider      | More Information                |
+| ------------- | ------------------------------- |
+| Anthropic     | https://www.anthropic.com/      |
+| Google Gen AI | https://ai.google.com/          |
+| OpenAI        | https://openai.com/             |
+| LiteLLM       | https://www.litellm.ai/         |
+
+### JavaScript Frameworks
+
+The following JavaScript Agent frameworks are supported out-of-the-box:
+
+| Framework     | More Information                |
+| ------------- | ------------------------------- |
+| Mastra        | https://mastra.ai/              |
+| Vercel AI SDK | https://ai.vercel.com/          |
+
+The following JavaScript AI providers are supported out-of-the-box:
+
+| Provider      | More Information                |
+| ------------- | ------------------------------- |
+| Anthropic     | https://www.anthropic.com/      |
+| Google Gen AI | https://ai.google.com/          |
+| OpenAI        | https://openai.com/             |
+
+<Callout type="info">
+For JavaScript, both the Bun and NodeJS runtimes are supported.
+</Callout>
+
+## Creating Templates
+
+The Agentuity Template system is fully open source and you can create your own templates by forking the [Agentuity Template repository](https://github.com/agentuity/templates) and making a pull request.
+
+Run the following command to test your template locally:
+
+<CLICommand command="agentuity create --templates-dir <path-to-directory>" />

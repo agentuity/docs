@@ -1,10 +1,13 @@
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
+import { Github } from "lucide-react";
+import { CommunityButton } from "../components/Community";
+import { NavButton } from "../components/NavButton";
+import { XButton } from "../components/XButton";
 
 /**
  * Shared layout configurations
  */
 export const baseOptions: BaseLayoutProps = {
-	githubUrl: "https://github.com/agentuity",
 	nav: {
 		url: "/Introduction",
 		title: (
@@ -34,43 +37,21 @@ export const baseOptions: BaseLayoutProps = {
 			</div>
 		),
 	},
-	// links: [
-	// 	{
-	// 		text: "Documentation",
-	// 		url: "/docs",
-	// 		active: "nested-url",
-	// 	},
-	// 	{
-	// 		type: "menu",
-	// 		text: "SDKs",
-	// 		items: [
-	// 			{
-	// 				text: "Python",
-	// 				description: "The Python SDK for Agentuity",
-	// 				url: "/docs/sdks/python",
-	// 				// (optional) Props for Radix UI Navigation Menu item in Home Layout
-	// 				menu: {
-	// 					className: "row-span-2",
-	// 					// add banner to navigation menu card
-	// 					// can be an image or other elements
-	// 					banner: <div>Python based SDKs</div>,
-	// 				},
-	// 			},
-	// 			{
-	// 				text: "JavaScript",
-	// 				description: "The JavaScript SDK for Agentuity",
-	// 				url: "/docs/sdks/javascript",
-	// 				menu: {
-	// 					className: "row-span-2",
-	// 					banner: <div>JavaScript based SDKs</div>,
-	// 				},
-	// 			},
-	// 		],
-	// 	},
-	// 	{
-	// 		text: "API",
-	// 		url: "/docs/api",
-	// 		active: "nested-url",
-	// 	},
-	// ],
+	links: [
+		{
+			type: "custom",
+			on: "nav",
+			children: (
+				<div className="flex items-center gap-2 text-sm">
+					<NavButton href="https://agentuity.com/blog">Blog</NavButton>
+					<NavButton href="https://app.agentuity.com">Console</NavButton>
+					<CommunityButton />
+					<XButton className="h-9" />
+					<NavButton href="https://github.com/agentuity" className="h-9">
+						<Github className="size-4" />
+					</NavButton>
+				</div>
+			),
+		},
+	],
 };

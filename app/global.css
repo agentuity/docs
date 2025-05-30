@@ -31,6 +31,49 @@
 	--color-gray-800: var(--color-zinc-800);
 	--color-gray-900: var(--color-zinc-900);
 	--color-gray-950: var(--color-zinc-950);
+
+	--shadow-md: none;
+
+	--color-fd-background: var(--color-white);
+	--color-fd-foreground: var(--color-cyan-900);
+	--color-fd-muted: var(--color-cyan-100);
+	--color-fd-muted-foreground: var(--color-cyan-700);
+	--color-fd-popover: var(--color-cyan-50);
+	--color-fd-popover-foreground: var(--color-cyan-900);
+	--color-fd-card: var(--color-white);
+	--color-fd-card-foreground: var(--color-cyan-900);
+	--color-fd-border: var(--color-gray-200);
+	--color-fd-primary: var(--color-cyan-700);
+	--color-fd-primary-foreground: var(--color-cyan-50);
+	--color-fd-secondary: var(--color-cyan-100);
+	--color-fd-secondary-foreground: var(--color-cyan-900);
+	--color-fd-accent: var(--color-cyan-100);
+	--color-fd-accent-foreground: var(--color-cyan-900);
+	--color-fd-ring: var(--color-cyan-500);
+}
+  
+.dark {
+	--color-fd-background: var(--color-cyan-900);
+	--color-fd-foreground: var(--color-white);
+	--color-fd-muted: var(--color-cyan-900);
+	--color-fd-muted-foreground: var(--color-gray-400);
+	--color-fd-popover: var(--color-cyan-900);
+	--color-fd-popover-foreground: var(--color-cyan-50);
+	--color-fd-card: var(--color-black);
+	--color-fd-card-foreground: var(--color-cyan-50);
+	--color-fd-border: var(--color-cyan-900);
+	--color-fd-primary: var(--color-cyan-200);
+	--color-fd-primary-foreground: var(--color-cyan-900);
+	--color-fd-secondary: var(--color-cyan-900);
+	--color-fd-secondary-foreground: var(--color-cyan-100);
+	--color-fd-accent: var(--color-cyan-900);
+	--color-fd-accent-foreground: var(--color-cyan-100);
+	--color-fd-ring: var(--color-cyan-300);
+}
+
+.dark body,
+.dark main {
+	background-color: #011;
 }
 
 aside [data-radix-scroll-area-viewport] button,
@@ -42,11 +85,99 @@ aside [data-radix-scroll-area-viewport] a {
 	background: #FAFAFA;
 }
 
-.dark aside {
-	background: #18181A;
+.dark aside,
+.dark header {
+	background: #011;
 }
 
 .dark aside [data-radix-scroll-area-viewport] button,
 .dark aside [data-radix-scroll-area-viewport] a {
 	color: #FFF;
+}
+
+/* make sure empty lines are rendered */
+code span.line:empty:before {
+	content: "\200b";
+}
+
+code span.line > span {
+	white-space: pre !important;
+}
+
+.code-example > div[role="tablist"] {
+	background-color: #EEE;
+}
+
+.dark .code-example > div[role="tablist"] {
+	background-color: #000;
+}
+
+.mermaid .cluster rect {
+	fill: #FFF !important;
+	stroke: #099 !important;
+}
+
+.dark .mermaid .cluster rect {
+	fill: #111 !important;
+	stroke: #099 !important;
+}
+
+.mermaid .flowchart-link {
+	stroke: #999 !important;
+}
+
+.mermaid .marker {
+	stroke: #999 !important;
+	fill: #777 !important;
+}
+
+.mermaid rect.label-container {
+	fill: rgba(150, 236, 236, 0.1) !important;
+	stroke: #099 !important;
+	stroke-dasharray: 2 2 !important;
+}
+
+.dark .mermaid .nodeLabel {
+	color: #FFF !important;
+}
+
+.mermaid text.actor > tspan {
+	font-size: 11px;
+}
+
+.mermaid .messageText {
+	font-size: 12px !important;
+}
+
+.mermaid .messageLine0,
+.mermaid .messageLine1 {
+	stroke: #099 !important;
+}
+
+.prose blockquote {
+	border: 2px solid var(--color-cyan-600);
+	background-color: var(--color-cyan-50);
+	font-style: normal;
+	border-radius: 0.5rem;
+}
+
+.dark .prose blockquote {
+	border: 1px solid var(--color-cyan-800);
+	background-color: var(--color-gray-950);
+}
+
+.prose {
+	:where(blockquote p:first-of-type):not(
+			:where([class~="not-prose"], [class~="not-prose"] *)
+		)::before {
+		content: "";
+	}
+}
+
+.dark .prose hr {
+	border-color: var(--color-cyan-800);
+}
+
+article > p {
+	margin-bottom: 1rem;
 }

@@ -1,44 +1,281 @@
 ---
-title: Agent Dashboard
-description: Overview of the agent dashboard in Agentuity Cloud
+title: Agents
+description: The agents page is for managing your agents
 ---
 
 ## Agent Dashboard Overview
 
-The agent dashboard provides a comprehensive view of your deployed agent and its performance. This page helps you monitor your agent's status, usage metrics, and recent activity.
+The agent dashboard provides a list of your agents. This page helps you monitor your agent's status, usage metrics, and recent activity.
 
-## Dashboard Sections
+<ThemeImage baseName="agents" alt="Agent Dashboard"  />
 
-### Agent Information
-The top section of the dashboard displays essential information about your agent:
-- Agent status (Active/Inactive)
-- Creation date
-- Last updated and deployment dates
-- LLM models being used by the agent
+### Managing an Agent
 
-### Cost & Usage Tracking
-This section provides detailed metrics about your agent's usage:
-- Total cost accumulated
-- LLM cost (portion of the total cost spent on language model calls)
-- Input tokens processed
-- Output tokens generated
+You can select a specific agent to view and manage its details.  The agent detail page provides a list of the agent's inputs and outputs, recent sessions and overview of costs.
 
-### Recent Activity
-The activity section shows a table of recent sessions for your agent, including:
-- Session status (Pending, Completed, Error)
-- Duration of each session
-- Cost per session
-- When the session started
+<ThemeImage baseName="agent-detail" alt="Agent Detail"  />
 
-### I/O Visualization
-The I/O visualization shows how your agent connects to various inputs and outputs. This visual representation helps you understand the flow of data through your agent.
+### Agent Input & Output
 
-## Calling Your Agent
+Agents receive data from various sources and send data to various destinations (input and output, or we call it IO).
 
-To call your deployed agent from external applications:
+<Mermaid chart="
+graph TD
+    subgraph Sources
+        A1[Webhook]
+        A2[Email]
+        A3[API]
+        A4[Cron]
+        A5[Agent]
+        A6[Slack]
+    end
 
-1. In the I/O visualization, click on the webhook icon or the plus button to add a webhook
-2. View the webhook configuration modal to get your agent's webhook URL
-3. Use this URL to send requests to your agent from your applications
+    subgraph Destinations
+        B1[Webhook]
+        B2[Email]
+        B3[API]
+        B4[Slack]
+        B5[Agent]
+    end
 
-For detailed information about using webhooks with your agent, see the [Webhooks](/Integrations/webhooks) documentation.
+    A1 --> Agent
+    A2 --> Agent
+    A3 --> Agent
+    A4 --> Agent
+    A5 --> Agent
+    A6 --> Agent
+
+    Agent --> B1
+    Agent --> B2
+    Agent --> B3
+    Agent --> B4
+    Agent --> B5
+"/>
+
+You can think of the agent as an intelligent black box that receives data from sources and responds with data which is sent to the configured destinations.
+
+Read the [Agent IO](/Guides/agent-io) guide for more information.
+
+You can add a new input or output by clicking the plus button in the agent IO visualization.
+
+<ThemeImage baseName="agent-io-new" alt="Agent New IO"  />
+
+When you agent is invoked, it will process the data and send the output to the output destination.
+
+The agent request object will contain a property called `trigger` that will contain the source that triggered the agent. You can use this to determine the source of the data and process it accordingly. This is particularly useful when you are using multiple sources to trigger the same agent.
+
+<CodeExample js={`import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
+
+export default async function Agent(
+   req: AgentRequest,
+   resp: AgentResponse,
+   ctx: AgentContext
+) {
+    ctx.logger.info('trigger was %s', req.trigger);
+    return resp.text("ok");
+}`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    context.logger.info('trigger was %s', request.trigger)
+    return response.text("ok")
+`} />
+
+#### Agent Webhook Source
+
+To configure your agent to receive data from a webhook, you need to add a new webhook source.  When receiving data from a webhook, the agent will send the data to the agent's inputs asynchronously without waiting for the agent to finish processing the data.
+
+<ThemeImage baseName="agent-io-webhook-source" alt="Agent New Webhook Source"  />
+
+For Webhook sources, you can require authorization to access the webhook.  This is useful if you want to protect your webhook from unauthorized access.
+
+The following authentication methods are supported:
+
+| Type    | Description |
+|---------|-------------|
+| Project | Authenticated using the project API Key |
+| Public  | No authentication required - webhook is publicly accessible |
+| Bearer  | Authenticated using Bearer Token via `Authorization: Bearer <token>` header |
+| Basic   | Authenticated using Basic Auth via `Authorization: Basic <username>:<password>` header |
+| Header  | Authenticated using custom header via `<key>: <value>` header |
+
+When using the Bearer, Basic or Header authentication methods, you can specify the authentication values for each agent.
+
+To trigger a webhook using curl with a required Bearer token authentication, you can use the following command:
+
+<CLICommand command={`curl https://agentuity.ai/webhook/agent_1234567890abcdef \\\n\t-H 'Authorization: Bearer <token>' \\\n\t--json '{"some":"data"}'`} />
+
+<Callout type="info">
+  Make sure to use the correct agent ID in the webhook URL.
+</Callout>
+
+The response from the webhook will contain an informational message if successful.  Additionally, the `Location` header will contain the URL that can be used to read the agent output.  This URL will block until the agent has started streaming the output response.
+
+#### Agent API Source
+
+To configure your agent to receive data as an API endpoint, you need to add a new API source.  When receiving data from an API endpoint, the agent will send the data to the agent's inputs synchronously and wait for the agent to respond.
+
+<ThemeImage baseName="agent-io-api-source" alt="Agent New API Source"  />
+
+For API sources, you can require authorization to access the API.  This is useful if you want to protect your API from unauthorized access.
+
+The following authentication methods are supported:
+
+| Type    | Description |
+|---------|-------------|
+| Project | Authenticated using the project API Key |
+| Public  | No authentication required - webhook is publicly accessible |
+| Bearer  | Authenticated using Bearer Token via `Authorization: Bearer <token>` header |
+| Basic   | Authenticated using Basic Auth via `Authorization: Basic <username>:<password>` header |
+| Header  | Authenticated using custom header via `<key>: <value>` header |
+
+When using the Bearer, Basic or Header authentication methods, you can specify the authentication values for each agent.
+
+When you plan on using the API source, it is recommended that you stream data to and from the agent.
+
+To invoke an API using curl with a required Bearer token authentication, you can use the following command:
+
+<CLICommand command={`curl https://agentuity.ai/api/agent_1234567890abcdef \\\n\t-H 'Authorization: Bearer <token>' \\\n\t--json '{"some":"data"}'`} />
+
+<Callout type="info">
+  Make sure to use the correct agent ID in the webhook URL.
+</Callout>
+
+#### Agent Email Source
+
+For Email sources, you can configure your agent at a unique agent email address.  When receiving an email, the agent will send the email content to the agent's inputs asynchronously without waiting for the agent to finish processing the email.
+
+<ThemeImage baseName="agent-io-email-source" alt="Agent New Email Source"  />
+
+<Callout type="info">
+  An email source can only be triggered by an email sent to the agent's email address and not via the API.
+</Callout>
+
+The response from the API will contain an informational message if successful.  Additionally, the `Location` header will contain the URL that can be used to read the agent output.  This URL will block until the agent has started streaming the output response.
+
+#### Agent Schedule Source
+
+For running an agent on a schedule, you can configure your agent to use a cron source.  When the agent is scheduled to run, the agent will send the data to the agent's inputs asynchronously without waiting for the agent to finish processing the data.
+
+<ThemeImage baseName="agent-io-cron-source" alt="Agent New Schedule Source"  />
+
+When creating a new schedule, you can specify the cron expression to run the agent.  The cron expression is a string that represents the schedule to run the agent.
+
+<div className="flex items-center justify-start gap-2">Click the sparkle icon <Sparkle /> to help you create a new cron expression using AI.</div>
+
+You can optionally specify a content type and payload to send to the agent when the agent is scheduled to run.
+
+A cron source can only be triggered internally by the Agentuity Platform and not via the API. However, you can trigger a scheduled agent to run by selecting the schedule and selecting "Manual Run" in the context menu.
+
+<ThemeImage baseName="agent-io-cron-trigger" alt="Trigger Cron Manually"  />
+
+### Agent Deployments
+
+Agentuity supports continuous deployment using a native GitHub App integration and a GitHub Actions workflow.
+
+#### GitHub App Integration
+
+The GitHub App integration is a native integration that allows you to deploy your agents to the Agentuity Platform from your GitHub repository.
+
+To enable the GitHub App integration, you need to provide permission for Agentuity to access your GitHub account. On your Project Settings page, you can find the GitHub App integration.
+
+<ThemeImage baseName="project-integration" alt="Project Integrations"  />
+
+Once connected, each Project can be configured to deploy from a specific GitHub repository automatically.
+
+<ThemeImage baseName="project-integration-github" alt="Project GitHub Integration"  />
+
+When a new commit is pushed to the repository, the GitHub Actions workflow will be triggered and the agent will be deployed to the Agentuity Platform.
+
+<ThemeImage baseName="agent-deployment" alt="Agent Deployment"  />
+
+You can select a specific deployment to view the deployment details including logs.
+
+<ThemeImage baseName="agent-deployment-detail" alt="Agent Deployment Detail"  />
+
+When using GitHub to deploy (either the GitHub App or the GitHub Actions workflow), your GitHub commit information will be displayed in the deployment details.
+
+You can see all the projects that are connected to your GitHub account in the Settings > Integrations section.
+
+<ThemeImage baseName="settings-integration-github" alt="GitHub Settings"  />
+
+From here you can disconnect a specific project from your GitHub account or disconnect Agentuity from your GitHub account.
+
+#### GitHub Actions Workflow
+
+The GitHub Actions workflow is a native integration that allows you to deploy your agents to the Agentuity Platform from your GitHub repository using GitHub Actions.
+
+You can install the GitHub Actions workflow by visiting the [Agentuity GitHub Actions Marketplace](https://github.com/marketplace/actions/agentuity-deploy-action) and clicking the "Install" button.
+
+<ThemeImage baseName="github-action" alt="GitHub Actions Workflow"  />
+
+You can also directly use the [Agentuity GitHub Actions](https://github.com/agentuity/deploy-action) repository to deploy your agents to the Agentuity Platform.
+
+#### Manual Deployment
+
+You can also manually deploy your agents to the Agentuity Platform with the CLI using the following command:
+
+<CLICommand command="agentuity deploy" />
+
+By default, the CLI will use the `latest` tag to deploy your agents. You can specify one or more tags to deploy by using the `--tag` flag.  The active deployment will only be used for agent requests based on the `latest` tag.
+
+You can test new versions of your agents by using the `--tag` flag to specify a specific tag and then using the tag in either the `webhook` or `api` source.
+
+For example, if you have a tag called `v1.0.0`, you can use the following command to deploy it:
+
+<CLICommand command="agentuity deploy --tag v1.0.0" />
+
+This will tag the deployment with the `v1.0.0` tag but not make it the active deployment.
+
+You can the invoke the agent with the `v1.0.0` tag by using curl with the following command:
+
+<CLICommand command={`curl https://agentuity.ai/api/agent_1234567890abcdef/v1.0.0 \\\n\t-H 'Authorization: Bearer <token>' \\\n\t--json '{"some":"data"}'`} />
+
+<Callout type="info">
+  Make sure to use the correct agent ID and tag in the API URL. Also, make sure to use the correct authentication token and that you have configured the API source.
+</Callout>
+
+#### Rollback & Delete
+
+You can rollback to a previous deployment by using the CLI with the following command:
+
+<CLICommand command="agentuity rollback" />
+
+If you would like to delete the deployment in addition to rolling back, you can use the `--delete` flag.
+
+<ThemeImage baseName="cli-rollback" alt="CI Rollback"  />
+
+You can select a specific deployment:
+
+<ThemeImage baseName="cli-rollback-detail" alt="CI Rollback"  />
+
+### Agent Logs
+
+You can view the logs for a specific agent by selecting the agent and then clicking the "Logs" tab.
+
+<ThemeImage baseName="agent-logs" alt="Agent Logs"  />
+
+If you select a specific log, you can view the log detail for the specific log entry.
+
+<ThemeImage baseName="agent-logs-detail" alt="Agent Logs Detail"  />
+
+### Agent Sessions
+
+The sessions dashboard provides a list of your agent sessions. This page helps you monitor your agent's status, usage metrics, and recent activity.
+
+<ThemeImage baseName="sessions" alt="Agent Sessions"  />
+
+If you select a specific session, you can view the session detail for the specific session.
+
+<ThemeImage baseName="agent-session-detail" alt="Agent Session Detail"  />
+
+If you select a specific span, a session span trace detail will be displayed with specific detail about the execution of the span.
+
+<ThemeImage baseName="agent-session-detail-sidebar" alt="Agent Session Detail Sidebar"  />
+
+## CLI
+
+You can use the CLI to manage your agents using the following command:
+
+<CLICommand command="agentuity agent" />
+
+See the [CLI documentation](/CLI/agent) for more information on specific command usage and flags.

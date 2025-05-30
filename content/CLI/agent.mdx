@@ -1,6 +1,6 @@
 ---
 title: Agent Commands
-description: Commands for managing agents in your Agentuity project
+description: Commands for managing agents
 ---
 
 The `agent` commands allow you to create, list, delete, and manage agents in your Agentuity project.
@@ -9,15 +9,11 @@ The `agent` commands allow you to create, list, delete, and manage agents in you
 
 Creates a new agent in your project.
 
-### Aliases
-
-`agentuity agent new` (shortcut for `agentuity agent create`)
+**Aliases:** new
 
 ### Usage
 
-```bash
-agentuity agent create [name] [description] [auth_type]
-```
+<CLICommand command="agentuity agent create [name] [description] [auth_type]" />
 
 **Arguments:**
 - `name` - The name of the agent
@@ -39,26 +35,21 @@ After providing this information, the command will:
 
 ### Example
 
-```bash
-$ agentuity agent create
-What should we name the agent? MyNewAgent
-How should we describe what the MyNewAgent agent does? This agent processes customer support requests
-✓ Agent created successfully
-```
+<CLICommand command="agentuity agent create">
+	What should we name the agent? MyNewAgent
+	How should we describe what the MyNewAgent agent does? This agent processes customer support requests
+	✓ Agent created successfully
+</CLICommand>
 
 ## agent list
 
 Lists all agents in your project.
 
-### Aliases
-
-`agentuity agent ls` (shortcut for `agentuity agent list`)
+**Aliases:** ls
 
 ### Usage
 
-```bash
-agentuity agent list
-```
+<CLICommand command="agentuity agent list" />
 
 **Flags:**
 - `-d, --dir string` - The project directory
@@ -71,8 +62,7 @@ This command will display a list of all agents in your project, including:
 
 ### Example
 
-```bash
-$ agentuity agent list
+<CLICommand command="agentuity agent list">
 src/agents
 ├── MyFirstAgent
 │  ├── ID: 3c4c0b692533d7807cf0f649ef425dfa29b58bcc99be03e208e52749107fca2e
@@ -81,21 +71,17 @@ src/agents
 └── MyNewAgent
    ├── ID: 7a8b9c0d1e2f3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3a4b5c6d7e8f
    └── Description: This agent processes customer support requests
-```
+</CLICommand>
 
 ## agent delete
 
 Deletes one or more agents from your project.
 
-### Aliases
-
-`agentuity agent rm` or `agentuity agent del` (shortcuts for `agentuity agent delete`)
+**Aliases:** rm, del
 
 ### Usage
 
-```bash
-agentuity agent delete
-```
+<CLICommand command="agentuity agent delete" />
 
 **Flags:**
 - `-d, --dir string` - The project directory
@@ -108,29 +94,24 @@ This command will:
 
 ### Example
 
-```bash
-$ agentuity agent delete
+<CLICommand command="agentuity agent delete">
 Select one or more agents to delete:
 [ ] MyFirstAgent 3c4c0b692533d7807cf0f649ef425dfa29b58bcc99be03e208e52749107fca2e
 [x] MyNewAgent 7a8b9c0d1e2f3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3a4b5c6d7e8f
 
 Are you sure you want to delete the selected agents? This action cannot be undone. [y/N] y
 ✓ Agent deleted successfully
-```
+</CLICommand>
 
 ## agent apikey
 
 Gets the API key for an agent.
 
-### Aliases
-
-`agentuity agent key` (shortcut for `agentuity agent apikey`)
+**Aliases:** key
 
 ### Usage
 
-```bash
-agentuity agent apikey [agent_name]
-```
+<CLICommand command="agentuity agent apikey [agent_name]" />
 
 **Arguments:**
 - `agent_name` - The name or ID of the agent (optional)
@@ -145,23 +126,25 @@ This command will:
 
 ### Example
 
-```bash
-# Get API key for a specific agent
-$ agentuity agent apikey MyFirstAgent
-Agent MyFirstAgent API key: [API KEY WILL BE DISPLAYED HERE]
+Get an API key for a specific agent:
 
-# Get API key interactively
-$ agentuity agent apikey
+<CLICommand command="agentuity agent apikey MyFirstAgent">
+✓ Agent MyFirstAgent API key: apikey_1234567890abcdefghijklmnopqrstuvwxyz
+</CLICommand>
+
+Get an API key for an agent interactively:
+
+<CLICommand command="agentuity agent apikey">
 Select an Agent:
-> MyFirstAgent 3c4c0b692533d7807cf0f649ef425dfa29b58bcc99be03e208e52749107fca2e
-  MyNewAgent 7a8b9c0d1e2f3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3a4b5c6d7e8f
+  [x] MyFirstAgent 3c4c0b692533d7807cf0f649ef425dfa29b58bcc99be03e208e52749107fca2e
+  [ ] MyNewAgent 7a8b9c0d1e2f3g4h5i6j7k8l9m0n1o2p3q4r5s6t7u8v9w0x1y2z3a4b5c6d7e8f
 
-Agent MyFirstAgent API key: [API KEY WILL BE DISPLAYED HERE]
-```
+✓ Agent MyFirstAgent API key: apikey_1234567890abcdefghijklmnopqrstuvwxyz
+</CLICommand>
 
 ## Global Flags
 
 These flags apply to all agent commands:
 
-- `--config string` - Config file (default is $HOME/.config/agentuity/config.yaml)
+- `--config string` - Config file (default is `$HOME/.config/agentuity/config.yaml`)
 - `--log-level string` - The log level to use (default "info")

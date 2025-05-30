@@ -1,64 +1,46 @@
 ---
 title: Installation
-description: Installation of Agentuity CLI
+description: Insructions for installing the CLI
 ---
-
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
-## Installation
+The Agentuity CLI is a command line tool for managing your Agentuity projects. It's a cross-platform tool that can be used on Windows (using WSL), MacOS, and Linux.
 
-<Tabs items={['macOS', 'Linux', 'Windows (WSL)']}>
-  <Tab>
-    ### macOS Installation
+### Install Script
 
-    ```bash
-    curl -fsS https://agentuity.sh | sh
-    ```
+The easiest way to install the Agentuity CLI is to use the install script. This script will automatically detect your operating system and install the appropriate version of the CLI.
 
-    ### Upgrading on macOS
+<CLICommand command="curl -fsS https://agentuity.sh | sh" />
 
-    To upgrade to the latest version of the Agentuity CLI:
+<Callout type="warn">
+  The install script for Windows only works in the <strong>WSL (Windows Subsystem for Linux)</strong> environment
+</Callout>
 
-    ```bash
-    agentuity upgrade
-    ```
-  </Tab>
-  <Tab>
-    ### Linux Installation
+<Callout type="info">
+  On MacOS, if you have Homebrew installed, the install script will automatically use brew for installation.
+</Callout>
 
-    ```bash
-    curl -fsS https://agentuity.sh | sh
-    ```
+### Version
 
-    ### Upgrading on Linux
+To print the version of the Agentuity CLI:
 
-    To upgrade to the latest version of the Agentuity CLI:
+<CLICommand command="agentuity version" />
 
-    ```bash
-    agentuity upgrade
-    ```
-  </Tab>
-  <Tab>
-    ### Windows (WSL) Installation
+You can also use the `-v` flag to print the version:
 
-    <Callout type="warning">
-      The install script for Windows only works in the <strong>WSL (Windows Subsystem for Linux)</strong> environment.<br/>
-      <strong>There is currently no support for a native Windows installer.</strong>
-    </Callout>
+<CLICommand command="agentuity -v" />
 
-    ```bash
-    curl -fsS https://agentuity.sh | sh
-    ```
+To check if you have the latest version of the Agentuity CLI:
 
-    ### Upgrading on Windows (WSL)
+<CLICommand command="agentuity version check" />
 
-    To upgrade to the latest version of the Agentuity CLI:
+### Upgrading
 
-    ```bash
-    agentuity upgrade
-    ```
-  </Tab>
-</Tabs>
+To upgrade to the latest version of the Agentuity CLI:
+
+<CLICommand command="agentuity upgrade" />
+
+For more details on the `version` command, see the [CLI Version Commands](/CLI/version).
 
 ## Manual Installation
 
@@ -80,7 +62,7 @@ The Agentuity CLI provides shell completions for bash, zsh, fish, and PowerShell
 ### Automatic Setup
 
 When you install the CLI using the installer scripts, completions are automatically set up for:
-- **Bash and Zsh** on macOS and Linux (when you have write permissions to the completion directories)
+- **Bash and Zsh** on MacOS and Linux (when you have write permissions to the completion directories)
 
 ### Manual Setup
 
@@ -90,60 +72,42 @@ You can manually set up completions for any supported shell using the `agentuity
   <Tab>
     To load completions in your current bash session:
 
-    ```bash
-    source <(agentuity completion bash)
-    ```
+    <CLICommand command="source <(agentuity completion bash)" />
 
     To load completions for every new session:
 
     For Linux:
-    ```bash
-    agentuity completion bash > /etc/bash_completion.d/agentuity
-    ```
+    <CLICommand command="agentuity completion bash > /etc/bash_completion.d/agentuity" />
 
-    For macOS:
-    ```bash
-    agentuity completion bash > $(brew --prefix)/etc/bash_completion.d/agentuity
-    ```
+    For MacOS:
+    <CLICommand command="agentuity completion bash > $(brew --prefix)/etc/bash_completion.d/agentuity" />
 
     Note: This depends on the `bash-completion` package. If not already installed, you can install it via your OS's package manager.
   </Tab>
   <Tab>
     To load completions in your current zsh session:
 
-    ```bash
-    source <(agentuity completion zsh)
-    ```
+    <CLICommand command="source <(agentuity completion zsh)" />
 
     To load completions for every new session:
 
     For Linux:
-    ```bash
-    agentuity completion zsh > "${fpath[1]}/_agentuity"
-    ```
+    <CLICommand command='agentuity completion zsh > "${fpath[1]}/_agentuity"' />
 
-    For macOS:
-    ```bash
-    agentuity completion zsh > $(brew --prefix)/share/zsh/site-functions/_agentuity
-    ```
+    For MacOS:
+    <CLICommand command="agentuity completion zsh > $(brew --prefix)/share/zsh/site-functions/_agentuity" />
 
     If shell completion is not already enabled in your environment, you need to enable it:
 
-    ```bash
-    echo "autoload -U compinit; compinit" >> ~/.zshrc
-    ```
+    <CLICommand command='echo "autoload -U compinit; compinit" >> ~/.zshrc' />
   </Tab>
   <Tab>
     To load completions in your current fish session:
 
-    ```bash
-    agentuity completion fish | source
-    ```
+    <CLICommand command="agentuity completion fish | source" />
 
     To load completions for every new session:
 
-    ```bash
-    agentuity completion fish > ~/.config/fish/completions/agentuity.fish
-    ```
+    <CLICommand command="agentuity completion fish > ~/.config/fish/completions/agentuity.fish" />
   </Tab>
 </Tabs>

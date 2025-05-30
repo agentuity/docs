@@ -1,6 +1,6 @@
 ---
 title: Authentication Commands
-description: Commands for authenticating with the Agentuity Cloud Platform
+description: Commands for authenticating with Agentuity
 ---
 
 The `auth` commands allow you to authenticate with the Agentuity Cloud Platform, manage your login session, and check your authentication status.
@@ -9,73 +9,60 @@ The `auth` commands allow you to authenticate with the Agentuity Cloud Platform,
 
 Logs you into the Agentuity Cloud Platform.
 
-### Aliases
-
-`agentuity login` (shortcut for `agentuity auth login`)
+**Aliases:** login
 
 ### Usage
 
-```bash
-agentuity auth login
-```
+<CLICommand command="agentuity auth login" />
 
-This command will print out a one-time code and open a browser window where you can log in to your Agentuity account and provide the one-time code. After successful authentication, your credentials will be stored locally for future use.  By default, the credentials and other configuration are stored in the following file: `$HOME/.config/agentuity/config.json`.
+This command will print out a one-time code and a link to a URL where you can log in to your Agentuity account and provide the one-time code. 
+
+After successful authentication, your credentials will be stored locally for future use.  By default, the credentials and other configuration are stored in the following file: `$HOME/.config/agentuity/config.yaml`.
 
 ### Example
 
-```bash
-$ agentuity auth login
+<CLICommand command="agentuity auth login">
 ✓ You are now logged in
-```
+</CLICommand>
 
 ## auth logout
 
 Logs you out of the Agentuity Cloud Platform.
 
-### Aliases
-
-`agentuity logout` (shortcut for `agentuity auth logout`)
+**Aliases:** logout
 
 ### Usage
 
-```bash
-agentuity auth logout
-```
+<CLICommand command="agentuity auth logout" />
 
 This command will remove your stored credentials.
 
 ### Example
 
-```bash
-$ agentuity auth logout
+<CLICommand command="agentuity auth logout">
 ✓ You have been logged out
-```
+</CLICommand>
 
 ## auth whoami
 
 Displays information about the currently logged-in user.
 
-### Aliases
-
-`agentuity whoami` (shortcut for `agentuity auth whoami`)
+**Aliases:** whoami
 
 ### Usage
 
-```bash
-agentuity auth whoami
-```
+<CLICommand command="agentuity auth whoami" />
 
 ### Example
 
-```bash
-$ agentuity auth whoami
+<CLICommand command="agentuity auth whoami">
 ╭──────────────────────────────────────────────────────────────────────────────────╮
 │                                                                                  │
 │ Currently logged in as                                                           │
 │                                                                                  │
-│ Name:           Jeff Haynie                    user_xsjDaYg0UsTcARJWa1BI5irsoB7  │
+│ Name:           Your Name                      user_0123456789abcedefghijklmnop  │
 │                                                                                  │
-│ Organization:   Jeff Team                       org_xsjDbpem0VT7QA9DupHGdE72HLQ  │
+│ Organization:   Your Organization               org_0123456789abcdefghijklmnopq  │
 │                                                                                  │
 ╰──────────────────────────────────────────────────────────────────────────────────╯
-```
+</CLICommand>

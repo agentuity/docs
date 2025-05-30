@@ -1,6 +1,6 @@
 ---
 title: Cloud Commands
-description: Commands for deploying and managing projects in the Agentuity Cloud Platform
+description: Commands for deploying and managing agents
 ---
 
 The `cloud` commands allow you to deploy and manage your projects in the Agentuity Cloud Platform.
@@ -9,65 +9,69 @@ The `cloud` commands allow you to deploy and manage your projects in the Agentui
 
 Deploys a project to the Agentuity Cloud Platform.
 
-### Aliases
-
-`agentuity deploy` (shortcut for `agentuity cloud deploy`)
+**Aliases:** deploy
 
 ### Usage
 
-```bash
-agentuity cloud deploy [flags]
-```
+<CLICommand command="agentuity cloud deploy" />
 
-### Flags
-
-| Flag | Description |
-| ---- | ----------- |
-| `--dir`, `-d` | The directory of the project to deploy |
+Flags:
+- `--description string` - Description for the deployment
+- `-d, --dir string` - The directory to the project to deploy (default ".")
+- `--force` - Force the processing of environment files
+- `--format string` - The output format to use for results which can be either 'text' or 'json' (default "text")
+- `-h, --help` - help for deploy
+- `--message string` - A shorter description for the deployment
+- `--org-id string` - The organization to create the project in
+- `--tag stringArray` - Tag(s) to associate with this deployment (can be specified multiple times)
+- `--templates-dir string` - The directory to load the templates. Defaults to loading them from the github.com/agentuity/templates repository
 
 ### Examples
 
 Deploy a project from the current directory:
-```bash
-$ agentuity cloud deploy
+
+<CLICommand command="agentuity cloud deploy">
 ✓ Project deployed successfully
-🚀 Your project is now live at: https://app.agentuity.com/projects/proj_123456
-```
+</CLICommand>
 
 Deploy a project from a specific directory:
-```bash
-$ agentuity cloud deploy --dir ~/projects/my-project
+
+<CLICommand command="agentuity cloud deploy --dir ~/projects/my-project">
 ✓ Project deployed successfully
-🚀 Your project is now live at: https://app.agentuity.com/projects/proj_123456
-```
+</CLICommand>
 
-## cloud status
+## cloud rollback
 
-Checks the deployment status of a project.
-
-### Aliases
-
-`agentuity status` (shortcut for `agentuity cloud status`)
+Rolls back a project to a previous version.
 
 ### Usage
 
-```bash
-agentuity cloud status [flags]
-```
+<CLICommand command="agentuity cloud rollback" />
 
-### Flags
-
-| Flag | Description |
-| ---- | ----------- |
-| `--dir`, `-d` | The directory of the project to check |
+Flags:
+- `--delete` - Delete the deployment instead of rolling back
+- `--dir string` - The directory to the project to rollback if project is not specified
+- `--force` - Force the rollback or delete
+- `-h, --help` - help for rollback
+- `--project string` - Project to rollback a deployment
+- `--tag string` - Tag of the deployment to rollback
 
 ### Examples
 
-Check the status of a project in the current directory:
-```bash
-$ agentuity cloud status
-Project: my-project
-Status: deployed
-Last deployment: 2025-02-27T04:00:00Z
-URL: https://app.agentuity.com/projects/proj_123456
-```
+Rollback the most recent deployment:
+
+<CLICommand command="agentuity cloud rollback">
+✓ Deployment rolled back successfully
+</CLICommand>
+
+Rollback a project to a specific tag:
+
+<CLICommand command="agentuity cloud rollback --tag my-tag">
+✓ Deployment rolled back successfully
+</CLICommand>
+
+Rollback and delete the most recent deployment:
+
+<CLICommand command="agentuity cloud rollback --delete">
+✓ Deployment rolled back successfully
+</CLICommand>

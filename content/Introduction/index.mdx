@@ -1,17 +1,28 @@
 ---
-title: Agentuity
+title: What is Agentuity?
+description: Agentuity is rebuilding the cloud for AI Agents
 ---
 
-Agentuity is a cloud platform designed specifically for building, deploying, and scaling 
-autonomous AI agents. It provides the infrastructure and tools necessary to manage agents 
-built with any framework, such as CrewAI, LangChain, or custom code.
+<div className="text-lg sm:text-xl font-bold h-8 text-cyan-700 dark:text-cyan-300">
+  <TypingAnimation delay={300}>Build agents, not infrastructure</TypingAnimation>
+</div>
 
-With Agentuity, you can:
-- Deploy agents with a single command
-- Monitor real-time performance and analytics
-- Scale agents effortlessly
-- Connect agents to various channels (API, chat, webhooks, email, SMS, voice)
-- Use any AI agent framework
+[Agentuity](https://agentuity.com) is a cloud platform designed specifically to make it easy to build, deploy, and operate AI Agents at scale.
+
+Our mission is to provide a fully agentic infrastructure and tools necessary to build Agents that are fully operated by AI.
+
+With Agentuity, you or your agents can:
+
+- Deploy agents with a single command to a fully agentic infrastructure
+- Monitor real-time performance, analytics, metrics and logs
+- Auto scale agents effortlessly and on-demand
+- Connect agents to various input and output channels (API, chat, webhooks, email, SMS, voice, etc.)
+- Securely communicate between agents and build complex agentic workflows
+- Use any AI agent framework across Python, Node.js or Bun
+
+<h3 className="text-base text-cyan-700 dark:text-cyan-300 mb-10">
+We see a near future where Agents are the primary way to build and operate software and where all the infrastructure is built uniquely for them.
+</h3>
 
 ## Agentuity Platform Overview
 
@@ -27,82 +38,90 @@ With Agentuity, you can:
 
 ## Getting Started
 
+Signup and have your first Agent running in minutes.
+
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 
 <Steps>
 <Step>
-### Create an Account
-[Create an Agentuity account](https://app.agentuity.com/sign-up) or [Sign in](https://app.agentuity.com/sign-in) to the cloud portal.
+### Create a Free Account
+[Create a free Agentuity account](https://app.agentuity.com/sign-up) or [Sign in](https://app.agentuity.com/sign-in) to the cloud portal.
+
+If you already have the Agentuity CLI installed, you can skip this step and signup using the CLI.
 </Step>
 
 <Step>
 ### Install the CLI
 
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+The [Agentuity CLI](/CLI/installation) is a cross-platform command-line tool for working with Agentuity Cloud. It supports Windows (using WSL), MacOS, and Linux.
 
-<Tabs items={['macOS', 'Linux', 'Windows (WSL)']}>
-  <Tab>
-    ```bash
-    curl -fsS https://agentuity.sh | sh
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    curl -fsS https://agentuity.sh | sh
-    ```
-  </Tab>
-  <Tab>
-    ```bash
-    curl -fsS https://agentuity.sh | sh
-    ```
-  </Tab>
-</Tabs>
+<CLICommand command="curl -fsS https://agentuity.sh | sh" />
+</Step>
+
+<Step>
+### Sign up for an Account with the CLI
+
+You can sign up for a free account using the CLI or skip this step if you already have an account.
+
+<CLICommand command="agentuity auth signup" />
 </Step>
 
 <Step>
 ### Login to Agentuity
-```bash
-agentuity login
-```
+
+You can skip this step if you used the CLI to sign up for an account, otherwise you must login to your account using the CLI.
+
+<CLICommand command="agentuity login" />
 </Step>
 
 <Step>
 ### Create Your First Project
-```bash
-agentuity new
-```
+
+You can select a template to get started quickly.
+
+<CLICommand command="agentuity create" />
 </Step>
 
 <Step>
-### Deploy Your Project
-```bash
-agentuity deploy
-```
+### Run Your Agent Locally
+
+You can run your agent locally to test it out before you deploy it to the cloud.
+
+<CLICommand command="agentuity dev" />
 </Step>
 
 <Step>
-### Access Your Agent's Webhook
-After deploying your agent, you can find its webhook URL in the agent's dashboard:
-1. Navigate to your agent in the Agentuity Cloud Console
-2. Click on the "Connections" tab or the webhook icon in the I/O visualization
-3. In the "Inbound Webhook" modal, you'll find the webhook URL and configuration options
+### Deploy Your Project to the Cloud
 
-This webhook URL is what you'll use to send requests to your agent from external applications.
+Deploy your agent to the cloud and start using it! 🚀
+
+<CLICommand command="agentuity deploy" />
+
+<Callout type="info">
+If you're using an Agentic Code Editor such as [Cursor](https://www.cursor.com), just tell your agent to deploy your project to the cloud such as "Deploy my project to the cloud" and it will do it for you.
+</Callout>
+
 </Step>
+
 </Steps>
 
-## Documentation Sections
+## Recommended Reading
 
 <Cards>
   <Card
-    title="Cloud & Account"
+    title="Guides"
+    href="/Guides"
+    description="Advanced guides for using Agentuity."
+  />
+  <Card
+    title="Cloud Console"
     href="/Cloud/"
-    description="Learn about Agentuity Cloud features, account management, and general platform information."
+    description="Learn about the Agentuity Console capabilities."
   />
   <Card
     title="Command Line Interface"
     href="/CLI/installation"
-    description="Get started with the Agentuity CLI for managing your agents and deployments from the terminal."
+    description="Reference for using Agentuity from the terminal."
   />
   <Card
     title="Examples & Tutorials"
@@ -114,8 +133,10 @@ This webhook URL is what you'll use to send requests to your agent from external
     href="/SDKs"
     description="Integrate Agentuity Cloud into your applications using our SDKs and APIs."
   />
+  <Card
+    title="Changelogs"
+    href="/Changelog"
+    description="Changelogs for the Agentuity SDKs and CLI."
+  />
 </Cards>
 
-## Need Help?
-
-Join our [Community Discord](https://discord.com/invite/vtn3hgUfuc) for assistance.

@@ -1,0 +1,12 @@
+{
+	"title": "Console",
+	"pages": [
+		"index",
+		"project",
+		"agents",
+		"vector-memory",
+		"key-value-memory",
+		"ai-gateway",
+		"settings"
+	]
+}

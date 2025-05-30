@@ -1,3 +1,10 @@
+import { CLICommand } from "@/components/CLICommand";
+import { CodeExample } from "@/components/CodeExample";
+import { Mermaid } from "@/components/Mermaid";
+import { Sparkle } from "@/components/Sparkle";
+import { ThemeImage } from "@/components/ThemeImage";
+import { TypingAnimation } from "@/components/TypingAnimation";
+import { XButton } from "@/components/XButton";
 import { source } from "@/lib/source";
 import { Popup, PopupContent, PopupTrigger } from "fumadocs-twoslash/ui";
 import { Tab, Tabs } from "fumadocs-ui/components/tabs";
@@ -9,7 +16,8 @@ import {
 	DocsTitle,
 } from "fumadocs-ui/page";
 import { notFound } from "next/navigation";
-import { Code } from "../../../components/Code";
+import { CommunityButton } from "../../../components/Community";
+import { NavButton } from "../../../components/NavButton";
 
 export default async function Page(props: {
 	params: Promise<{ slug?: string[] }>;
@@ -41,11 +49,38 @@ export default async function Page(props: {
 						Popup,
 						PopupContent,
 						PopupTrigger,
-						Code,
+						CodeExample,
+						CLICommand,
+						CommunityButton,
+						Mermaid,
+						NavButton,
+						Sparkle,
 						Tab,
 						Tabs,
+						ThemeImage,
+						TypingAnimation,
 					}}
 				/>
+				<div className="mt-12 border p-4 rounded-lg bg-fd-card">
+					<h3 className="mt-1 text-fd-foreground">Need Help?</h3>
+					<p>
+						Join our <CommunityButton noBorder /> for assistance or just to hang
+						with other humans building agents.
+					</p>
+					<p>
+						Send us an email at{" "}
+						<a href="mailto:hi@agentuity.com">hi@agentuity.com</a> if you&apos;d
+						like to get in touch.
+					</p>
+					<p className="flex items-center gap-2">
+						Please <XButton follow noBorder />
+					</p>
+					<p>
+						If you haven&apos;t already, please{" "}
+						<a href="https://app.agentuity.com/sign-up">Signup</a> for your free
+						account now and start building your first agent!
+					</p>
+				</div>
 			</DocsBody>
 		</DocsPage>
 	);

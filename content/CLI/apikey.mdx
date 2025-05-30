@@ -1,11 +1,9 @@
 ---
 title: API Key Commands
-description: Managing API keys with the Agentuity CLI
+description: Commands for managing API keys
 ---
 
-## Overview
-
-The Agentuity CLI provides commands to manage API keys for authentication with the Agentuity Cloud Platform.
+The `apikey` commands allow you to create, list, delete, and manage API keys for authentication with the Agentuity Cloud Platform.
 
 ## Commands
 
@@ -13,74 +11,66 @@ The Agentuity CLI provides commands to manage API keys for authentication with t
 
 Base command for API key management.
 
-```bash
-agentuity apikey
-```
+<CLICommand command="agentuity apikey" />
 
-**Aliases:** `apikeys`
+**Aliases:** apikeys
 
 **Examples:**
-```bash
-agentuity apikey list
-agentuity apikey create
-```
+
+<CLICommand command="agentuity apikey list" />
+<CLICommand command="agentuity apikey create" />
 
 ### apikey create
 
 Creates a new API key for use with the Agentuity Cloud Platform.
 
-```bash
-agentuity apikey create
-```
+<CLICommand command="agentuity apikey create" />
 
-**Aliases:** None
+**Aliases:** new, add
 
-**Examples:**
-```bash
-agentuity apikey create
-```
+**Flags:**
+- `--expires-at string` - The expiration date of the API key
+- `--format string` - The format to output the API key in (default "text")
+- `-h, --help` - help for create
+- `-o, --org-id string` - The organization ID to associate the API key with
+- `-p, --project-id string` - The project ID to associate the API key with
 
 ### apikey delete
 
 Deletes an existing API key.
 
-```bash
-agentuity apikey delete
-```
+<CLICommand command="agentuity apikey delete [id]" />
 
-**Aliases:** None
+**Aliases:** rm, del
 
-**Examples:**
-```bash
-agentuity apikey delete
-```
+Specify an optional API key ID to delete a specific API key or choose from a list of API keys.
 
 ### apikey get
 
 Retrieves information about a specific API key.
 
-```bash
-agentuity apikey get
-```
+<CLICommand command="agentuity apikey get [id]" />
 
 **Aliases:** None
 
-**Examples:**
-```bash
-agentuity apikey get
-```
+Specify an optional API key ID to get a specific API key or choose from a list of API keys.
+
+**Flags:**
+- `--format string` - The format to output the API key in (default "text")
+- `-h, --help` - help for get
+- `-m, --mask` - Mask the API key value
 
 ### apikey list
 
 Lists all available API keys for your account.
 
-```bash
-agentuity apikey list
-```
+<CLICommand command="agentuity apikey list" />
 
 **Aliases:** None
 
-**Examples:**
-```bash
-agentuity apikey list
-```
+**Flags:**
+- `--format string` - The format to output the API key in (default "text")
+- `-h, --help` - help for list
+- `-m, --mask` - Mask the API key value
+- `-o, --org-id string` - The organization ID to filter by
+- `-p, --project-id string` - The project ID to filter by
