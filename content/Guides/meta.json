@@ -1,7 +1,6 @@
 {
 	"title": "Guides",
 	"pages": [
-		"index",
 		"what-is-an-agent",
 		"agent-native-cloud",
 		"agent-engineering",
