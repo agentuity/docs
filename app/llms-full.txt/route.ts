@@ -46,9 +46,7 @@ When interacting with this documentation:
 6. Troubleshooting - Common issues and solutions\n\n`;
 
 		const scanned = docs.map((doc) => {
-			if (!doc.file.startsWith("Changelog")) {
-				return `file: ${doc.file}\nmeta: ${JSON.stringify(doc.meta, null, 2)}\n${doc.content}`;
-			}
+			return `file: ${doc.file}\nmeta: ${JSON.stringify(doc.meta, null, 2)}\n${doc.content}`;
 		});
 
 		return new Response(preamble + scanned.join("\n\n"), {
