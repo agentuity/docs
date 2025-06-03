@@ -278,3 +278,67 @@ description: Reference for CLI-related error codes (CLI-XXXX)
 - Verify you have the necessary permissions
 - Ensure the zip file was created successfully
 - Check if the encryption library is working correctly
+
+## CLI-0024
+
+**Error Message**: Error adding GitHub Action Workflow to the project
+
+**Cause**: The system encountered an error when attempting to add a GitHub Action workflow to the project.
+
+**Solution**: 
+- Verify you have write permissions to the repository
+- Check if the .github/workflows directory exists or can be created
+- Ensure the workflow file format is valid
+- Verify your GitHub repository settings allow Actions
+
+## CLI-0025
+
+**Error Message**: Failed to upgrade CLI
+
+**Cause**: The system could not upgrade the CLI to the latest version.
+
+**Solution**: 
+- Check your internet connection
+- Verify you have write permissions to the CLI installation directory
+- Ensure the upgrade server is accessible
+- Try running the upgrade command with elevated privileges
+- Check if there are any conflicting processes using the CLI
+
+## CLI-0026
+
+**Error Message**: Failed to fetch API keys
+
+**Cause**: The system could not retrieve API keys from the server.
+
+**Solution**: 
+- Check your internet connection
+- Verify your authentication credentials are valid
+- Ensure you have permission to access API keys
+- Check if the API server is accessible
+- Try refreshing your authentication token
+
+## CLI-0027
+
+**Error Message**: Failed to create API key
+
+**Cause**: The system could not create a new API key.
+
+**Solution**: 
+- Verify you have permission to create API keys
+- Check if you've reached the maximum number of API keys
+- Ensure the API key name is unique and valid
+- Verify your authentication credentials are current
+- Check the server logs for more specific error details
+
+## CLI-0028
+
+**Error Message**: Failed to delete API key
+
+**Cause**: The system could not delete the specified API key.
+
+**Solution**: 
+- Verify the API key exists
+- Check if you have permission to delete the API key
+- Ensure the API key is not currently in use
+- Verify your authentication credentials are valid
+- Try refreshing your session and attempting again
