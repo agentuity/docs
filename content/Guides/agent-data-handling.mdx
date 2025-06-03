@@ -39,16 +39,15 @@ export default async function Agent(
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
    contentType = request.data.contentType
-	 switch contentType:
-		case 'text/plain':
-			text = await request.data.text()
-			# do something with the text
-		case 'application/json':
-			json = await request.data.json()
-			# do something with the json
-		default:
-			# do something with the data
-			break
+        if contentType == 'text/plain':
+            text = await request.data.text()
+            # do something with the text
+        elif contentType == 'application/json':
+            json = await request.data.json()
+            # do something with the json
+        else:
+            # do something with the data
+            pass
 `} />
 
 
