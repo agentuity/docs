@@ -394,7 +394,7 @@ export default async function Agent(
   resp: AgentResponse,
   ctx: AgentContext
 ) {
-   return Response('Hi', { status: 202 });
+   return new Response('Hi', { status: 202 });
 }`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
