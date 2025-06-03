@@ -378,9 +378,9 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
 `} />
 
 
-#### Custom Content Types
+#### Custom Respnose
 
-For advanced use cases, you can use the `data` method to send a response with a custom content type.
+For advanced use cases, you can return a native Response object from your agent.
 
 <CodeExample js={`import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
 
@@ -389,12 +389,12 @@ export default async function Agent(
   resp: AgentResponse,
   ctx: AgentContext
 ) {
-   const csv = 'name,age\\nAlice,30\\nBob,25';
-   return resp.data(csv, 'text/csv');
+   return Response('Hi', { status: 202 });
 }`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-   csv = 'name,age\\nAlice,30\\nBob,25'
-   return response.data(csv, "text/csv")
+   return Response("Hi", status=202)
 `} />
 
+For JavaScript, the `Response` object follows the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Response) interface.
+For Python, the `Response` object follows the [aiohttp.ClientResponse](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse) interface.
