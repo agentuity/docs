@@ -205,6 +205,10 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
    context.logger.info('email subject: %s', email.subject)
 `} />
 
+<Callout type="info">
+  The email object is only supported when you setup your agent to receive emails.
+</Callout>
+
 You must await the `email` method to get the email object.  The email object will be a `Email` object.  The Email object has the following properties:
 
 - `date`: The date of the email.
