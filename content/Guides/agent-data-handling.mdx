@@ -248,18 +248,17 @@ export default async function Agent(
     contentDisposition: "attachment"
   };
   
-  const messageId = await email.sendReply(req, ctx, {
+  await email.sendReply(req, ctx, {
     subject: "Re: Your inquiry",
     text: "Thank you for your message. We'll respond within 24 hours.",
     html: "<p>Thank you for your message. We'll respond within <strong>24 hours</strong>.</p>",
     attachments: [attachment]
   });
   
-  ctx.logger.info(\`Reply sent with message ID: \${messageId}\`);
+  ctx.logger.info("Reply sent successfully");
   
   return resp.json({ 
-    status: "Reply sent",
-    messageId: messageId
+    status: "Reply sent"
   });
 }`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
 from agentuity.io.email import EmailAttachment
@@ -285,20 +284,6 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     context.logger.info("Reply sent successfully")
     
     return response.json({"status": "Reply sent"})
-`} />
-
-### Authentication Requirements
-
-The `sendReply` method requires an email authentication token to be present in the request metadata. This token is automatically provided when the agent is triggered by an incoming email.
-
-<CodeExample js={`// JavaScript - The token is automatically extracted from request metadata
-const authToken = request.metadata?.['email-auth-token'];
-if (!authToken) {
-    throw new Error('Email authorization token is required but not found in metadata');
-}`} py={`# Python - The token is automatically extracted from request metadata
-email_auth_token = request.metadata.get("email-auth-token")
-if not email_auth_token:
-    raise ValueError("Missing required email-auth-token in AgentRequest metadata for email reply.")
 `} />
 
 ### Large Attachment Support

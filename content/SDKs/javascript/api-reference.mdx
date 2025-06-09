@@ -795,16 +795,16 @@ Returns an array of `IncomingEmailAttachment` objects. Returns an empty array if
 ```typescript
 const email = await request.data.email();
 const attachments = email.attachments();
-console.log('Attachments:', attachments.length);
+context.logger.debug('Attachments:', attachments.length);
 for (const attachment of attachments) {
-  console.log('Attachment:', attachment.filename, attachment.contentDisposition);
+  context.logger.debug('Attachment:', attachment.filename, attachment.contentDisposition);
   const data = await attachment.data();
   const buffer = await data.buffer();
-  console.log('Size:', buffer.length, 'bytes');
+  context.logger.debug('Size:', buffer.length, 'bytes');
 }
 ```
 
-#### `sendReply(request, context, reply): Promise<string>`
+#### `sendReply(request, context, reply): Promise<void>`
 
 Send a reply to the incoming email using the Agentuity email API.
 
@@ -816,7 +816,7 @@ Send a reply to the incoming email using the Agentuity email API.
 
 ##### Return Value
 
-Returns a `Promise<string>` that resolves to the message ID of the sent reply.
+Returns a `Promise<void>` that resolves when the reply is sent successfully.
 
 ##### Example
 
@@ -830,16 +830,17 @@ async function handler(request, response, context) {
         contentDisposition: "attachment"
     };
     
-    const messageId = await email.sendReply(request, context, {
+    await email.sendReply(request, context, {
         subject: "Re: Your inquiry",
         text: "Thank you for contacting us. We'll get back to you soon.",
         html: "<p>Thank you for contacting us. We'll get back to you soon.</p>",
         attachments: [attachment]
     });
     
+    context.logger.info("Reply sent successfully");
+    
     return response.json({ 
-        status: "Reply sent successfully",
-        messageId: messageId
+        status: "Reply sent successfully"
     });
 }
 ```
@@ -879,14 +880,14 @@ async function handler(request, response, context) {
     const email = await request.data.email();
     
     for (const attachment of email.attachments()) {
-        console.log(`Processing: ${attachment.filename}`);
-        console.log(`Disposition: ${attachment.contentDisposition}`);
+        context.logger.debug(`Processing: ${attachment.filename}`);
+        context.logger.debug(`Disposition: ${attachment.contentDisposition}`);
         
         const data = await attachment.data();
         const buffer = await data.buffer();
         
-        console.log(`Size: ${buffer.length} bytes`);
-        console.log(`Content-Type: ${data.contentType}`);
+        context.logger.debug(`Size: ${buffer.length} bytes`);
+        context.logger.debug(`Content-Type: ${data.contentType}`);
     }
     
     return response.json({ message: "Attachments processed" });
