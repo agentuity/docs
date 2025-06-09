@@ -227,6 +227,73 @@ The `Attachment` object has the following properties:
 - `contentDisposition`: The content disposition of the attachment which is either `inline` or `attachment`. Defaults to `attachment`.
 - `data`: The `DataType` of the attachment.
 
+## Sending Email Replies
+
+Both SDKs support sending replies to incoming emails using the `sendReply` method. This requires the email-auth-token to be present in the request metadata.
+
+### JavaScript SDK
+
+<CodeExample js={`import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
+
+export default async function Agent(
+   req: AgentRequest,
+   resp: AgentResponse,
+   ctx: AgentContext
+) {
+   const email = await req.data.email();
+   
+   const attachment = {
+      filename: "response.pdf",
+      data: pdfData,
+      contentDisposition: "attachment"
+   };
+   
+   await email.sendReply(req, ctx, {
+      subject: "Re: Your inquiry",
+      text: "Thank you for your message. We'll respond within 24 hours.",
+      html: "<p>Thank you for your message. We'll respond within <strong>24 hours</strong>.</p>",
+      attachments: [attachment]
+   });
+   
+   ctx.logger.info("Reply sent successfully");
+   
+   return resp.json({ 
+      status: "Reply sent"
+   });
+}`}py={`from agentuity import AgentRequest, AgentResponse, AgentContext
+from agentuity.io.email import EmailAttachment
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    email = await request.data.email()
+    
+    attachment = EmailAttachment(
+        filename="response.pdf",
+        data=pdf_data,
+        content_type="application/pdf"
+    )
+    
+    await email.sendReply(
+        request=request,
+        context=context,
+        subject="Re: Your inquiry",
+        text="Thank you for your message. We'll respond within 24 hours.",
+        html="<p>Thank you for your message. We'll respond within <strong>24 hours</strong>.</p>",
+        attachments=[attachment]
+    )
+    
+    context.logger.info("Reply sent successfully")
+    
+    return response.json({"status": "Reply sent"})
+`} />
+
+### Large Attachment Support
+
+Both SDKs now support large email attachments through streaming mechanisms:
+
+- **Incoming attachments**: Use the `data()` method which returns a Promise/async Data object that streams the content
+- **Outgoing attachments**: Can handle large files efficiently through the attachment data handling
+- **OpenTelemetry tracing**: Automatic tracing is included for attachment operations to monitor performance
+
 
 ### Response Data Formats
 

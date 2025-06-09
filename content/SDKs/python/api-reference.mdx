@@ -65,6 +65,121 @@ def welcome():
     }
 ```
 
+## Email Processing
+
+The Agentuity SDK provides comprehensive email processing capabilities, including parsing incoming emails, handling attachments, and sending replies.
+
+### Email Class
+
+The `Email` class represents an incoming email with methods to access its properties and send replies.
+
+#### `sendReply(request, context, subject=None, text=None, html=None, attachments=None)`
+
+Send a reply to the incoming email using the Agentuity email API.
+
+##### Parameters
+
+- `request` (AgentRequest): The triggering agent request, used to extract metadata such as email-auth-token
+- `context` (AgentContext): The agent context, used to get the base_url and agentId
+- `subject` (str, optional): Subject of the reply. Defaults to 'Re: &lt;original subject&gt;'
+- `text` (str, optional): Plain text body of the reply
+- `html` (str, optional): HTML body of the reply
+- `attachments` (List[OutgoingEmailAttachmentInterface], optional): List of attachments to include
+
+##### Return Value
+
+Returns `None` on successful send.
+
+##### Example
+
+```python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+from agentuity.io.email import EmailAttachment
+
+async def handler(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    # Get the incoming email
+    email = request.data.email()
+    
+    # Create an attachment
+    attachment = EmailAttachment(
+        filename="response.txt",
+        data="Thank you for your inquiry!",
+        content_type="text/plain"
+    )
+    
+    # Send a reply
+    await email.sendReply(
+        request=request,
+        context=context,
+        subject="Re: Your inquiry",
+        text="Thank you for contacting us. We'll get back to you soon.",
+        html="<p>Thank you for contacting us. We'll get back to you soon.</p>",
+        attachments=[attachment]
+    )
+    
+    return response.json({"status": "Reply sent successfully"})
+```
+
+### EmailAttachment Class
+
+The `EmailAttachment` class represents an outgoing email attachment with streaming data support.
+
+#### Constructor
+
+```python
+EmailAttachment(filename: str, data: DataLike, content_type: str = None)
+```
+
+##### Parameters
+
+- `filename` (str): The filename of the attachment
+- `data` (DataLike): The attachment data (can be string, bytes, or Data object)
+- `content_type` (str, optional): MIME type of the attachment
+
+#### Properties
+
+- `filename` (str): The filename of the attachment
+- `data()`: Returns the Data object containing the attachment content
+
+### IncomingEmailAttachment Class
+
+The `IncomingEmailAttachment` class represents an attachment from an incoming email with support for large attachments via streaming.
+
+#### Properties
+
+- `filename` (str): The filename of the attachment
+- `content_disposition` (str): The content disposition ('attachment' or 'inline')
+
+#### Methods
+
+##### `async data()`
+
+Asynchronously retrieves the attachment data as a Data object with streaming support for large files.
+
+##### Return Value
+
+Returns a `Data` object that streams the attachment content.
+
+##### Example
+
+```python
+async def handler(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    email = request.data.email()
+    
+    # Process attachments
+    for attachment in email.attachments:
+        context.logger.info(f"Processing attachment: {attachment.filename}")
+        
+        # Stream large attachment data
+        data = await attachment.data()
+        content = await data.binary()
+        
+        # Process the attachment content
+        context.logger.info(f"Attachment size: {len(content)} bytes")
+    
+    return response.json({"attachments_processed": len(email.attachments)})
+```
+
 ## Agent Lifecycle
 
 The Agentuity SDK provides a structured way to define and handle agents. An agent consists of a handler function, with its configuration managed by the Agentuity CLI.
