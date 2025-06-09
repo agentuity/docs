@@ -81,7 +81,7 @@ Send a reply to the incoming email using the Agentuity email API.
 
 - `request` (AgentRequest): The triggering agent request, used to extract metadata such as email-auth-token
 - `context` (AgentContext): The agent context, used to get the base_url and agentId
-- `subject` (str, optional): Subject of the reply. Defaults to 'Re: <original subject>'
+- `subject` (str, optional): Subject of the reply. Defaults to 'Re: &lt;original subject&gt;'
 - `text` (str, optional): Plain text body of the reply
 - `html` (str, optional): HTML body of the reply
 - `attachments` (List[OutgoingEmailAttachmentInterface], optional): List of attachments to include
