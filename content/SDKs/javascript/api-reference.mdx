@@ -782,13 +782,13 @@ const htmlBody = email.html();
 console.log('HTML content:', htmlBody);
 ```
 
-#### `attachments(): Attachment[]`
+#### `attachments(): IncomingEmailAttachment[]`
 
 Returns the attachments of the email.
 
 ##### Return Value
 
-Returns an array of `Attachment` objects. Returns an empty array if there are no attachments.
+Returns an array of `IncomingEmailAttachment` objects. Returns an empty array if there are no attachments.
 
 ##### Example
 
@@ -796,10 +796,112 @@ Returns an array of `Attachment` objects. Returns an empty array if there are no
 const email = await request.data.email();
 const attachments = email.attachments();
 console.log('Attachments:', attachments.length);
-attachments.forEach(attachment => {
-  console.log('Attachment:', attachment.filename, attachment.contentType);
-});
+for (const attachment of attachments) {
+  console.log('Attachment:', attachment.filename, attachment.contentDisposition);
+  const data = await attachment.data();
+  const buffer = await data.buffer();
+  console.log('Size:', buffer.length, 'bytes');
+}
 ```
+
+#### `sendReply(request, context, reply): Promise<string>`
+
+Send a reply to the incoming email using the Agentuity email API.
+
+##### Parameters
+
+- `request` (AgentRequest): The triggering agent request containing email-auth-token in metadata
+- `context` (AgentContext): The agent context providing access to email services
+- `reply` (EmailReply): The reply configuration object
+
+##### Return Value
+
+Returns a `Promise<string>` that resolves to the message ID of the sent reply.
+
+##### Example
+
+```typescript
+async function handler(request, response, context) {
+    const email = await request.data.email();
+    
+    const attachment = {
+        filename: "response.pdf",
+        data: pdfData,
+        contentDisposition: "attachment"
+    };
+    
+    const messageId = await email.sendReply(request, context, {
+        subject: "Re: Your inquiry",
+        text: "Thank you for contacting us. We'll get back to you soon.",
+        html: "<p>Thank you for contacting us. We'll get back to you soon.</p>",
+        attachments: [attachment]
+    });
+    
+    return response.json({ 
+        status: "Reply sent successfully",
+        messageId: messageId
+    });
+}
+```
+
+## Email Interfaces
+
+### EmailReply Interface
+
+The `EmailReply` interface defines the structure for email reply configuration.
+
+#### Properties
+
+- `subject?` (string): The subject of the reply. If not provided, defaults to 'RE: <original subject>'
+- `text` (string): The plain text body of the reply
+- `html?` (string): The optional HTML body of the reply
+- `attachments?` (OutgoingEmailAttachment[]): Optional attachments to include
+
+### IncomingEmailAttachment Interface
+
+The `IncomingEmailAttachment` interface represents an attachment from an incoming email.
+
+#### Properties
+
+- `filename` (string): The filename of the attachment
+- `contentDisposition` ('attachment' | 'inline'): The content disposition of the attachment
+
+#### Methods
+
+##### `data(): Promise<Data>`
+
+Asynchronously retrieves the attachment data as a Data object. For large attachments, this uses streaming to efficiently handle the data transfer.
+
+##### Example
+
+```typescript
+async function handler(request, response, context) {
+    const email = await request.data.email();
+    
+    for (const attachment of email.attachments()) {
+        console.log(`Processing: ${attachment.filename}`);
+        console.log(`Disposition: ${attachment.contentDisposition}`);
+        
+        const data = await attachment.data();
+        const buffer = await data.buffer();
+        
+        console.log(`Size: ${buffer.length} bytes`);
+        console.log(`Content-Type: ${data.contentType}`);
+    }
+    
+    return response.json({ message: "Attachments processed" });
+}
+```
+
+### OutgoingEmailAttachment Interface
+
+The `OutgoingEmailAttachment` interface represents an attachment to be included in an outgoing email reply.
+
+#### Properties
+
+- `filename` (string): The filename of the attachment
+- `data` (DataType): The data of the attachment
+- `contentDisposition?` ('attachment' | 'inline'): The content disposition. Defaults to 'attachment' if not provided
 
 ## Logging
 
