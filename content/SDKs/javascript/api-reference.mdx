@@ -239,25 +239,25 @@ for (const result of results) {
 }
 ```
 
-#### `delete(name: string, ...ids: string[]): Promise<number>`
+#### `delete(name: string, key: string): Promise<number>`
 
-Deletes vectors from the vector storage.
+Deletes a vector from the vector storage.
 
 ##### Parameters
 
 - `name`: The name of the vector storage
-- `ids`: One or more IDs of vectors to delete
+- `key`: The ID of the vector to delete
 
 ##### Return Value
 
-Returns a Promise that resolves to the number of vectors that were deleted.
+Returns a Promise that resolves to the number of vectors that were deleted (0 or 1).
 
 ##### Example
 
 ```typescript
-// Delete vectors
-const deletedCount = await context.vector.delete('product-descriptions', 'id1', 'id2', 'id3');
-console.log(`Deleted ${deletedCount} vectors`);
+// Delete a single vector
+const deletedCount = await context.vector.delete('product-descriptions', 'id1');
+console.log(`Deleted ${deletedCount} vector(s)`);
 ```
 
 ## Agent Communication
