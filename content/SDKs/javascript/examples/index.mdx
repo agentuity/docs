@@ -156,15 +156,15 @@ const handler: AgentHandler = async (request, response, context) => {
     }
     
     case 'delete': {
-      // Delete products from vector storage
-      if (!Array.isArray(products) || products.length === 0) {
-        return response.json({ error: 'No product IDs to delete' });
+      // Delete a product from vector storage
+      if (!products || !Array.isArray(products) || products.length === 0) {
+        return response.json({ error: 'No product ID to delete' });
       }
       
-      const count = await context.vector.delete('products', ...products);
+      const count = await context.vector.delete('products', products[0]);
       
       return response.json({ 
-        message: `Deleted ${count} products successfully` 
+        message: `Deleted ${count} product successfully` 
       });
     }
     

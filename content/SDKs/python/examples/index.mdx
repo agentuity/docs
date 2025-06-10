@@ -211,19 +211,19 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         })
     
     elif action == "delete":
-        # Delete products from vector storage
+        # Delete a product from vector storage
         if not isinstance(products, list) or len(products) == 0:
-            return response.json({"error": "No product IDs to delete"})
+            return response.json({"error": "No product ID to delete"})
 
-        # Extract product IDs
-        product_ids = [p["id"] for p in products]
+        # Extract first product ID (single key deletion)
+        product_id = products[0]["id"]
         
         # Delete from vector database
-        count = await context.vector.delete("products", product_ids[0])
+        count = await context.vector.delete("products", product_id)
         
         return response.json({
-            "message": f"Deleted {count} products successfully",
-            "ids": product_ids
+            "message": f"Deleted {count} product successfully",
+            "id": product_id
         })
     
     else:

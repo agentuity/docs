@@ -458,30 +458,30 @@ except Exception as e:
     # Handle the error appropriately
 ```
 
-#### `async delete(name: str, *ids: str) -> int`
+#### `async delete(name: str, key: str) -> int`
 
-Deletes vectors from the vector storage.
+Deletes a vector from the vector storage.
 
 ##### Parameters
 
 - `name`: The name of the vector storage
-- `ids`: One or more IDs of vectors to delete
+- `key`: The ID of the vector to delete
 
 ##### Return Value
 
-Returns the number of vectors that were deleted.
+Returns the number of vectors that were deleted (0 or 1).
 
 ##### Example
 
 ```python
 from agentuity.sdk import AgentContext
 
-# Delete vectors with error handling
+# Delete a single vector with error handling
 try:
-    deleted_count = await context.vector.delete("product-descriptions", "id1", "id2", "id3")
-    context.logger.info(f"Deleted {deleted_count} vectors")
+    deleted_count = await context.vector.delete("product-descriptions", "id1")
+    context.logger.info(f"Deleted {deleted_count} vector(s)")
 except Exception as e:
-    context.logger.error(f"Failed to delete vectors: {str(e)}")
+    context.logger.error(f"Failed to delete vector: {str(e)}")
     # Handle the error appropriately
 ```
 
