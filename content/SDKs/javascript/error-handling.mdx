@@ -158,11 +158,11 @@ When working with the key-value storage API, handle potential errors:
 ```typescript
 try {
   // Attempt to get a value
-  const value = await context.kv.get('user-preferences', userId);
+  const result = await context.kv.get('user-preferences', userId);
   
   // Process the value
-  if (value) {
-    const preferences = JSON.parse(new TextDecoder().decode(value));
+  if (result.exists) {
+    const preferences = await result.data.json();
     // Use preferences...
   }
 } catch (error) {

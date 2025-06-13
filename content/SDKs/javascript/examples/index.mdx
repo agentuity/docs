@@ -53,15 +53,14 @@ const handler: AgentHandler = async (request, response, context) => {
   switch (action) {
     case 'get': {
       // Retrieve user preferences
-      const data = await context.kv.get('user-preferences', userId);
+      const result = await context.kv.get('user-preferences', userId);
       
-      if (!data) {
+      if (!result.exists) {
         return response.json({ message: 'No preferences found' });
       }
       
-      // Convert ArrayBuffer to string and parse as JSON
-      const prefsString = new TextDecoder().decode(data);
-      const userPrefs = JSON.parse(prefsString);
+      // Access data using the Data interface
+      const userPrefs = await result.data.json();
       
       return response.json({ preferences: userPrefs });
     }
@@ -316,13 +315,13 @@ const handler: AgentHandler = async (request, response, context) => {
 // Helper functions
 async function lookupResource(resourceId: string, context: any) {
   // Simulate resource lookup
-  const resource = await context.kv.get('resources', resourceId);
+  const result = await context.kv.get('resources', resourceId);
   
-  if (!resource) {
+  if (!result.exists) {
     throw new ResourceNotFoundError(resourceId);
   }
   
-  return JSON.parse(new TextDecoder().decode(resource));
+  return await result.data.json();
 }
 
 async function processResource(resource: any, context: any) {
