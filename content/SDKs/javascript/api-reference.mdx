@@ -94,7 +94,7 @@ The Agentuity SDK provides two storage APIs: Key-Value Storage and Vector Storag
 
 The Key-Value Storage API provides a simple way to store and retrieve data. It is accessed through the `context.kv` object.
 
-#### `get(name: string, key: string): Promise<ArrayBuffer | null>`
+#### `get(name: string, key: string): Promise<DataResult>`
 
 Retrieves a value from the key-value storage.
 
@@ -105,16 +105,16 @@ Retrieves a value from the key-value storage.
 
 ##### Return Value
 
-Returns a Promise that resolves to an ArrayBuffer containing the value, or null if the key does not exist.
+Returns a Promise that resolves to a DataResult object. The DataResult has an `exists` boolean property and a `data` property containing the value if found.
 
 ##### Example
 
 ```typescript
 // Retrieve a value from key-value storage
-const value = await context.kv.get('user-preferences', 'user-123');
-if (value) {
-  // Convert ArrayBuffer to string if needed
-  const valueString = new TextDecoder().decode(value);
+const result = await context.kv.get('user-preferences', 'user-123');
+if (result.exists) {
+  // Access data using the Data interface methods
+  const valueString = await result.data.text();
   console.log(`User preferences: ${valueString}`);
 } else {
   console.log('User preferences not found');
