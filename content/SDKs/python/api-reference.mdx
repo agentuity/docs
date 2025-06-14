@@ -531,7 +531,7 @@ Stores an object in the object storage.
 - `bucket`: The bucket to put the object into
 - `key`: The key of the object to put
 - `data`: The data to store (can be string, bytes, or other DataLike types)
-- `params` (optional): Additional parameters for the object. The following properties map to canonical HTTP headers: `Content-Type`, `Content-Encoding`, `Cache-Control`, `Content-Disposition`, and `Content-Language`. All other properties are added as generic metadata to the underlying storage provider (if supported). The `Content-Type` parameter is optional - if not provided, the content type will be automatically detected based on the data type (e.g., objects will be set to `application/json`). If the content type cannot be determined, it defaults to `application/octet-stream`.
+- `params` (optional): Additional parameters for the object. The following properties map to canonical HTTP headers: `content_type` (Content-Type), `content_encoding` (Content-Encoding), `cache_control` (Cache-Control), `content_disposition` (Content-Disposition), and `content_language` (Content-Language). The optional `metadata` property accepts a dictionary of arbitrary key-value pairs that will be stored as metadata with the object but not returned as part of HTTP results when the object is fetched. The `content_type` parameter is optional - if not provided, the content type will be automatically detected based on the data type (e.g., objects will be set to `application/json`). If the content type cannot be determined, it defaults to `application/octet-stream`.
 
 ##### Return Value
 
@@ -567,14 +567,32 @@ await context.objectstore.put(
 # Store without specifying content type (will default to application/octet-stream if unknown)
 await context.objectstore.put("files", "unknown-data", some_data)
 
-# Store with custom encoding
+# Store with custom encoding and cache control
 await context.objectstore.put(
     "compressed", 
     "data.gz", 
     compressed_data,
     ObjectStorePutParams(
         content_type="application/octet-stream",
-        content_encoding="gzip"
+        content_encoding="gzip",
+        cache_control="max-age=3600"
+    )
+)
+
+# Store with metadata (not returned in HTTP results when fetched)
+await context.objectstore.put(
+    "uploads", 
+    "document.pdf", 
+    pdf_data,
+    ObjectStorePutParams(
+        content_type="application/pdf",
+        content_disposition="attachment; filename=\"report.pdf\"",
+        content_language="en-US",
+        metadata={
+            "user-id": "12345",
+            "upload-source": "web-app",
+            "version": "2.0"
+        }
     )
 )
 ```
