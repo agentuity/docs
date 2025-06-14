@@ -303,7 +303,7 @@ Stores an object in the object storage.
 - `bucket`: The bucket to put the object into
 - `key`: The key of the object to put
 - `data`: The data to store (can be ArrayBuffer, string, or other DataType)
-- `params` (optional): Additional parameters including content type and encoding
+- `params` (optional): Additional parameters including content type and encoding. The `contentType` parameter is optional - if not provided, the content type will be automatically detected based on the data type (e.g., objects will be set to `application/json`). If the content type cannot be determined, it defaults to `application/octet-stream`.
 
 ##### Return Value
 
@@ -312,16 +312,23 @@ Returns a Promise that resolves when the object has been stored.
 ##### Example
 
 ```typescript
-// Store a text file
+// Store a text file with explicit content type
 await context.objectstore.put('documents', 'readme.txt', 'Hello, world!', {
   contentType: 'text/plain'
 });
+
+// Store an object (content type auto-detected as application/json)
+const userData = { name: 'John', age: 30 };
+await context.objectstore.put('users', 'user-123.json', userData);
 
 // Store a binary file
 const imageData = new Uint8Array([/* image bytes */]).buffer;
 await context.objectstore.put('images', 'photo.jpg', imageData, {
   contentType: 'image/jpeg'
 });
+
+// Store without specifying content type (will default to application/octet-stream if unknown)
+await context.objectstore.put('files', 'unknown-data', someData);
 
 // Store with custom encoding
 await context.objectstore.put('compressed', 'data.gz', compressedData, {

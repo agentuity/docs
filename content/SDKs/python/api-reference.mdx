@@ -531,7 +531,7 @@ Stores an object in the object storage.
 - `bucket`: The bucket to put the object into
 - `key`: The key of the object to put
 - `data`: The data to store (can be string, bytes, or other DataLike types)
-- `params` (optional): Additional parameters including content type and encoding
+- `params` (optional): Additional parameters including content type and encoding. The `content_type` parameter is optional - if not provided, the content type will be automatically detected based on the data type (e.g., objects will be set to `application/json`). If the content type cannot be determined, it defaults to `application/octet-stream`.
 
 ##### Return Value
 
@@ -543,13 +543,17 @@ Returns None when the object has been stored successfully.
 from agentuity import AgentContext
 from agentuity.server.objectstore import ObjectStorePutParams
 
-# Store a text file
+# Store a text file with explicit content type
 await context.objectstore.put(
     "documents", 
     "readme.txt", 
     "Hello, world!",
     ObjectStorePutParams(content_type="text/plain")
 )
+
+# Store an object (content type auto-detected as application/json)
+user_data = {"name": "John", "age": 30}
+await context.objectstore.put("users", "user-123.json", user_data)
 
 # Store binary data
 image_data = bytes([/* image bytes */])
@@ -559,6 +563,9 @@ await context.objectstore.put(
     image_data,
     ObjectStorePutParams(content_type="image/jpeg")
 )
+
+# Store without specifying content type (will default to application/octet-stream if unknown)
+await context.objectstore.put("files", "unknown-data", some_data)
 
 # Store with custom encoding
 await context.objectstore.put(
