@@ -610,7 +610,7 @@ Creates a time-limited public URL for accessing an object.
 
 - `bucket`: The bucket containing the object
 - `key`: The key of the object
-- `expires_duration` (optional): Duration in milliseconds until the URL expires
+- `expires_duration` (optional): Duration in milliseconds until the URL expires. Defaults to 1 hour (3600000ms) if not provided. Minimum value is 1 minute (60000ms) - values less than 1 minute will be set to 1 minute.
 
 ##### Return Value
 
@@ -632,8 +632,22 @@ try:
     # Share the URL with users
     context.logger.info(f"Download link: {public_url}")
     
-    # Create a URL with default expiration
+    # Create a URL with default expiration (1 hour)
     default_url = await context.objectstore.create_public_url("images", "photo.jpg")
+    
+    # Create a URL with minimum expiration (1 minute)
+    short_url = await context.objectstore.create_public_url(
+        "temp-files", 
+        "quick-access.txt", 
+        expires_duration=60000  # 1 minute in milliseconds
+    )
+    
+    # Values less than 1 minute will be automatically set to 1 minute
+    auto_min_url = await context.objectstore.create_public_url(
+        "temp-files", 
+        "auto-min.txt", 
+        expires_duration=30000  # Will be set to 60000ms (1 minute)
+    )
     
 except Exception as e:
     context.logger.error(f"Failed to create public URL: {str(e)}")

@@ -363,7 +363,7 @@ Creates a time-limited public URL for accessing an object.
 
 - `bucket`: The bucket containing the object
 - `key`: The key of the object
-- `expiresDuration` (optional): Duration in milliseconds until the URL expires
+- `expiresDuration` (optional): Duration in milliseconds until the URL expires. Defaults to 1 hour (3600000ms) if not provided. Minimum value is 1 minute (60000ms) - values less than 1 minute will be set to 1 minute.
 
 ##### Return Value
 
@@ -382,8 +382,22 @@ const publicUrl = await context.objectstore.createPublicURL(
 // Share the URL with users
 console.log(`Download link: ${publicUrl}`);
 
-// Create a URL with default expiration
+// Create a URL with default expiration (1 hour)
 const defaultUrl = await context.objectstore.createPublicURL('images', 'photo.jpg');
+
+// Create a URL with minimum expiration (1 minute)
+const shortUrl = await context.objectstore.createPublicURL(
+  'temp-files', 
+  'quick-access.txt', 
+  60000 // 1 minute in milliseconds
+);
+
+// Values less than 1 minute will be automatically set to 1 minute
+const autoMinUrl = await context.objectstore.createPublicURL(
+  'temp-files', 
+  'auto-min.txt', 
+  30000 // Will be set to 60000ms (1 minute)
+);
 ```
 
 ## Agent Communication
