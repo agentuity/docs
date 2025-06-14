@@ -9,6 +9,9 @@ This section provides detailed documentation for the Agentuity JavaScript SDK AP
 
 - [Agent Lifecycle](#agent-lifecycle)
 - [Storage APIs](#storage-apis)
+  - [Key-Value Storage](#key-value-storage)
+  - [Vector Storage](#vector-storage)
+  - [Object Storage](#object-storage)
 - [Agent Communication](#agent-communication)
 - [Response Types](#response-types)
 - [Request Handling](#request-handling)
@@ -88,7 +91,7 @@ export default handler;
 
 ## Storage APIs
 
-The Agentuity SDK provides two storage APIs: Key-Value Storage and Vector Storage.
+The Agentuity SDK provides three storage APIs: Key-Value Storage, Vector Storage, and Object Storage.
 
 ### Key-Value Storage
 
@@ -258,6 +261,163 @@ Returns a Promise that resolves to the number of vectors that were deleted (0 or
 // Delete a single vector
 const deletedCount = await context.vector.delete('product-descriptions', 'id1');
 console.log(`Deleted ${deletedCount} vector(s)`);
+```
+
+### Object Storage
+
+The Object Storage API provides a way to store and retrieve objects (files, documents, media) with support for public URL generation. It is accessed through the `context.objectstore` object.
+
+#### `get(bucket: string, key: string): Promise<DataResult>`
+
+Retrieves an object from the object storage.
+
+##### Parameters
+
+- `bucket`: The bucket to get the object from
+- `key`: The key of the object to get
+
+##### Return Value
+
+Returns a Promise that resolves to a DataResult object. The DataResult has an `exists` boolean property and a `data` property containing the object data if found.
+
+##### Example
+
+```typescript
+// Retrieve an object from object storage
+const result = await context.objectstore.get('user-uploads', 'profile-123.jpg');
+if (result.exists) {
+  // Access data using the Data interface methods
+  const imageData = await result.data.binary();
+  console.log(`Image size: ${imageData.byteLength} bytes`);
+} else {
+  console.log('Image not found');
+}
+```
+
+#### `put(bucket: string, key: string, data: DataType, params?: ObjectStorePutParams): Promise<void>`
+
+Stores an object in the object storage.
+
+##### Parameters
+
+- `bucket`: The bucket to put the object into
+- `key`: The key of the object to put
+- `data`: The data to store (can be ArrayBuffer, string, or other DataType)
+- `params` (optional): Additional parameters for the object. The following properties map to canonical HTTP headers: `contentType` (Content-Type), `contentEncoding` (Content-Encoding), `cacheControl` (Cache-Control), `contentDisposition` (Content-Disposition), and `contentLanguage` (Content-Language). The optional `metadata` property accepts a dictionary of arbitrary key-value pairs that will be stored as metadata with the object but not returned as part of HTTP results when the object is fetched. The `contentType` parameter is optional - if not provided, the content type will be automatically detected based on the data type (e.g., objects will be set to `application/json`). If the content type cannot be determined, it defaults to `application/octet-stream`.
+
+##### Return Value
+
+Returns a Promise that resolves when the object has been stored.
+
+##### Example
+
+```typescript
+// Store a text file with explicit content type
+await context.objectstore.put('documents', 'readme.txt', 'Hello, world!', {
+  contentType: 'text/plain'
+});
+
+// Store an object (content type auto-detected as application/json)
+const userData = { name: 'John', age: 30 };
+await context.objectstore.put('users', 'user-123.json', userData);
+
+// Store a binary file
+const imageData = new Uint8Array([/* image bytes */]).buffer;
+await context.objectstore.put('images', 'photo.jpg', imageData, {
+  contentType: 'image/jpeg'
+});
+
+// Store without specifying content type (will default to application/octet-stream if unknown)
+await context.objectstore.put('files', 'unknown-data', someData);
+
+// Store with custom encoding and cache control
+await context.objectstore.put('compressed', 'data.gz', compressedData, {
+  contentType: 'application/octet-stream',
+  contentEncoding: 'gzip',
+  cacheControl: 'max-age=3600'
+});
+
+// Store with metadata (not returned in HTTP results when fetched)
+await context.objectstore.put('uploads', 'document.pdf', pdfData, {
+  contentType: 'application/pdf',
+  contentDisposition: 'attachment; filename="report.pdf"',
+  contentLanguage: 'en-US',
+  metadata: {
+    'user-id': '12345',
+    'upload-source': 'web-app',
+    'version': '2.0'
+  }
+});
+```
+
+#### `delete(bucket: string, key: string): Promise<boolean>`
+
+Deletes an object from the object storage.
+
+##### Parameters
+
+- `bucket`: The bucket to delete the object from
+- `key`: The key of the object to delete
+
+##### Return Value
+
+Returns a Promise that resolves to a boolean indicating whether the object was deleted (true) or didn't exist (false).
+
+##### Example
+
+```typescript
+// Delete an object
+const wasDeleted = await context.objectstore.delete('user-uploads', 'old-file.pdf');
+if (wasDeleted) {
+  console.log('File deleted successfully');
+} else {
+  console.log('File did not exist');
+}
+```
+
+#### `createPublicURL(bucket: string, key: string, expiresDuration?: number): Promise<string>`
+
+Creates a time-limited public URL for accessing an object.
+
+##### Parameters
+
+- `bucket`: The bucket containing the object
+- `key`: The key of the object
+- `expiresDuration` (optional): Duration in milliseconds until the URL expires. Defaults to 1 hour (3600000ms) if not provided. Minimum value is 1 minute (60000ms) - values less than 1 minute will be set to 1 minute.
+
+##### Return Value
+
+Returns a Promise that resolves to a public URL string that can be used to access the object.
+
+##### Example
+
+```typescript
+// Create a public URL that expires in 1 hour
+const publicUrl = await context.objectstore.createPublicURL(
+  'user-uploads', 
+  'document.pdf', 
+  3600000 // 1 hour in milliseconds
+);
+
+// Share the URL with users
+console.log(`Download link: ${publicUrl}`);
+
+// Create a URL with default expiration (1 hour)
+const defaultUrl = await context.objectstore.createPublicURL('images', 'photo.jpg');
+
+// Create a URL with minimum expiration (1 minute)
+const shortUrl = await context.objectstore.createPublicURL(
+  'temp-files', 
+  'quick-access.txt', 
+  60000 // 1 minute in milliseconds
+);
+
+// Values less than 1 minute will be automatically set to 1 minute
+const autoMinUrl = await context.objectstore.createPublicURL(
+  'temp-files', 
+  'auto-min.txt', 
+  30000 // Will be set to 60000ms (1 minute)
+);
 ```
 
 ## Agent Communication

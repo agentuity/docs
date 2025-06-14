@@ -11,6 +11,7 @@ This section provides detailed documentation for the Agentuity Python SDK API, i
 - [Storage APIs](#storage-apis)
   - [Key-Value Storage](#key-value-storage)
   - [Vector Storage](#vector-storage)
+  - [Object Storage](#object-storage)
 - [Agent Communication](#agent-communication)
 - [Response Types](#response-types)
   - [JSON Responses](#json-responses)
@@ -247,7 +248,7 @@ async def handler(request: AgentRequest, response: AgentResponse, context: Agent
 
 ## Storage APIs
 
-The Agentuity SDK provides two storage APIs: Key-Value Storage and Vector Storage.
+The Agentuity SDK provides three storage APIs: Key-Value Storage, Vector Storage, and Object Storage.
 
 ### Key-Value Storage
 
@@ -482,6 +483,199 @@ try:
     context.logger.info(f"Deleted {deleted_count} vector(s)")
 except Exception as e:
     context.logger.error(f"Failed to delete vector: {str(e)}")
+    # Handle the error appropriately
+```
+
+### Object Storage
+
+The Object Storage API provides a way to store and retrieve objects (files, documents, media) with support for public URL generation. It is accessed through the `context.objectstore` object.
+
+#### `async get(bucket: str, key: str) -> DataResult`
+
+Retrieves an object from the object storage.
+
+##### Parameters
+
+- `bucket`: The bucket to get the object from
+- `key`: The key of the object to get
+
+##### Return Value
+
+Returns a DataResult object that has an `exists` property to check if the object exists and a `data` property containing the object data if found.
+
+##### Example
+
+```python
+from agentuity import AgentContext
+
+# Retrieve an object from object storage with error handling
+try:
+    result = await context.objectstore.get("user-uploads", "profile-123.jpg")
+    if result.exists:
+        # Access data using the Data interface methods
+        image_data = await result.data.binary()
+        context.logger.info(f"Image size: {len(image_data)} bytes")
+    else:
+        context.logger.info("Image not found")
+except Exception as e:
+    context.logger.error(f"Failed to retrieve object: {str(e)}")
+    # Handle the error appropriately
+```
+
+#### `async put(bucket: str, key: str, data: DataLike, params: Optional[ObjectStorePutParams] = None) -> None`
+
+Stores an object in the object storage.
+
+##### Parameters
+
+- `bucket`: The bucket to put the object into
+- `key`: The key of the object to put
+- `data`: The data to store (can be string, bytes, or other DataLike types)
+- `params` (optional): Additional parameters for the object. The following properties map to canonical HTTP headers: `content_type` (Content-Type), `content_encoding` (Content-Encoding), `cache_control` (Cache-Control), `content_disposition` (Content-Disposition), and `content_language` (Content-Language). The optional `metadata` property accepts a dictionary of arbitrary key-value pairs that will be stored as metadata with the object but not returned as part of HTTP results when the object is fetched. The `content_type` parameter is optional - if not provided, the content type will be automatically detected based on the data type (e.g., objects will be set to `application/json`). If the content type cannot be determined, it defaults to `application/octet-stream`.
+
+##### Return Value
+
+Returns None when the object has been stored successfully.
+
+##### Example
+
+```python
+from agentuity import AgentContext
+from agentuity.server.objectstore import ObjectStorePutParams
+
+# Store a text file with explicit content type
+await context.objectstore.put(
+    "documents", 
+    "readme.txt", 
+    "Hello, world!",
+    ObjectStorePutParams(content_type="text/plain")
+)
+
+# Store an object (content type auto-detected as application/json)
+user_data = {"name": "John", "age": 30}
+await context.objectstore.put("users", "user-123.json", user_data)
+
+# Store binary data
+image_data = bytes([/* image bytes */])
+await context.objectstore.put(
+    "images", 
+    "photo.jpg", 
+    image_data,
+    ObjectStorePutParams(content_type="image/jpeg")
+)
+
+# Store without specifying content type (will default to application/octet-stream if unknown)
+await context.objectstore.put("files", "unknown-data", some_data)
+
+# Store with custom encoding and cache control
+await context.objectstore.put(
+    "compressed", 
+    "data.gz", 
+    compressed_data,
+    ObjectStorePutParams(
+        content_type="application/octet-stream",
+        content_encoding="gzip",
+        cache_control="max-age=3600"
+    )
+)
+
+# Store with metadata (not returned in HTTP results when fetched)
+await context.objectstore.put(
+    "uploads", 
+    "document.pdf", 
+    pdf_data,
+    ObjectStorePutParams(
+        content_type="application/pdf",
+        content_disposition="attachment; filename=\"report.pdf\"",
+        content_language="en-US",
+        metadata={
+            "user-id": "12345",
+            "upload-source": "web-app",
+            "version": "2.0"
+        }
+    )
+)
+```
+
+#### `async delete(bucket: str, key: str) -> bool`
+
+Deletes an object from the object storage.
+
+##### Parameters
+
+- `bucket`: The bucket to delete the object from
+- `key`: The key of the object to delete
+
+##### Return Value
+
+Returns a boolean indicating whether the object was deleted (True) or didn't exist (False).
+
+##### Example
+
+```python
+from agentuity import AgentContext
+
+# Delete an object with error handling
+try:
+    was_deleted = await context.objectstore.delete("user-uploads", "old-file.pdf")
+    if was_deleted:
+        context.logger.info("File deleted successfully")
+    else:
+        context.logger.info("File did not exist")
+except Exception as e:
+    context.logger.error(f"Failed to delete object: {str(e)}")
+    # Handle the error appropriately
+```
+
+#### `async create_public_url(bucket: str, key: str, expires_duration: Optional[int] = None) -> str`
+
+Creates a time-limited public URL for accessing an object.
+
+##### Parameters
+
+- `bucket`: The bucket containing the object
+- `key`: The key of the object
+- `expires_duration` (optional): Duration in milliseconds until the URL expires. Defaults to 1 hour (3600000ms) if not provided. Minimum value is 1 minute (60000ms) - values less than 1 minute will be set to 1 minute.
+
+##### Return Value
+
+Returns a public URL string that can be used to access the object.
+
+##### Example
+
+```python
+from agentuity import AgentContext
+
+# Create a public URL that expires in 1 hour
+try:
+    public_url = await context.objectstore.create_public_url(
+        "user-uploads", 
+        "document.pdf", 
+        expires_duration=3600000  # 1 hour in milliseconds
+    )
+    
+    # Share the URL with users
+    context.logger.info(f"Download link: {public_url}")
+    
+    # Create a URL with default expiration (1 hour)
+    default_url = await context.objectstore.create_public_url("images", "photo.jpg")
+    
+    # Create a URL with minimum expiration (1 minute)
+    short_url = await context.objectstore.create_public_url(
+        "temp-files", 
+        "quick-access.txt", 
+        expires_duration=60000  # 1 minute in milliseconds
+    )
+    
+    # Values less than 1 minute will be automatically set to 1 minute
+    auto_min_url = await context.objectstore.create_public_url(
+        "temp-files", 
+        "auto-min.txt", 
+        expires_duration=30000  # Will be set to 60000ms (1 minute)
+    )
+    
+except Exception as e:
+    context.logger.error(f"Failed to create public URL: {str(e)}")
     # Handle the error appropriately
 ```
 
