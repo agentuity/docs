@@ -531,7 +531,7 @@ Stores an object in the object storage.
 - `bucket`: The bucket to put the object into
 - `key`: The key of the object to put
 - `data`: The data to store (can be string, bytes, or other DataLike types)
-- `params` (optional): Additional parameters for the object. Only two properties are supported: `content_type` and `content_encoding`. Any other properties are ignored. The `content_type` parameter is optional - if not provided, the content type will be automatically detected based on the data type (e.g., objects will be set to `application/json`). If the content type cannot be determined, it defaults to `application/octet-stream`.
+- `params` (optional): Additional parameters for the object. The following properties map to canonical HTTP headers: `content_type` (Content-Type), `content_encoding` (Content-Encoding), `cache_control` (Cache-Control), `content_disposition` (Content-Disposition), `content_language` (Content-Language), and `etag` (ETag). All other properties are added as generic metadata to the underlying storage provider (if supported). The `content_type` parameter is optional - if not provided, the content type will be automatically detected based on the data type (e.g., objects will be set to `application/json`). If the content type cannot be determined, it defaults to `application/octet-stream`.
 
 ##### Return Value
 
