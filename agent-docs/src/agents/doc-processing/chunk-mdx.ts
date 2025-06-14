@@ -1,6 +1,25 @@
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { DirectoryLoader } from "langchain/document_loaders/fs/directory";
 import { TextLoader } from "langchain/document_loaders/fs/text";
+import matter from 'gray-matter';
+import * as path from 'path';
+
+/**
+ * Type for a single enriched documentation chunk.
+ * Includes all standard metadata and allows for additional frontmatter fields.
+ */
+export type Chunk = {
+  id: string;
+  path: string;
+  chunkIndex: number;
+  contentType: string;
+  heading: string;
+  breadcrumbs: string[];
+  text: string;
+  hash: string;
+  // Allow additional frontmatter fields
+  [key: string]: any;
+};
 
 export function detectContentType(textChunk: string): string {
   if (/^---\n.*?---/s.test(textChunk.trim())) {
@@ -104,4 +123,40 @@ export async function generateDocsChunks(docsPath: string) {
     allChunks.push(...docChunks);
   }
   return allChunks;
+}
+
+/**
+ * Chunks and enriches a single MDX doc with metadata.
+ * - Parses and removes frontmatter
+ * - Chunks markdown (by heading, content type, etc.)
+ * - Enriches each chunk with: id, path, chunkIndex, contentType, heading, breadcrumbs, all frontmatter fields, and hash
+ * @param docPath Absolute path to the .mdx file
+ * @param fileContent Raw file content (with frontmatter)
+ * @param hash Optional hash of the file content to attach to each chunk
+ * @returns Array of enriched chunk objects (no keywords or embeddings yet)
+ */
+export async function chunkAndEnrichDoc(docPath: string, fileContent: string, hash: string): Promise<Chunk[]> {
+  const { content: markdownBody, data: frontmatter } = matter(fileContent);
+  const doc = { pageContent: markdownBody, metadata: { path: docPath } };
+  const chunks = await hybridChunkDocument(doc);
+  // Track heading and breadcrumbs as we walk through chunks
+  let currentHeading = '';
+  let breadcrumbs: string[] = [];
+  return chunks.map((chunk, idx) => {
+    if (chunk.metadata.contentType === 'header' || chunk.metadata.contentType === 'header_section') {
+      currentHeading = chunk.pageContent.split('\n')[0].replace(/^#+\s*/, '').trim();
+      breadcrumbs = [currentHeading];
+    }
+    return {
+      id: `${path.basename(docPath, '.mdx')}-${idx}`,
+      path: docPath,
+      chunkIndex: idx,
+      contentType: chunk.metadata.contentType,
+      heading: currentHeading,
+      breadcrumbs: [...breadcrumbs],
+      text: chunk.pageContent,
+      hash: hash,
+      ...frontmatter,
+    };
+  });
 } 
