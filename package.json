@@ -14,11 +14,13 @@
 		"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
 	},
 	"dependencies": {
+		"@langchain/community": "^0.3.46",
 		"fumadocs-core": "15.2.6",
 		"fumadocs-mdx": "11.5.8",
 		"fumadocs-twoslash": "^3.1.0",
 		"fumadocs-ui": "15.2.6",
 		"geist": "^1.4.2",
+		"langchain": "^0.3.28",
 		"mermaid": "^11.6.0",
 		"motion": "^12.12.2",
 		"next": "15.3.0",
