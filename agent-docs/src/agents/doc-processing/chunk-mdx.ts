@@ -10,15 +10,13 @@ import * as path from 'path';
  */
 export type Chunk = {
   id: string;
-  path: string;
   chunkIndex: number;
   contentType: string;
   heading: string;
   breadcrumbs: string[];
   text: string;
-  hash: string;
   // Allow additional frontmatter fields
-  [key: string]: any;
+  frontmatter: Record<string, any>;
 };
 
 export function detectContentType(textChunk: string): string {
@@ -129,15 +127,13 @@ export async function generateDocsChunks(docsPath: string) {
  * Chunks and enriches a single MDX doc with metadata.
  * - Parses and removes frontmatter
  * - Chunks markdown (by heading, content type, etc.)
- * - Enriches each chunk with: id, path, chunkIndex, contentType, heading, breadcrumbs, all frontmatter fields, and hash
- * @param docPath Absolute path to the .mdx file
+ * - Enriches each chunk with: id, chunkIndex, contentType, heading, breadcrumbs, all frontmatter fields
  * @param fileContent Raw file content (with frontmatter)
- * @param hash Optional hash of the file content to attach to each chunk
  * @returns Array of enriched chunk objects (no keywords or embeddings yet)
  */
-export async function chunkAndEnrichDoc(docPath: string, fileContent: string, hash: string): Promise<Chunk[]> {
+export async function chunkAndEnrichDoc(fileContent: string): Promise<Chunk[]> {
   const { content: markdownBody, data: frontmatter } = matter(fileContent);
-  const doc = { pageContent: markdownBody, metadata: { path: docPath } };
+  const doc = { pageContent: markdownBody, metadata: {} };
   const chunks = await hybridChunkDocument(doc);
   // Track heading and breadcrumbs as we walk through chunks
   let currentHeading = '';
@@ -148,15 +144,13 @@ export async function chunkAndEnrichDoc(docPath: string, fileContent: string, ha
       breadcrumbs = [currentHeading];
     }
     return {
-      id: `${path.basename(docPath, '.mdx')}-${idx}`,
-      path: docPath,
+      id: crypto.randomUUID(),
       chunkIndex: idx,
       contentType: chunk.metadata.contentType,
       heading: currentHeading,
       breadcrumbs: [...breadcrumbs],
       text: chunk.pageContent,
-      hash: hash,
-      ...frontmatter,
+      frontmatter: frontmatter,
     };
   });
 } 

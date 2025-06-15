@@ -1,6 +1,7 @@
 import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
-import { openai } from '@ai-sdk/openai';
-import { generateText } from 'ai';
+import { syncDocs, DEFAULT_CONTENT_DIR } from './docs-orchestrator';
+import fs from 'fs/promises';
+import * as path from 'path';
 
 export const welcome = () => {
   return {
@@ -25,17 +26,41 @@ export default async function Agent(
   ctx: AgentContext
 ) {
   try {
-    const result = await generateText({
-      model: openai('gpt-4o-mini'),
-      system:
-        'You are a helpful assistant that provides concise and accurate information.',
-      prompt: (await req.data.text()) ?? 'Hello, OpenAI',
-    });
-
-    return resp.text(result.text);
+    const stats = await loadAllDocs(ctx);
+    return resp.text("Processed docs... "+JSON.stringify(stats));
   } catch (error) {
     ctx.logger.error('Error running agent:', error);
 
     return resp.text('Sorry, there was an error processing your request.');
   }
+}
+
+/**
+ * Recursively finds all .mdx files in the given directory.
+ * @param rootDir The root directory to search (e.g., '/content')
+ * @returns Promise<string[]> Array of absolute file paths to .mdx files
+ */
+export async function getAllDocPaths(rootDir: string): Promise<string[]> {
+  const entries = await fs.readdir(rootDir, { withFileTypes: true });
+  const files: string[] = [];
+  for (const entry of entries) {
+    const fullPath = path.join(rootDir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...(await getAllDocPaths(fullPath)));
+    } else if (entry.isFile() && entry.name.endsWith('.mdx')) {
+      files.push(fullPath);
+    }
+  }
+  return files;
+}
+
+export async function loadAllDocs(ctx: AgentContext) {
+  const contentDir = path.resolve(__dirname, '../../../../../content');
+  const docPaths = await getAllDocPaths(contentDir+"/SDKs");
+  // const stats = await syncDocs(ctx, {
+  //   changedFiles: docPaths,
+  //   removedFiles: [],
+  //   dryRun: false,
+  // });
+  return docPaths;
 }
