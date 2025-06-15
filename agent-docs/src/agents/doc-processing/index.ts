@@ -3,7 +3,8 @@ import { syncDocs } from './docs-orchestrator';
 import fs from 'fs/promises';
 import * as path from 'path';
 
-const CONTENT_DIR =path.resolve(__dirname, '../../../../../content');
+const CONTENT_DIR = path.resolve(__dirname, '../../../../../content');
+const VECTOR_STORE_NAME = 'docs';
 
 export const welcome = () => {
   return {
@@ -28,15 +29,18 @@ export default async function Agent(
   ctx: AgentContext
 ) {
   try {
-    // Parse JSON body for changedFiles and removedFiles
-    const { changedFiles = [], removedFiles = [] } = await req.data.json() as any;
+    const { changedFiles = [], removedFiles = [], fullReload = false } = await req.data.json() as any;
+
+    if (fullReload) {
+      ctx.logger.info('Full reload requested: deleting all vectors and reloading all docs.');
+      const stats = await loadAllDocs(ctx);
+      return resp.json({ status: 'ok', fullReload: true, stats });
+    }
+
     if (!Array.isArray(changedFiles) || !Array.isArray(removedFiles)) {
       return resp.json({ error: 'changedFiles and removedFiles must be arrays.' }, 400);
     }
-    console.log("changedFiles", changedFiles);
-    console.log("removedFiles", removedFiles);
-
-    // Call orchestrator
+    ctx.logger.info('Incremental sync: changedFiles=%o, removedFiles=%o', changedFiles, removedFiles);
     const stats = await syncDocs(ctx, {
       changedFiles,
       removedFiles,
@@ -75,11 +79,20 @@ export async function getAllDocPaths(rootDir: string): Promise<string[]> {
 }
 
 export async function loadAllDocs(ctx: AgentContext) {
-  const docPaths = await getAllDocPaths(CONTENT_DIR+"/SDKs");
+  ctx.logger.info('Full reload: deleting all vectors in the store.');
+  const allVectors = await ctx.vector.search(VECTOR_STORE_NAME, { query: ' ', limit: 10000 });
+  const allIds = allVectors.map(v => v.key);
+  if (allIds.length > 0) {
+    // Delete vectors in batches since we can't delete them all at once
+    for (const id of allIds) {
+      await ctx.vector.delete(VECTOR_STORE_NAME, id);
+    }
+  }
+  const docPaths = await getAllDocPaths(CONTENT_DIR);
   const stats = await syncDocs(ctx, {
     changedFiles: docPaths,
     removedFiles: [],
-    dryRun: false,
+    contentDir: CONTENT_DIR
   });
   return stats;
 }

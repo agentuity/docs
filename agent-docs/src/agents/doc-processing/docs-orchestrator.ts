@@ -26,7 +26,7 @@ export function computeFileHash(content: string): string {
 export async function hasDocChanged(ctx: AgentContext, docPath: string, newHash: string): Promise<boolean> {
     const vectors = await ctx.vector.search(vectorStoreName, {
         query: ' ',
-        limit: 10,
+        limit: 1,
         metadata: { path: docPath },
     });
     if (vectors.length > 0) {
