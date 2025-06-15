@@ -16,7 +16,7 @@ export async function embedChunks(
   // Call the embedding API in batch
   const response = await embedMany({
     model: openai.embedding(model),
-    values: texts,
+    values: texts
   })
   if (!response.embeddings || response.embeddings.length !== texts.length) {
     throw new Error('Embedding API returned unexpected result.');

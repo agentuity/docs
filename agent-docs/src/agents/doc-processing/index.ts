@@ -26,8 +26,12 @@ export default async function Agent(
   ctx: AgentContext
 ) {
   try {
-    const stats = await loadAllDocs(ctx);
-    return resp.text("Processed docs... "+JSON.stringify(stats));
+    const text = await req.data.text();
+    const relevantDocs = await ctx.vector.search("docs", {
+      query: text,
+      limit: 10,
+    });
+    return resp.text(JSON.stringify(relevantDocs));
   } catch (error) {
     ctx.logger.error('Error running agent:', error);
 
@@ -57,10 +61,10 @@ export async function getAllDocPaths(rootDir: string): Promise<string[]> {
 export async function loadAllDocs(ctx: AgentContext) {
   const contentDir = path.resolve(__dirname, '../../../../../content');
   const docPaths = await getAllDocPaths(contentDir+"/SDKs");
-  // const stats = await syncDocs(ctx, {
-  //   changedFiles: docPaths,
-  //   removedFiles: [],
-  //   dryRun: false,
-  // });
-  return docPaths;
+  const stats = await syncDocs(ctx, {
+    changedFiles: docPaths,
+    removedFiles: [],
+    dryRun: false,
+  });
+  return stats;
 }

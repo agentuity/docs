@@ -53,8 +53,6 @@ ${chunkContent}
     maxTokens: 150,
     temperature: 0.2,
   });
-  console.log("result");
-  console.log(result.text);
   const raw = result.text || '';
   let keywords: string[] = [];
   const parsed = JSON.parse(raw);

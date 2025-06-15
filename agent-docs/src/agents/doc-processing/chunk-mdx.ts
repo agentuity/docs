@@ -13,10 +13,9 @@ export type Chunk = {
   chunkIndex: number;
   contentType: string;
   heading: string;
-  breadcrumbs: string[];
   text: string;
-  // Allow additional frontmatter fields
-  frontmatter: Record<string, any>;
+  title: string;
+  description: string;
 };
 
 export function detectContentType(textChunk: string): string {
@@ -137,20 +136,18 @@ export async function chunkAndEnrichDoc(fileContent: string): Promise<Chunk[]> {
   const chunks = await hybridChunkDocument(doc);
   // Track heading and breadcrumbs as we walk through chunks
   let currentHeading = '';
-  let breadcrumbs: string[] = [];
   return chunks.map((chunk, idx) => {
     if (chunk.metadata.contentType === 'header' || chunk.metadata.contentType === 'header_section') {
       currentHeading = chunk.pageContent.split('\n')[0].replace(/^#+\s*/, '').trim();
-      breadcrumbs = [currentHeading];
     }
     return {
       id: crypto.randomUUID(),
       chunkIndex: idx,
       contentType: chunk.metadata.contentType,
       heading: currentHeading,
-      breadcrumbs: [...breadcrumbs],
       text: chunk.pageContent,
-      frontmatter: frontmatter,
+      title: frontmatter.title,
+      description: frontmatter.description,
     };
   });
 } 

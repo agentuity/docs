@@ -21,13 +21,12 @@ async function createVectorEmbedding(chunks: Chunk[]): Promise<VectorUpsertParam
     if (!embeddings[index]) {
       throw new Error(`No embedding found for chunk ${chunk.id}`);
     }
-
     const metadata: Record<string, any> = {
       chunkIndex: chunk.chunkIndex,
       contentType: chunk.contentType,
       heading: chunk.heading,
-      breadcrumbs: chunk.breadcrumbs,
-      frontmatter: chunk.frontmatter,
+      title: chunk.title,
+      description: chunk.description,
       text: chunk.text
     };
 
