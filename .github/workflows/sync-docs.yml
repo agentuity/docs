@@ -1,0 +1,35 @@
+name: Sync Docs to Vector Store
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'content/**'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Get changed and removed files
+        id: files
+        run: |
+          git fetch origin ${{ github.event.before }}
+          echo "changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- 'content/**/*.mdx' | xargs)" >> $GITHUB_OUTPUT
+          echo "removed=$(git diff --name-only --diff-filter=D ${{ github.event.before }} ${{ github.sha }} -- 'content/**/*.mdx' | xargs)" >> $GITHUB_OUTPUT
+
+      - name: Trigger Agentuity Sync Agent
+        env:
+          AGENTUITY_TOKEN: ${{ secrets.AGENTUITY_TOKEN }}
+        run: |
+          # Convert space-separated lists to JSON arrays
+          changed_json=$(jq -n --arg files "${{ steps.files.outputs.changed }}" '$files | split(" ") | map(select(length > 0))')
+          removed_json=$(jq -n --arg files "${{ steps.files.outputs.removed }}" '$files | split(" ") | map(select(length > 0))')
+          # POST to Agentuity agent webhook
+          curl https://agentuity.ai/webhook/9c33f9e6b129d4d0e2f5c1d5570c0cb7 \
+            -X POST \
+            -H "Authorization: Bearer $AGENTUITY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"changedFiles":'$changed_json', "removedFiles":'$removed_json'}'

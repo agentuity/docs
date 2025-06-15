@@ -1,7 +1,9 @@
 import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
-import { syncDocs, DEFAULT_CONTENT_DIR } from './docs-orchestrator';
+import { syncDocs } from './docs-orchestrator';
 import fs from 'fs/promises';
 import * as path from 'path';
+
+const CONTENT_DIR =path.resolve(__dirname, '../../../../../content');
 
 export const welcome = () => {
   return {
@@ -26,16 +28,30 @@ export default async function Agent(
   ctx: AgentContext
 ) {
   try {
-    const text = await req.data.text();
-    const relevantDocs = await ctx.vector.search("docs", {
-      query: text,
-      limit: 10,
-    });
-    return resp.text(JSON.stringify(relevantDocs));
-  } catch (error) {
-    ctx.logger.error('Error running agent:', error);
+    // Parse JSON body for changedFiles and removedFiles
+    const { changedFiles = [], removedFiles = [] } = await req.data.json() as any;
+    if (!Array.isArray(changedFiles) || !Array.isArray(removedFiles)) {
+      return resp.json({ error: 'changedFiles and removedFiles must be arrays.' }, 400);
+    }
+    console.log("changedFiles", changedFiles);
+    console.log("removedFiles", removedFiles);
 
-    return resp.text('Sorry, there was an error processing your request.');
+    // Call orchestrator
+    const stats = await syncDocs(ctx, {
+      changedFiles,
+      removedFiles,
+      contentDir: CONTENT_DIR
+    });
+    return resp.json({ status: 'ok', stats });
+  } catch (error) {
+    ctx.logger.error('Error running sync agent:', error);
+    let message = 'Unknown error';
+    if (error instanceof Error) {
+      message = error.message;
+    } else if (typeof error === 'string') {
+      message = error;
+    }
+    return resp.json({ error: message }, 500);
   }
 }
 
@@ -59,8 +75,7 @@ export async function getAllDocPaths(rootDir: string): Promise<string[]> {
 }
 
 export async function loadAllDocs(ctx: AgentContext) {
-  const contentDir = path.resolve(__dirname, '../../../../../content');
-  const docPaths = await getAllDocPaths(contentDir+"/SDKs");
+  const docPaths = await getAllDocPaths(CONTENT_DIR+"/SDKs");
   const stats = await syncDocs(ctx, {
     changedFiles: docPaths,
     removedFiles: [],
