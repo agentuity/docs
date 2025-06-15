@@ -1,6 +1,10 @@
 import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
-import { openai } from '@ai-sdk/openai';
-import { generateText } from 'ai';
+import { syncDocs } from './docs-orchestrator';
+import fs from 'fs/promises';
+import * as path from 'path';
+
+const CONTENT_DIR = path.resolve(__dirname, '../../../../../content');
+const VECTOR_STORE_NAME = 'docs';
 
 export const welcome = () => {
   return {
@@ -25,17 +29,70 @@ export default async function Agent(
   ctx: AgentContext
 ) {
   try {
-    const result = await generateText({
-      model: openai('gpt-4o-mini'),
-      system:
-        'You are a helpful assistant that provides concise and accurate information.',
-      prompt: (await req.data.text()) ?? 'Hello, OpenAI',
+    const { changedFiles = [], removedFiles = [], fullReload = false } = await req.data.json() as any;
+
+    if (fullReload) {
+      ctx.logger.info('Full reload requested: deleting all vectors and reloading all docs.');
+      const stats = await loadAllDocs(ctx);
+      return resp.json({ status: 'ok', fullReload: true, stats });
+    }
+
+    if (!Array.isArray(changedFiles) || !Array.isArray(removedFiles)) {
+      return resp.json({ error: 'changedFiles and removedFiles must be arrays.' }, 400);
+    }
+    ctx.logger.info('Incremental sync: changedFiles=%o, removedFiles=%o', changedFiles, removedFiles);
+    const stats = await syncDocs(ctx, {
+      changedFiles,
+      removedFiles,
+      contentDir: CONTENT_DIR
     });
-
-    return resp.text(result.text);
+    return resp.json({ status: 'ok', stats });
   } catch (error) {
-    ctx.logger.error('Error running agent:', error);
-
-    return resp.text('Sorry, there was an error processing your request.');
+    ctx.logger.error('Error running sync agent:', error);
+    let message = 'Unknown error';
+    if (error instanceof Error) {
+      message = error.message;
+    } else if (typeof error === 'string') {
+      message = error;
+    }
+    return resp.json({ error: message }, 500);
   }
+}
+
+/**
+ * Recursively finds all .mdx files in the given directory.
+ * @param rootDir The root directory to search (e.g., '/content')
+ * @returns Promise<string[]> Array of absolute file paths to .mdx files
+ */
+export async function getAllDocPaths(rootDir: string): Promise<string[]> {
+  const entries = await fs.readdir(rootDir, { withFileTypes: true });
+  const files: string[] = [];
+  for (const entry of entries) {
+    const fullPath = path.join(rootDir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...(await getAllDocPaths(fullPath)));
+    } else if (entry.isFile() && entry.name.endsWith('.mdx')) {
+      files.push(fullPath);
+    }
+  }
+  return files;
+}
+
+export async function loadAllDocs(ctx: AgentContext) {
+  ctx.logger.info('Full reload: deleting all vectors in the store.');
+  const allVectors = await ctx.vector.search(VECTOR_STORE_NAME, { query: ' ', limit: 10000 });
+  const allIds = allVectors.map(v => v.key);
+  if (allIds.length > 0) {
+    // Delete vectors in batches since we can't delete them all at once
+    for (const id of allIds) {
+      await ctx.vector.delete(VECTOR_STORE_NAME, id);
+    }
+  }
+  const docPaths = await getAllDocPaths(CONTENT_DIR);
+  const stats = await syncDocs(ctx, {
+    changedFiles: docPaths,
+    removedFiles: [],
+    contentDir: CONTENT_DIR
+  });
+  return stats;
 }
