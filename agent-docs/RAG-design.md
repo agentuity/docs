@@ -14,13 +14,12 @@ A Retrieval-Augmented Generation (RAG) system for Agentuity's documentation, ena
 ### 2.2 Metadata Structure
 ```typescript
 interface DocumentMetadata {
-  id: string;            // Unique identifier for the chunk
-  path: string;          // URL path to the documentation page
-  chunkIndex: number;    // Position/order of the chunk within the document
-  contentType: string;   // Type of content (e.g., code_block, header, text, etc.)
-  heading?: string;      // Nearest heading or section title for context
-  breadcrumbs: string[]; // Hierarchical navigation path
-  keywords: string[];    // Important terms or phrases relevant to the chunk
+  id: string;            
+  path: string;          
+  chunkIndex: number;    
+  contentType: string;
+  heading?: string;    
+  keywords?: string;  
 }
 ```
 
@@ -29,13 +28,11 @@ interface DocumentMetadata {
 - **path**: Navigation, linking, analytics.
 - **chunkIndex**: Context window, document flow.
 - **contentType**: Result presentation, filtering.
-- **heading**: Context for display and grouping.
-- **breadcrumbs**: Hierarchical navigation, UI.
 - **keywords**: Hybrid search, filtering, boosting, related content, highlighting.
 
 ---
 
-## 3. Keyword Extraction
+## 3. [Optional] Keyword Extraction
 - **Purpose:** Boost search accuracy, enable hybrid search, support filtering, and improve UI.
 - **Approach:**
   - Start with simple extraction (headings, code, links, bolded text).
@@ -52,11 +49,11 @@ interface DocumentMetadata {
 ---
 
 ## 5. Vector Store
-- Use a vector database (e.g., pgvector, Pinecone, Weaviate, Qdrant).
+- Use Agentuity built in Vector storage
 - Store for each chunk:
   - Embedding vector
   - Main content
-  - Metadata (id, path, chunkIndex, contentType, heading, breadcrumbs)
+  - Metadata (id, path, chunkIndex, contentType, heading)
   - Keywords
 
 ---
@@ -75,7 +72,7 @@ interface DocumentMetadata {
 
 ---
 
-## 7. Keyword Boosting and Highlighting
+## 7. [Optional] Keyword Boosting and Highlighting
 
 ### 7.1 Keyword Boosting in Retrieval
 
@@ -146,7 +143,7 @@ A reranker is a model (often a cross-encoder or LLM) that takes a set of candida
 ### 8.2 Where Does It Fit?
 - The reranker is applied **after** the hybrid retrieval (semantic + keyword boosting) step.
 - It takes the top-N candidate chunks and the user query, and produces a new, more accurate ranking.
-- The final results shown to the user are sorted by the reranker's scores.
+- The final answer generated based on the top n context after reranked.
 
 ### 8.3 Retrieval Pipeline with Reranker
 
@@ -154,7 +151,7 @@ A reranker is a model (often a cross-encoder or LLM) that takes a set of candida
 2. **Hybrid Retrieval** (semantic + keyword search, with boosting)
 3. **Top-N Candidates**
 4. **Reranker Model** (scores each candidate for true relevance)
-5. **Final Ranked Results** (displayed to user)
+5. **Final Generated Answer** (displayed to user)
 
 ### 8.4 Example Models
 - OpenAI GPT-4o or GPT-3.5-turbo (with a ranking prompt)
@@ -179,7 +176,7 @@ graph TD
   A[User Query] --> B[Hybrid Retriever (Embeddings + Keywords)]
   B --> C[Top-N Candidates]
   C --> D[Reranker Model]
-  D --> E[Final Ranked Results]
+  D --> E[Final Answer]
 ```
 
 ---
@@ -210,19 +207,7 @@ graph TD
   "chunkIndex": 1,
   "contentType": "step",
   "heading": "Install the CLI",
-  "breadcrumbs": ["Introduction", "Getting Started", "Install the CLI"],
-  "keywords": [
-    "Agentuity CLI",
-    "CLI installation",
-    "command-line tool",
-    "cross-platform",
-    "Windows",
-    "WSL",
-    "MacOS",
-    "Linux",
-    "curl",
-    "installation"
-  ]
+  "keywords": "Agentuity CLI, CLI installation, command-line tool, cross-platform, Windows, WSL, MacOS, Linux, curl, installation"
 }
 ```
 

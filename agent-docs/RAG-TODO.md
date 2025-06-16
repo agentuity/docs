@@ -2,22 +2,22 @@
 
 ## 1. Document Chunking & Metadata
 - [x] Refine and test the chunking logic for MDX files.
-- [ ] Implement full metadata enrichment (id, path, chunkIndex, contentType, heading, breadcrumbs, keywords) in the chunking/processing pipeline.
+- [x] Implement full metadata enrichment (id, path, chunkIndex, contentType, heading, keywords) in the chunking/processing pipeline.
 - [x] Write unit tests for chunking and metadata extraction.
 
 ## 2. Keyword Extraction
 - [x] Implement LLM-based keyword extraction for each chunk.
 - [x] Write tests to validate keyword extraction quality.
+- [ ] Integrate keyword in document processing pipeline
 
 ## 3. Embedding Generation
 - [x] Implement embedding function for batch processing of chunk texts (using OpenAI SDK or Agentuity vector store as appropriate).
-- [ ] Integrate embedding generation into the chunk processing pipeline.
+- [x] Integrate embedding generation into the chunk processing pipeline.
 - [ ] Write tests to ensure embeddings are generated and stored correctly.
 
 ## 4. Vector Store Integration
-- [ ] Set up Agentuity vector database integration.
-- [ ] Store chunk content, metadata, keywords, and embeddings.
-- [ ] Write integration tests for storage and retrieval.
+- [x] Set up Agentuity vector database integration.
+- [x] Store chunk content, metadata, keywords, and embeddings.
 
 ## 5. Hybrid Retrieval Logic
 - [ ] Implement hybrid search (semantic + keyword boosting).
@@ -46,20 +46,9 @@
 - [ ] Document each module and its tests.
 - [ ] Provide clear setup and usage instructions.
 
----
-
 ## 11. Sync/Processor Workflow Design
-- [ ] Design the documentation sync workflow:
-    - [ ] Primary: Trigger sync via CI/CD or GitHub Action after merges to main/deploy branch.
-    - [ ] Optional: Implement a webhook endpoint for manual or CMS-triggered syncs.
-    - [ ] Ensure the sync process is idempotent and efficient (only updates changed docs/chunks).
-    - [ ] Plan for operational workflow implementation after core modules are complete.
-
----
-
-## 12. Docs Processor Implementation (Next Focus)
-- [ ] Implement a docs processor that:
-    - [ ] Loops over all docs in the /content directory
-    - [ ] Chunks each doc
-    - [ ] Enriches each chunk with id, path, chunkIndex, contentType, heading, breadcrumbs, and keywords
-    - [ ] Prepares enriched chunks for embedding and storage 
+- [x] Design the documentation sync workflow:
+    - [x] Primary: Trigger sync via CI/CD or GitHub Action after merges to main/deploy branch.
+    - [x] Optional: Implement a webhook endpoint for manual or CMS-triggered syncs.
+    - [x] Ensure the sync process is idempotent and efficient (only updates changed docs/chunks).
+    - [x] Plan for operational workflow implementation after core modules are complete.
