@@ -32,8 +32,6 @@ interface OrchestratorOptions {
     changedFiles: string[]; // Absolute file paths
     removedFiles: string[]; // Absolute file paths
     contentDir?: string;    // Defaults to /content
-    dryRun?: boolean;       // For testing/logging only
-    // ...other options (logging, concurrency, etc.)
 }
 
 interface SyncStats {
@@ -47,7 +45,7 @@ interface SyncStats {
  * Helper to remove all vectors for a given relative path from the vector store.
  */
 async function removeVectorsByRelativePath(ctx: AgentContext, relativePath: string, vectorStoreName: string) {
-    ctx.logger.info('Removing vectors for path: %s, store: %s, metadata: %o', relativePath, vectorStoreName, {path: relativePath});
+    ctx.logger.info('Removing vectors for path: %s, store: %s, metadata: %o', relativePath, vectorStoreName, { path: relativePath });
     const vectors = await ctx.vector.search(vectorStoreName, {
         query: ' ',
         limit: 1000,
@@ -59,12 +57,12 @@ async function removeVectorsByRelativePath(ctx: AgentContext, relativePath: stri
             await ctx.vector.delete(vectorStoreName, vector.key);
         }
     } else {
-        ctx.logger.info('No vectors found for path: %s, store: %s, metadata: %o', relativePath, vectorStoreName, {path: relativePath});
+        ctx.logger.info('No vectors found for path: %s, store: %s, metadata: %o', relativePath, vectorStoreName, { path: relativePath });
     }
 }
 
 export async function syncDocs(ctx: AgentContext, options: OrchestratorOptions): Promise<SyncStats> {
-    const { changedFiles, removedFiles, dryRun } = options;
+    const { changedFiles, removedFiles } = options;
     const contentDir = options.contentDir || DEFAULT_CONTENT_DIR;
     let processed = 0, deleted = 0, errors = 0;
     const errorFiles: string[] = [];

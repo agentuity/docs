@@ -13,7 +13,6 @@ export async function embedChunks(
   if (!Array.isArray(texts) || texts.length === 0) {
     throw new Error('No texts provided for embedding.');
   }
-  // Call the embedding API in batch
   const response = await embedMany({
     model: openai.embedding(model),
     values: texts

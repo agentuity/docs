@@ -83,7 +83,6 @@ export async function loadAllDocs(ctx: AgentContext) {
   const allVectors = await ctx.vector.search(VECTOR_STORE_NAME, { query: ' ', limit: 10000 });
   const allIds = allVectors.map(v => v.key);
   if (allIds.length > 0) {
-    // Delete vectors in batches since we can't delete them all at once
     for (const id of allIds) {
       await ctx.vector.delete(VECTOR_STORE_NAME, id);
     }
