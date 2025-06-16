@@ -28,7 +28,7 @@ jobs:
           changed_json=$(jq -n --arg files "${{ steps.files.outputs.changed }}" '$files | split(" ") | map(select(length > 0))')
           removed_json=$(jq -n --arg files "${{ steps.files.outputs.removed }}" '$files | split(" ") | map(select(length > 0))')
           # POST to Agentuity agent webhook
-          curl https://agentuity.ai/webhook/9c33f9e6b129d4d0e2f5c1d5570c0cb7 \
+          curl https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6 \
             -X POST \
             -H "Authorization: Bearer $AGENTUITY_TOKEN" \
             -H "Content-Type: application/json" \
