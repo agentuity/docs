@@ -1,8 +1,8 @@
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { DirectoryLoader } from "langchain/document_loaders/fs/directory";
+import { Document } from "langchain/document";
 import { TextLoader } from "langchain/document_loaders/fs/text";
 import matter from 'gray-matter';
-import * as path from 'path';
 
 /**
  * Type for a single enriched documentation chunk.
@@ -87,7 +87,7 @@ export function createContentAwareSplitter(contentType: string) {
   }
 }
 
-export async function hybridChunkDocument(doc: any) {
+export async function hybridChunkDocument(doc: Document) {
   const initialSplitter = new RecursiveCharacterTextSplitter({
     chunkSize: 2000,
     chunkOverlap: 100,
