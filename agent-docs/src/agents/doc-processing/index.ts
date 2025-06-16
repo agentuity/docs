@@ -2,9 +2,9 @@ import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
 import { syncDocs } from './docs-orchestrator';
 import fs from 'fs/promises';
 import * as path from 'path';
+import { VECTOR_STORE_NAME } from './config';
 
 const CONTENT_DIR = path.resolve(__dirname, '../../../../../content');
-const VECTOR_STORE_NAME = 'docs';
 
 export const welcome = () => {
   return {

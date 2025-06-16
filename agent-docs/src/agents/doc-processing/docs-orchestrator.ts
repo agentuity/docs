@@ -1,21 +1,13 @@
+// Node.js built-in modules
 import { promises as fs } from 'fs';
-import { processDoc } from './docs-processor';
-import type { AgentContext } from '@agentuity/sdk';
-import { createHash } from 'crypto';
 import * as path from 'path';
-// import vector store SDK or context as needed
 
-const vectorStoreName = 'docs';
+import type { AgentContext } from '@agentuity/sdk';
+
+import { processDoc } from './docs-processor';
+import { VECTOR_STORE_NAME } from './config';
+
 export const DEFAULT_CONTENT_DIR = path.resolve(__dirname, '../../../../content');
-
-/**
- * Computes a SHA-256 hash of the given file content.
- * @param content File content as string
- * @returns Hex string of the hash
- */
-export function computeFileHash(content: string): string {
-    return createHash('sha256').update(content).digest('hex');
-}
 
 /**
  * Checks if a document has changed by comparing its hash.
@@ -24,7 +16,7 @@ export function computeFileHash(content: string): string {
  * @returns true if changed, false if unchanged
  */
 export async function hasDocChanged(ctx: AgentContext, docPath: string, newHash: string): Promise<boolean> {
-    const vectors = await ctx.vector.search(vectorStoreName, {
+    const vectors = await ctx.vector.search(VECTOR_STORE_NAME, {
         query: ' ',
         limit: 1,
         metadata: { path: docPath },
@@ -81,7 +73,7 @@ export async function syncDocs(ctx: AgentContext, options: OrchestratorOptions):
         try {
             // Compute relative path for metadata and vector store
             const relativePath = path.relative(contentDir, absolutePath);
-            await removeVectorsByRelativePath(ctx, relativePath, vectorStoreName);
+            await removeVectorsByRelativePath(ctx, relativePath, VECTOR_STORE_NAME);
             const content = await fs.readFile(absolutePath, 'utf-8');
             const chunks = await processDoc(content);
             for (const chunk of chunks) {
@@ -89,7 +81,7 @@ export async function syncDocs(ctx: AgentContext, options: OrchestratorOptions):
                     ...chunk.metadata,
                     path: relativePath,
                 };
-                await ctx.vector.upsert(vectorStoreName, chunk);
+                await ctx.vector.upsert(VECTOR_STORE_NAME, chunk);
             }
             processed++;
         } catch (err) {
@@ -102,7 +94,7 @@ export async function syncDocs(ctx: AgentContext, options: OrchestratorOptions):
     for (const absolutePath of removedFiles) {
         try {
             const relativePath = path.relative(contentDir, absolutePath);
-            await removeVectorsByRelativePath(ctx, relativePath, vectorStoreName);
+            await removeVectorsByRelativePath(ctx, relativePath, VECTOR_STORE_NAME);
             deleted++;
         } catch (err) {
             errors++;

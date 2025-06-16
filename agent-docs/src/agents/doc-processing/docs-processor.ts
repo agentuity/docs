@@ -1,9 +1,17 @@
+import type { VectorUpsertParams } from '@agentuity/sdk';
+
 import { chunkAndEnrichDoc } from './chunk-mdx';
 import { embedChunks } from './embed-chunks';
 import type { Chunk } from './chunk-mdx';
-import type { VectorUpsertParams } from '@agentuity/sdk';
 
-
+export type ChunkMetadata = {
+  chunkIndex: number;
+  contentType: string;
+  heading: string;
+  title: string;
+  description: string;
+  text: string;
+};
 
 /**
  * Processes a single .mdx doc: loads, chunks, and enriches each chunk with metadata.
@@ -21,7 +29,7 @@ async function createVectorEmbedding(chunks: Chunk[]): Promise<VectorUpsertParam
     if (!embeddings[index]) {
       throw new Error(`No embedding found for chunk ${chunk.id}`);
     }
-    const metadata: Record<string, any> = {
+    const metadata: ChunkMetadata = {
       chunkIndex: chunk.chunkIndex,
       contentType: chunk.contentType,
       heading: chunk.heading,
