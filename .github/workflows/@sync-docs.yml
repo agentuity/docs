@@ -9,11 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-      - name: Get changed and removed files (last 2 commits)
+      - name: Get changed and removed files (last 2 commits on main)
         id: files
         run: |
-          last2=$(git rev-list --max-count=2 HEAD)
+          git fetch origin main
+          last2=$(git rev-list --max-count=2 origin/main)
           commit_arr=($last2)
           if [ "${#commit_arr[@]}" -eq 2 ]; then
             base_commit=${commit_arr[1]}
@@ -22,14 +25,22 @@ jobs:
             base_commit=${commit_arr[0]}
             head_commit=${commit_arr[0]}
           fi
-          echo "Comparing $base_commit..$head_commit"
+          echo "Comparing $base_commit..$head_commit on main branch"
           echo "changed=$(git diff --name-only $base_commit $head_commit -- 'content/**/*.mdx' | xargs)" >> $GITHUB_OUTPUT
           echo "removed=$(git diff --name-only --diff-filter=D $base_commit $head_commit -- 'content/**/*.mdx' | xargs)" >> $GITHUB_OUTPUT
+
+      - name: Print files being sent to agent
+        run: |
+          echo "Changed files: ${{ steps.files.outputs.changed }}"
+          echo "Removed files: ${{ steps.files.outputs.removed }}"
 
       - name: Trigger Agentuity Sync Agent
         run: |
           changed_json=$(jq -n --arg files "${{ steps.files.outputs.changed }}" '$files | split(" ") | map(select(length > 0))')
           removed_json=$(jq -n --arg files "${{ steps.files.outputs.removed }}" '$files | split(" ") | map(select(length > 0))')
+          echo "Sending to agent API:"
+          echo "Changed files JSON: $changed_json"
+          echo "Removed files JSON: $removed_json"
           curl https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6 \
             -X POST \
             -H "Content-Type: application/json" \
