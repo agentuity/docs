@@ -16,6 +16,7 @@ export type Chunk = {
   text: string;
   title: string;
   description: string;
+  createdAt: string;
 };
 
 export function detectContentType(textChunk: string): string {
@@ -148,6 +149,7 @@ export async function chunkAndEnrichDoc(fileContent: string): Promise<Chunk[]> {
       text: chunk.pageContent,
       title: frontmatter.title,
       description: frontmatter.description,
+      createdAt: new Date().toISOString(),
     };
   });
 } 

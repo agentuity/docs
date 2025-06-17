@@ -11,6 +11,7 @@ export type ChunkMetadata = {
   title: string;
   description: string;
   text: string;
+  createdAt: string;
 };
 
 /**
@@ -35,7 +36,8 @@ async function createVectorEmbedding(chunks: Chunk[]): Promise<VectorUpsertParam
       heading: chunk.heading,
       title: chunk.title,
       description: chunk.description,
-      text: chunk.text
+      text: chunk.text,
+      createdAt: chunk.createdAt,
     };
 
     return {
