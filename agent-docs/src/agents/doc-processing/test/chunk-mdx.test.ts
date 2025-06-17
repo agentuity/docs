@@ -1,10 +1,8 @@
 import { expect, test } from "bun:test";
 import { detectContentType, hybridChunkDocument } from "../chunk-mdx";
-import { only } from "node:test";
+import { Document } from "langchain/document";
 
-// Helper to create a mock doc object for hybridChunkDocument
-type Doc = { pageContent: string; metadata?: any };
-const makeDoc = (content: string): Doc => ({ pageContent: content, metadata: {} });
+const makeDoc = (content: string): Document => ({ pageContent: content, metadata: { contentType: "text" } });
 
 // 1. Headings
 
