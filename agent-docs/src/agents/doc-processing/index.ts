@@ -1,27 +1,29 @@
 import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
-import { syncDocs } from './docs-orchestrator';
-import fs from 'fs/promises';
-import * as path from 'path';
-import { VECTOR_STORE_NAME } from './config';
-
-const CONTENT_DIR = path.resolve(__dirname, '../../../../../content');
+import { syncDocsFromPayload } from './docs-orchestrator';
 
 export const welcome = () => {
   return {
-    welcome:
-      "Welcome to the Vercel AI SDK with OpenAI Agent! I can help you build AI-powered applications using Vercel's AI SDK with OpenAI models.",
+    welcome: "Documentation Sync Agent - Processes embedded MDX content from GitHub workflows",
     prompts: [
       {
-        data: 'How do I implement streaming responses with OpenAI models?',
-        contentType: 'text/plain',
-      },
-      {
-        data: 'What are the best practices for prompt engineering with OpenAI?',
+        data: 'Sync documentation changes from GitHub',
         contentType: 'text/plain',
       },
     ],
   };
 };
+
+interface FilePayload {
+  path: string;
+  content: string; // base64-encoded
+}
+
+interface SyncPayload {
+  commit?: string;
+  repo?: string;
+  changed: FilePayload[];
+  removed: string[];
+}
 
 export default async function Agent(
   req: AgentRequest,
@@ -29,23 +31,37 @@ export default async function Agent(
   ctx: AgentContext
 ) {
   try {
-    const { changedFiles = [], removedFiles = [], fullReload = false } = await req.data.json() as any;
-
-    if (fullReload) {
-      ctx.logger.info('Full reload requested: deleting all vectors and reloading all docs.');
-      const stats = await loadAllDocs(ctx);
-      return resp.json({ status: 'ok', fullReload: true, stats });
+    const payload = await req.data.json() as unknown as SyncPayload;
+    
+    // Validate new payload format - reject old formats
+    if (!payload.changed || !payload.removed || !Array.isArray(payload.changed) || !Array.isArray(payload.removed)) {
+      return resp.json({ 
+        error: 'Invalid payload format. Expected {changed: FilePayload[], removed: string[]}' 
+      }, 400);
     }
 
-    if (!Array.isArray(changedFiles) || !Array.isArray(removedFiles)) {
-      return resp.json({ error: 'changedFiles and removedFiles must be arrays.' }, 400);
+    // Validate changed files have required structure
+    for (const file of payload.changed) {
+      if (!file.path || !file.content || typeof file.path !== 'string' || typeof file.content !== 'string') {
+        return resp.json({ 
+          error: 'Invalid file format. Each changed file must have {path: string, content: string}' 
+        }, 400);
+      }
     }
-    ctx.logger.info('Incremental sync: changedFiles=%o, removedFiles=%o', changedFiles, removedFiles);
-    const stats = await syncDocs(ctx, {
-      changedFiles,
-      removedFiles,
-      contentDir: CONTENT_DIR
-    });
+
+    // Validate removed files are strings
+    for (const file of payload.removed) {
+      if (typeof file !== 'string') {
+        return resp.json({ 
+          error: 'Invalid removed file format. Each removed file must be a string path' 
+        }, 400);
+      }
+    }
+
+    ctx.logger.info('Processing payload: %d changed files, %d removed files', 
+      payload.changed.length, payload.removed.length);
+    
+    const stats = await syncDocsFromPayload(ctx, payload);
     return resp.json({ status: 'ok', stats });
   } catch (error) {
     ctx.logger.error('Error running sync agent:', error);
@@ -57,41 +73,4 @@ export default async function Agent(
     }
     return resp.json({ error: message }, 500);
   }
-}
-
-/**
- * Recursively finds all .mdx files in the given directory.
- * @param rootDir The root directory to search (e.g., '/content')
- * @returns Promise<string[]> Array of absolute file paths to .mdx files
- */
-export async function getAllDocPaths(rootDir: string): Promise<string[]> {
-  const entries = await fs.readdir(rootDir, { withFileTypes: true });
-  const files: string[] = [];
-  for (const entry of entries) {
-    const fullPath = path.join(rootDir, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...(await getAllDocPaths(fullPath)));
-    } else if (entry.isFile() && entry.name.endsWith('.mdx')) {
-      files.push(fullPath);
-    }
-  }
-  return files;
-}
-
-export async function loadAllDocs(ctx: AgentContext) {
-  ctx.logger.info('Full reload: deleting all vectors in the store.');
-  const allVectors = await ctx.vector.search(VECTOR_STORE_NAME, { query: ' ', limit: 10000 });
-  const allIds = allVectors.map(v => v.key);
-  if (allIds.length > 0) {
-    for (const id of allIds) {
-      await ctx.vector.delete(VECTOR_STORE_NAME, id);
-    }
-  }
-  const docPaths = await getAllDocPaths(CONTENT_DIR);
-  const stats = await syncDocs(ctx, {
-    changedFiles: docPaths,
-    removedFiles: [],
-    contentDir: CONTENT_DIR
-  });
-  return stats;
 }

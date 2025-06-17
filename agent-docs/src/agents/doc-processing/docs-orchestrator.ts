@@ -1,105 +1,102 @@
-// Node.js built-in modules
-import { promises as fs } from 'fs';
-import * as path from 'path';
-
 import type { AgentContext } from '@agentuity/sdk';
-
 import { processDoc } from './docs-processor';
 import { VECTOR_STORE_NAME } from './config';
 
-export const DEFAULT_CONTENT_DIR = path.resolve(__dirname, '../../../../content');
-
-/**
- * Checks if a document has changed by comparing its hash.
- * @param docPath Absolute path to the .mdx file
- * @param newHash Newly computed hash
- * @returns true if changed, false if unchanged
- */
-export async function hasDocChanged(ctx: AgentContext, docPath: string, newHash: string): Promise<boolean> {
-    const vectors = await ctx.vector.search(VECTOR_STORE_NAME, {
-        query: ' ',
-        limit: 1,
-        metadata: { path: docPath },
-    });
-    if (vectors.length > 0) {
-        const storedHash = vectors[0]?.metadata?.hash;
-        return storedHash !== newHash;
-    }
-    return true;
+interface FilePayload {
+  path: string;
+  content: string; // base64-encoded
 }
 
-interface OrchestratorOptions {
-    changedFiles: string[]; // Absolute file paths
-    removedFiles: string[]; // Absolute file paths
-    contentDir?: string;    // Defaults to /content
+interface SyncPayload {
+  commit?: string;
+  repo?: string;
+  changed: FilePayload[];
+  removed: string[];
 }
 
 interface SyncStats {
-    processed: number;
-    deleted: number;
-    errors: number;
-    errorFiles: string[];
+  processed: number;
+  deleted: number;
+  errors: number;
+  errorFiles: string[];
 }
 
 /**
- * Helper to remove all vectors for a given relative path from the vector store.
+ * Helper to remove all vectors for a given logical path from the vector store.
  */
-async function removeVectorsByRelativePath(ctx: AgentContext, relativePath: string, vectorStoreName: string) {
-    ctx.logger.info('Removing vectors for path: %s, store: %s, metadata: %o', relativePath, vectorStoreName, { path: relativePath });
-    const vectors = await ctx.vector.search(vectorStoreName, {
-        query: ' ',
-        limit: 1000,
-        metadata: { path: relativePath },
-    });
-    if (vectors.length > 0) {
-        // Delete vectors one by one to avoid issues with large batches
-        for (const vector of vectors) {
-            await ctx.vector.delete(vectorStoreName, vector.key);
-        }
-    } else {
-        ctx.logger.info('No vectors found for path: %s, store: %s, metadata: %o', relativePath, vectorStoreName, { path: relativePath });
+async function removeVectorsByPath(ctx: AgentContext, logicalPath: string, vectorStoreName: string) {
+  ctx.logger.info('Removing vectors for path: %s', logicalPath);
+  const vectors = await ctx.vector.search(vectorStoreName, {
+    query: ' ',
+    limit: 1000,
+    metadata: { path: logicalPath },
+  });
+  
+  if (vectors.length > 0) {
+    // Delete vectors one by one to avoid issues with large batches
+    for (const vector of vectors) {
+      await ctx.vector.delete(vectorStoreName, vector.key);
     }
+    ctx.logger.info('Removed %d vectors for path: %s', vectors.length, logicalPath);
+  } else {
+    ctx.logger.info('No vectors found for path: %s', logicalPath);
+  }
 }
 
-export async function syncDocs(ctx: AgentContext, options: OrchestratorOptions): Promise<SyncStats> {
-    const { changedFiles, removedFiles } = options;
-    const contentDir = options.contentDir || DEFAULT_CONTENT_DIR;
-    let processed = 0, deleted = 0, errors = 0;
-    const errorFiles: string[] = [];
+/**
+ * Process documentation sync from embedded payload - completely filesystem-free
+ */
+export async function syncDocsFromPayload(ctx: AgentContext, payload: SyncPayload): Promise<SyncStats> {
+  const { changed, removed } = payload;
+  let processed = 0, deleted = 0, errors = 0;
+  const errorFiles: string[] = [];
 
-    for (const absolutePath of changedFiles) {
-        try {
-            // Compute relative path for metadata and vector store
-            const relativePath = path.relative(contentDir, absolutePath);
-            await removeVectorsByRelativePath(ctx, relativePath, VECTOR_STORE_NAME);
-            const content = await fs.readFile(absolutePath, 'utf-8');
-            const chunks = await processDoc(content);
-            for (const chunk of chunks) {
-                chunk.metadata = {
-                    ...chunk.metadata,
-                    path: relativePath,
-                };
-                await ctx.vector.upsert(VECTOR_STORE_NAME, chunk);
-            }
-            processed++;
-        } catch (err) {
-            errors++;
-            errorFiles.push(absolutePath);
-            ctx.logger.error('Error processing file %s: %o', absolutePath, err);
-        }
+  // Process changed files with embedded content
+  for (const file of changed) {
+    try {
+      const { path: logicalPath, content: base64Content } = file;
+      
+      // Base64-decode the content
+      const content = Buffer.from(base64Content, 'base64').toString('utf-8');
+      
+      // Remove existing vectors for this path
+      await removeVectorsByPath(ctx, logicalPath, VECTOR_STORE_NAME);
+      
+      // Process the document content into chunks
+      const chunks = await processDoc(content);
+      
+      // Upsert chunks with path metadata
+      for (const chunk of chunks) {
+        chunk.metadata = {
+          ...chunk.metadata,
+          path: logicalPath,
+        };
+        await ctx.vector.upsert(VECTOR_STORE_NAME, chunk);
+      }
+      
+      processed++;
+      ctx.logger.info('Successfully processed file: %s (%d chunks)', logicalPath, chunks.length);
+    } catch (err) {
+      errors++;
+      errorFiles.push(file.path);
+      ctx.logger.error('Error processing file %s: %o', file.path, err);
     }
+  }
 
-    for (const absolutePath of removedFiles) {
-        try {
-            const relativePath = path.relative(contentDir, absolutePath);
-            await removeVectorsByRelativePath(ctx, relativePath, VECTOR_STORE_NAME);
-            deleted++;
-        } catch (err) {
-            errors++;
-            errorFiles.push(absolutePath);
-            ctx.logger.error('Error deleting file %s: %o', absolutePath, err);
-        }
+  // Process removed files
+  for (const logicalPath of removed) {
+    try {
+      await removeVectorsByPath(ctx, logicalPath, VECTOR_STORE_NAME);
+      deleted++;
+      ctx.logger.info('Successfully removed file: %s', logicalPath);
+    } catch (err) {
+      errors++;
+      errorFiles.push(logicalPath);
+      ctx.logger.error('Error deleting file %s: %o', logicalPath, err);
     }
+  }
 
-    return { processed, deleted, errors, errorFiles };
+  const stats = { processed, deleted, errors, errorFiles };
+  ctx.logger.info('Sync completed: %o', stats);
+  return stats;
 } 

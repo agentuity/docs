@@ -17,19 +17,55 @@ jobs:
         id: files
         run: |
           git fetch origin ${{ github.event.before }}
-          echo "changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- 'content/**/*.mdx' | xargs)" >> $GITHUB_OUTPUT
-          echo "removed=$(git diff --name-only --diff-filter=D ${{ github.event.before }} ${{ github.sha }} -- 'content/**/*.mdx' | xargs)" >> $GITHUB_OUTPUT
+          
+          # Get changed files (relative to content directory)
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- 'content/**/*.mdx' | sed 's|^content/||')
+          REMOVED_FILES=$(git diff --name-only --diff-filter=D ${{ github.event.before }} ${{ github.sha }} -- 'content/**/*.mdx' | sed 's|^content/||')
+          
+          echo "Changed files: $CHANGED_FILES"
+          echo "Removed files: $REMOVED_FILES"
+          
+          # Build JSON payload with file contents
+          payload=$(jq -n \
+            --arg commit "${{ github.sha }}" \
+            --arg repo "${{ github.repository }}" \
+            --argjson changed "$(
+              if [ -n "$CHANGED_FILES" ]; then
+                for f in $CHANGED_FILES; do
+                  if [ -f "content/$f" ]; then
+                    jq -n \
+                      --arg path "$f" \
+                      --arg content "$(base64 -w0 < "content/$f")" \
+                      '{path: $path, content: $content}'
+                  fi
+                done | jq -s '.'
+              else
+                echo '[]'
+              fi
+            )" \
+            --argjson removed "$(
+              if [ -n "$REMOVED_FILES" ]; then
+                printf '%s\n' $REMOVED_FILES | jq -R -s -c 'split("\n") | map(select(length > 0))'
+              else
+                echo '[]'
+              fi
+            )" \
+            '{commit: $commit, repo: $repo, changed: $changed, removed: $removed}'
+          )
+          
+          echo "payload<<EOF" >> $GITHUB_OUTPUT
+          echo "$payload" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Trigger Agentuity Sync Agent
         env:
           AGENTUITY_TOKEN: ${{ secrets.AGENTUITY_TOKEN }}
         run: |
-          # Convert space-separated lists to JSON arrays
-          changed_json=$(jq -n --arg files "${{ steps.files.outputs.changed }}" '$files | split(" ") | map(select(length > 0))')
-          removed_json=$(jq -n --arg files "${{ steps.files.outputs.removed }}" '$files | split(" ") | map(select(length > 0))')
-          # POST to Agentuity agent webhook
+          echo "Sending payload to agent:"
+          echo '${{ steps.files.outputs.payload }}' | jq '.'
+          
           curl https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6 \
             -X POST \
             -H "Authorization: Bearer $AGENTUITY_TOKEN" \
             -H "Content-Type: application/json" \
-            -d '{"changedFiles":'$changed_json', "removedFiles":'$removed_json'}'
+            -d '${{ steps.files.outputs.payload }}'

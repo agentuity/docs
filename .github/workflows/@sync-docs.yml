@@ -26,35 +26,52 @@ jobs:
             head_commit=${commit_arr[0]}
           fi
           echo "Comparing $base_commit..$head_commit on main branch"
-          echo "changed=$(git diff --name-only $base_commit $head_commit -- 'content/**/*.mdx' | xargs)" >> $GITHUB_OUTPUT
-          echo "removed=$(git diff --name-only --diff-filter=D $base_commit $head_commit -- 'content/**/*.mdx' | xargs)" >> $GITHUB_OUTPUT
-
-      - name: Print files being sent to agent
-        run: |
-          echo "Changed files: ${{ steps.files.outputs.changed }}"
-          echo "Removed files: ${{ steps.files.outputs.removed }}"
+          
+          # Get changed files (relative to content directory)
+          CHANGED_FILES=$(git diff --name-only $base_commit $head_commit -- 'content/**/*.mdx' | sed 's|^content/||')
+          REMOVED_FILES=$(git diff --name-only --diff-filter=D $base_commit $head_commit -- 'content/**/*.mdx' | sed 's|^content/||')
+          
+          echo "Changed files: $CHANGED_FILES"
+          echo "Removed files: $REMOVED_FILES"
+          
+          # Build JSON payload with file contents
+          payload=$(jq -n \
+            --arg commit "$head_commit" \
+            --arg repo "${{ github.repository }}" \
+            --argjson changed "$(
+              if [ -n "$CHANGED_FILES" ]; then
+                for f in $CHANGED_FILES; do
+                  if [ -f "content/$f" ]; then
+                    jq -n \
+                      --arg path "$f" \
+                      --arg content "$(base64 -w0 < "content/$f")" \
+                      '{path: $path, content: $content}'
+                  fi
+                done | jq -s '.'
+              else
+                echo '[]'
+              fi
+            )" \
+            --argjson removed "$(
+              if [ -n "$REMOVED_FILES" ]; then
+                printf '%s\n' $REMOVED_FILES | jq -R -s -c 'split("\n") | map(select(length > 0))'
+              else
+                echo '[]'
+              fi
+            )" \
+            '{commit: $commit, repo: $repo, changed: $changed, removed: $removed}'
+          )
+          
+          echo "payload<<EOF" >> $GITHUB_OUTPUT
+          echo "$payload" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Trigger Agentuity Sync Agent
         run: |
-          changed_json=$(jq -n --arg files "${{ steps.files.outputs.changed }}" '$files | split(" ") | map(select(length > 0))')
-          removed_json=$(jq -n --arg files "${{ steps.files.outputs.removed }}" '$files | split(" ") | map(select(length > 0))')
-          echo "Sending to agent API:"
-          echo "Changed files JSON: $changed_json"
-          echo "Removed files JSON: $removed_json"
-          
-          # Build the complete JSON payload using jq
-          payload=$(jq -n \
-            --arg changed "${{ steps.files.outputs.changed }}" \
-            --arg removed "${{ steps.files.outputs.removed }}" \
-            '{
-              changedFiles: ($changed | split(" ") | map(select(length > 0))),
-              removedFiles: ($removed | split(" ") | map(select(length > 0)))
-            }')
-          
-          echo "Complete JSON payload:"
-          echo "$payload"
+          echo "Sending payload to agent:"
+          echo '${{ steps.files.outputs.payload }}' | jq '.'
           
           curl https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6 \
             -X POST \
             -H "Content-Type: application/json" \
-            -d "$payload" 
+            -d '${{ steps.files.outputs.payload }}' 
