@@ -41,7 +41,20 @@ jobs:
           echo "Sending to agent API:"
           echo "Changed files JSON: $changed_json"
           echo "Removed files JSON: $removed_json"
+          
+          # Build the complete JSON payload using jq
+          payload=$(jq -n \
+            --arg changed "${{ steps.files.outputs.changed }}" \
+            --arg removed "${{ steps.files.outputs.removed }}" \
+            '{
+              changedFiles: ($changed | split(" ") | map(select(length > 0))),
+              removedFiles: ($removed | split(" ") | map(select(length > 0)))
+            }')
+          
+          echo "Complete JSON payload:"
+          echo "$payload"
+          
           curl https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6 \
             -X POST \
             -H "Content-Type: application/json" \
-            -d '{"changedFiles":'$changed_json', "removedFiles":'$removed_json'}' 
+            -d "$payload" 
