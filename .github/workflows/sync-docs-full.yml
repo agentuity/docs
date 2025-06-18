@@ -1,7 +1,7 @@
 name: Full Docs Sync to Vector Store
 
 on:
-  push:
+  workflow_dispatch:
 
 jobs:
   sync:
@@ -81,7 +81,7 @@ jobs:
           jq -r '.removed[]' payload.json
           
           # Uncomment to actually send
-          # curl https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6 \
-          #   -X POST \
-          #   -H "Content-Type: application/json" \
-          #   -d @payload.json 
+          curl https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6 \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -d @payload.json 
