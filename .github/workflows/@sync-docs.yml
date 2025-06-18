@@ -1,8 +1,7 @@
 name: Sync Docs to Vector Store (PR & Push)
 
 on:
-  push:
-  pull_request:
+  workflow_dispatch
 
 jobs:
   sync:
