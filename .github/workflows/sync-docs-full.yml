@@ -1,7 +1,7 @@
 name: Full Docs Sync to Vector Store
 
 on:
-  push:  # Allow manual triggering only
+  workflow_dispatch
 
 jobs:
   sync:
@@ -41,7 +41,16 @@ jobs:
             
             # Add to changed array (with content)
             if [ -f "content/$path" ]; then
+              echo "Reading file: content/$path"
+              echo "First few lines of content:"
+              head -n 5 "content/$path"
+              echo "---"
+              
               CONTENT=$(base64 -w0 < "content/$path")
+              echo "Base64 sample (first 100 chars):"
+              echo "$CONTENT" | cut -c1-100
+              echo "---"
+              
               if [ "$FIRST_CHANGED" = true ]; then
                 FIRST_CHANGED=false
                 CHANGED_JSON+="{\"path\":\"$path\",\"content\":\"$CONTENT\"}"
@@ -57,9 +66,9 @@ jobs:
           # Construct the final payload
           PAYLOAD="{\"repo\":\"$GITHUB_REPOSITORY\",\"changed\":$CHANGED_JSON,\"removed\":$REMOVED_JSON}"
           
-          # Debug - show what we're about to send
-          echo "Payload structure (without file contents):"
-          echo "$PAYLOAD" | jq 'del(.changed[].content)'
+          # Debug - show structure and first file's content
+          echo "Payload structure for first file:"
+          echo "$PAYLOAD" | jq '.changed[0]'
           
           # Save full payload to file
           echo "$PAYLOAD" > payload.json
