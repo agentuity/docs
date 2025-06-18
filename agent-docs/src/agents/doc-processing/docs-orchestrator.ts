@@ -52,7 +52,17 @@ export async function syncDocsFromPayload(ctx: AgentContext, payload: SyncPayloa
       const { path: logicalPath, content: base64Content } = file;
 
       // Base64-decode the content
-      const content = Buffer.from(base64Content, 'base64').toString('utf-8');
+      let content: string;
+      try {
+        const buf = Buffer.from(base64Content, 'base64');
+        // re-encode to verify round-trip
+        if (buf.toString('base64') !== base64Content.replace(/\s/g, '')) {
+          throw new Error('Malformed base64 payload');
+        }
+        content = buf.toString('utf-8');
+      } catch (decodeErr) {
+        throw new Error(`Invalid base64 content for ${logicalPath}: ${decodeErr}`);
+      }
 
       // Remove existing vectors for this path
       await removeVectorsByPath(ctx, logicalPath, VECTOR_STORE_NAME);
