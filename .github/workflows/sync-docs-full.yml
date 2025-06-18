@@ -7,71 +7,42 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Get all MDX files and prepare payload
         id: files
         run: |
           # First find all MDX files recursively
           echo "Finding all MDX files..."
-          ALL_PATHS=$(find content -type f -name "*.mdx" | sed 's|^content/||')
+          find content -type f -name "*.mdx" | sed 's|^content/||' > mdx_files.txt
+          echo "Found files:"
+          cat mdx_files.txt
           
-          # Debug - show all found paths
-          echo "Found these MDX files:"
-          echo "$ALL_PATHS"
-          
-          # Create JSON arrays for both changed and removed
-          # We want to remove and re-add everything to get a fresh start
-          CHANGED_JSON="["
-          REMOVED_JSON="["
-          FIRST_CHANGED=true
-          FIRST_REMOVED=true
-          
-          while IFS= read -r path; do
-            # Skip empty lines
-            [ -z "$path" ] && continue
-            
-            # Add to removed array (all paths)
-            if [ "$FIRST_REMOVED" = true ]; then
-              FIRST_REMOVED=false
-              REMOVED_JSON+="\"$path\""
-            else
-              REMOVED_JSON+=",\"$path\""
-            fi
-            
-            # Add to changed array (with content)
-            if [ -f "content/$path" ]; then
-              echo "Reading file: content/$path"
-              echo "First few lines of content:"
-              head -n 5 "content/$path"
-              echo "---"
-              
-              CONTENT=$(base64 -w0 < "content/$path")
-              echo "Base64 sample (first 100 chars):"
-              echo "$CONTENT" | cut -c1-100
-              echo "---"
-              
-              if [ "$FIRST_CHANGED" = true ]; then
-                FIRST_CHANGED=false
-                CHANGED_JSON+="{\"path\":\"$path\",\"content\":\"$CONTENT\"}"
-              else
-                CHANGED_JSON+=",{\"path\":\"$path\",\"content\":\"$CONTENT\"}"
+          # Create the changed array by processing each file through jq
+          echo "Processing files..."
+          jq -n --slurpfile paths <(
+            while IFS= read -r path; do
+              [ -z "$path" ] && continue
+              if [ -f "content/$path" ]; then
+                echo "Processing: content/$path"
+                jq -n \
+                  --arg path "$path" \
+                  --arg content "$(base64 -w0 < "content/$path")" \
+                  '{path: $path, content: $content}'
               fi
-            fi
-          done <<< "$ALL_PATHS"
+            done < mdx_files.txt | jq -s '.'
+          ) \
+          --slurpfile removed <(cat mdx_files.txt | jq -R . | jq -s .) \
+          --arg repo "$GITHUB_REPOSITORY" \
+          '{
+            repo: $repo,
+            changed: ($paths | .[0] // []),
+            removed: ($removed | .[0] // [])
+          }' > payload.json
           
-          CHANGED_JSON+="]"
-          REMOVED_JSON+="]"
-          
-          # Construct the final payload
-          PAYLOAD="{\"repo\":\"$GITHUB_REPOSITORY\",\"changed\":$CHANGED_JSON,\"removed\":$REMOVED_JSON}"
-          
-          # Debug - show structure and first file's content
-          echo "Payload structure for first file:"
-          echo "$PAYLOAD" | jq '.changed[0]'
-          
-          # Save full payload to file
-          echo "$PAYLOAD" > payload.json
+          # Show debug info
+          echo "Payload structure (without contents):"
+          jq 'del(.changed[].content)' payload.json
 
       - name: Send to Agentuity
         run: |
