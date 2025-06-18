@@ -12,49 +12,67 @@ jobs:
       - name: Get all MDX files and prepare payload
         id: files
         run: |
-          # Find all MDX files in content directory and store in a file
+          # First find all MDX files recursively
           echo "Finding all MDX files..."
-          find content -name "*.mdx" | sed 's|^content/||' > mdx_files.txt
-          echo "Found files:"
-          cat mdx_files.txt
+          ALL_PATHS=$(find content -type f -name "*.mdx" | sed 's|^content/||')
           
-          # Build JSON payload with all files
-          payload=$(jq -n \
-            --arg repo "${{ github.repository }}" \
-            --slurpfile files <(cat mdx_files.txt | jq -R .) \
-            --slurpfile changed <(
-              while IFS= read -r f; do
-                if [ -f "content/$f" ]; then
-                  echo "Processing file: content/$f"
-                  jq -n \
-                    --arg path "$f" \
-                    --arg content "$(base64 -w0 < "content/$f")" \
-                    '{path: $path, content: $content}'
-                fi
-              done < mdx_files.txt | jq -s '.'
-            ) \
-            '{
-              repo: $repo,
-              removed: $files,
-              changed: ($changed | .[0] // [])
-            }'
-          )
+          # Debug - show all found paths
+          echo "Found these MDX files:"
+          echo "$ALL_PATHS"
           
-          # Save payload to file to avoid GitHub Actions output issues
-          echo "$payload" > payload.json
+          # Create JSON arrays for both changed and removed
+          # We want to remove and re-add everything to get a fresh start
+          CHANGED_JSON="["
+          REMOVED_JSON="["
+          FIRST_CHANGED=true
+          FIRST_REMOVED=true
           
-          # Set the payload path as output
-          echo "payload_path=payload.json" >> $GITHUB_OUTPUT
+          while IFS= read -r path; do
+            # Skip empty lines
+            [ -z "$path" ] && continue
+            
+            # Add to removed array (all paths)
+            if [ "$FIRST_REMOVED" = true ]; then
+              FIRST_REMOVED=false
+              REMOVED_JSON+="\"$path\""
+            else
+              REMOVED_JSON+=",\"$path\""
+            fi
+            
+            # Add to changed array (with content)
+            if [ -f "content/$path" ]; then
+              CONTENT=$(base64 -w0 < "content/$path")
+              if [ "$FIRST_CHANGED" = true ]; then
+                FIRST_CHANGED=false
+                CHANGED_JSON+="{\"path\":\"$path\",\"content\":\"$CONTENT\"}"
+              else
+                CHANGED_JSON+=",{\"path\":\"$path\",\"content\":\"$CONTENT\"}"
+              fi
+            fi
+          done <<< "$ALL_PATHS"
+          
+          CHANGED_JSON+="]"
+          REMOVED_JSON+="]"
+          
+          # Construct the final payload
+          PAYLOAD="{\"repo\":\"$GITHUB_REPOSITORY\",\"changed\":$CHANGED_JSON,\"removed\":$REMOVED_JSON}"
+          
+          # Debug - show what we're about to send
+          echo "Payload structure (without file contents):"
+          echo "$PAYLOAD" | jq 'del(.changed[].content)'
+          
+          # Save full payload to file
+          echo "$PAYLOAD" > payload.json
 
-      - name: Show debug info
+      - name: Send to Agentuity
         run: |
-          echo "Files to process:"
+          echo "About to sync these files:"
           jq -r '.changed[].path' payload.json
-          echo -e "\nFiles to remove first:"
+          echo -e "\nWill first remove these paths:"
           jq -r '.removed[]' payload.json
-          echo -e "\nFull payload:"
-          cat payload.json
-        #   curl https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6 \
-        #     -X POST \
-        #     -H "Content-Type: application/json" \
-        #     -d @payload.json 
+          
+          # Uncomment to actually send
+          # curl https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6 \
+          #   -X POST \
+          #   -H "Content-Type: application/json" \
+          #   -d @payload.json 
