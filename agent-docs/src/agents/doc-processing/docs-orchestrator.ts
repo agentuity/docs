@@ -13,7 +13,7 @@ async function removeVectorsByPath(ctx: AgentContext, logicalPath: string, vecto
     limit: 10000,
     metadata: { path: logicalPath },
   });
-  
+
   if (vectors.length > 0) {
     // Delete vectors one by one to avoid issues with large batches
     for (const vector of vectors) {
@@ -50,16 +50,16 @@ export async function syncDocsFromPayload(ctx: AgentContext, payload: SyncPayloa
   for (const file of changed) {
     try {
       const { path: logicalPath, content: base64Content } = file;
-      
+
       // Base64-decode the content
       const content = Buffer.from(base64Content, 'base64').toString('utf-8');
-      
+
       // Remove existing vectors for this path
       await removeVectorsByPath(ctx, logicalPath, VECTOR_STORE_NAME);
-      
+
       // Process the document content into chunks
       const chunks = await processDoc(content);
-      
+
       // Upsert chunks with path metadata
       for (const chunk of chunks) {
         chunk.metadata = {
@@ -68,7 +68,7 @@ export async function syncDocsFromPayload(ctx: AgentContext, payload: SyncPayloa
         };
         await ctx.vector.upsert(VECTOR_STORE_NAME, chunk);
       }
-      
+
       processed++;
       ctx.logger.info('Successfully processed file: %s (%d chunks)', logicalPath, chunks.length);
     } catch (err) {
@@ -85,14 +85,9 @@ export async function syncDocsFromPayload(ctx: AgentContext, payload: SyncPayloa
 
 export async function clearVectorDb(ctx: AgentContext) {
   ctx.logger.info('Clearing all vectors from store: %s', VECTOR_STORE_NAME);
-  const allVectors = await ctx.vector.search(VECTOR_STORE_NAME, { 
-    query: ' ', 
-    limit: 10000 
-  });
-  
-  if (allVectors.length > 0) {
-    for (const vector of allVectors) {
-      await ctx.vector.delete(VECTOR_STORE_NAME, vector.key);
-    }
+  while (true) {
+    const batch = await ctx.vector.search(VECTOR_STORE_NAME, { query: ' ', limit: 1000 });
+    if (batch.length === 0) break;
+    await Promise.all(batch.map(v => ctx.vector.delete(VECTOR_STORE_NAME, v.key)));
   }
 }
