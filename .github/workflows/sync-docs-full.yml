@@ -1,8 +1,8 @@
 name: Full Docs Sync to Vector Store
 
 on:
-    push:
-        
+  workflow_dispatch:  # Allow manual triggering only
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -12,20 +12,18 @@ jobs:
       - name: Get all MDX files and prepare payload
         id: files
         run: |
-          # Find all MDX files in content directory
+          # Find all MDX files in content directory and store in a file
           echo "Finding all MDX files..."
-          ALL_FILES=$(find content -name "*.mdx" | sed 's|^content/||')
+          find content -name "*.mdx" | sed 's|^content/||' > mdx_files.txt
           echo "Found files:"
-          echo "$ALL_FILES"
+          cat mdx_files.txt
           
           # Build JSON payload with all files
           payload=$(jq -n \
             --arg repo "${{ github.repository }}" \
-            --argjson removed "$(
-              printf '%s\n' $ALL_FILES | jq -R -s -c 'split("\n") | map(select(length > 0))'
-            )" \
-            --argjson changed "$(
-              for f in $ALL_FILES; do
+            --slurpfile files <(cat mdx_files.txt | jq -R .) \
+            --slurpfile changed <(
+              while IFS= read -r f; do
                 if [ -f "content/$f" ]; then
                   echo "Processing file: content/$f"
                   jq -n \
@@ -33,24 +31,30 @@ jobs:
                     --arg content "$(base64 -w0 < "content/$f")" \
                     '{path: $path, content: $content}'
                 fi
-              done | jq -s '.'
-            )" \
-            '{repo: $repo, changed: $changed, removed: $removed}'
+              done < mdx_files.txt | jq -s '.'
+            ) \
+            '{
+              repo: $repo,
+              removed: $files,
+              changed: ($changed | .[0] // [])
+            }'
           )
           
-          echo "payload<<EOF" >> $GITHUB_OUTPUT
-          echo "$payload" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Save payload to file to avoid GitHub Actions output issues
+          echo "$payload" > payload.json
+          
+          # Set the payload path as output
+          echo "payload_path=payload.json" >> $GITHUB_OUTPUT
 
-      - name: Trigger Agentuity Sync Agent
+      - name: Show debug info
         run: |
-          echo "Sending payload to agent. Files to process:"
-          echo '${{ steps.files.outputs.payload }}' | jq -r '.changed[].path'
-          echo "Files to remove first:"
-          echo '${{ steps.files.outputs.payload }}' | jq -r '.removed[]'
-          echo "Test payload:"
-          echo '${{ steps.files.outputs.payload }}'
+          echo "Files to process:"
+          jq -r '.changed[].path' payload.json
+          echo -e "\nFiles to remove first:"
+          jq -r '.removed[]' payload.json
+          echo -e "\nFull payload:"
+          cat payload.json
         #   curl https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6 \
         #     -X POST \
         #     -H "Content-Type: application/json" \
-        #     -d '${{ steps.files.outputs.payload }}' 
+        #     -d @payload.json 
