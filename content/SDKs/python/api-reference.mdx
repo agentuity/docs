@@ -956,27 +956,42 @@ Gets the payload of the request as a string.
 
 ##### Return Value
 
-Returns the request payload as a string.
+Returns the request payload as a UTF-8 decoded string.
 
 ##### Example
 
 ```python
-text = request.data.text
+text = await request.data.text()
 print(f"Request text: {text}")
+```
+
+#### `json() -> dict`
+
+Gets the payload of the request as a JSON object.
+
+##### Return Value
+
+Returns the request payload as a parsed JSON dictionary. If the data is not valid JSON, this will raise a ValueError.
+
+##### Example
+
+```python
+json_data = await request.data.json()
+print(f"JSON data: {json_data}")
 ```
 
 #### `binary() -> bytes`
 
-Gets the payload of the request as bytes.
+Gets the payload of the request as binary bytes.
 
 ##### Return Value
 
-Returns the request payload as bytes.
+Returns the request payload as raw bytes.
 
 ##### Example
 
 ```python
-binary_data = request.binary()
+binary_data = await request.data.binary()
 print(f"Binary data size: {len(binary_data)} bytes")
 ```
 
