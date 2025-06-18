@@ -10,7 +10,7 @@ async function removeVectorsByPath(ctx: AgentContext, logicalPath: string, vecto
   ctx.logger.info('Removing vectors for path: %s', logicalPath);
   const vectors = await ctx.vector.search(vectorStoreName, {
     query: ' ',
-    limit: 1000,
+    limit: 10000,
     metadata: { path: logicalPath },
   });
   
