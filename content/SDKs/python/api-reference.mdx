@@ -980,32 +980,36 @@ binary_data = request.binary()
 print(f"Binary data size: {len(binary_data)} bytes")
 ```
 
-### Media-Specific Methods
+#### `base64() -> str`
 
-The SDK provides specialized methods for various media types:
+Gets the payload of the request as a base64 encoded string.
 
-- `pdf() -> bytes`
-- `png() -> bytes`
-- `jpeg() -> bytes`
-- `gif() -> bytes`
-- `webp() -> bytes`
-- `mp3() -> bytes`
-- `wav() -> bytes`
-- `ogg() -> bytes`
-- `email() -> Email`
+##### Return Value
 
-Each method returns the request payload as bytes with the appropriate content type validation, except for `email()` which returns an `Email` object.
+Returns the request payload as a base64 encoded string.
 
-#### Example
+##### Example
 
 ```python
-# Get an image from the request
-image = request.png()
-# Process the image...
+base64_data = await request.data.base64()
+print(f"Base64 data: {base64_data}")
+```
 
-# Get audio from the request
-audio = request.mp3()
-# Process the audio...
+#### `stream() -> IO[bytes]`
+
+Gets the payload of the request as a stream of bytes.
+
+##### Return Value
+
+Returns a file-like object providing access to the data as bytes.
+
+##### Example
+
+```python
+stream = await request.data.stream()
+# Process stream data...
+async for chunk in stream:
+    process_chunk(chunk)
 ```
 
 #### `email() -> Email`

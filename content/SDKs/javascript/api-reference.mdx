@@ -739,13 +739,13 @@ const text = await request.data.text();
 console.log(`Request text: ${text}`);
 ```
 
-#### `binary(): Promise<ArrayBuffer>`
+#### `binary(): Promise<Uint8Array>`
 
-Gets the payload of the request as an ArrayBuffer.
+Gets the payload of the request as a Uint8Array.
 
 ##### Return Value
 
-Returns a Promise that resolves to the request payload as an ArrayBuffer.
+Returns a Promise that resolves to the request payload as a Uint8Array.
 
 ##### Example
 
@@ -753,6 +753,74 @@ Returns a Promise that resolves to the request payload as an ArrayBuffer.
 const binaryData = await request.data.binary();
 console.log(`Binary data size: ${binaryData.byteLength} bytes`);
 ```
+
+#### `base64(): Promise<string>`
+
+Gets the payload of the request as a base64 encoded string.
+
+##### Return Value
+
+Returns a Promise that resolves to the request payload as a base64 encoded string.
+
+##### Example
+
+```typescript
+const base64Data = await request.data.base64();
+console.log(`Base64 data: ${base64Data}`);
+```
+
+#### `object<T>(): Promise<T>`
+
+Gets the payload of the request as a JSON object and parses it as a specific type.
+
+##### Return Value
+
+Returns a Promise that resolves to the request payload as a JSON object of the specified type T. If the data is not JSON, this will throw an error.
+
+##### Example
+
+```typescript
+interface UserData {
+  name: string;
+  email: string;
+}
+
+const userData = await request.data.object<UserData>();
+console.log(`User: ${userData.name} (${userData.email})`);
+```
+
+#### `buffer(): Promise<Buffer>`
+
+Gets the payload of the request as a Node.js Buffer.
+
+##### Return Value
+
+Returns a Promise that resolves to the request payload as a Buffer.
+
+##### Example
+
+```typescript
+const bufferData = await request.data.buffer();
+console.log(`Buffer size: ${bufferData.length} bytes`);
+```
+
+#### `stream(): Promise<ReadableStream>`
+
+Gets the payload of the request as a readable stream.
+
+##### Return Value
+
+Returns a Promise that resolves to the request payload as a ReadableStream.
+
+##### Example
+
+```typescript
+const stream = await request.data.stream();
+const reader = stream.getReader();
+// Process stream data...
+```
+
+
 
 
 
