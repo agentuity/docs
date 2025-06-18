@@ -13,12 +13,19 @@ export async function embedChunks(
   if (!Array.isArray(texts) || texts.length === 0) {
     throw new Error('No texts provided for embedding.');
   }
-  const response = await embedMany({
-    model: openai.embedding(model),
-    values: texts
-  })
+  let response: Awaited<ReturnType<typeof embedMany>>;
+  try {
+    response = await embedMany({
+      model: openai.embedding(model),
+      values: texts,
+    });
+  } catch (err) {
+    throw new Error(`Failed to embed ${texts.length} chunk(s): ${String(err)}`);
+  }
+
   if (!response.embeddings || response.embeddings.length !== texts.length) {
     throw new Error('Embedding API returned unexpected result.');
+  }
   }
   return response.embeddings;
 } 
