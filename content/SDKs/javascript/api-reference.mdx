@@ -118,9 +118,9 @@ const result = await context.kv.get('user-preferences', 'user-123');
 if (result.exists) {
   // Access data using the Data interface methods
   const valueString = await result.data.text();
-  console.log(`User preferences: ${valueString}`);
+  context.logger.info(`User preferences: ${valueString}`);
 } else {
-  console.log('User preferences not found');
+  context.logger.info('User preferences not found');
 }
 ```
 
@@ -237,8 +237,8 @@ const results = await context.vector.search('product-descriptions', {
 
 // Process search results
 for (const result of results) {
-  console.log(`Product ID: ${result.id}, Similarity: ${result.distance}`);
-  console.log(`Metadata: ${JSON.stringify(result.metadata)}`);
+  context.logger.info(`Product ID: ${result.id}, Similarity: ${result.distance}`);
+  context.logger.info(`Metadata: ${JSON.stringify(result.metadata)}`);
 }
 ```
 
@@ -260,7 +260,7 @@ Returns a Promise that resolves to the number of vectors that were deleted (0 or
 ```typescript
 // Delete a single vector
 const deletedCount = await context.vector.delete('product-descriptions', 'id1');
-console.log(`Deleted ${deletedCount} vector(s)`);
+context.logger.info(`Deleted ${deletedCount} vector(s)`);
 ```
 
 ### Object Storage
@@ -288,9 +288,9 @@ const result = await context.objectstore.get('user-uploads', 'profile-123.jpg');
 if (result.exists) {
   // Access data using the Data interface methods
   const imageData = await result.data.binary();
-  console.log(`Image size: ${imageData.byteLength} bytes`);
+  context.logger.info(`Image size: ${imageData.byteLength} bytes`);
 } else {
-  console.log('Image not found');
+  context.logger.info('Image not found');
 }
 ```
 
@@ -369,9 +369,9 @@ Returns a Promise that resolves to a boolean indicating whether the object was d
 // Delete an object
 const wasDeleted = await context.objectstore.delete('user-uploads', 'old-file.pdf');
 if (wasDeleted) {
-  console.log('File deleted successfully');
+  context.logger.info('File deleted successfully');
 } else {
-  console.log('File did not exist');
+  context.logger.info('File did not exist');
 }
 ```
 
@@ -400,7 +400,7 @@ const publicUrl = await context.objectstore.createPublicURL(
 );
 
 // Share the URL with users
-console.log(`Download link: ${publicUrl}`);
+context.logger.info(`Download link: ${publicUrl}`);
 
 // Create a URL with default expiration (1 hour)
 const defaultUrl = await context.objectstore.createPublicURL('images', 'photo.jpg');
@@ -660,7 +660,7 @@ Returns a string representing the trigger type (webhook, cron, manual, agent, et
 
 ```typescript
 const triggerType = request.trigger;
-console.log(`Request triggered by: ${triggerType}`);
+context.logger.info(`Request triggered by: ${triggerType}`);
 ```
 
 #### `get(key: string, defaultValue?: Json): Json`
@@ -721,7 +721,7 @@ Returns a Promise that resolves to the request payload as a JSON object.
 
 ```typescript
 const data = await request.data.json();
-console.log(`Request data: ${JSON.stringify(data)}`);
+context.logger.info(`Request data: ${JSON.stringify(data)}`);
 ```
 
 #### `text(): Promise<string>`
@@ -736,7 +736,7 @@ Returns a Promise that resolves to the request payload as a string.
 
 ```typescript
 const text = await request.data.text();
-console.log(`Request text: ${text}`);
+context.logger.info(`Request text: ${text}`);
 ```
 
 #### `binary(): Promise<Uint8Array>`
@@ -751,7 +751,7 @@ Returns a Promise that resolves to the request payload as a Uint8Array.
 
 ```typescript
 const binaryData = await request.data.binary();
-console.log(`Binary data size: ${binaryData.byteLength} bytes`);
+context.logger.info(`Binary data size: ${binaryData.byteLength} bytes`);
 ```
 
 #### `base64(): Promise<string>`
@@ -766,7 +766,7 @@ Returns a Promise that resolves to the request payload as a base64 encoded strin
 
 ```typescript
 const base64Data = await request.data.base64();
-console.log(`Base64 data: ${base64Data}`);
+context.logger.info(`Base64 data: ${base64Data}`);
 ```
 
 #### `object<T>(): Promise<T>`
@@ -786,7 +786,7 @@ interface UserData {
 }
 
 const userData = await request.data.object<UserData>();
-console.log(`User: ${userData.name} (${userData.email})`);
+context.logger.info(`User: ${userData.name} (${userData.email})`);
 ```
 
 #### `buffer(): Promise<Buffer>`
@@ -801,7 +801,7 @@ Returns a Promise that resolves to the request payload as a Buffer.
 
 ```typescript
 const bufferData = await request.data.buffer();
-console.log(`Buffer size: ${bufferData.length} bytes`);
+context.logger.info(`Buffer size: ${bufferData.length} bytes`);
 ```
 
 #### `stream(): Promise<ReadableStream>`
@@ -845,7 +845,7 @@ Returns a `Date` object representing the email's date, or `null` if no date is a
 ```typescript
 const email = await request.data.email();
 const emailDate = email.date();
-console.log('Email received on:', emailDate);
+context.logger.info('Email received on:', emailDate);
 ```
 
 #### `messageId(): string | null`
