@@ -1,25 +1,7 @@
 import type { AgentContext } from '@agentuity/sdk';
 import { processDoc } from './docs-processor';
 import { VECTOR_STORE_NAME } from './config';
-
-interface FilePayload {
-  path: string;
-  content: string; // base64-encoded
-}
-
-interface SyncPayload {
-  commit?: string;
-  repo?: string;
-  changed: FilePayload[];
-  removed: string[];
-}
-
-interface SyncStats {
-  processed: number;
-  deleted: number;
-  errors: number;
-  errorFiles: string[];
-}
+import type { FilePayload, SyncPayload, SyncStats } from './types';
 
 /**
  * Helper to remove all vectors for a given logical path from the vector store.
@@ -47,9 +29,22 @@ async function removeVectorsByPath(ctx: AgentContext, logicalPath: string, vecto
  * Process documentation sync from embedded payload - completely filesystem-free
  */
 export async function syncDocsFromPayload(ctx: AgentContext, payload: SyncPayload): Promise<SyncStats> {
-  const { changed, removed } = payload;
+  const { changed = [], removed = [] } = payload;
   let processed = 0, deleted = 0, errors = 0;
   const errorFiles: string[] = [];
+
+  // Process removed files
+  for (const logicalPath of removed) {
+    try {
+      await removeVectorsByPath(ctx, logicalPath, VECTOR_STORE_NAME);
+      deleted++;
+      ctx.logger.info('Successfully removed file: %s', logicalPath);
+    } catch (err) {
+      errors++;
+      errorFiles.push(logicalPath);
+      ctx.logger.error('Error deleting file %s: %o', logicalPath, err);
+    }
+  }
 
   // Process changed files with embedded content
   for (const file of changed) {
@@ -83,20 +78,21 @@ export async function syncDocsFromPayload(ctx: AgentContext, payload: SyncPayloa
     }
   }
 
-  // Process removed files
-  for (const logicalPath of removed) {
-    try {
-      await removeVectorsByPath(ctx, logicalPath, VECTOR_STORE_NAME);
-      deleted++;
-      ctx.logger.info('Successfully removed file: %s', logicalPath);
-    } catch (err) {
-      errors++;
-      errorFiles.push(logicalPath);
-      ctx.logger.error('Error deleting file %s: %o', logicalPath, err);
-    }
-  }
-
   const stats = { processed, deleted, errors, errorFiles };
   ctx.logger.info('Sync completed: %o', stats);
   return stats;
-} 
+}
+
+export async function clearVectorDb(ctx: AgentContext) {
+  ctx.logger.info('Clearing all vectors from store: %s', VECTOR_STORE_NAME);
+  const allVectors = await ctx.vector.search(VECTOR_STORE_NAME, { 
+    query: ' ', 
+    limit: 10000 
+  });
+  
+  if (allVectors.length > 0) {
+    for (const vector of allVectors) {
+      await ctx.vector.delete(VECTOR_STORE_NAME, vector.key);
+    }
+  }
+}

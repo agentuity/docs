@@ -1,5 +1,6 @@
 import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
 import { syncDocsFromPayload } from './docs-orchestrator';
+import type { FilePayload, SyncPayload } from './types';
 
 export const welcome = () => {
   return {
@@ -13,18 +14,6 @@ export const welcome = () => {
   };
 };
 
-interface FilePayload {
-  path: string;
-  content: string; // base64-encoded
-}
-
-interface SyncPayload {
-  commit?: string;
-  repo?: string;
-  changed: FilePayload[];
-  removed: string[];
-}
-
 export default async function Agent(
   req: AgentRequest,
   resp: AgentResponse,
@@ -33,35 +22,57 @@ export default async function Agent(
   try {
     const payload = await req.data.json() as unknown as SyncPayload;
     
-    // Validate new payload format - reject old formats
-    if (!payload.changed || !payload.removed || !Array.isArray(payload.changed) || !Array.isArray(payload.removed)) {
+    // Validate that at least one operation is requested
+    if ((!payload.changed || payload.changed.length === 0) && 
+        (!payload.removed || payload.removed.length === 0)) {
       return resp.json({ 
-        error: 'Invalid payload format. Expected {changed: FilePayload[], removed: string[]}' 
+        error: 'Invalid payload format. Must provide at least one of: changed files or removed files' 
       }, 400);
     }
 
-    // Validate changed files have required structure
-    for (const file of payload.changed) {
-      if (!file.path || !file.content || typeof file.path !== 'string' || typeof file.content !== 'string') {
+    // Validate changed files if present
+    if (payload.changed) {
+      if (!Array.isArray(payload.changed)) {
         return resp.json({ 
-          error: 'Invalid file format. Each changed file must have {path: string, content: string}' 
+          error: 'Invalid payload format. Changed files must be an array' 
         }, 400);
+      }
+
+      for (const file of payload.changed) {
+        if (!file.path || !file.content || typeof file.path !== 'string' || typeof file.content !== 'string') {
+          return resp.json({ 
+            error: 'Invalid file format. Each changed file must have {path: string, content: string}' 
+          }, 400);
+        }
       }
     }
 
-    // Validate removed files are strings
-    for (const file of payload.removed) {
-      if (typeof file !== 'string') {
+    // Validate removed files if present
+    if (payload.removed) {
+      if (!Array.isArray(payload.removed)) {
         return resp.json({ 
-          error: 'Invalid removed file format. Each removed file must be a string path' 
+          error: 'Invalid payload format. Removed files must be an array' 
         }, 400);
+      }
+
+      for (const file of payload.removed) {
+        if (typeof file !== 'string') {
+          return resp.json({ 
+            error: 'Invalid removed file format. Each removed file must be a string path' 
+          }, 400);
+        }
       }
     }
 
     ctx.logger.info('Processing payload: %d changed files, %d removed files', 
-      payload.changed.length, payload.removed.length);
+      payload.changed?.length || 0, payload.removed?.length || 0);
     
-    const stats = await syncDocsFromPayload(ctx, payload);
+    const stats = await syncDocsFromPayload(ctx, {
+      commit: payload.commit,
+      repo: payload.repo,
+      changed: payload.changed || [],
+      removed: payload.removed || []
+    });
     return resp.json({ status: 'ok', stats });
   } catch (error) {
     ctx.logger.error('Error running sync agent:', error);
