@@ -10,7 +10,10 @@ echo "Validating file paths" >&2
 valid_count=0
 invalid_count=0
 
-while IFS= read -r file; do
+# Read all input into an array first
+mapfile -t files
+
+for file in "${files[@]}"; do
     # Skip empty lines
     if [ -z "$file" ]; then
         continue
