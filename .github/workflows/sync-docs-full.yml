@@ -18,27 +18,34 @@ jobs:
           echo "Found files:"
           cat mdx_files.txt
           
-          # Create the changed array by processing each file through jq
+          # Create JSON array of changed files
           echo "Processing files..."
-          jq -n --slurpfile paths <(
-            while IFS= read -r path; do
-              [ -z "$path" ] && continue
-              if [ -f "content/$path" ]; then
-                echo "Processing: content/$path"
-                jq -n \
-                  --arg path "$path" \
-                  --arg content "$(base64 -w0 < "content/$path")" \
-                  '{path: $path, content: $content}'
-              fi
-            done < mdx_files.txt | jq -s '.'
-          ) \
-          --slurpfile removed <(cat mdx_files.txt | jq -R . | jq -s .) \
-          --arg repo "$GITHUB_REPOSITORY" \
-          '{
-            repo: $repo,
-            changed: ($paths | .[0] // []),
-            removed: ($removed | .[0] // [])
-          }' > payload.json
+          changed_files="[]"
+          while IFS= read -r path; do
+            [ -z "$path" ] && continue
+            if [ -f "content/$path" ]; then
+              echo "Processing: content/$path" >&2
+              file_json=$(jq -n \
+                --arg path "$path" \
+                --arg content "$(base64 -w0 < "content/$path")" \
+                '{path: $path, content: $content}')
+              changed_files=$(echo "$changed_files" | jq --argjson file "$file_json" '. + [$file]')
+            fi
+          done < mdx_files.txt
+          
+          # Create removed files array (same as changed for full sync)
+          removed_files=$(cat mdx_files.txt | jq -R . | jq -s .)
+          
+          # Create final payload
+          jq -n \
+            --argjson changed "$changed_files" \
+            --argjson removed "$removed_files" \
+            --arg repo "$GITHUB_REPOSITORY" \
+            '{
+              repo: $repo,
+              changed: $changed,
+              removed: $removed
+            }' > payload.json
           
           # Show debug info
           echo "Payload structure (without contents):"
