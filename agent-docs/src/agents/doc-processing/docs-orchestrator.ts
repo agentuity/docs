@@ -76,7 +76,8 @@ export async function syncDocsFromPayload(ctx: AgentContext, payload: SyncPayloa
           ...chunk.metadata,
           path: logicalPath,
         };
-        await ctx.vector.upsert(VECTOR_STORE_NAME, chunk);
+        const result = await ctx.vector.upsert(VECTOR_STORE_NAME, chunk);
+        ctx.logger.info('Upserted chunk: %o', result.length);
       }
 
       processed++;
