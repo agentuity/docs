@@ -20,32 +20,40 @@ jobs:
           
           # Create JSON array of changed files
           echo "Processing files..."
-          changed_files="[]"
+          rm -f changed_files.json
+          echo "[]" > changed_files.json
+          
           while IFS= read -r path; do
             [ -z "$path" ] && continue
             if [ -f "content/$path" ]; then
               echo "Processing: content/$path" >&2
-              file_json=$(jq -n \
+              # Create individual file JSON and append to array
+              jq -n \
                 --arg path "$path" \
                 --arg content "$(base64 -w0 < "content/$path")" \
-                '{path: $path, content: $content}')
-              changed_files=$(echo "$changed_files" | jq --argjson file "$file_json" '. + [$file]')
+                '{path: $path, content: $content}' > temp_file.json
+              # Append to the array using jq
+              jq '. + [input]' changed_files.json temp_file.json > temp_changed.json
+              mv temp_changed.json changed_files.json
             fi
           done < mdx_files.txt
           
           # Create removed files array (same as changed for full sync)
-          removed_files=$(cat mdx_files.txt | jq -R . | jq -s .)
+          cat mdx_files.txt | jq -R . | jq -s . > removed_files.json
           
           # Create final payload
           jq -n \
-            --argjson changed "$changed_files" \
-            --argjson removed "$removed_files" \
+            --slurpfile changed changed_files.json \
+            --slurpfile removed removed_files.json \
             --arg repo "$GITHUB_REPOSITORY" \
             '{
               repo: $repo,
-              changed: $changed,
-              removed: $removed
+              changed: ($changed | .[0] // []),
+              removed: ($removed | .[0] // [])
             }' > payload.json
+          
+          # Clean up temp files
+          rm -f changed_files.json removed_files.json temp_file.json
           
           # Show debug info
           echo "Payload structure (without contents):"
