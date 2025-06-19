@@ -60,6 +60,8 @@ jobs:
           jq 'del(.changed[].content)' payload.json
 
       - name: Send to Agentuity
+        env:
+          AGENTUITY_TOKEN: ${{ secrets.AGENTUITY_TOKEN }}
         run: |
           echo "About to sync these files:"
           jq -r '.changed[].path' payload.json
@@ -69,5 +71,6 @@ jobs:
           # Uncomment to actually send
           curl https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6 \
             -X POST \
+            -H "Authorization: Bearer $AGENTUITY_TOKEN" \
             -H "Content-Type: application/json" \
             -d @payload.json
