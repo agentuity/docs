@@ -41,12 +41,7 @@ Respond ONLY with a valid JSON object as described above. In your answer, you sh
     maxTokens: 2048,
   });
 
-  let answer = '';
-  for await (const delta of llmResponse.textStream) {
-    answer += delta;
-  }
-
-  return resp.text(answer);
+  return resp.stream(llmResponse.textStream);
 }
 
 async function retrieveRelevantDocs(ctx: AgentContext, prompt: string): Promise<RelevantDoc[]> {
