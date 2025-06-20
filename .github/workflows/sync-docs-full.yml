@@ -1,7 +1,7 @@
 name: Full Docs Sync to Vector Store
 
 on:
-  push:
+  workflow_dispatch:
 
 jobs:
   sync:
