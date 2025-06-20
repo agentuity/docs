@@ -57,7 +57,7 @@ async function retrieveRelevantDocs(ctx: AgentContext, prompt: string): Promise<
   try {
 
 
-    var vectors = await ctx.vector.search(VECTOR_STORE_NAME, dbQuery);
+    const vectors = await ctx.vector.search(VECTOR_STORE_NAME, dbQuery);
 
     const uniquePaths = new Set<string>();
 
@@ -101,10 +101,13 @@ async function retrieveDocumentBasedOnPath(ctx: AgentContext, path: string): Pro
 
     // Sort vectors by chunk index and concatenate text
     const sortedVectors = vectors
-      .map(vec => ({
-        metadata: vec.metadata as ChunkMetadata,
-        index: (vec.metadata as ChunkMetadata).chunkIndex
-      }))
+      .map(vec => {
+        const metadata = vec.metadata as ChunkMetadata;
+        return {
+          metadata,
+          index: metadata.chunkIndex
+        };
+      })
       .sort((a, b) => a.index - b.index);
 
     const fullText = sortedVectors
