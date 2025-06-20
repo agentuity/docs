@@ -12,60 +12,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Get changed and removed files
-        id: files
+      - name: Collect and validate files
         run: |
+          set -euo pipefail
           git fetch origin ${{ github.event.before }}
+          ./bin/collect-changed-files.sh "${{ github.event.before }}" "${{ github.sha }}" | \
+            ./bin/validate-files.sh > changed-files.txt
           
-          # Get changed files (relative to content directory)
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- 'content/**/*.mdx' | sed 's|^content/||')
-          REMOVED_FILES=$(git diff --name-only --diff-filter=D ${{ github.event.before }} ${{ github.sha }} -- 'content/**/*.mdx' | sed 's|^content/||')
-          
-          echo "Changed files: $CHANGED_FILES"
-          echo "Removed files: $REMOVED_FILES"
-          
-          # Build JSON payload with file contents
-          payload=$(jq -n \
-            --arg commit "${{ github.sha }}" \
-            --arg repo "${{ github.repository }}" \
-            --argjson changed "$(
-              if [ -n "$CHANGED_FILES" ]; then
-                for f in $CHANGED_FILES; do
-                  if [ -f "content/$f" ]; then
-                    jq -n \
-                      --arg path "$f" \
-                      --arg content "$(base64 -w0 < "content/$f")" \
-                      '{path: $path, content: $content}'
-                  fi
-                done | jq -s '.'
-              else
-                echo '[]'
-              fi
-            )" \
-            --argjson removed "$(
-              if [ -n "$REMOVED_FILES" ]; then
-                printf '%s\n' $REMOVED_FILES | jq -R -s -c 'split("\n") | map(select(length > 0))'
-              else
-                echo '[]'
-              fi
-            )" \
-            '{commit: $commit, repo: $repo, changed: $changed, removed: $removed}'
-          )
-          
-          echo "payload<<EOF" >> $GITHUB_OUTPUT
-          echo "$payload" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "Files to sync:"
+          cat changed-files.txt
 
-      - name: Trigger Agentuity Sync Agent
+      - name: Build and send payload
         env:
           AGENTUITY_TOKEN: ${{ secrets.AGENTUITY_TOKEN }}
         run: |
-          echo "Sending payload to agent:"
-          echo '${{ steps.files.outputs.payload }}' | jq '.'
-          
-          curl https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6 \
-            -X POST \
-            -H "Authorization: Bearer $AGENTUITY_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '${{ steps.files.outputs.payload }}'
+          set -euo pipefail
+          cat changed-files.txt | \
+            ./bin/build-payload.sh "${{ github.repository }}" incremental | \
+            ./bin/send-webhook.sh "https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6" "Bearer $AGENTUITY_TOKEN"

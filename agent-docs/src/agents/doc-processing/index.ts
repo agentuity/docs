@@ -1,6 +1,6 @@
 import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
 import { syncDocsFromPayload } from './docs-orchestrator';
-import type { FilePayload, SyncPayload } from './types';
+import type { SyncPayload } from './types';
 
 export const welcome = () => {
   return {

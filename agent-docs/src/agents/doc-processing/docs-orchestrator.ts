@@ -1,7 +1,7 @@
 import type { AgentContext } from '@agentuity/sdk';
 import { processDoc } from './docs-processor';
-import { VECTOR_STORE_NAME } from './config';
-import type { FilePayload, SyncPayload, SyncStats } from './types';
+import { VECTOR_STORE_NAME } from '../../../../config';
+import type { SyncPayload, SyncStats } from './types';
 
 /**
  * Helper to remove all vectors for a given logical path from the vector store.
@@ -76,7 +76,8 @@ export async function syncDocsFromPayload(ctx: AgentContext, payload: SyncPayloa
           ...chunk.metadata,
           path: logicalPath,
         };
-        await ctx.vector.upsert(VECTOR_STORE_NAME, chunk);
+        const result = await ctx.vector.upsert(VECTOR_STORE_NAME, chunk);
+        ctx.logger.info('Upserted chunk: %o', result.length);
       }
 
       processed++;
