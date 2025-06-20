@@ -9,65 +9,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get all MDX files and prepare payload
-        id: files
+      - name: Collect and validate files
         run: |
-          # First find all MDX files recursively
-          echo "Finding all MDX files..."
-          find content -type f -name "*.mdx" | sed 's|^content/||' > mdx_files.txt
-          echo "Found files:"
-          cat mdx_files.txt
+          set -euo pipefail
+          ./bin/collect-all-files.sh | \
+            ./bin/validate-files.sh > all-files.txt
           
-          # Create JSON array of changed files
-          echo "Processing files..."
-          rm -f changed_files.json
-          echo "[]" > changed_files.json
-          
-          while IFS= read -r path; do
-            [ -z "$path" ] && continue
-            if [ -f "content/$path" ]; then
-              echo "Processing: content/$path" >&2
-              # Create individual file JSON and append to array
-              jq -n \
-                --arg path "$path" \
-                --arg content "$(base64 -w0 < "content/$path")" \
-                '{path: $path, content: $content}' > temp_file.json
-              # Append to the array using jq
-              jq '. + [input]' changed_files.json temp_file.json > temp_changed.json
-              mv temp_changed.json changed_files.json
-            fi
-          done < mdx_files.txt
-          
-          # Create removed files array (same as changed for full sync)
-          cat mdx_files.txt | jq -R . | jq -s . > removed_files.json
-          
-          # Create final payload
-          jq -n \
-            --slurpfile changed changed_files.json \
-            --slurpfile removed removed_files.json \
-            --arg repo "$GITHUB_REPOSITORY" \
-            '{
-              repo: $repo,
-              changed: ($changed | .[0] // []),
-              removed: ($removed | .[0] // [])
-            }' > payload.json
-          
-          # Clean up temp files
-          rm -f changed_files.json removed_files.json temp_file.json
-          
-          # Show debug info
-          echo "Payload structure (without contents):"
-          jq 'del(.changed[].content)' payload.json
+          echo "Files to sync:"
+          cat all-files.txt
 
-      - name: Send to Agentuity
+      - name: Build and send payload
+        env:
+          AGENTUITY_TOKEN: ${{ secrets.AGENTUITY_TOKEN }}
         run: |
-          echo "About to sync these files:"
-          jq -r '.changed[].path' payload.json
-          echo -e "\nWill first remove these paths:"
-          jq -r '.removed[]' payload.json
-          
-          # Uncomment to actually send
-          curl https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6 \
-            -X POST \
-            -H "Content-Type: application/json" \
-            -d @payload.json
+          set -euo pipefail
+          cat all-files.txt | \
+            ./bin/build-payload.sh "${{ github.repository }}" full | \
+            ./bin/send-webhook.sh "https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6" "Bearer $AGENTUITY_TOKEN"

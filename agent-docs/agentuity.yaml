@@ -75,3 +75,6 @@ agents:
     name: doc-processing
     # The description of the Agent which is editable
     description: An applicaiton that process documents
+  - id: agent_9ccc5545e93644bd9d7954e632a55a61
+    name: doc-qa
+    description: Agent that can answer questions based on dev docs as the knowledge base
