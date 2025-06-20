@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+trap "" PIPE
 
 # collect-all-files.sh
 # Outputs newline-separated list of all MDX files (relative to content/)

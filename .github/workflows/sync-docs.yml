@@ -12,9 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Collect and validate files
         run: |
+          set -euo pipefail
           git fetch origin ${{ github.event.before }}
           ./bin/collect-changed-files.sh "${{ github.event.before }}" "${{ github.sha }}" | \
             ./bin/validate-files.sh > changed-files.txt
@@ -26,6 +29,7 @@ jobs:
         env:
           AGENTUITY_TOKEN: ${{ secrets.AGENTUITY_TOKEN }}
         run: |
+          set -euo pipefail
           cat changed-files.txt | \
             ./bin/build-payload.sh "${{ github.repository }}" incremental | \
             ./bin/send-webhook.sh "https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6" "Bearer $AGENTUITY_TOKEN"
