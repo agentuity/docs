@@ -3,7 +3,7 @@ import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 
 import type { ChunkMetadata } from '../doc-processing/types';
-import { VECTOR_STORE_NAME, vectorSearchNumber } from './config';
+import { VECTOR_STORE_NAME, vectorSearchNumber } from '../../../../config';
 import type { RelevantDoc } from './types';
 
 export default async function Agent(
