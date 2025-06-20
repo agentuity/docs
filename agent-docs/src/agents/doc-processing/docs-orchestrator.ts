@@ -1,7 +1,7 @@
 import type { AgentContext } from '@agentuity/sdk';
 import { processDoc } from './docs-processor';
 import { VECTOR_STORE_NAME } from './config';
-import type { FilePayload, SyncPayload, SyncStats } from './types';
+import type { SyncPayload, SyncStats } from './types';
 
 /**
  * Helper to remove all vectors for a given logical path from the vector store.
