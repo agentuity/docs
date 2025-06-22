@@ -9,50 +9,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get all MDX files and prepare payload
-        id: files
+      - name: Collect and validate files
         run: |
-          # First find all MDX files recursively
-          echo "Finding all MDX files..."
-          find content -type f -name "*.mdx" | sed 's|^content/||' > mdx_files.txt
-          echo "Found files:"
-          cat mdx_files.txt
+          set -euo pipefail
+          ./bin/collect-all-files.sh | \
+            ./bin/validate-files.sh > all-files.txt
           
-          # Create the changed array by processing each file through jq
-          echo "Processing files..."
-          jq -n --slurpfile paths <(
-            while IFS= read -r path; do
-              [ -z "$path" ] && continue
-              if [ -f "content/$path" ]; then
-                echo "Processing: content/$path"
-                jq -n \
-                  --arg path "$path" \
-                  --arg content "$(base64 -w0 < "content/$path")" \
-                  '{path: $path, content: $content}'
-              fi
-            done < mdx_files.txt | jq -s '.'
-          ) \
-          --slurpfile removed <(cat mdx_files.txt | jq -R . | jq -s .) \
-          --arg repo "$GITHUB_REPOSITORY" \
-          '{
-            repo: $repo,
-            changed: ($paths | .[0] // []),
-            removed: ($removed | .[0] // [])
-          }' > payload.json
-          
-          # Show debug info
-          echo "Payload structure (without contents):"
-          jq 'del(.changed[].content)' payload.json
+          echo "Files to sync:"
+          cat all-files.txt
 
-      - name: Send to Agentuity
+      - name: Build and send payload
+        env:
+          AGENTUITY_TOKEN: ${{ secrets.AGENTUITY_TOKEN }}
         run: |
-          echo "About to sync these files:"
-          jq -r '.changed[].path' payload.json
-          echo -e "\nWill first remove these paths:"
-          jq -r '.removed[]' payload.json
-          
-          # Uncomment to actually send
-          curl https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6 \
-            -X POST \
-            -H "Content-Type: application/json" \
-            -d @payload.json 
+          set -euo pipefail
+          cat all-files.txt | \
+            ./bin/build-payload.sh "${{ github.repository }}" full | \
+            ./bin/send-webhook.sh "https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6" "Bearer $AGENTUITY_TOKEN"

@@ -16,3 +16,14 @@ export interface SyncStats {
   errors: number;
   errorFiles: string[];
 } 
+
+export type ChunkMetadata = {
+  chunkIndex: number;
+  contentType: string;
+  heading: string;
+  title: string;
+  description: string;
+  text: string;
+  createdAt: string;
+  path?: string;
+};

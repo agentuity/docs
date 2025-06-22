@@ -29,6 +29,6 @@ export async function embedChunks(
   if (!response.embeddings || response.embeddings.length !== texts.length) {
     throw new Error('Embedding API returned unexpected result.');
   }
-  }
+  
   return response.embeddings;
 } 
