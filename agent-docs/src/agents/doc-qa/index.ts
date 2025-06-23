@@ -14,6 +14,8 @@ export default async function Agent(
   const prompt = await req.data.text();
   const relevantDocs = await retrieveRelevantDocs(ctx, prompt);
 
+
+
   const systemPrompt = `
 You are a developer documentation assistant. Your job is to answer user questions about the Agentuity platform as effectively and concisely as possible, adapting your style to the user's request. If the user asks for a direct answer, provide it without extra explanation. If they want an explanation, provide a clear and concise one. Use only the provided relevant documents to answer.
 
@@ -55,8 +57,6 @@ async function retrieveRelevantDocs(ctx: AgentContext, prompt: string): Promise<
     limit: vectorSearchNumber
   }
   try {
-
-
     const vectors = await ctx.vector.search(VECTOR_STORE_NAME, dbQuery);
 
     const uniquePaths = new Set<string>();
@@ -80,7 +80,7 @@ async function retrieveRelevantDocs(ctx: AgentContext, prompt: string): Promise<
         content: await retrieveDocumentBasedOnPath(ctx, path)
       }))
     );
-
+    
     return docs;
   } catch (err) {
     ctx.logger.error('Error retrieving relevant docs: %o', err);
