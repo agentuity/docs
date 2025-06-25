@@ -1,14 +1,8 @@
 import type { AgentContext } from '@agentuity/sdk';
 import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { z } from 'zod';
-import { PromptType } from './types';
-
-const PromptClassificationSchema = z.object({
-  type: z.enum(['Normal', 'Thinking']),
-  confidence: z.number().min(0).max(1),
-  reasoning: z.string()
-});
+import type { PromptType } from './types';
+import { PromptClassificationSchema } from './types';
 
 /**
  * Determines the prompt type based on the input string using LLM classification.
@@ -57,10 +51,10 @@ Be conservative - when in doubt, default to "Normal" for better performance.`;
         ctx.logger.info('Prompt classified as %s (confidence: %f): %s', 
             result.object.type, result.object.confidence, result.object.reasoning);
 
-        return result.object.type === 'Thinking' ? PromptType.Thinking : PromptType.Normal;
+        return result.object.type as PromptType;
         
     } catch (error) {
         ctx.logger.error('Error classifying prompt, defaulting to Normal: %o', error);
-        return PromptType.Normal; // Fail-safe default
+        return 'Normal' as PromptType;
     }
 }

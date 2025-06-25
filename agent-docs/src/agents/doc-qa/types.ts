@@ -1,15 +1,25 @@
-export interface RelevantDoc {
-    path: string;
-    content: string;
-}
+import { z } from 'zod';
 
-export enum PromptType {
-  Normal = 'Normal',
-  Thinking = 'Thinking'
-}
+export const RelevantDocSchema = z.object({
+    path: z.string(),
+    content: z.string()
+});
 
-export interface PromptClassification {
-  type: PromptType;
-  confidence: number;
-  reasoning: string;
-}
+export const AnswerSchema = z.object({
+    answer: z.string(),
+    documents: z.array(z.string())
+});
+
+export const PromptTypeSchema = z.enum(['Normal', 'Thinking']);
+
+export const PromptClassificationSchema = z.object({
+    type: PromptTypeSchema,
+    confidence: z.number().min(0).max(1),
+    reasoning: z.string()
+});
+
+// Generated TypeScript types
+export type RelevantDoc = z.infer<typeof RelevantDocSchema>;
+export type Answer = z.infer<typeof AnswerSchema>;
+export type PromptType = z.infer<typeof PromptTypeSchema>;
+export type PromptClassification = z.infer<typeof PromptClassificationSchema>;
