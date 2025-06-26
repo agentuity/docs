@@ -2,6 +2,7 @@ import { RootProvider } from "fumadocs-ui/provider";
 import { GeistSans } from "geist/font/sans";
 import type { ReactNode } from "react";
 import type { Metadata } from 'next';
+import CustomSearchDialog from "@/components/CustomSearchDialog";
 import "./global.css";
 
 export const metadata: Metadata = {
@@ -82,7 +83,12 @@ export default function Layout({ children }: { children: ReactNode }) {
 	return (
 		<html lang="en" className={GeistSans.className} suppressHydrationWarning>
 			<body className="flex flex-col min-h-screen antialiased">
-				<RootProvider theme={{ enabled: true, enableSystem: true }}>
+				<RootProvider 
+					theme={{ enabled: true, enableSystem: true }}
+					search={{
+						SearchDialog: CustomSearchDialog
+					}}
+				>
 					{children}
 				</RootProvider>
 			</body>
