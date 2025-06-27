@@ -5,89 +5,161 @@ import { NextRequest } from 'next/server';
 // Create the default search handler
 const { GET: defaultSearchHandler } = createFromSource(source);
 
-// Helper function to convert document path to URL
 function documentPathToUrl(docPath: string): string {
-  // Remove .mdx extension and convert to URL format
-  // "CLI/agent.mdx" -> "/CLI/agent"
   return '/' + docPath.replace(/\.mdx?$/, '');
 }
 
-// Helper function to get document title from source
-function getDocumentTitle(docPath: string): string {
+// Helper function to get document title and description from source
+function getDocumentMetadata(docPath: string): { title: string; description?: string } {
   try {
-    // Convert path to URL format for source lookup
-    const urlPath = documentPathToUrl(docPath).substring(1).split('/'); // Remove leading slash and split
+    const urlPath = documentPathToUrl(docPath).substring(1).split('/');
     const page = source.getPage(urlPath);
-    return page?.data.title || docPath.replace(/\.mdx?$/, '').replace(/\//g, ' > ');
+    
+    if (page?.data) {
+      return {
+        title: page.data.title || formatPathAsTitle(docPath),
+        description: page.data.description
+      };
+    }
+  } catch (error) {
+    console.warn(`Failed to get metadata for ${docPath}:`, error);
+  }
+  
+  return { title: formatPathAsTitle(docPath) };
+}
+
+function formatPathAsTitle(docPath: string): string {
+  return docPath
+    .replace(/\.mdx?$/, '')
+    .split('/')
+    .map(segment => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' > ');
+}
+
+function getDocumentSnippet(docPath: string, maxLength: number = 150): string {
+  try {
+    const urlPath = documentPathToUrl(docPath).substring(1).split('/');
+    const page = source.getPage(urlPath);
+    
+    if (page?.data.description) {
+      return page.data.description.length > maxLength 
+        ? page.data.description.substring(0, maxLength) + '...'
+        : page.data.description;
+    }
+    
+    // Fallback description based on path
+    const pathParts = docPath.replace(/\.mdx?$/, '').split('/');
+    const section = pathParts[0];
+    const topic = pathParts[pathParts.length - 1];
+    
+    return `Learn about ${topic} in the ${section} section of our documentation.`;
   } catch {
-    // Fallback to formatted path if lookup fails
-    return docPath.replace(/\.mdx?$/, '').replace(/\//g, ' > ');
+    return `Documentation for ${formatPathAsTitle(docPath)}`;
   }
 }
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  console.log(request.url);
   const query = searchParams.get('query');
-  console.log("query: " + query);
-  
+   
   // If no query, return empty results
   if (!query || query.trim().length === 0) {
     return Response.json([]);
   }
 
   try {
-    // Call your AI agent API
-    const response = await fetch('https://agentuity.ai/api/9ccc5545e93644bd9d7954e632a55a61', {
+    const response = await fetch('http://127.0.0.1:3500/agent_9ccc5545e93644bd9d7954e632a55a61', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer wht_843942568308430586ec1bc460245a8f',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ message: query }),
     });
 
     if (!response.ok) {
-      throw new Error(`Agent API error: ${response.status}`);
+      throw new Error(`Agent API error: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
-
     const results = [];
 
-    // 1. Add the AI answer as the first result (most prominent)
-    if (data.answer) {
+    if (data.answer && data.answer.trim()) {
       results.push({
         id: `ai-answer-${Date.now()}`,
-        url: '#ai-answer', // Special marker for AI answers
-        title: `🤖 AI Answer`,
-        content: data.answer,
-        type: 'ai-answer' // Custom type for styling
+        url: '#ai-answer',
+        title: 'AI Answer',
+        content: data.answer.trim(),
+        type: 'ai-answer'
       });
     }
 
     // 2. Add related documents as clickable results
-    if (data.documents && Array.isArray(data.documents)) {
-      data.documents.forEach((docPath: string, index: number) => {
-        const url = documentPathToUrl(docPath);
-        const title = getDocumentTitle(docPath);
-        
-        results.push({
-          id: `doc-${Date.now()}-${index}`,
-          url: url,
-          title: `📄 ${title}`,
-          content: `Related documentation: ${title}`,
-          type: 'document' // Custom type for styling
-        });
+    if (data.documents && Array.isArray(data.documents) && data.documents.length > 0) {
+      const uniqueDocuments = [...new Set(data.documents as string[])];
+      
+      uniqueDocuments.forEach((docPath: string, index: number) => {
+        try {
+          const url = documentPathToUrl(docPath);
+          const metadata = getDocumentMetadata(docPath);
+          const snippet = getDocumentSnippet(docPath);
+          
+          results.push({
+            id: `doc-${Date.now()}-${index}`,
+            url: url,
+            title: metadata.title,
+            content: snippet,
+            type: 'document'
+          });
+        } catch (error) {
+          console.warn(`Failed to process document ${docPath}:`, error);
+        }
       });
     }
 
+    console.log('Returning results:', results.length, 'items');
     return Response.json(results);
 
   } catch (error) {
     console.error('Error calling AI agent:', error);
     
     // Fallback to original Fumadocs search behavior if AI fails
-    return defaultSearchHandler(request);
+    console.log('Falling back to default search');
+    try {
+      const fallbackResponse = await defaultSearchHandler(request);
+      const fallbackData = await fallbackResponse.json();
+      
+      // Add a note that this is fallback search
+      if (Array.isArray(fallbackData) && fallbackData.length > 0) {
+        return Response.json([
+          {
+            id: 'fallback-notice',
+            url: '#fallback',
+            title: '⚠️ AI Search Unavailable',
+            content: 'AI search is temporarily unavailable. Showing traditional search results below.',
+            type: 'ai-answer'
+          },
+          ...fallbackData.map((item: Record<string, unknown>, index: number) => ({
+            ...item,
+            id: `fallback-${index}`,
+            type: 'document'
+          }))
+        ]);
+      }
+      
+      return fallbackResponse;
+    } catch (fallbackError) {
+      console.error('Fallback search also failed:', fallbackError);
+      
+      // Return error message as AI answer
+      return Response.json([
+        {
+          id: 'error-notice',
+          url: '#error',
+          title: '❌ Search Error',
+          content: 'Search is temporarily unavailable. Please try again later or check our documentation directly.',
+          type: 'ai-answer'
+        }
+      ]);
+    }
   }
 }
