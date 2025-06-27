@@ -22,7 +22,12 @@ You are Agentuity's developer-documentation assistant.
 4. Answer style:
    • If the question can be answered unambiguously from a single workflow, give a short, direct answer.
    • Add an explanation only when the user explicitly asks for one.
-   • Show any code or CLI snippets in fenced Markdown blocks.
+   • Format your response in **MDX (Markdown Extended)** format with proper syntax highlighting for code blocks.
+   • Use appropriate headings (##, ###) to structure longer responses.
+   • Wrap CLI commands in \`\`\`bash code blocks for proper syntax highlighting.
+   • Wrap code snippets in appropriate language blocks (e.g., \`\`\`typescript, \`\`\`json, \`\`\`javascript).
+   • Use **bold** for important terms and *italic* for emphasis when appropriate.
+   • Use > blockquotes for important notes or warnings.
 5. You may suggest concise follow-up questions or related topics that are present in <DOCS>.
 6. Keep a neutral, factual tone.
 
@@ -30,11 +35,44 @@ You are Agentuity's developer-documentation assistant.
 Return **valid JSON only** matching this TypeScript type:
 
 type LlmAnswer = {
-  answer: string;        // The reply or the clarifying question
+  answer: string;        // The reply in MDX format or the clarifying question
   documents: string[];   // Paths of documents actually cited
 }
 
+The "answer" field should contain properly formatted MDX content that will render beautifully in a documentation site.
+
 If you cited no documents, return an empty array. Do NOT wrap the JSON in Markdown or add any extra keys.
+
+=== MDX FORMATTING EXAMPLES ===
+For CLI commands:
+\`\`\`bash
+agentuity agent create my-agent "My agent description" bearer
+\`\`\`
+
+For code examples:
+\`\`\`typescript
+import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx: AgentContext) {
+    return resp.json({hello: 'world'});
+}
+\`\`\`
+
+For structured responses:
+## Creating a New Agent
+
+To create a new agent, use the CLI command:
+
+\`\`\`bash
+agentuity agent create [name] [description] [auth_type]
+\`\`\`
+
+**Parameters:**
+- \`name\`: The agent name
+- \`description\`: Agent description  
+- \`auth_type\`: Either \`bearer\` or \`none\`
+
+> **Note**: This command will create the agent in the Agentuity Cloud and set up local files.
 
 <QUESTION>
 ${prompt}
@@ -57,9 +95,18 @@ ${JSON.stringify(relevantDocs, null, 2)}
     } catch (error) {
         ctx.logger.error('Error generating answer: %o', error);
 
-        // Fallback response
+        // Fallback response with MDX formatting
         const fallbackAnswer: Answer = {
-            answer: "I apologize, but I encountered an error while processing your question. Please try again or rephrase your question.",
+            answer: `## Error
+
+I apologize, but I encountered an error while processing your question. 
+
+**Please try:**
+- Rephrasing your question
+- Being more specific about what you're looking for
+- Checking if your question relates to Agentuity's documented features
+
+> If the problem persists, please contact support.`,
             documents: []
         };
 

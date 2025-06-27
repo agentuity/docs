@@ -1,5 +1,4 @@
 import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
-import { getPromptType } from './prompt';
 import answerQuestion from './rag';
 
 export default async function Agent(
@@ -7,9 +6,22 @@ export default async function Agent(
   resp: AgentResponse,
   ctx: AgentContext
 ) {
-  const prompt = await req.data.text();
-  const promptType = await getPromptType(ctx, prompt);
-  ctx.logger.info(`Receive user prompt with type: ${promptType}`);
+  let jsonRequest: any = null;
+  let prompt: string;
+
+  try {
+    jsonRequest = await req.data.json();
+    prompt = typeof jsonRequest === 'object' && jsonRequest !== null && 'message' in jsonRequest
+      ? jsonRequest.message
+      : JSON.stringify(jsonRequest);
+  } catch {
+    prompt = await req.data.text();
+  }
+
+  if (prompt === undefined || prompt === null) {
+    return resp.text("How can I help you?");
+  }
+
   const answer = await answerQuestion(ctx, prompt);
   return resp.json(answer);
 }
