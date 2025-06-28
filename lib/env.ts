@@ -1,7 +1,6 @@
 /**
  * Environment variable validation and configuration utility
  */
-
 export interface AgentConfig {
   url: string;
   bearerToken?: string;
@@ -39,7 +38,7 @@ export const validateEnv = (): boolean => {
     const config = getAgentConfig();
     console.log('✓ Environment variables validated');
     console.log('✓ Agent URL:', config.url);
-    console.log('✓ Bearer token:', config.bearerToken ? 'configured' : 'not set');
+    console.log('✓ Bearer token:', config.bearerToken ? 'configured' : 'Not Set');
     return true;
   } catch (error) {
     console.error('❌ Environment validation failed:', error);
@@ -56,13 +55,12 @@ export const validateEnv = (): boolean => {
  * Use .env.local for development and .env.production for production
  */
 declare global {
-  namespace NodeJS {
-    interface ProcessEnv {
-      AGENT_BASE_URL?: string;
-      AGENT_ID?: string;
-      AGENT_BEARER_TOKEN?: string;
-      AGENT_FULL_URL?: string;
-      NEXTJS_ENV?: string;
-    }
+  interface ProcessEnv {
+    AGENT_BASE_URL?: string;
+    AGENT_ID?: string;
+    AGENT_BEARER_TOKEN?: string;
+    AGENT_FULL_URL?: string;
+    NEXTJS_ENV?: string;
   }
-} 
+}
+export {}; 

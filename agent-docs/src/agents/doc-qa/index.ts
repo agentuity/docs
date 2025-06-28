@@ -20,7 +20,7 @@ export default async function Agent(
     prompt = await req.data.text();
   }
 
-  if (prompt === undefined || prompt === null) {
+  if (!prompt.trim()) {
     return resp.text("How can I help you?");
   }
 
