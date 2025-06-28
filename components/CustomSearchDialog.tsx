@@ -54,7 +54,7 @@ export default function CustomSearchDialog(props: SharedProps) {
       if (saved) {
         const parsed = JSON.parse(saved);
         // Convert timestamp strings back to Date objects
-        const messagesWithDates = parsed.map((msg: any) => ({
+        const messagesWithDates: Message[] = (parsed as Message[]).map((msg) => ({
           ...msg,
           timestamp: new Date(msg.timestamp)
         }));
