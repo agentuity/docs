@@ -3,7 +3,13 @@ import { GeistSans } from "geist/font/sans";
 import type { ReactNode } from "react";
 import type { Metadata } from 'next';
 import CustomSearchDialog from "@/components/CustomSearchDialog";
+import { validateEnv } from "@/lib/env";
 import "./global.css";
+
+// Validate environment variables at startup (server-side only)
+if (typeof window === 'undefined') {
+	validateEnv();
+}
 
 export const metadata: Metadata = {
 	metadataBase: new URL('https://www.agentuity.dev'),

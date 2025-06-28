@@ -1,6 +1,7 @@
 import { source } from '@/lib/source';
 import { createFromSource } from 'fumadocs-core/search/server';
 import { NextRequest } from 'next/server';
+import { getAgentConfig } from '@/lib/env';
 
 // Create the default search handler
 const { GET: defaultSearchHandler } = createFromSource(source);
@@ -68,11 +69,21 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const response = await fetch('http://127.0.0.1:3500/agent_9ccc5545e93644bd9d7954e632a55a61', {
+    const agentConfig = getAgentConfig();
+    
+    // Prepare headers
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Add bearer token if provided
+    if (agentConfig.bearerToken) {
+      headers['Authorization'] = `Bearer ${agentConfig.bearerToken}`;
+    }
+
+    const response = await fetch(agentConfig.url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify({ message: query }),
     });
 

@@ -6,12 +6,14 @@
 		"prebuild": "node scripts/generate-docs-json.js",
 		"build": "next build",
 		"build:worker": "opennextjs-cloudflare build",
+		"build:production": "NODE_ENV=production next build",
 		"dev": "PORT=3201 next dev",
 		"start": "next start",
 		"postinstall": "fumadocs-mdx",
 		"preview": "opennextjs-cloudflare && wrangler dev",
 		"deploy": "opennextjs-cloudflare && wrangler deploy --keep-vars",
-		"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+		"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+		"validate-env": "node -e \"require('./lib/env').validateEnv()\""
 	},
 	"dependencies": {
 		"cmdk": "^1.1.1",
