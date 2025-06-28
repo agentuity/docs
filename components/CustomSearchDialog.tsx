@@ -4,12 +4,12 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Command } from 'cmdk';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { 
-  X, 
-  Send, 
-  RotateCcw, 
-  Trash2, 
-  User, 
+import {
+  X,
+  Send,
+  RotateCcw,
+  Trash2,
+  User,
   HelpCircle,
   Loader2
 } from 'lucide-react';
@@ -104,7 +104,13 @@ export default function CustomSearchDialog(props: SharedProps) {
 
     try {
       const searchParams = new URLSearchParams({ query: query.trim() });
-      const response = await fetch(`/api/search?${searchParams}`);
+
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(), 45000);
+
+      const response = await fetch(`/api/search?${searchParams}`, {
+        signal: controller.signal
+      });
       const data: SearchResult[] = await response.json();
 
       // Find AI answer and documents
@@ -179,8 +185,11 @@ export default function CustomSearchDialog(props: SharedProps) {
   }, []);
 
   const handleSourceClick = useCallback((url: string) => {
-    if (url && url !== '#') {
+    if (url && url !== '#' && (url.startsWith('/') || url.startsWith('http'))) {
       window.open(url, '_blank');
+    }
+    else {
+      console.warn('Invalid or potentially unsafe URL:', url);
     }
   }, []);
 
@@ -190,7 +199,7 @@ export default function CustomSearchDialog(props: SharedProps) {
     <Command.Dialog open={open} onOpenChange={onOpenChange} label="Search with Agentuity AI">
       <div className="fixed inset-0 z-50 bg-black/30">
         <div className="fixed left-1/2 top-1/2 w-full max-w-3xl h-[75vh] -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800 flex flex-col">
-          
+
           {/* Header */}
           <div className="flex items-center justify-between p-5 border-b border-gray-50 dark:border-gray-800">
             <div className="flex items-center gap-3">
@@ -233,11 +242,10 @@ export default function CustomSearchDialog(props: SharedProps) {
                 )}
 
                 <div className={`max-w-[85%] ${message.type === 'user' ? 'order-last' : ''}`}>
-                  <div className={`rounded-lg px-3 py-2 ${
-                    message.type === 'user' 
-                      ? 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 ml-auto' 
-                      : 'bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300'
-                  }`}>
+                  <div className={`rounded-lg px-3 py-2 ${message.type === 'user'
+                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 ml-auto'
+                    : 'bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300'
+                    }`}>
                     {message.type === 'ai' ? (
                       <div className="prose prose-sm max-w-none dark:prose-invert prose-gray text-sm">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>

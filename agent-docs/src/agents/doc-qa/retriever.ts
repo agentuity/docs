@@ -44,23 +44,28 @@ export async function retrieveRelevantDocs(ctx: AgentContext, prompt: string): P
   async function retrieveDocumentBasedOnPath(ctx: AgentContext, path: string): Promise<string> {
     const dbQuery = {
       query: ' ',
-      limit: 10000,
+      limit: 1000,
       metadata: {
         path: path
       }
     }
     try {
       const vectors = await ctx.vector.search(VECTOR_STORE_NAME, dbQuery);
-  
+      
       // Sort vectors by chunk index and concatenate text
       const sortedVectors = vectors
         .map(vec => {
-          const metadata = vec.metadata as ChunkMetadata;
+          const metadata = vec.metadata;
+          if (!metadata || typeof metadata.chunkIndex !== 'number' || typeof metadata.text !== 'string') {
+            ctx.logger.warn('Invalid chunk metadata structure for path %s', path);
+            return null;
+          }
           return {
             metadata,
-            index: metadata.chunkIndex
+            index: metadata.chunkIndex as number
           };
         })
+        .filter(item => item !== null)
         .sort((a, b) => a.index - b.index);
   
       const fullText = sortedVectors

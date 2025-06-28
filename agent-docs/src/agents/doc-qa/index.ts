@@ -11,9 +11,11 @@ export default async function Agent(
 
   try {
     jsonRequest = await req.data.json();
-    prompt = typeof jsonRequest === 'object' && jsonRequest !== null && 'message' in jsonRequest
-      ? jsonRequest.message
-      : JSON.stringify(jsonRequest);
+    if (typeof jsonRequest === 'object' && jsonRequest !== null && 'message' in jsonRequest) {
+      prompt = String(jsonRequest.message || '');
+    } else {
+      prompt = JSON.stringify(jsonRequest);
+    }
   } catch {
     prompt = await req.data.text();
   }

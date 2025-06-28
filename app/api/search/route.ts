@@ -14,7 +14,7 @@ function getDocumentMetadata(docPath: string): { title: string; description?: st
   try {
     const urlPath = documentPathToUrl(docPath).substring(1).split('/');
     const page = source.getPage(urlPath);
-    
+
     if (page?.data) {
       return {
         title: page.data.title || formatPathAsTitle(docPath),
@@ -24,7 +24,7 @@ function getDocumentMetadata(docPath: string): { title: string; description?: st
   } catch (error) {
     console.warn(`Failed to get metadata for ${docPath}:`, error);
   }
-  
+
   return { title: formatPathAsTitle(docPath) };
 }
 
@@ -40,18 +40,18 @@ function getDocumentSnippet(docPath: string, maxLength: number = 150): string {
   try {
     const urlPath = documentPathToUrl(docPath).substring(1).split('/');
     const page = source.getPage(urlPath);
-    
+
     if (page?.data.description) {
-      return page.data.description.length > maxLength 
+      return page.data.description.length > maxLength
         ? page.data.description.substring(0, maxLength) + '...'
         : page.data.description;
     }
-    
+
     // Fallback description based on path
     const pathParts = docPath.replace(/\.mdx?$/, '').split('/');
     const section = pathParts[0];
     const topic = pathParts[pathParts.length - 1];
-    
+
     return `Learn about ${topic} in the ${section} section of our documentation.`;
   } catch {
     return `Documentation for ${formatPathAsTitle(docPath)}`;
@@ -61,7 +61,7 @@ function getDocumentSnippet(docPath: string, maxLength: number = 150): string {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query');
-   
+
   // If no query, return empty results
   if (!query || query.trim().length === 0) {
     return Response.json([]);
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     const results = [];
 
-    if (data.answer && data.answer.trim()) {
+    if (data?.answer?.trim()) {
       results.push({
         id: `ai-answer-${Date.now()}`,
         url: '#ai-answer',
@@ -96,13 +96,13 @@ export async function GET(request: NextRequest) {
     // 2. Add related documents as clickable results
     if (data.documents && Array.isArray(data.documents) && data.documents.length > 0) {
       const uniqueDocuments = [...new Set(data.documents as string[])];
-      
+
       uniqueDocuments.forEach((docPath: string, index: number) => {
         try {
           const url = documentPathToUrl(docPath);
           const metadata = getDocumentMetadata(docPath);
           const snippet = getDocumentSnippet(docPath);
-          
+
           results.push({
             id: `doc-${Date.now()}-${index}`,
             url: url,
@@ -121,13 +121,13 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error calling AI agent:', error);
-    
+
     // Fallback to original Fumadocs search behavior if AI fails
     console.log('Falling back to default search');
     try {
       const fallbackResponse = await defaultSearchHandler(request);
       const fallbackData = await fallbackResponse.json();
-      
+
       // Add a note that this is fallback search
       if (Array.isArray(fallbackData) && fallbackData.length > 0) {
         return Response.json([
@@ -145,11 +145,11 @@ export async function GET(request: NextRequest) {
           }))
         ]);
       }
-      
+
       return fallbackResponse;
     } catch (fallbackError) {
       console.error('Fallback search also failed:', fallbackError);
-      
+
       // Return error message as AI answer
       return Response.json([
         {
