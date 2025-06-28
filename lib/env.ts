@@ -63,4 +63,3 @@ declare global {
     NEXTJS_ENV?: string;
   }
 }
-export {}; 

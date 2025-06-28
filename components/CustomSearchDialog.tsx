@@ -46,6 +46,15 @@ export default function CustomSearchDialog(props: SharedProps) {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   // Load messages from localStorage on mount
   useEffect(() => {
@@ -105,12 +114,23 @@ export default function CustomSearchDialog(props: SharedProps) {
     try {
       const searchParams = new URLSearchParams({ query: query.trim() });
 
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      
       const controller = new AbortController();
-      setTimeout(() => controller.abort(), 45000);
+      abortControllerRef.current = controller;
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       const response = await fetch(`/api/search?${searchParams}`, {
         signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
+      if (!response.ok) {
+        throw new Error(`Search failed: ${response.status}`);
+      }
+      
       const data: SearchResult[] = await response.json();
 
       // Find AI answer and documents
