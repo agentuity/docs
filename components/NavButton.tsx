@@ -5,16 +5,22 @@ export interface NavButtonProps {
 	children: React.ReactNode;
 	noBorder?: boolean;
 	className?: string;
+	target?: string;
+	rel?: string;
 }
 export function NavButton({
 	href,
 	children,
 	className,
 	noBorder = false,
+	target,
+	rel,
 }: NavButtonProps) {
 	return (
 		<a
 			href={href}
+			target={target}
+			rel={rel}
 			className={cn(
 				"inline-flex flex-row items-center gap-2 w-auto no-underline",
 				noBorder
