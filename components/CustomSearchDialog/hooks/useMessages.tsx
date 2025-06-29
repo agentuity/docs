@@ -77,6 +77,10 @@ export function useMessages() {
       }
 
       const data: SearchResult[] = await response.json();
+      
+      if (!Array.isArray(data)) {
+        throw new Error('Incorrect search result format.');
+      }
 
       // Find AI answer and documents
       const aiAnswer = data.find(result => result.type === 'ai-answer');
