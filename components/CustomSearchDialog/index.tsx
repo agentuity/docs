@@ -22,7 +22,6 @@ export default function CustomSearchDialog(props: CustomSearchDialogProps) {
     handleClear,
     handleSourceClick
   } = useMessages();
-
   // Focus input when dialog opens
   useEffect(() => {
     if (open) {

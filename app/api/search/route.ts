@@ -7,7 +7,8 @@ import { getAgentConfig } from '@/lib/env';
 const { GET: defaultSearchHandler } = createFromSource(source);
 
 function documentPathToUrl(docPath: string): string {
-  return '/' + docPath.replace(/\.mdx?$/, '');
+  // Remove the .md or .mdx extension before any # symbol
+  return '/' + docPath.replace(/\.mdx?(?=#|$)/, '');
 }
 
 // Helper function to get document title and description from source

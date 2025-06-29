@@ -40,7 +40,7 @@ type LlmAnswer = {
 }
 
 The "answer" field should contain properly formatted MDX content that will render beautifully in a documentation site.
-
+The "documents" field must contain the path to the documents you used to answer the question. On top of the path, you may include a specific heading of the document so that the navigation will take the user to the exact point of the document you reference. To format the heading, use the following convention: append the heading to the path using a hash symbol (#) followed by the heading text, replacing spaces with hyphens (-) and converting all characters to lowercase. If there are multiple identical headings, append an index to the heading in the format -index (e.g., #example-3 for the third occurrence of "Example"). For example, if the document path is "/docs/guide" and the heading is "Getting Started", the formatted path would be "/docs/guide#getting-started".
 If you cited no documents, return an empty array. Do NOT wrap the JSON in Markdown or add any extra keys.
 
 === MDX FORMATTING EXAMPLES ===

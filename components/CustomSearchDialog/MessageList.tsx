@@ -23,7 +23,7 @@ export function MessageList({ messages, loading, handleSourceClick }: MessageLis
         <MessageItem 
           key={message.id} 
           message={message} 
-          handleSourceClick={handleSourceClick} 
+          handleSourceClick={handleSourceClick}
         />
       ))}
 
