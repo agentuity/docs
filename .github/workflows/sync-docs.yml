@@ -19,8 +19,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin ${{ github.event.before }}
-          ./bin/collect-changed-files.sh "${{ github.event.before }}" "${{ github.sha }}" | \
-            ./bin/validate-files.sh > changed-files.txt
+          ./bin/collect-changed-files.sh "${{ github.event.before }}" "${{ github.sha }}" > changed-files.txt
           
           echo "Files to sync:"
           cat changed-files.txt
