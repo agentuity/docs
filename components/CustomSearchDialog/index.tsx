@@ -30,13 +30,6 @@ export default function CustomSearchDialog(props: CustomSearchDialogProps) {
     }
   }, [open]);
 
-  // Handle keyboard shortcuts
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      onOpenChange(false);
-    }
-  };
-
   if (!open) return null;
 
   return (

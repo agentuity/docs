@@ -21,7 +21,7 @@ export interface SearchResult {
   type?: 'ai-answer' | 'document' | 'default';
 }
 
-export interface CustomSearchDialogProps extends SharedProps {}
+export type CustomSearchDialogProps = SharedProps;
 
 export interface MessageListProps {
   messages: Message[];
