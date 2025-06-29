@@ -7,32 +7,22 @@ import { SearchInputProps } from './types';
 export function SearchInput({ currentInput, setCurrentInput, loading, sendMessage }: SearchInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize textarea based on content
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    // Reset height to auto to get the correct scrollHeight
     textarea.style.height = 'auto';
     
-    // Set the height to scrollHeight to fit the content (up to max-height set in CSS)
     const newHeight = Math.min(textarea.scrollHeight, 150); // Max height of 150px
     textarea.style.height = `${newHeight}px`;
   }, [currentInput]);
 
-  // Focus textarea when component mounts
   useEffect(() => {
     textareaRef.current?.focus();
   }, []);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (currentInput.trim()) {
-        sendMessage(currentInput);
-      }
-    }
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    if (e.key === 'Enter' && (!e.shiftKey || e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       if (currentInput.trim()) {
         sendMessage(currentInput);
