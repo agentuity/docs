@@ -191,7 +191,7 @@ export default async function Agent(
 ) {
     // Check if this was triggered by Discord
     if (req.trigger === 'discord') {
-        const messageData = await req.data.json();
+        const messageData = await req.data.discord();
         
         ctx.logger.info('Discord message from %s: %s', 
             messageData.username, 
@@ -214,7 +214,7 @@ export default async function Agent(
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     # Check if this was triggered by Discord
     if request.trigger == 'discord':
-        message_data = await request.data.json()
+        message_data = await request.data.discord()
         
         context.logger.info('Discord message from %s: %s', 
             message_data['username'], 
