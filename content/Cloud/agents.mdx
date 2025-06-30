@@ -28,6 +28,7 @@ graph TD
         A4[Cron]
         A5[Agent]
         A6[Slack]
+        A7[Discord]
     end
 
     subgraph Destinations
@@ -36,6 +37,7 @@ graph TD
         B3[API]
         B4[Slack]
         B5[Agent]
+        B6[Discord]
     end
 
     A1 --> Agent
@@ -44,12 +46,14 @@ graph TD
     A4 --> Agent
     A5 --> Agent
     A6 --> Agent
+    A7 --> Agent
 
     Agent --> B1
     Agent --> B2
     Agent --> B3
     Agent --> B4
     Agent --> B5
+    Agent --> B6
 "/>
 
 You can think of the agent as an intelligent black box that receives data from sources and responds with data which is sent to the configured destinations.
@@ -151,6 +155,87 @@ For Email sources, you can configure your agent at a unique agent email address.
 </Callout>
 
 The response from the API will contain an informational message if successful.  Additionally, the `Location` header will contain the URL that can be used to read the agent output.  This URL will block until the agent has started streaming the output response.
+
+#### Agent Discord Source
+
+For Discord sources, you can configure your agent to receive messages from a Discord server. When a user tags the bot in a Discord message, the agent will receive the message content asynchronously without waiting for the agent to finish processing the message.
+
+<ThemeImage baseName="agent-io-discord-source" alt="Agent New Discord Source"  />
+
+To set up Discord Integration:
+
+1. **Add Discord IO**: Click the plus button in the agent IO visualization and select Discord
+2. **Select Server**: Choose a Discord server from your connected servers
+3. **Invite Bot**: If the bot isn't already in the server, use the provided invite link to add the Agentuity bot to your Discord server
+4. **Tag Bot**: Once configured, tag the bot (@Agentuity) in Discord messages to forward them to your agent
+
+<Callout type="info">
+  You must have a Discord account linked to your Agentuity account to use Discord Integration. The bot must be invited to your Discord server before it can receive messages.
+</Callout>
+
+The Discord Integration provides the following data when a message is forwarded:
+
+- **Message Content**: The text content of the Discord message
+- **Author Information**: Username and user ID of the message author
+- **Server Context**: Guild ID and channel ID
+- **Message ID**: Unique identifier for the Discord message
+
+When your agent receives a Discord message, you can access the Discord-specific data through the request object:
+
+<CodeExample js={`import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
+
+export default async function Agent(
+   req: AgentRequest,
+   resp: AgentResponse,
+   ctx: AgentContext
+) {
+    // Check if this was triggered by Discord
+    if (req.trigger === 'discord') {
+        const messageData = await req.data.discord();
+        
+        ctx.logger.info('Discord message from %s: %s', 
+            messageData.username, 
+            messageData.content
+        );
+        
+        // Access server and channel info
+        ctx.logger.info('Guild: %s, Channel: %s, Message: %s', 
+            messageData.guildId, 
+            messageData.channelId,
+            messageData.messageId
+        );
+        
+        return resp.text(\`Hello \${messageData.username}! I received your message.\`);
+    }
+    
+    return resp.text("Hello from Discord bot!");
+}`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    # Check if this was triggered by Discord
+    if request.trigger == 'discord':
+        message_data = await request.data.discord()
+        
+        context.logger.info('Discord message from %s: %s', 
+            message_data['username'], 
+            message_data['content']
+        )
+        
+        # Access server and channel info
+        context.logger.info('Guild: %s, Channel: %s, Message: %s', 
+            message_data['guildId'], 
+            message_data['channelId'],
+            message_data['messageId']
+        )
+        
+        return response.text(f"Hello {message_data['username']}! I received your message.")
+    
+    return response.text("Hello from Discord bot!")
+`} />
+
+<Callout type="warn">
+  Discord sources can only be triggered by messages where the bot is tagged in a Discord server. The bot cannot receive all messages in a channel for privacy reasons.
+</Callout>
 
 #### Agent Schedule Source
 
