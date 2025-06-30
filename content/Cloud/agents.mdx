@@ -167,7 +167,7 @@ To set up Discord Integration:
 1. **Add Discord IO**: Click the plus button in the agent IO visualization and select Discord
 2. **Select Server**: Choose a Discord server from your connected servers
 3. **Invite Bot**: If the bot isn't already in the server, use the provided invite link to add the Agentuity bot to your Discord server
-4. **Tag Bot**: Once configured, tag the bot (@AgentuityBot) in Discord messages to forward them to your agent
+4. **Tag Bot**: Once configured, tag the bot (@Agentuity) in Discord messages to forward them to your agent
 
 <Callout type="info">
   You must have a Discord account linked to your Agentuity account to use Discord Integration. The bot must be invited to your Discord server before it can receive messages.
@@ -176,10 +176,9 @@ To set up Discord Integration:
 The Discord Integration provides the following data when a message is forwarded:
 
 - **Message Content**: The text content of the Discord message
-- **Author Information**: Username and ID of the message author
-- **Server Context**: Server ID and channel information
-- **Timestamp**: When the message was sent
-- **Mentions**: Any users or roles mentioned in the message
+- **Author Information**: Username and user ID of the message author
+- **Server Context**: Guild ID and channel ID
+- **Message ID**: Unique identifier for the Discord message
 
 When your agent receives a Discord message, you can access the Discord-specific data through the request object:
 
@@ -195,17 +194,18 @@ export default async function Agent(
         const messageData = await req.data.json();
         
         ctx.logger.info('Discord message from %s: %s', 
-            messageData.author.username, 
+            messageData.username, 
             messageData.content
         );
         
         // Access server and channel info
-        ctx.logger.info('Server: %s, Channel: %s', 
-            messageData.guild_id, 
-            messageData.channel_id
+        ctx.logger.info('Guild: %s, Channel: %s, Message: %s', 
+            messageData.guildId, 
+            messageData.channelId,
+            messageData.messageId
         );
         
-        return resp.text(\`Hello \${messageData.author.username}! I received your message.\`);
+        return resp.text(\`Hello \${messageData.username}! I received your message.\`);
     }
     
     return resp.text("Hello from Discord bot!");
@@ -217,17 +217,18 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         message_data = await request.data.json()
         
         context.logger.info('Discord message from %s: %s', 
-            message_data['author']['username'], 
+            message_data['username'], 
             message_data['content']
         )
         
         # Access server and channel info
-        context.logger.info('Server: %s, Channel: %s', 
-            message_data['guild_id'], 
-            message_data['channel_id']
+        context.logger.info('Guild: %s, Channel: %s, Message: %s', 
+            message_data['guildId'], 
+            message_data['channelId'],
+            message_data['messageId']
         )
         
-        return response.text(f"Hello {message_data['author']['username']}! I received your message.")
+        return response.text(f"Hello {message_data['username']}! I received your message.")
     
     return response.text("Hello from Discord bot!")
 `} />
