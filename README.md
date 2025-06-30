@@ -10,7 +10,8 @@ This project contains the Agentuity documentation website, created using Fumadoc
 
 To make the search feature work, you must set up `.env.local` with the following steps.
 
-## Setup Local Environment
+## Quick Start Guide
+
 1. **Navigate to the Agent Directory:**
    ```bash
    cd agent-docs
@@ -26,6 +27,9 @@ To make the search feature work, you must set up `.env.local` with the following
    ```bash
    cp .env.example .env.local
    ```
+
+4. **Update `AGENT_ID`:**
+   If you are a contributor from outside the Agentuity organization, ensure that you update the `AGENT_ID` in your `.env.local` file with your specific agent ID from the `agentuity dev` run.
 
 ## Running Docs Application
 
