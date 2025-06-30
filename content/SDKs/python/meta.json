@@ -1,4 +1,19 @@
 {
 	"title": "Python SDK",
-	"pages": ["api-reference", "core-concepts", "..."]
+	"pages": [
+		"index",
+		"core-concepts",
+		"api-reference",
+		"error-handling",
+		"data-handling",
+		"async-api",
+		"frameworks",
+		{
+			"title": "Examples",
+			"pages": [
+				"examples/index",
+				"examples/pydantic"
+			]
+		}
+	]
 }

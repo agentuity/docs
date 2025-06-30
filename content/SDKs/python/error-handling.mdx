@@ -1,0 +1,228 @@
+---
+title: Error Handling
+description: Learn how to handle errors in the Agentuity Python SDK
+---
+
+This section covers error handling strategies and common error types in the Agentuity Python SDK.
+
+## Error Handling Patterns
+
+### Try-Except Pattern
+
+The most common error handling pattern is to use try-except blocks in your agent handlers:
+
+```python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def handler(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    try:
+        # Process the request
+        data = await request.data.json()
+        
+        # Perform operations that might fail
+        result = await process_data(data)
+        
+        # Return successful response
+        return response.json({"result": result})
+    except Exception as error:
+        # Log the error
+        context.logger.error("Error processing request", error)
+        
+        # Return error response
+        return response.json({
+            "error": "Failed to process request",
+            "message": str(error)
+        })
+```
+
+### Error Classification
+
+For more sophisticated error handling, you can classify errors and handle them differently:
+
+```python
+async def handler(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    try:
+        # Process the request
+        data = await request.data.json()
+        result = await process_data(data)
+        return response.json({"result": result})
+    except ValueError as error:
+        # Handle validation errors
+        context.logger.error("Validation error", error)
+        return response.json({
+            "error": "Validation error",
+            "message": str(error)
+        })
+    except ConnectionError as error:
+        # Handle network/connection errors
+        context.logger.error("Connection error", error)
+        return response.json({
+            "error": "Service unavailable",
+            "message": "Unable to connect to external service"
+        })
+    except Exception as error:
+        # Handle unexpected errors
+        context.logger.error("Unexpected error", error)
+        return response.json({
+            "error": "Internal server error",
+            "message": "An unexpected error occurred"
+        })
+```
+
+## SDK Function Error Handling
+
+### resolve_agent() / getAgent() Errors
+
+The agent resolution functions can throw several types of errors:
+
+#### Agent Not Found Errors
+
+```python
+from agentuity.server.agent import resolve_agent
+
+try:
+    agent = resolve_agent(context, {"id": "non-existent-agent"})
+except ValueError as error:
+    # Error: "agent non-existent-agent not found or you don't have access to it"
+    context.logger.error("Agent resolution failed", error)
+```
+
+#### Agent Loop Detection
+
+```python
+try:
+    # This will throw if trying to get the current agent
+    agent = resolve_agent(context, {"name": "current-agent-name"})
+except ValueError as error:
+    # Error: "agent loop detected trying to redirect to the current active agent..."
+    context.logger.error("Agent loop detected", error)
+```
+
+#### Network and API Errors
+
+```python
+try:
+    agent = resolve_agent(context, {"name": "remote-agent"})
+except Exception as error:
+    # Network timeouts, connection failures, or API errors
+    context.logger.error("Failed to resolve remote agent", error)
+```
+
+### agent.run() Errors
+
+The `agent.run()` method can throw several types of errors:
+
+#### HTTP and Network Errors
+
+```python
+try:
+    agent = resolve_agent(context, {"name": "data-processor"})
+    result = await agent.run("process this data")
+except Exception as error:
+    # HTTP errors (non-200 status codes), timeouts, connection failures
+    context.logger.error("Agent invocation failed", error)
+```
+
+#### Handoff Execution Errors
+
+```python
+try:
+    # Using response.handoff() which internally calls agent.run()
+    return response.handoff({"name": "target-agent"}, "data to process")
+except ValueError as error:
+    # Agent not found or not accessible
+    context.logger.error("Handoff failed - agent not found", error)
+except Exception as error:
+    # Timeout, connection issues, or agent execution failures
+    if "timeout" in str(error).lower():
+        context.logger.error("Handoff timed out", error)
+    elif "connection" in str(error).lower():
+        context.logger.error("Handoff connection failed", error)
+    else:
+        context.logger.error("Handoff execution failed", error)
+```
+
+#### Best Practices for Agent Communication
+
+```python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+from agentuity.server.agent import resolve_agent
+
+async def handler(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    try:
+        # Always wrap agent operations in try-except
+        agent = resolve_agent(context, {"name": "helper-agent"})
+        result = await agent.run(request.data)
+        
+        return response.json({"success": True, "result": result})
+    except ValueError as error:
+        # Handle agent not found errors
+        context.logger.error("Agent not found", {
+            "error": str(error),
+            "agent_name": "helper-agent"
+        })
+        return response.json({
+            "error": "Service temporarily unavailable",
+            "code": "AGENT_NOT_FOUND"
+        })
+    except Exception as error:
+        # Handle other errors (network, timeout, etc.)
+        context.logger.error("Agent communication failed", {
+            "error": str(error),
+            "error_type": type(error).__name__
+        })
+        
+        if "timeout" in str(error).lower():
+            return response.json({
+                "error": "Request timeout",
+                "code": "AGENT_TIMEOUT"
+            })
+        
+        return response.json({
+            "error": "Internal server error", 
+            "code": "AGENT_COMMUNICATION_FAILED"
+        })
+```
+
+## Error Handling for Storage APIs
+
+### Key-Value Storage Errors
+
+```python
+try:
+    result = await context.kv.get("user-preferences", "user-123")
+    if result.exists:
+        preferences = result.data.json
+    else:
+        preferences = {"theme": "light"}  # Default values
+except Exception as error:
+    context.logger.error("Key-value storage error", error)
+    preferences = {"theme": "light"}  # Fallback
+```
+
+### Vector Storage Errors
+
+```python
+try:
+    results = await context.vector.search("products", {
+        "query": "ergonomic chair",
+        "limit": 5
+    })
+except Exception as error:
+    context.logger.error("Vector search error", error)
+    results = []  # Empty results as fallback
+```
+
+### Object Storage Errors
+
+```python
+try:
+    result = await context.objectstore.get("uploads", "file.pdf")
+    if result.exists:
+        file_data = await result.data.binary()
+    else:
+        context.logger.info("File not found")
+except Exception as error:
+    context.logger.error("Object storage error", error)
+    # Handle appropriately based on use case
+```

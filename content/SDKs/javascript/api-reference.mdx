@@ -436,6 +436,14 @@ Retrieves a handle to a remote agent that can be invoked.
 
 Returns a Promise that resolves to a `RemoteAgent` object that can be used to invoke the agent.
 
+#### Errors
+
+This method can throw the following errors:
+- **Agent Not Found**: Throws an error if the specified agent ID or name is not found or you don't have access to it
+- **Agent Loop**: Throws an error if trying to get a reference to the current agent (prevents infinite loops)
+- **Network Errors**: Throws an error for network timeouts, connection failures, or API communication issues
+- **Invalid Response**: Throws an error if the API returns malformed data
+
 #### Example
 
 ```typescript

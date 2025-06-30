@@ -252,3 +252,108 @@ context.tracer.startActiveSpan('operation-name', async (span) => {
   }
 });
 ```
+
+## SDK Function Error Handling
+
+### getAgent() Errors
+
+The `context.getAgent()` function can throw several types of errors:
+
+#### Agent Not Found Errors
+
+```typescript
+try {
+  const agent = await context.getAgent({ id: 'non-existent-agent' });
+} catch (error) {
+  // Error: "agent non-existent-agent not found or you don't have access to it"
+  context.logger.error('Agent resolution failed', error);
+}
+```
+
+#### Agent Loop Detection
+
+```typescript
+try {
+  // This will throw if trying to get the current agent
+  const agent = await context.getAgent({ name: 'current-agent-name' });
+} catch (error) {
+  // Error: "agent loop detected trying to redirect to the current active agent..."
+  context.logger.error('Agent loop detected', error);
+}
+```
+
+#### Network and API Errors
+
+```typescript
+try {
+  const agent = await context.getAgent({ name: 'remote-agent' });
+} catch (error) {
+  // Network timeouts, connection failures, or API errors
+  context.logger.error('Failed to resolve remote agent', error);
+}
+```
+
+### agent.run() Errors
+
+The `agent.run()` method can throw several types of errors:
+
+#### HTTP and Network Errors
+
+```typescript
+try {
+  const agent = await context.getAgent({ name: 'data-processor' });
+  const result = await agent.run({ data: 'process this' });
+} catch (error) {
+  // HTTP errors (non-200 status codes), timeouts, connection failures
+  context.logger.error('Agent invocation failed', error);
+}
+```
+
+#### Metadata Validation Errors
+
+```typescript
+try {
+  const agent = await context.getAgent({ name: 'data-processor' });
+  const result = await agent.run(
+    { data: 'process this' },
+    'application/json',
+    { invalidMetadata: new Date() } // This will throw
+  );
+} catch (error) {
+  // Error: "args.metadata must be a JsonObject"
+  context.logger.error('Invalid metadata provided', error);
+}
+```
+
+#### Best Practices for Agent Communication
+
+```typescript
+const handler: AgentHandler = async (request, response, context) => {
+  try {
+    // Always wrap agent operations in try-catch
+    const agent = await context.getAgent({ name: 'helper-agent' });
+    const result = await agent.run(request.data);
+    
+    return response.json({ success: true, result });
+  } catch (error) {
+    // Log the specific error for debugging
+    context.logger.error('Agent communication failed', {
+      error: error.message,
+      stack: error.stack
+    });
+    
+    // Return appropriate error response
+    if (error.message.includes('not found')) {
+      return response.json({ 
+        error: 'Service temporarily unavailable',
+        code: 'AGENT_NOT_FOUND'
+      });
+    }
+    
+    return response.json({ 
+      error: 'Internal server error',
+      code: 'AGENT_COMMUNICATION_FAILED'
+    });
+  }
+};
+```
