@@ -21,11 +21,10 @@ To make the search feature work, you must set up `.env.local` with the following
    agentuity dev
    ```
 
-3. **Update `.env.local`:**  
-   Add your agent's URL and ID:
-   ```plaintext
-   AGENT_BASE_URL=YOUR_AGENT_URL
-   AGENT_ID=YOUR_DOC_QA_AGENT_ID
+3. **Copy Environment Configuration:**
+   For local development, copy the `.env.example` file to `.env.local`:
+   ```bash
+   cp .env.example .env.local
    ```
 
 ## Running Docs Application
