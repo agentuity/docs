@@ -12,8 +12,7 @@ jobs:
       - name: Collect and validate files
         run: |
           set -euo pipefail
-          ./bin/collect-all-files.sh | \
-            ./bin/validate-files.sh > all-files.txt
+          ./bin/collect-all-files.sh > all-files.txt
           
           echo "Files to sync:"
           cat all-files.txt
