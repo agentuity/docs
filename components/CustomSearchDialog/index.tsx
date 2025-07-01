@@ -13,7 +13,7 @@ export default function CustomSearchDialog(props: CustomSearchDialogProps) {
   const { open, onOpenChange } = props;
   const [currentInput, setCurrentInput] = useState('');
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  
+
   const {
     messages,
     loading,
@@ -28,14 +28,19 @@ export default function CustomSearchDialog(props: CustomSearchDialogProps) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [open]);
-
   if (!open) return null;
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/30" />
-        <Dialog.Content className="fixed inset-0 z-50">
+        <Dialog.Content
+          className="fixed inset-0 z-50"
+          onOpenAutoFocus={(e) => {
+            e.preventDefault();
+            setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 0);
+          }}
+          >
           <Dialog.Title className="sr-only">Search Documentation</Dialog.Title>
           <div className="fixed left-1/2 top-1/2 w-full max-w-3xl h-[75vh] -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800 flex flex-col">
             {/* Header */}
@@ -59,8 +64,8 @@ export default function CustomSearchDialog(props: CustomSearchDialogProps) {
             </div>
 
             {/* Messages Area */}
-            <MessageList 
-              messages={messages} 
+            <MessageList
+              messages={messages}
               loading={loading}
               handleSourceClick={handleSourceClick}
             />
@@ -77,7 +82,7 @@ export default function CustomSearchDialog(props: CustomSearchDialogProps) {
                     setCurrentInput('');
                   }}
                 />
-              
+
                 {/* Action Buttons */}
                 <div className="flex items-center justify-between text-xs mt-2">
                   <div className="flex gap-4">
