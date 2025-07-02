@@ -1,36 +1,13 @@
 'use client';
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { User, HelpCircle, Loader2, Copy, Check } from 'lucide-react';
+import { User, HelpCircle, Loader2 } from 'lucide-react';
 import { AgentuityLogo } from '../icons/AgentuityLogo';
+import { CLICommand } from '../CLICommand';
+import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock';
 import { MessageListProps, Message } from './types';
-
-// Copy button component for code blocks
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy text:', err);
-    }
-  };
-
-  return (
-    <button
-      onClick={handleCopy}
-      className="absolute top-2 right-2 p-1.5 rounded bg-gray-700 hover:bg-gray-600 text-white opacity-70 hover:opacity-100 transition-opacity"
-      title="Copy code"
-    >
-      {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-    </button>
-  );
-}
 
 export function MessageList({ messages, loading, handleSourceClick }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -116,40 +93,36 @@ function MessageItem({ message, handleSourceClick }: MessageItemProps) {
                 remarkPlugins={[remarkGfm]}
                 components={{
                   pre: ({ children }) => {
-                    // Better text extraction for copying
-                    const extractTextContent = (element: any): string => {
-                      if (typeof element === 'string') return element;
-                      if (typeof element === 'number') return String(element);
-                      if (element?.props?.children) {
-                        if (typeof element.props.children === 'string') {
-                          return element.props.children;
-                        }
-                        if (Array.isArray(element.props.children)) {
-                          return element.props.children.map(extractTextContent).join('');
-                        }
-                        return extractTextContent(element.props.children);
-                      }
-                      return '';
-                    };
+                    // Extract code content and language
+                    const codeElement = React.Children.toArray(children)[0] as any;
+                    const className = codeElement?.props?.className || '';
+                    const language = className.replace('language-', '');
+                    const code = codeElement?.props?.children || '';
 
-                    const codeText = Array.isArray(children) 
-                      ? children.map(extractTextContent).join('')
-                      : extractTextContent(children);
+                    // Use CLICommand for bash/shell commands
+                    if (language === 'bash' || language === 'sh' || language === 'shell') {
+                      return <CLICommand command={code} />;
+                    }
 
+                    // Use DynamicCodeBlock for other languages
                     return (
-                      <div className="relative group">
-                        <pre className="max-w-full whitespace-pre-wrap break-words pr-12">
-                          {children}
-                        </pre>
-                        <CopyButton text={codeText} />
-                      </div>
+                      <DynamicCodeBlock 
+                        code={code} 
+                        lang={language || 'text'}
+                      />
                     );
                   },
-                  code: ({ children, className }) => (
-                    <code className={`break-words whitespace-pre-wrap ${className || ''}`}>
-                      {children}
-                    </code>
-                  )
+                  code: ({ children, className, ...props }) => {
+                    // Only handle inline code (not code blocks which are handled by pre)
+                    if (!className) {
+                      return (
+                        <code className="break-words whitespace-pre-wrap" {...props}>
+                          {children}
+                        </code>
+                      );
+                    }
+                    return <code {...props}>{children}</code>;
+                  }
                 }}
               >
                 {message.content}
