@@ -94,10 +94,17 @@ function MessageItem({ message, handleSourceClick }: MessageItemProps) {
                 components={{
                   pre: ({ children }) => {
                     // Extract code content and language
-                    const codeElement = React.Children.toArray(children)[0] as any;
+                    const codeElement = React.Children.toArray(children)[0] as React.ReactElement<{
+                      className?: string;
+                      children?: React.ReactNode;
+                    }>;
                     const className = codeElement?.props?.className || '';
                     const language = className.replace('language-', '');
-                    const code = codeElement?.props?.children || '';
+                    
+                    // Extract string content from children
+                    const code = typeof codeElement?.props?.children === 'string' 
+                      ? codeElement.props.children 
+                      : String(codeElement?.props?.children || '');
 
                     // Use CLICommand for bash/shell commands
                     if (language === 'bash' || language === 'sh' || language === 'shell') {
