@@ -3,23 +3,32 @@ import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
 
 import { retrieveRelevantDocs } from './retriever';
+import { rephraseVaguePrompt } from './prompt';
 import { AnswerSchema } from './types';
 import type { Answer } from './types';
 
 export default async function answerQuestion(ctx: AgentContext, prompt: string) {
-    const relevantDocs = await retrieveRelevantDocs(ctx, prompt);
+    // First, rephrase the prompt for better vector search
+    const rephrasedPrompt = await rephraseVaguePrompt(ctx, prompt);
+    
+    // Use the rephrased prompt for document retrieval
+    const relevantDocs = await retrieveRelevantDocs(ctx, rephrasedPrompt);
 
     const systemPrompt = `
 You are Agentuity's developer-documentation assistant.
 
+=== CONTEXT ===
+You will receive both the user's ORIGINAL question and a REPHRASED version that was optimized for document search. The rephrased version helped find the relevant documents, but you should answer the user's original intent.
+
 === RULES ===
 1. Use ONLY the content inside <DOCS> tags to craft your reply. If the required information is missing, state that the docs do not cover it.
 2. Never fabricate or guess undocumented details.
-3. Ambiguity handling:
+3. Focus on answering the ORIGINAL QUESTION, using the documents found via the rephrased search.
+4. Ambiguity handling:
    • When <DOCS> contains more than one distinct workflow or context that could satisfy the question, do **not** choose for the user.
    • Briefly (≤ 2 sentences each) summarise each plausible interpretation and ask **one** clarifying question so the user can pick a path.
    • Provide a definitive answer only after the ambiguity is resolved.
-4. Answer style:
+5. Answer style:
    • If the question can be answered unambiguously from a single workflow, give a short, direct answer.
    • Add an explanation only when the user explicitly asks for one.
    • Format your response in **MDX (Markdown Extended)** format with proper syntax highlighting for code blocks.
@@ -28,8 +37,8 @@ You are Agentuity's developer-documentation assistant.
    • Wrap code snippets in appropriate language blocks (e.g., \`\`\`typescript, \`\`\`json, \`\`\`javascript).
    • Use **bold** for important terms and *italic* for emphasis when appropriate.
    • Use > blockquotes for important notes or warnings.
-5. You may suggest concise follow-up questions or related topics that are present in <DOCS>.
-6. Keep a neutral, factual tone.
+6. You may suggest concise follow-up questions or related topics that are present in <DOCS>.
+7. Keep a neutral, factual tone.
 
 === OUTPUT FORMAT ===
 Return **valid JSON only** matching this TypeScript type:
@@ -74,9 +83,13 @@ agentuity agent create [name] [description] [auth_type]
 
 > **Note**: This command will create the agent in the Agentuity Cloud and set up local files.
 
-<QUESTION>
+<ORIGINAL_QUESTION>
 ${prompt}
-</QUESTION>
+</ORIGINAL_QUESTION>
+
+<REPHRASED_SEARCH_QUERY>
+${rephrasedPrompt}
+</REPHRASED_SEARCH_QUERY>
 
 <DOCS>
 ${JSON.stringify(relevantDocs, null, 2)}
@@ -87,7 +100,7 @@ ${JSON.stringify(relevantDocs, null, 2)}
         const result = await generateObject({
             model: openai('gpt-4o'),
             system: systemPrompt,
-            prompt: prompt,
+            prompt: `Please answer the original question using the documentation found via the rephrased search query. Your answer should cater toward the original user prompt rather than the rephrased version of the query.`,
             schema: AnswerSchema,
             maxTokens: 2048,
         });

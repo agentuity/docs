@@ -1,10 +1,12 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { User, HelpCircle, Loader2 } from 'lucide-react';
 import { AgentuityLogo } from '../icons/AgentuityLogo';
+import { CLICommand } from '../CLICommand';
+import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock';
 import { MessageListProps, Message } from './types';
 
 export function MessageList({ messages, loading, handleSourceClick }: MessageListProps) {
@@ -87,12 +89,52 @@ function MessageItem({ message, handleSourceClick }: MessageItemProps) {
           }`}>
           {message.type === 'ai' ? (
             <div className="prose prose-sm max-w-none dark:prose-invert prose-gray text-sm">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  pre: ({ children }) => {
+                    // Extract code content and language
+                    const codeElement = React.Children.toArray(children)[0] as React.ReactElement<{
+                      className?: string;
+                      children?: React.ReactNode;
+                    }>;
+                    const className = codeElement?.props?.className || '';
+                    const language = className.replace('language-', '');
+                    
+                    // Extract string content from children
+                    const code = typeof codeElement?.props?.children === 'string' 
+                      ? codeElement.props.children 
+                      : String(codeElement?.props?.children || '');
+
+                    // Use CLICommand for bash/shell commands
+                    if (language === 'bash' || language === 'sh' || language === 'shell') {
+                      return <CLICommand command={code} />;
+                    }
+
+                    return (
+                      <DynamicCodeBlock 
+                        code={code} 
+                        lang={language || 'text'}
+                      />
+                    );
+                  },
+                  code: ({ children, className, ...props }) => {
+                    if (!className) {
+                      return (
+                        <code className="break-words whitespace-pre-wrap" {...props}>
+                          {children}
+                        </code>
+                      );
+                    }
+                    return <code {...props}>{children}</code>;
+                  }
+                }}
+              >
                 {message.content}
               </ReactMarkdown>
             </div>
           ) : (
-            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+            <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
           )}
         </div>
 
