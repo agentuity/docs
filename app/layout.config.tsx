@@ -43,11 +43,11 @@ export const baseOptions: BaseLayoutProps = {
 			on: "nav",
 			children: (
 				<div className="flex items-center gap-2 text-sm">
-					<NavButton href="https://agentuity.com/blog">Blog</NavButton>
-					<NavButton href="https://app.agentuity.com">Console</NavButton>
-					<CommunityButton />
+					<NavButton href="https://agentuity.com/blog" target="_blank" rel="noopener noreferrer">Blog</NavButton>
+					<NavButton href="https://app.agentuity.com" target="_blank" rel="noopener noreferrer">Console</NavButton>
+					<CommunityButton target="_blank" rel="noopener noreferrer" />
 					<XButton className="h-9" />
-					<NavButton href="https://github.com/agentuity" className="h-9">
+					<NavButton href="https://github.com/agentuity" className="h-9" target="_blank" rel="noopener noreferrer">
 						<Github className="size-4" />
 					</NavButton>
 				</div>
