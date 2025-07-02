@@ -65,7 +65,7 @@ export function useMessages() {
 
       const controller = new AbortController();
       abortControllerRef.current = controller;
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const timeoutId = setTimeout(() => controller.abort(), 90000);
 
       const response = await fetch(`/api/search?${searchParams}`, {
         signal: controller.signal
@@ -142,6 +142,7 @@ export function useMessages() {
   }, []);
 
   const handleSourceClick = useCallback((url: string) => {
+    
     if (url && url !== '#' && (url.startsWith('/') || url.startsWith('http'))) {
       window.open(url, '_blank');
     }

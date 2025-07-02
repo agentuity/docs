@@ -8,7 +8,28 @@ const { GET: defaultSearchHandler } = createFromSource(source);
 
 function documentPathToUrl(docPath: string): string {
   // Remove the .md or .mdx extension before any # symbol
-  return '/' + docPath.replace(/\.mdx?(?=#|$)/, '');
+  let path = docPath.replace(/\.mdx?(?=#|$)/, '');
+
+  // Split path and hash (if any)
+  const [basePath, hash] = path.split('#');
+
+  // Split the base path into segments
+  const segments = basePath.split('/').filter(Boolean);
+
+  // If the last segment is 'index', remove it
+  if (segments.length > 0 && segments[segments.length - 1].toLowerCase() === 'index') {
+    segments.pop();
+  }
+
+  // Reconstruct the path
+  let url = '/' + segments.join('/');
+  if (url === '/') {
+    url = '/';
+  }
+  if (hash) {
+    url += '#' + hash;
+  }
+  return url;
 }
 
 // Helper function to get document title and description from source
