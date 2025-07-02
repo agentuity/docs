@@ -21,27 +21,31 @@ RETRY_DELAY=2
 
 echo "Sending webhook to $WEBHOOK_URL" >&2
 
-# Read payload from stdin
-payload=$(cat)
+# Create temporary file for payload
+TEMP_FILE=$(mktemp)
+trap "rm -f $TEMP_FILE" EXIT
 
-if [ -z "$payload" ]; then
+# Read payload from stdin to temporary file
+cat > "$TEMP_FILE"
+
+if [ ! -s "$TEMP_FILE" ]; then
     echo "Error: No payload received from stdin" >&2
     exit 1
 fi
 
 # Validate JSON
-if ! echo "$payload" | jq . >/dev/null 2>&1; then
+if ! jq . "$TEMP_FILE" >/dev/null 2>&1; then
     echo "Error: Invalid JSON payload" >&2
     exit 1
 fi
 
-echo "Payload size: $(echo "$payload" | wc -c) bytes" >&2
+echo "Payload size: $(wc -c < "$TEMP_FILE") bytes" >&2
 
-# Build curl command
+# Build curl command using temporary file
 curl_args=(
     -X POST
     -H "Content-Type: application/json"
-    -d "$payload"
+    --data-binary "@$TEMP_FILE"
     --fail
     --show-error
     --silent
