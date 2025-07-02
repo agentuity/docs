@@ -40,7 +40,7 @@ export function SearchInput({ currentInput, setCurrentInput, loading, sendMessag
     <div className="w-full">
       <div className="flex gap-2">
         {/* Textarea Container */}
-        <div className="flex-1 min-w-0">
+         <div className="flex-1 min-w-0 relative">
           <textarea
             ref={textareaRef}
             value={currentInput}

@@ -23,7 +23,7 @@ echo "Sending webhook to $WEBHOOK_URL" >&2
 
 # Create temporary file for payload
 TEMP_FILE=$(mktemp)
-trap "rm -f $TEMP_FILE" EXIT
+trap 'rm -f "$TEMP_FILE"' EXIT
 
 # Read payload from stdin to temporary file
 cat > "$TEMP_FILE"

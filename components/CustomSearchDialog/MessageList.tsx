@@ -104,7 +104,6 @@ function MessageItem({ message, handleSourceClick }: MessageItemProps) {
                       return <CLICommand command={code} />;
                     }
 
-                    // Use DynamicCodeBlock for other languages
                     return (
                       <DynamicCodeBlock 
                         code={code} 
@@ -113,7 +112,6 @@ function MessageItem({ message, handleSourceClick }: MessageItemProps) {
                     );
                   },
                   code: ({ children, className, ...props }) => {
-                    // Only handle inline code (not code blocks which are handled by pre)
                     if (!className) {
                       return (
                         <code className="break-words whitespace-pre-wrap" {...props}>
