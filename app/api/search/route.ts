@@ -8,7 +8,7 @@ const { GET: defaultSearchHandler } = createFromSource(source);
 
 function documentPathToUrl(docPath: string): string {
   // Remove the .md or .mdx extension before any # symbol
-  let path = docPath.replace(/\.mdx?(?=#|$)/, '');
+  const path = docPath.replace(/\.mdx?(?=#|$)/, '');
 
   // Split path and hash (if any)
   const [basePath, hash] = path.split('#');
