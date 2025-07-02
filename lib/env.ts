@@ -60,6 +60,5 @@ declare global {
     AGENT_ID?: string;
     AGENT_BEARER_TOKEN?: string;
     AGENT_FULL_URL?: string;
-    NEXTJS_ENV?: string;
   }
 }

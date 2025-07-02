@@ -20,8 +20,5 @@
 	"routes": [
 		{ "pattern": "agentuity.dev", "custom_domain": true },
 		{ "pattern": "www.agentuity.dev", "custom_domain": true }
-	],
-	"vars": {
-		"NEXTJS_ENV": "production"
-	}
+	]
 }
