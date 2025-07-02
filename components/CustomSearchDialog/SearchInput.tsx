@@ -30,10 +30,17 @@ export function SearchInput({ currentInput, setCurrentInput, loading, sendMessag
     }
   };
 
+  const handleSend = () => {
+    if (currentInput.trim()) {
+      sendMessage(currentInput);
+    }
+  };
+
   return (
     <div className="w-full">
       <div className="flex gap-2">
-        <div className="flex-1 relative">
+        {/* Textarea Container */}
+        <div className="flex-1 min-w-0">
           <textarea
             ref={textareaRef}
             value={currentInput}
@@ -44,20 +51,25 @@ export function SearchInput({ currentInput, setCurrentInput, loading, sendMessag
             disabled={loading}
             rows={1}
           />
-          {currentInput.trim() && (
-            <div className="absolute right-2 bottom-2 text-xs text-gray-400">
+          {currentInput.trim() && !loading && (
+            <div className="absolute right-2 bottom-2 text-xs text-gray-400 pointer-events-none">
               Press Enter to send
             </div>
           )}
         </div>
-        <button
-          onClick={() => currentInput.trim() && sendMessage(currentInput)}
-          disabled={loading || !currentInput.trim()}
-          className="px-3 py-2 bg-gray-800 hover:bg-gray-900 disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-400 text-white text-sm rounded-lg transition-colors disabled:cursor-not-allowed flex-shrink-0"
-          aria-label="Send message"
-        >
-          <Send className="w-4 h-4" />
-        </button>
+
+        {/* Button Container - this is the key fix */}
+        <div className="flex flex-col">
+          <button
+            onClick={handleSend}
+            disabled={loading || !currentInput.trim()}
+            className="h-[40px] w-[40px] bg-gray-800 hover:bg-gray-900 disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-400 text-white text-sm rounded-lg transition-colors disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0"
+            aria-label="Send message"
+            type="button"
+          >
+            <Send className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

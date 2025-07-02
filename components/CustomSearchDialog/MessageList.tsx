@@ -1,11 +1,36 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { User, HelpCircle, Loader2 } from 'lucide-react';
+import { User, HelpCircle, Loader2, Copy, Check } from 'lucide-react';
 import { AgentuityLogo } from '../icons/AgentuityLogo';
 import { MessageListProps, Message } from './types';
+
+// Copy button component for code blocks
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text:', err);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="absolute top-2 right-2 p-1.5 rounded bg-gray-700 hover:bg-gray-600 text-white opacity-70 hover:opacity-100 transition-opacity"
+      title="Copy code"
+    >
+      {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+    </button>
+  );
+}
 
 export function MessageList({ messages, loading, handleSourceClick }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -87,12 +112,51 @@ function MessageItem({ message, handleSourceClick }: MessageItemProps) {
           }`}>
           {message.type === 'ai' ? (
             <div className="prose prose-sm max-w-none dark:prose-invert prose-gray text-sm">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  pre: ({ children }) => {
+                    // Better text extraction for copying
+                    const extractTextContent = (element: any): string => {
+                      if (typeof element === 'string') return element;
+                      if (typeof element === 'number') return String(element);
+                      if (element?.props?.children) {
+                        if (typeof element.props.children === 'string') {
+                          return element.props.children;
+                        }
+                        if (Array.isArray(element.props.children)) {
+                          return element.props.children.map(extractTextContent).join('');
+                        }
+                        return extractTextContent(element.props.children);
+                      }
+                      return '';
+                    };
+
+                    const codeText = Array.isArray(children) 
+                      ? children.map(extractTextContent).join('')
+                      : extractTextContent(children);
+
+                    return (
+                      <div className="relative group">
+                        <pre className="max-w-full whitespace-pre-wrap break-words pr-12">
+                          {children}
+                        </pre>
+                        <CopyButton text={codeText} />
+                      </div>
+                    );
+                  },
+                  code: ({ children, className }) => (
+                    <code className={`break-words whitespace-pre-wrap ${className || ''}`}>
+                      {children}
+                    </code>
+                  )
+                }}
+              >
                 {message.content}
               </ReactMarkdown>
             </div>
           ) : (
-            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+            <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
           )}
         </div>
 
