@@ -67,7 +67,7 @@ export function useMessages() {
       abortControllerRef.current = controller;
       const timeoutId = setTimeout(() => controller.abort(), 90000);
 
-      const response = await fetch(`/api/search?${searchParams}`, {
+      const response = await fetch(`/api/rag-search?${searchParams}`, {
         signal: controller.signal
       });
 

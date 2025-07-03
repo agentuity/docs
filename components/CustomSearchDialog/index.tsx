@@ -35,14 +35,13 @@ export default function CustomSearchDialog(props: CustomSearchDialogProps) {
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/30" />
         <Dialog.Content
-          className="fixed inset-0 z-50"
+          className="fixed left-1/2 top-1/2 w-full max-w-3xl h-[75vh] -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800 z-50 flex flex-col"
           onOpenAutoFocus={(e) => {
             e.preventDefault();
             setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 0);
           }}
           >
           <Dialog.Title className="sr-only">Search Documentation</Dialog.Title>
-          <div className="fixed left-1/2 top-1/2 w-full max-w-3xl h-[75vh] -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800 flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-gray-50 dark:border-gray-800">
               <div className="flex items-center gap-3">
@@ -110,7 +109,6 @@ export default function CustomSearchDialog(props: CustomSearchDialogProps) {
                 </div>
               </div>
             </div>
-          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
