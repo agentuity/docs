@@ -44,7 +44,7 @@ export const baseOptions: BaseLayoutProps = {
 			children: (
 				<div className="flex items-center gap-2 text-sm">
 					<NavButton href="https://agentuity.com/blog" target="_blank" rel="noopener noreferrer">Blog</NavButton>
-					<NavButton href="https://app.agentuity.com" target="_blank" rel="noopener noreferrer">App</NavButton>
+					<NavButton href="https://app.agentuity.com" target="_blank" rel="noopener noreferrer">Cloud App</NavButton>
 					<CommunityButton target="_blank" rel="noopener noreferrer" />
 					<XButton className="h-9" />
 					<NavButton href="https://github.com/agentuity" className="h-9" target="_blank" rel="noopener noreferrer">
