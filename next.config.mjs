@@ -17,6 +17,11 @@ const config = {
 			source: "/docs",
 			destination: "/",
 			permanent: true,
+		},
+		{
+			source: "/Guides/:path*",
+			destination: "/Concepts/:path*",
+			permanent: true,
 		}
 	],
 };
