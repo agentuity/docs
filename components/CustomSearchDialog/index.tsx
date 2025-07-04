@@ -79,30 +79,28 @@ export default function CustomSearchDialog(props: CustomSearchDialogProps) {
               />
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-between text-xs mt-2">
-                <div className="flex gap-4">
-                  {messages.length > 0 && (
-                    <>
-                      <button
-                        onClick={handleRetry}
-                        disabled={loading}
-                        className="flex items-center gap-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 transition-colors"
-                      >
-                        <RotateCcw className="w-3 h-3" />
-                        Retry
-                      </button>
-                      <button
-                        onClick={handleClear}
-                        disabled={loading}
-                        className="flex items-center gap-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 transition-colors"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        Clear
-                      </button>
-                    </>
-                  )}
+              {messages.length > 0 && (
+                <div className="flex items-center justify-between text-xs mt-2">
+                  <div className="flex gap-4">
+                    <button
+                      onClick={handleRetry}
+                      disabled={loading}
+                      className="flex items-center gap-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 transition-colors"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      Retry
+                    </button>
+                    <button
+                      onClick={handleClear}
+                      disabled={loading}
+                      className="flex items-center gap-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50 transition-colors"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Clear
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </Dialog.Content>

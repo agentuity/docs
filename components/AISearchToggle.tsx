@@ -16,8 +16,8 @@ export default function AISearchToggle() {
     <>
       <button 
         onClick={handleToggle}
-        aria-label="Open AI-powered search"
-        className="transition-all duration-200 hover:scale-110 active:scale-95 transform-origin-center border border-gray-200 dark:border-gray-700 rounded-md p-1.5 hover:border-cyan-300 dark:hover:border-cyan-600"
+        aria-label="Agent-powered search"
+        className="flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 transform-origin-center border border-gray-200 dark:border-cyan-900 rounded-md size-10 hover:border-cyan-300 dark:hover:border-cyan-600"
       >
         <Sparkles className="size-4 text-cyan-700 dark:text-cyan-500" />
       </button>
