@@ -21,6 +21,13 @@ export function SearchInput({ currentInput, setCurrentInput, loading, sendMessag
     textareaRef.current?.focus();
   }, []);
 
+  // Refocus when loading completes
+  useEffect(() => {
+    if (!loading) {
+      textareaRef.current?.focus();
+    }
+  }, [loading]);
+
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && (!e.shiftKey || e.ctrlKey || e.metaKey)) {
       e.preventDefault();
@@ -57,8 +64,6 @@ export function SearchInput({ currentInput, setCurrentInput, loading, sendMessag
             </div>
           )}
         </div>
-
-        {/* Button Container - this is the key fix */}
         <div className="flex flex-col">
           <button
             onClick={handleSend}
