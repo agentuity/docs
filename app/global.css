@@ -112,6 +112,26 @@ code span.line > span {
 	background-color: #000;
 }
 
+figure {
+	background-color: var(--color-cyan-100);
+}
+
+.dark figure {
+	background-color: var(--color-cyan-900);
+}
+
+figure > div:nth-child(1) {
+	border: 0;
+	background: transparent;
+}
+
+figure > div:nth-child(2) {
+	background: transparent;
+	border: 0;
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
 .mermaid .cluster rect {
 	fill: #FFF !important;
 	stroke: #099 !important;
