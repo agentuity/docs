@@ -54,7 +54,7 @@ jobs:
       - name: Collect and validate files
         run: |
           set -euo pipefail
-          git fetch origin ${{ steps.commits.outputs.before_commit }}
+          git fetch origin "${{ steps.commits.outputs.before_commit }}"
           ./bin/collect-changed-files.sh "${{ steps.commits.outputs.before_commit }}" "${{ steps.commits.outputs.after_commit }}" > changed-files.txt
           
           echo "Files to sync:"
