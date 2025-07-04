@@ -35,10 +35,10 @@ jobs:
             
             # Use defaults if not provided
             if [ -z "$BEFORE_COMMIT" ]; then
-              BEFORE_COMMIT="HEAD~1"
+              BEFORE_COMMIT="$(git rev-parse HEAD~1)"
             fi
             if [ -z "$AFTER_COMMIT" ]; then
-              AFTER_COMMIT="HEAD"
+              AFTER_COMMIT="$(git rev-parse HEAD)"
             fi
             
             echo "before_commit=$BEFORE_COMMIT" >> $GITHUB_OUTPUT
