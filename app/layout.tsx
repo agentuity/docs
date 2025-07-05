@@ -2,7 +2,6 @@ import { RootProvider } from "fumadocs-ui/provider";
 import { GeistSans } from "geist/font/sans";
 import type { ReactNode } from "react";
 import type { Metadata } from 'next';
-import CustomSearchDialog from "@/components/CustomSearchDialog";
 import { validateEnv } from "@/lib/env";
 import "./global.css";
 
@@ -91,9 +90,6 @@ export default function Layout({ children }: { children: ReactNode }) {
 			<body className="flex flex-col min-h-screen antialiased">
 				<RootProvider 
 					theme={{ enabled: true, enableSystem: true }}
-					search={{
-						SearchDialog: CustomSearchDialog
-					}}
 				>
 					{children}
 				</RootProvider>

@@ -6,6 +6,16 @@ on:
       - main
     paths:
       - 'content/**'
+  workflow_dispatch:
+    inputs:
+      before_commit:
+        description: 'Before commit SHA (leave empty for automatic detection)'
+        required: false
+        type: string
+      after_commit:
+        description: 'After commit SHA (leave empty for HEAD)'
+        required: false
+        type: string
 
 jobs:
   sync:
@@ -15,11 +25,37 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set commit variables
+        id: commits
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Manual run
+            BEFORE_COMMIT="${{ github.event.inputs.before_commit }}"
+            AFTER_COMMIT="${{ github.event.inputs.after_commit }}"
+            
+            # Use defaults if not provided
+            if [ -z "$BEFORE_COMMIT" ]; then
+              BEFORE_COMMIT="$(git rev-parse HEAD~1)"
+            fi
+            if [ -z "$AFTER_COMMIT" ]; then
+              AFTER_COMMIT="$(git rev-parse HEAD)"
+            fi
+            
+            echo "before_commit=$BEFORE_COMMIT" >> $GITHUB_OUTPUT
+            echo "after_commit=$AFTER_COMMIT" >> $GITHUB_OUTPUT
+            echo "Manual run: $BEFORE_COMMIT -> $AFTER_COMMIT"
+          else
+            # Automatic push run
+            echo "before_commit=${{ github.event.before }}" >> $GITHUB_OUTPUT
+            echo "after_commit=${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "Push run: ${{ github.event.before }} -> ${{ github.sha }}"
+          fi
+
       - name: Collect and validate files
         run: |
           set -euo pipefail
-          git fetch origin ${{ github.event.before }}
-          ./bin/collect-changed-files.sh "${{ github.event.before }}" "${{ github.sha }}" > changed-files.txt
+          git fetch origin "${{ steps.commits.outputs.before_commit }}"
+          ./bin/collect-changed-files.sh "${{ steps.commits.outputs.before_commit }}" "${{ steps.commits.outputs.after_commit }}" > changed-files.txt
           
           echo "Files to sync:"
           cat changed-files.txt

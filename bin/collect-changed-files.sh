@@ -33,7 +33,7 @@ echo "Collecting changed files between $BEFORE_COMMIT and $AFTER_COMMIT" >&2
 # Get changed files (excluding deleted)
 echo "Changed files:" >&2
 git diff --name-only "$BEFORE_COMMIT" "$AFTER_COMMIT" -- 'content/**/*.mdx' | \
-    grep '^content/' | \
+    (grep '^content/' || true) | \
     sed 's|^content/||' | \
     while read -r file; do
         if [ -n "$file" ] && [ -f "content/$file" ]; then
@@ -45,7 +45,7 @@ git diff --name-only "$BEFORE_COMMIT" "$AFTER_COMMIT" -- 'content/**/*.mdx' | \
 # Get removed files
 echo "Removed files:" >&2
 git diff --name-only --diff-filter=D "$BEFORE_COMMIT" "$AFTER_COMMIT" -- 'content/**/*.mdx' | \
-    grep '^content/' | \
+    (grep '^content/' || true) | \
     sed 's|^content/||' | \
     while read -r file; do
         if [ -n "$file" ]; then

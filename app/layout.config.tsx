@@ -3,7 +3,6 @@ import { Github } from "lucide-react";
 import { CommunityButton } from "../components/Community";
 import { NavButton } from "../components/NavButton";
 import { XButton } from "../components/XButton";
-
 /**
  * Shared layout configurations
  */
