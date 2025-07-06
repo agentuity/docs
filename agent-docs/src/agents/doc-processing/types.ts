@@ -19,6 +19,7 @@ export interface SyncStats {
 
 export type ChunkMetadata = {
   chunkIndex: number;
+  totalChunks: number;
   contentType: string;
   heading: string;
   title: string;

@@ -8,18 +8,31 @@ import type { SyncPayload, SyncStats } from './types';
  */
 async function removeVectorsByPath(ctx: AgentContext, logicalPath: string, vectorStoreName: string) {
   ctx.logger.info('Removing vectors for path: %s', logicalPath);
-  const vectors = await ctx.vector.search(vectorStoreName, {
-    query: ' ',
-    limit: 10000,
-    metadata: { path: logicalPath },
-  });
+  
+  let totalDeleted = 0;
+  
+  while (true) {
+    const vectors = await ctx.vector.search(vectorStoreName, {
+      query: ' ',
+      limit: 100,
+      metadata: { path: logicalPath },
+    });
 
-  if (vectors.length > 0) {
+    if (!Array.isArray(vectors) || vectors.length === 0) {
+      break;
+    }
+
     // Delete vectors one by one to avoid issues with large batches
     for (const vector of vectors) {
       await ctx.vector.delete(vectorStoreName, vector.key);
     }
-    ctx.logger.info('Removed %d vectors for path: %s', vectors.length, logicalPath);
+    
+    totalDeleted += vectors.length;
+    ctx.logger.info('Deleted %d vectors (total: %d) for path: %s', vectors.length, totalDeleted, logicalPath);
+  }
+
+  if (totalDeleted > 0) {
+    ctx.logger.info('Completed removal of %d vectors for path: %s', totalDeleted, logicalPath);
   } else {
     ctx.logger.info('No vectors found for path: %s', logicalPath);
   }
@@ -79,6 +92,8 @@ export async function syncDocsFromPayload(ctx: AgentContext, payload: SyncPayloa
         const result = await ctx.vector.upsert(VECTOR_STORE_NAME, chunk);
         ctx.logger.info('Upserted chunk: %o', result.length);
       }
+
+      ctx.logger.info('Upserted total %o chunks for file: %s', chunks.length, logicalPath);
 
       processed++;
       ctx.logger.info('Successfully processed file: %s (%d chunks)', logicalPath, chunks.length);
