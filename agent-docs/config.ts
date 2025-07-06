@@ -1,2 +1,2 @@
 export const VECTOR_STORE_NAME = process.env.VECTOR_STORE_NAME || 'docs';
-export const vectorSearchNumber = 20;
+export const vectorSearchNumber = 10;
