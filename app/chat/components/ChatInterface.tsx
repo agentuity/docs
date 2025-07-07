@@ -232,18 +232,18 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                   {/* Quick Start Options */}
                   <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto mb-8">
                     <button
-                      onClick={() => sendMessage("Start Crash Course")}
+                      onClick={() => sendMessage("Start New Tutorial")}
                       className="flex items-center gap-2 px-4 py-3 agentuity-button-primary rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95"
                     >
                       <span>🚀</span>
-                      Start Crash Course
+                      Start New Tutorial
                     </button>
                     <button
-                      onClick={() => sendMessage("Continue My Course")}
+                      onClick={() => sendMessage("Continue My Tutorial")}
                       className="flex items-center gap-2 px-4 py-3 agentuity-button rounded-xl text-sm font-medium text-gray-200 transition-all duration-200 hover:scale-105 active:scale-95"
                     >
                       <span>📚</span>
-                      Continue My Course
+                      Continue My Tutorial
                     </button>
                   </div>
                   
