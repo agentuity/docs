@@ -1,5 +1,5 @@
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
-import { Github } from "lucide-react";
+import { Github, MessageCircle } from "lucide-react";
 import { CommunityButton } from "../components/Community";
 import { NavButton } from "../components/NavButton";
 import { XButton } from "../components/XButton";
@@ -42,6 +42,10 @@ export const baseOptions: BaseLayoutProps = {
 			on: "nav",
 			children: (
 				<div className="flex items-center gap-2 text-sm">
+					<NavButton href="/chat" className="h-9">
+						<MessageCircle className="size-4" />
+						Chat
+					</NavButton>
 					<NavButton href="https://agentuity.com/blog" target="_blank" rel="noopener noreferrer">Blog</NavButton>
 					<NavButton href="https://app.agentuity.com" target="_blank" rel="noopener noreferrer">Console</NavButton>
 					<CommunityButton target="_blank" rel="noopener noreferrer" />
