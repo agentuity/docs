@@ -38,7 +38,7 @@ export function ChatInput({ currentInput, setCurrentInput, loading, sendMessage 
     <div className="flex gap-3 items-end">
       {/* Textarea Container */}
       <div className="flex-1 min-w-0 relative">
-        <div className="relative agentuity-card rounded-2xl overflow-hidden">
+        <div className="relative bg-transparent border border-white/10 rounded-2xl overflow-hidden">
           <textarea
             ref={textareaRef}
             value={currentInput}

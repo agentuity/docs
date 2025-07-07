@@ -219,15 +219,37 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {messages.length === 0 && (
                 <div className="text-center py-20">
-                  <div className="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-cyan-500/20">
+                  <div className="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-cyan-500/20">
                     <HelpCircle className="w-8 h-8 text-cyan-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-200 mb-2">
-                    Start a conversation
+                  <h3 className="text-lg font-semibold text-gray-200 mb-3">
+                    Welcome to Agentuity
                   </h3>
-                  <p className="text-sm text-gray-300 max-w-md mx-auto leading-relaxed">
-                    Ask questions about Agentuity or request code examples to get started with your interactive coding experience
+                  <p className="text-sm text-gray-300 max-w-md mx-auto leading-relaxed mb-8">
+                    Get started with AI agents or continue your learning journey
                   </p>
+                  
+                  {/* Quick Start Options */}
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto mb-8">
+                    <button
+                      onClick={() => sendMessage("Start Crash Course")}
+                      className="flex items-center gap-2 px-4 py-3 agentuity-button-primary rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95"
+                    >
+                      <span>🚀</span>
+                      Start Crash Course
+                    </button>
+                    <button
+                      onClick={() => sendMessage("Continue My Course")}
+                      className="flex items-center gap-2 px-4 py-3 agentuity-button rounded-xl text-sm font-medium text-gray-200 transition-all duration-200 hover:scale-105 active:scale-95"
+                    >
+                      <span>📚</span>
+                      Continue My Course
+                    </button>
+                  </div>
+                  
+                  <div className="text-xs text-gray-400 max-w-sm mx-auto">
+                    Or start typing below for any other questions about Agentuity
+                  </div>
                 </div>
               )}
 
