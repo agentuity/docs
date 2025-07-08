@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChatMessage, ChatInterfaceProps, ChatSession } from '../types';
 import { ChatMessageComponent } from './ChatMessage';
 import { ChatInput } from './ChatInput';
@@ -67,6 +67,13 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>(createDummySessions());
   const [executingFiles, setExecutingFiles] = useState<Set<string>>(new Set());
+  const [currentSessionId, setCurrentSessionId] = useState(sessionId);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new messages are added
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const sendMessage = async (content: string) => {
     if (!content.trim()) return;
@@ -176,6 +183,8 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
   const handleSessionSelect = (newSessionId: string) => {
     // In a real app, this would load messages for the session
     console.log('Switching to session:', newSessionId);
+    // Update current session ID for sidebar highlighting
+    setCurrentSessionId(newSessionId);
     // For MVP, just clear current messages and show which session is selected
     setMessages([]);
     window.history.pushState({}, '', `/chat/${newSessionId}`);
@@ -193,6 +202,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
     };
     
     setSessions(prev => [newSession, ...prev]);
+    setCurrentSessionId(newSessionId);
     setMessages([]);
     window.history.pushState({}, '', `/chat/${newSessionId}`);
   };
@@ -204,7 +214,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
         {/* Sidebar */}
         <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block relative`}>
           <SessionSidebar
-            currentSessionId={sessionId}
+            currentSessionId={currentSessionId}
             sessions={sessions}
             onSessionSelect={handleSessionSelect}
             onNewSession={handleNewSession}
@@ -216,7 +226,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
           {/* Chat Container - Perplexity Style */}
           <div className="flex-1 flex flex-col bg-black/20 border border-white/10 rounded-2xl overflow-hidden">
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 agentuity-scrollbar">
               {messages.length === 0 && (
                 <div className="text-center py-20">
                   <div className="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-cyan-500/20">
@@ -251,7 +261,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                     Or start typing below for any other questions about Agentuity
                   </div>
                 </div>
-              )}
+              )}  
 
               {messages.map((message) => (
                 <ChatMessageComponent
@@ -262,6 +272,8 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                   executionState={message.codeBlock?.filename && executingFiles.has(message.codeBlock.filename) ? 'running' : 'idle'}
                 />
               ))}
+              {/* Invisible div to scroll to */}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Input */}

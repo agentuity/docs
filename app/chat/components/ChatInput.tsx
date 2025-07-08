@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, KeyboardEvent, useState } from 'react';
+import { useEffect, KeyboardEvent, useState, useRef } from 'react';
 import { Send, Maximize2, Minimize2, X } from 'lucide-react';
 import { ChatInputProps } from '../types';
 import { useAutoResize } from '../hooks/useAutoResize';
 
 export function ChatInput({ currentInput, setCurrentInput, loading, sendMessage }: ChatInputProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const textareaRef = useAutoResize(currentInput, { maxHeight: isFullscreen ? 400 : 150 });
+  const { textareaRef, triggerResize } = useAutoResize(currentInput, { maxHeight: isFullscreen ? 400 : 150 });
+  const prevIsFullscreen = useRef(isFullscreen);
 
   useEffect(() => {
     textareaRef.current?.focus();
@@ -19,6 +20,18 @@ export function ChatInput({ currentInput, setCurrentInput, loading, sendMessage 
       textareaRef.current?.focus();
     }
   }, [loading]);
+
+  // Focus textarea and trigger resize when exiting fullscreen mode
+  useEffect(() => {
+    if (prevIsFullscreen.current === true && isFullscreen === false) {
+      // Small delay to ensure DOM has updated after fullscreen exit
+      setTimeout(() => {
+        textareaRef.current?.focus();
+        triggerResize(); // Explicitly trigger resize after fullscreen exit
+      }, 100);
+    }
+    prevIsFullscreen.current = isFullscreen;
+  }, [isFullscreen, triggerResize]);
 
   // Handle fullscreen keyboard shortcuts
   useEffect(() => {
@@ -43,6 +56,10 @@ export function ChatInput({ currentInput, setCurrentInput, loading, sendMessage 
       e.preventDefault();
       if (currentInput.trim()) {
         sendMessage(currentInput);
+        // Exit fullscreen after sending to see the response
+        if (isFullscreen) {
+          setIsFullscreen(false);
+        }
       }
     }
   };
@@ -50,6 +67,10 @@ export function ChatInput({ currentInput, setCurrentInput, loading, sendMessage 
   const handleSend = () => {
     if (currentInput.trim()) {
       sendMessage(currentInput);
+      // Exit fullscreen after sending to see the response
+      if (isFullscreen) {
+        setIsFullscreen(false);
+      }
     }
   };
 
@@ -66,18 +87,17 @@ export function ChatInput({ currentInput, setCurrentInput, loading, sendMessage 
 
       {/* Main input container */}
       <div className={`
-        ${isFullscreen 
-          ? 'fixed inset-4 z-50 flex flex-col bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-6' 
+        ${isFullscreen
+          ? 'fixed inset-4 z-50 flex flex-col bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-6'
           : 'flex gap-3 items-end'
         }
       `}>
-        
+
         {/* Fullscreen header */}
         {isFullscreen && (
           <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
             <div>
               <h3 className="text-lg font-semibold text-gray-200">Compose Message</h3>
-              <p className="text-xs text-gray-400">Ctrl+Enter to send • Escape to exit</p>
             </div>
             <button
               onClick={toggleFullscreen}
@@ -105,16 +125,16 @@ export function ChatInput({ currentInput, setCurrentInput, loading, sendMessage 
               placeholder="Ask about Agentuity or request code examples..."
               className={`
                 w-full px-4 py-3 text-sm bg-transparent text-gray-200 placeholder-gray-400 
-                transition-all resize-none overflow-y-auto focus:outline-none border-0
-                ${isFullscreen 
-                  ? 'flex-1 min-h-[200px] max-h-none pr-12' 
-                  : 'min-h-[48px] max-h-[150px] pr-12'
+                transition-all resize-none focus:outline-none border-0 agentuity-scrollbar
+                ${isFullscreen
+                  ? 'flex-1 min-h-[200px] max-h-none pr-12 overflow-y-auto'
+                  : 'min-h-[48px] max-h-[150px] pr-12 overflow-y-auto'
                 }
               `}
               disabled={loading}
               rows={isFullscreen ? 10 : 1}
             />
-            
+
             {/* Expand button inside textarea */}
             {!isFullscreen && (
               <button
@@ -126,19 +146,13 @@ export function ChatInput({ currentInput, setCurrentInput, loading, sendMessage 
                 <Maximize2 className="w-4 h-4" />
               </button>
             )}
-            
-            {currentInput.trim() && !loading && !isFullscreen && (
-              <div className="absolute right-3 bottom-2 text-xs text-gray-300 pointer-events-none agentuity-button px-2 py-1 rounded-lg">
-                Press Enter to send
-              </div>
-            )}
           </div>
         </div>
 
         {/* Action buttons */}
         <div className={`
-          ${isFullscreen 
-            ? 'flex items-center justify-between pt-4 border-t border-white/10 mt-4' 
+          ${isFullscreen
+            ? 'flex items-center justify-between pt-4 border-t border-white/10 mt-4'
             : 'flex gap-3 items-end'
           }
         `}>

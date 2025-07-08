@@ -247,3 +247,18 @@ figure > div:nth-child(2) {
 article > p {
 	margin-bottom: 1rem;
 }
+
+/* Reusable scrollbar styling for dark theme */
+.agentuity-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.agentuity-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.agentuity-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+.agentuity-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}

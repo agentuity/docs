@@ -16,7 +16,7 @@ export default function CodeBlock({
   loading
 }: CodeBlockProps) {
   const [code, setCode] = useState(content);
-  const textareaRef = useAutoResize(code);
+  const { textareaRef } = useAutoResize(code);
 
   useEffect(() => {
     setCode(content);
