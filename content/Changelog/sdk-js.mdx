@@ -15,7 +15,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
 
 ### Changes
 
-- **Added**: Support for bulk delete in vector storage ([PR #145](https://github.com/agentuity/sdk-js/pull/145))
+- **Added**: Support for bulk delete in vector storage - The `vector.delete()` method now accepts multiple keys as variadic arguments, allowing efficient bulk deletion of vectors. Supports both single key deletion (`delete(name, key)`) and bulk deletion (`delete(name, key1, key2, key3)`) patterns. This is more efficient than making multiple individual delete calls. ([PR #145](https://github.com/agentuity/sdk-js/pull/145))
 - **Changed**: Improved documentation of vector search parameters and tightened vector search metadata type definition ([PR #146](https://github.com/agentuity/sdk-js/pull/146))
 
 ## v0.0.130

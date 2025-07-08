@@ -155,15 +155,18 @@ const handler: AgentHandler = async (request, response, context) => {
     }
     
     case 'delete': {
-      // Delete a product from vector storage
+      // Delete products from vector storage
       if (!products || !Array.isArray(products) || products.length === 0) {
-        return response.json({ error: 'No product ID to delete' });
+        return response.json({ error: 'No product IDs to delete' });
       }
       
-      const count = await context.vector.delete('products', products[0]);
+      // Support both single and bulk deletion
+      const productIds = products.map(p => p.id || p);
+      const count = await context.vector.delete('products', ...productIds);
       
       return response.json({ 
-        message: `Deleted ${count} product successfully` 
+        message: `Deleted ${count} product(s) successfully`,
+        deletedCount: count
       });
     }
     
