@@ -218,26 +218,43 @@ Searches for vectors in the vector storage.
 ##### Parameters
 
 - `name`: The name of the vector storage
-- `params`: Search parameters including query, limit, similarity threshold, and metadata filters
+- `params`: Search parameters object with the following properties:
+  - `query` (string, required): The text query to search for. This will be converted to embeddings and used to find semantically similar documents.
+  - `limit` (number, optional): Maximum number of search results to return. Must be a positive integer. If not specified, the server default will be used.
+  - `similarity` (number, optional): Minimum similarity threshold for results (0.0-1.0). Only vectors with similarity scores greater than or equal to this value will be returned. 1.0 means exact match, 0.0 means no similarity requirement.
+  - `metadata` (object, optional): Metadata filters to apply to the search. Only vectors whose metadata matches all specified key-value pairs will be included in results. Must be a valid JSON object.
 
 ##### Return Value
 
-Returns a Promise that resolves to an array of search results, each containing an ID, metadata, and distance score.
+Returns a Promise that resolves to an array of search results, each containing an ID, key, metadata, and similarity score.
 
-##### Example
+##### Examples
 
 ```typescript
-// Search for similar products
+// Basic search with query only
+const results = await context.vector.search('product-descriptions', {
+  query: 'comfortable office chair'
+});
+
+// Search with limit and similarity threshold
 const results = await context.vector.search('product-descriptions', {
   query: 'comfortable office chair',
   limit: 5,
-  similarity: 0.7,
-  metadata: { category: 'furniture' }
+  similarity: 0.7
+});
+
+// Search with metadata filtering
+const results = await context.vector.search('product-descriptions', {
+  query: 'comfortable office chair',
+  limit: 10,
+  similarity: 0.6,
+  metadata: { category: 'furniture', inStock: true }
 });
 
 // Process search results
 for (const result of results) {
-  console.log(`Product ID: ${result.id}, Similarity: ${result.distance}`);
+  console.log(`Product ID: ${result.id}, Similarity: ${result.similarity}`);
+  console.log(`Key: ${result.key}`);
   console.log(`Metadata: ${JSON.stringify(result.metadata)}`);
 }
 ```
