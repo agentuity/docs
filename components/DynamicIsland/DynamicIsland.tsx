@@ -80,7 +80,7 @@ export function DynamicIsland({
       onFocus={handleFocus}
       onBlur={handleBlur}
       tabIndex={0}
-      className="outline-none"
+      className="outline-none absolute"
       role="region"
       aria-label={`Tutorial: ${tutorial.title}`}
       aria-expanded={isExpanded}

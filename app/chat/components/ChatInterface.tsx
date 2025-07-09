@@ -352,14 +352,16 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
 
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col relative p-2">
-          <div className="flex-1 flex flex-col bg-black/20 border border-white/10 rounded-2xl overflow-hidden">
-            {/* Dynamic Island */}
-            <DynamicIsland
-              tutorial={tutorialHook.tutorial}
-              onNextStep={tutorialHook.nextStep}
-              onPreviousStep={tutorialHook.previousStep}
-              onSkipStep={tutorialHook.skipStep}
-            />
+          <div className="flex-1 flex flex-col bg-black/20 border border-white/10 rounded-2xl overflow-hidden relative">
+            {/* Dynamic Island - positioned at top center of chat window */}
+            <div className="absolute top-4 left-0 right-0 flex justify-center z-50">
+              <DynamicIsland
+                tutorial={tutorialHook.tutorial}
+                onNextStep={tutorialHook.nextStep}
+                onPreviousStep={tutorialHook.previousStep}
+                onSkipStep={tutorialHook.skipStep}
+              />
+            </div>
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6 agentuity-scrollbar">
               {messages.length === 0 && (

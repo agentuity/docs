@@ -4,12 +4,8 @@ import { motion } from 'motion/react';
 import { IslandWrapperProps } from './types';
 
 export function IslandWrapper({ isExpanded, children, className = '' }: IslandWrapperProps) {
-  // Position styles (top only)
+  // Position styles - relative to chat container
   const positionStyles = {
-    position: 'fixed' as const,
-    top: '1rem',
-    left: '50%',
-    transform: 'translateX(-50%)',
     zIndex: 1000,
   };
 
