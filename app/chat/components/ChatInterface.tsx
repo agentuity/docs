@@ -5,11 +5,85 @@ import { ChatMessage, ChatInterfaceProps, ChatSession } from '../types';
 import { ChatMessageComponent } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { SessionSidebar } from './SessionSidebar';
-import { HelpCircle, Menu } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
+import { DynamicIsland } from '../../../components/DynamicIsland/DynamicIsland';
+import { useTutorial } from '../../../components/DynamicIsland/useTutorial';
+import { TutorialStep } from '../../../components/DynamicIsland/types';
+
+// Extended tutorial step with keywords for chat detection
+interface ChatTutorialStep extends TutorialStep {
+  keywords: string[];
+}
+
+// Tutorial configuration
+const tutorialSteps: ChatTutorialStep[] = [
+  {
+    id: 'welcome',
+    title: 'Welcome to Agentuity',
+    description: 'Learn the basics of creating and deploying AI agents',
+    icon: '🚀',
+    estimatedTime: '5 min',
+    completed: false,
+    keywords: ['hello', 'start', 'begin', 'tutorial', 'help', 'getting started']
+  },
+  {
+    id: 'create-agent',
+    title: 'Create Your First Agent',
+    description: 'Learn how to create and configure your first AI agent',
+    icon: '🤖',
+    estimatedTime: '10 min',
+    completed: false,
+    keywords: ['create', 'agent', 'new agent', 'build', 'make']
+  },
+  {
+    id: 'configure',
+    title: 'Configure Agent Settings',
+    description: 'Configure authentication, environment, and deployment settings',
+    icon: '⚙️',
+    estimatedTime: '15 min',
+    completed: false,
+    keywords: ['configure', 'settings', 'auth', 'environment', 'config']
+  },
+  {
+    id: 'deploy',
+    title: 'Deploy Your Agent',
+    description: 'Deploy your agent to the Agentuity platform',
+    icon: '🚀',
+    estimatedTime: '8 min',
+    completed: false,
+    keywords: ['deploy', 'launch', 'publish', 'release', 'live']
+  },
+  {
+    id: 'monitor',
+    title: 'Monitor & Optimize',
+    description: 'Learn to monitor your agent and optimize its performance',
+    icon: '📊',
+    estimatedTime: '12 min',
+    completed: false,
+    keywords: ['monitor', 'optimize', 'performance', 'analytics', 'logs']
+  }
+];
+
+const initialTutorial = {
+  id: 'agentuity-tutorial',
+  title: 'Agentuity Getting Started',
+  currentStep: 0,
+  totalSteps: tutorialSteps.length,
+  steps: tutorialSteps,
+  isActive: true
+};
+
+const tutorialMessages = {
+  welcome: "Welcome to Agentuity! 🚀 I'm here to help you build amazing AI agents. Let's start by creating your first agent - just ask me about creating an agent!",
+  'create-agent': "Great! Let's create your first agent. You can use the `agentuity agent create` command, or I can guide you through the process step by step. What would you prefer?",
+  configure: "Perfect! Now let's configure your agent. We'll need to set up authentication, environment variables, and other settings. What type of authentication would you like to use?",
+  deploy: "Excellent! Time to deploy your agent to the cloud. Make sure your code is ready, then we can use `agentuity deploy` to launch it live!",
+  monitor: "Amazing! Your agent is now live. Let's explore monitoring tools and optimization strategies to ensure peak performance. Check out the analytics dashboard!"
+};
 
 // Generate unique IDs
 const generateId = () => {
-  return typeof crypto !== 'undefined' && crypto.randomUUID 
+  return typeof crypto !== 'undefined' && crypto.randomUUID
     ? crypto.randomUUID()
     : Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
@@ -31,7 +105,7 @@ const createDummySessions = (): ChatSession[] => [
     updatedAt: new Date('2024-01-15T10:35:00')
   },
   {
-    id: 'session-2', 
+    id: 'session-2',
     messages: [
       {
         id: '2',
@@ -49,7 +123,7 @@ const createDummySessions = (): ChatSession[] => [
     messages: [
       {
         id: '3',
-        type: 'user', 
+        type: 'user',
         content: 'Can you show me a TypeScript example?',
         timestamp: new Date('2024-01-13T09:15:00')
       }
@@ -70,10 +144,52 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
   const [currentSessionId, setCurrentSessionId] = useState(sessionId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Tutorial state
+  const tutorialHook = useTutorial(initialTutorial);
+
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Tutorial message detection
+  const detectTutorialProgress = (message: string) => {
+    const lowerMessage = message.toLowerCase();
+
+    // Check if message contains keywords for advancing tutorial
+    const currentStep = tutorialSteps[tutorialHook.tutorial.currentStep];
+    const nextStep = tutorialSteps[tutorialHook.tutorial.currentStep + 1];
+
+    if (nextStep && currentStep.keywords.some(keyword => lowerMessage.includes(keyword))) {
+      tutorialHook.nextStep();
+      return true;
+    }
+
+    return false;
+  };
+
+  // Generate tutorial bot response
+  const generateTutorialResponse = (userMessage: string): ChatMessage | null => {
+    const lowerMessage = userMessage.toLowerCase();
+
+    // Check if this is a tutorial-related message
+    const currentStep = tutorialSteps[tutorialHook.tutorial.currentStep];
+    const isTutorialMessage = currentStep.keywords.some(keyword => lowerMessage.includes(keyword));
+
+    if (isTutorialMessage) {
+      const responseText = tutorialMessages[currentStep.id as keyof typeof tutorialMessages];
+      if (responseText) {
+        return {
+          id: generateId(),
+          type: 'assistant',
+          content: responseText,
+          timestamp: new Date(),
+        };
+      }
+    }
+
+    return null;
+  };
 
   const sendMessage = async (content: string) => {
     if (!content.trim()) return;
@@ -89,6 +205,20 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
     setLoading(true);
 
     try {
+      // Check for tutorial progression
+      detectTutorialProgress(content);
+
+      // Try to generate a tutorial response first
+      const tutorialResponse = generateTutorialResponse(content);
+
+      if (tutorialResponse) {
+        // Use tutorial response
+        setMessages(prev => [...prev, tutorialResponse]);
+        setLoading(false);
+        return;
+      }
+
+      // Otherwise, use the normal API
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -200,7 +330,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
       createdAt: new Date(),
       updatedAt: new Date()
     };
-    
+
     setSessions(prev => [newSession, ...prev]);
     setCurrentSessionId(newSessionId);
     setMessages([]);
@@ -209,7 +339,6 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
 
   return (
     <div className="flex h-screen relative overflow-hidden agentuity-background chat-interface">
-
       <div className="relative z-10 flex w-full h-full">
         {/* Sidebar */}
         <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block relative`}>
@@ -223,8 +352,14 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
 
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col relative p-2">
-          {/* Chat Container - Perplexity Style */}
           <div className="flex-1 flex flex-col bg-black/20 border border-white/10 rounded-2xl overflow-hidden">
+            {/* Dynamic Island */}
+            <DynamicIsland
+              tutorial={tutorialHook.tutorial}
+              onNextStep={tutorialHook.nextStep}
+              onPreviousStep={tutorialHook.previousStep}
+              onSkipStep={tutorialHook.skipStep}
+            />
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6 agentuity-scrollbar">
               {messages.length === 0 && (
@@ -238,7 +373,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                   <p className="text-sm text-gray-300 max-w-md mx-auto leading-relaxed mb-8">
                     Get started with AI agents or continue your learning journey
                   </p>
-                  
+
                   {/* Quick Start Options */}
                   <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto mb-8">
                     <button
@@ -256,12 +391,12 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                       Continue My Tutorial
                     </button>
                   </div>
-                  
+
                   <div className="text-xs text-gray-400 max-w-sm mx-auto">
                     Or start typing below for any other questions about Agentuity
                   </div>
                 </div>
-              )}  
+              )}
 
               {messages.map((message) => (
                 <ChatMessageComponent
