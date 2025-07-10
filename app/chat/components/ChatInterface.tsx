@@ -153,26 +153,6 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
   // Stabilize the onReady callback to prevent re-renders
   const handleTerminalReady = useCallback((terminal: Terminal) => {
     console.log('Terminal ready:', terminal);
-    // Initialize with welcome message and tutorial
-    terminal.writeln('\x1b[36m╔═══════════════════════════════════════════════════════════════╗\x1b[0m');
-    terminal.writeln('\x1b[36m║                🚀 Agentuity Interactive Tutorial 🚀           ║\x1b[0m');
-    terminal.writeln('\x1b[36m╚═══════════════════════════════════════════════════════════════╝\x1b[0m');
-    terminal.writeln('');
-    terminal.writeln('\x1b[32m✓ Terminal connected and ready!\x1b[0m');
-    terminal.writeln('');
-    terminal.writeln('\x1b[33m📚 Tutorial: Create Your First Agentuity Agent\x1b[0m');
-    terminal.writeln('');
-    terminal.writeln('\x1b[97mStep 1: Create a new agent project\x1b[0m');
-    terminal.writeln('\x1b[36m   → agentuity agent create my-first-agent\x1b[0m');
-    terminal.writeln('');
-    terminal.writeln('\x1b[97mStep 2: Configure your agent\x1b[0m');
-    terminal.writeln('\x1b[36m   → agentuity agent configure\x1b[0m');
-    terminal.writeln('');
-    terminal.writeln('\x1b[97mStep 3: Deploy your agent\x1b[0m');
-    terminal.writeln('\x1b[36m   → agentuity deploy\x1b[0m');
-    terminal.writeln('');
-    terminal.writeln('\x1b[90m💡 Tip: Type any command to get started!\x1b[0m');
-    terminal.writeln('');
   }, []);
 
   // Stabilize the onClose callback
