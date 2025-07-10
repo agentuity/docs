@@ -25,6 +25,7 @@ export default function TerminalComponent({
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const initializationRef = useRef(false);
 
   // Stabilize the onReady callback to prevent useEffect re-runs
   const stableOnReady = useCallback((terminal: Terminal) => {
@@ -34,8 +35,10 @@ export default function TerminalComponent({
   }, []);
 
   useEffect(() => {
-    // Prevent double initialization
-    if (!terminalRef.current || isInitialized) return;
+    // Prevent double initialization (for React StrictMode)
+    if (!terminalRef.current || isInitialized || initializationRef.current) return;
+    
+    initializationRef.current = true;
 
     // Create terminal instance
     const terminal = new Terminal({
@@ -77,16 +80,20 @@ export default function TerminalComponent({
     // Open terminal in DOM
     terminal.open(terminalRef.current);
     
-    // Enable focus
-    terminal.focus();
-    
-    // Fit to container
-    fitAddon.fit();
-
-    // Store references
+    // Store references first
     terminalInstance.current = terminal;
     fitAddonRef.current = fitAddon;
     setIsInitialized(true);
+
+    // Delay fitting to ensure container is properly sized
+    setTimeout(() => {
+      try {
+        fitAddon.fit();
+        terminal.focus();
+      } catch (error) {
+        console.warn('Error fitting terminal:', error);
+      }
+    }, 100);
 
     // Setup terminal input handling
     const inputHandler = terminal.onData((data) => {
@@ -114,8 +121,12 @@ export default function TerminalComponent({
 
     // Handle window resize
     const handleWindowResize = () => {
-      if (fitAddonRef.current) {
-        fitAddonRef.current.fit();
+      if (fitAddonRef.current && terminalInstance.current) {
+        try {
+          fitAddonRef.current.fit();
+        } catch (error) {
+          console.warn('Error fitting terminal on resize:', error);
+        }
       }
     };
 
@@ -129,8 +140,12 @@ export default function TerminalComponent({
       window.removeEventListener('resize', handleWindowResize);
       
       // Clean up terminal handlers
-      inputHandler.dispose();
-      resizeHandler.dispose();
+      try {
+        inputHandler?.dispose();
+        resizeHandler?.dispose();
+      } catch (error) {
+        console.warn('Error disposing terminal handlers:', error);
+      }
       
       if (websocketRef.current) {
         websocketRef.current.close();
@@ -143,8 +158,30 @@ export default function TerminalComponent({
       }
       
       setIsInitialized(false);
+      initializationRef.current = false;
     };
-  }, []); // Empty dependency array
+  }, []); // Empty dependency array to prevent re-runs
+
+  // Add effect to handle terminal fitting when container size changes
+  useEffect(() => {
+    if (isInitialized && fitAddonRef.current && terminalRef.current) {
+      const resizeObserver = new ResizeObserver(() => {
+        if (fitAddonRef.current) {
+          try {
+            fitAddonRef.current.fit();
+          } catch (error) {
+            console.warn('Error fitting terminal on container resize:', error);
+          }
+        }
+      });
+
+      resizeObserver.observe(terminalRef.current);
+
+      return () => {
+        resizeObserver.disconnect();
+      };
+    }
+  }, [isInitialized]);
 
   // Separate effect to handle onReady changes after initialization
   useEffect(() => {
@@ -284,7 +321,11 @@ export default function TerminalComponent({
       <div 
         ref={terminalRef} 
         className="w-full h-full bg-gray-900 rounded-lg overflow-hidden focus:outline-none"
-        style={{ minHeight: '400px' }}
+        style={{ 
+          minHeight: '400px',
+          minWidth: '300px',
+          contain: 'layout style'
+        }}
         onClick={() => {
           // Focus terminal when clicked
           if (terminalInstance.current) {
