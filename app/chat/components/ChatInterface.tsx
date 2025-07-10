@@ -483,14 +483,6 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
               <div className={`p-4 border-b border-white/8 ${isTerminalOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-medium text-gray-200">Terminal</h3>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={toggleTerminal}
-                      className="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-gray-300"
-                    >
-                      ×
-                    </button>
-                  </div>
                 </div>
               </div>
               <div className={`flex-1 p-4 ${isTerminalOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
