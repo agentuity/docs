@@ -24,6 +24,7 @@ async function createVectorEmbedding(chunks: Chunk[]): Promise<VectorUpsertParam
     }
     const metadata: ChunkMetadata = {
       chunkIndex: chunk.chunkIndex,
+      totalChunks: chunk.totalChunks,
       contentType: chunk.contentType,
       heading: chunk.heading,
       title: chunk.title,
