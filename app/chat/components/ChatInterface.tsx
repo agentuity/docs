@@ -385,7 +385,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
 
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col relative p-2">
-          <div className={`flex-1 flex ${isTerminalOpen ? 'flex-row' : 'flex-col'} bg-black/20 border border-white/10 rounded-2xl overflow-hidden relative`}>
+          <div className={`flex-1 flex flex-row bg-black/20 border border-white/10 rounded-2xl overflow-hidden relative`}>
             {/* Dynamic Island - positioned at top center of chat window */}
             <div className="absolute top-4 left-0 right-0 flex justify-center z-50">
               <DynamicIsland
@@ -400,8 +400,8 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
             <button
               onClick={toggleTerminal}
               className={`absolute top-4 right-4 z-50 p-2 rounded-lg transition-all duration-200 ${isTerminalOpen
-                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                  : 'bg-gray-500/20 text-gray-400 border border-gray-500/30 hover:bg-gray-500/30'
+                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                : 'bg-gray-500/20 text-gray-400 border border-gray-500/30 hover:bg-gray-500/30'
                 }`}
               title={isTerminalOpen ? 'Close Terminal' : 'Open Terminal'}
             >
