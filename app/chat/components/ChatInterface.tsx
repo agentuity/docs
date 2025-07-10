@@ -395,20 +395,19 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                 onSkipStep={tutorialHook.skipStep}
               />
             </div>
-            
+
             {/* Terminal Toggle Button */}
             <button
               onClick={toggleTerminal}
-              className={`absolute top-4 right-4 z-50 p-2 rounded-lg transition-all duration-200 ${
-                isTerminalOpen 
-                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' 
+              className={`absolute top-4 right-4 z-50 p-2 rounded-lg transition-all duration-200 ${isTerminalOpen
+                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
                   : 'bg-gray-500/20 text-gray-400 border border-gray-500/30 hover:bg-gray-500/30'
-              }`}
+                }`}
               title={isTerminalOpen ? 'Close Terminal' : 'Open Terminal'}
             >
               <TerminalIcon className="w-4 h-4" />
             </button>
-            
+
             {/* Chat Messages Area */}
             <div className={`flex-1 flex flex-col ${isTerminalOpen ? 'min-w-0' : ''}`}>
               {/* Messages */}
@@ -485,7 +484,6 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-medium text-gray-200">Terminal</h3>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">Interactive Agentuity Tutorial</span>
                     <button
                       onClick={toggleTerminal}
                       className="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-gray-300"
