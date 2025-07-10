@@ -1,16 +1,154 @@
 ---
 title: SDKs
-description: Agentuity SDKs
+description: Choose the right Agentuity SDK for your AI agent development. Compare Python vs JavaScript SDKs with features, examples, and framework integrations.
 ---
 
-<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', padding: '1rem' }}>
+import Script from 'next/script';
+
+<Script
+	id="sdks-faq-schema"
+	type="application/ld+json"
+	strategy="afterInteractive"
+>
+	{`
+	{
+		"@context": "https://schema.org",
+		"@type": "FAQPage",
+		"mainEntity": [
+			{
+				"@type": "Question",
+				"name": "Which Agentuity SDK should I choose?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "Choose Python SDK for data science, ML workflows, and backend services. Choose JavaScript/TypeScript SDK for web applications, Node.js services, and frontend integrations. Both SDKs offer the same core functionality for building AI agents."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "What's the difference between Python and JavaScript SDKs?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "Both SDKs provide identical core features for agent development. Python SDK integrates well with ML libraries like scikit-learn and pandas. JavaScript SDK offers native TypeScript support and seamless web integration. Choose based on your existing tech stack."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "Do the SDKs support popular AI frameworks?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "Yes! Python SDK integrates with LangChain, LlamaIndex, and Pydantic. JavaScript SDK supports LangChain.js and other popular frameworks. Both SDKs work with major LLM providers like OpenAI, Anthropic, and others."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "Can I use both SDKs in the same project?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "Absolutely! You can use different SDKs for different parts of your application. For example, use Python for data processing agents and JavaScript for web-facing agents, all within the same Agentuity project."
+				}
+			}
+		]
+	}
+	`}
+</Script>
+
+## Choose Your SDK
+
+Agentuity provides native SDKs for Python and JavaScript/TypeScript, enabling you to build AI agents in your preferred language. Both SDKs offer the same powerful features for creating, deploying, and managing autonomous AI agents.
+
+## SDK Comparison
+
+| Feature | Python SDK | JavaScript SDK |
+|---------|------------|----------------|
+| **Core Agent Features** | ✅ Full support | ✅ Full support |
+| **TypeScript Support** | ❌ | ✅ Native support |
+| **ML Library Integration** | ✅ pandas, scikit-learn, numpy | ⚠️ Limited |
+| **Web Framework Integration** | ⚠️ Flask, FastAPI | ✅ Express, Next.js, React |
+| **LangChain Support** | ✅ LangChain Python | ✅ LangChain.js |
+| **Async/Await** | ✅ asyncio support | ✅ Native promises |
+| **Data Processing** | ✅ Excellent | ✅ Good |
+| **Frontend Integration** | ❌ | ✅ Excellent |
+
+## When to Use Each SDK
+
+### Choose Python SDK When:
+- Building **data-intensive agents** that process large datasets
+- Integrating with **ML/AI libraries** like scikit-learn, pandas, or numpy
+- Developing **backend services** and APIs
+- Working with **data science workflows**
+- Your team has **Python expertise**
+
+### Choose JavaScript SDK When:
+- Building **web applications** with agent integration
+- Creating **real-time user interfaces** for agents
+- Developing **Node.js microservices**
+- Need **TypeScript support** for better developer experience
+- Your team has **JavaScript/web development expertise**
+
+<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', padding: '1rem' }}>
   <Card href="/SDKs/python">
-    <h3>Python SDK</h3>
-    <p>Build AI Agents with our Python SDK</p>
+    <h3>🐍 Python SDK</h3>
+    <p>Perfect for data science, ML workflows, and backend services. Integrates seamlessly with pandas, scikit-learn, and LangChain.</p>
+    <div style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#666' }}>
+      <strong>Popular for:</strong> Data processing • ML pipelines • Backend APIs • Research
+    </div>
   </Card>
   
   <Card href="/SDKs/javascript">
-    <h3>JavaScript SDK</h3>
-    <p>Build AI Agents using our JavaScript/TypeScript SDK</p>
+    <h3>⚡ JavaScript SDK</h3>
+    <p>Ideal for web applications, real-time UIs, and Node.js services. Full TypeScript support with excellent developer experience.</p>
+    <div style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#666' }}>
+      <strong>Popular for:</strong> Web apps • Real-time UIs • Node.js services • Frontend integration
+    </div>
   </Card>
+</div>
+
+## Quick Start Examples
+
+### Python SDK
+```python
+from agentuity import Agent, AgentContext
+
+async def my_agent(ctx: AgentContext, req: AgentRequest) -> AgentResponse:
+    # Process data with pandas, run ML models, etc.
+    result = await process_with_ml_model(req.data)
+    return AgentResponse(data=result)
+```
+
+### JavaScript SDK
+```typescript
+import { Agent, AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
+
+export default async function myAgent(
+  ctx: AgentContext, 
+  req: AgentRequest
+): Promise<AgentResponse> {
+  // Integrate with web APIs, real-time data, etc.
+  const result = await processWebData(req.data);
+  return { data: result };
+}
+```
+
+## Frequently Asked Questions
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+  <div className="p-4 border rounded-lg">
+    <h4 className="font-semibold mb-2">Which SDK should I choose?</h4>
+    <p className="text-sm text-muted-foreground">Choose Python for data science and ML workflows. Choose JavaScript for web apps and real-time UIs. Both offer the same core agent features.</p>
+  </div>
+  
+  <div className="p-4 border rounded-lg">
+    <h4 className="font-semibold mb-2">Can I use both SDKs together?</h4>
+    <p className="text-sm text-muted-foreground">Yes! Use different SDKs for different parts of your application. Python for data processing, JavaScript for web interfaces.</p>
+  </div>
+  
+  <div className="p-4 border rounded-lg">
+    <h4 className="font-semibold mb-2">Do they support popular frameworks?</h4>
+    <p className="text-sm text-muted-foreground">Yes! Python SDK works with LangChain, Pydantic, pandas. JavaScript SDK supports LangChain.js, TypeScript, and web frameworks.</p>
+  </div>
+  
+  <div className="p-4 border rounded-lg">
+    <h4 className="font-semibold mb-2">Which has better performance?</h4>
+    <p className="text-sm text-muted-foreground">Both are optimized for their use cases. Python excels at data processing, JavaScript excels at real-time web interactions.</p>
+  </div>
 </div>

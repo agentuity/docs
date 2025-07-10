@@ -1,10 +1,75 @@
 ---
 title: Installation
-description: Insructions for installing the CLI
+description: Complete guide to installing the Agentuity CLI on Windows, macOS, and Linux. Includes troubleshooting, shell completions, and upgrade instructions.
 ---
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import Script from 'next/script';
+
+<Script
+	id="cli-installation-faq-schema"
+	type="application/ld+json"
+	strategy="afterInteractive"
+>
+	{`
+	{
+		"@context": "https://schema.org",
+		"@type": "FAQPage",
+		"mainEntity": [
+			{
+				"@type": "Question",
+				"name": "How do I install the Agentuity CLI?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "The easiest way is to use the install script: curl -fsS https://agentuity.sh | sh. This automatically detects your operating system and installs the appropriate version. On macOS with Homebrew, it will use brew for installation."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "Does the Agentuity CLI work on Windows?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "Yes, the Agentuity CLI works on Windows using WSL (Windows Subsystem for Linux). The install script only works in the WSL environment, not in native Windows Command Prompt or PowerShell."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "How do I upgrade the Agentuity CLI?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "Use the command 'agentuity upgrade' to upgrade to the latest version. You can check if you have the latest version with 'agentuity version check'."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "How do I enable shell completions for the CLI?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "Shell completions are automatically set up for Bash and Zsh on macOS and Linux when using the installer. For manual setup, use 'agentuity completion bash', 'agentuity completion zsh', or 'agentuity completion fish' depending on your shell."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "Can I install the CLI manually without the install script?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "Yes, you can manually download the CLI from the GitHub releases page at https://github.com/agentuity/cli/releases, extract the file, and add the executable to your system PATH."
+				}
+			}
+		]
+	}
+	`}
+</Script>
 
 The Agentuity CLI is a command line tool for managing your Agentuity projects. It's a cross-platform tool that can be used on Windows (using WSL), MacOS, and Linux.
+
+## Why Use the Agentuity CLI?
+
+The CLI provides the fastest way to:
+- **Deploy AI agents** to the cloud in minutes
+- **Manage projects** and environments locally and remotely  
+- **Test agents locally** before deploying to production
+- **Access cloud services** like vector memory and AI gateway
+- **Automate workflows** with scripting and CI/CD integration
 
 ### Install Script
 
@@ -111,3 +176,37 @@ You can manually set up completions for any supported shell using the `agentuity
     <CLICommand command="agentuity completion fish > ~/.config/fish/completions/agentuity.fish" />
   </Tab>
 </Tabs>
+
+## Frequently Asked Questions
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+  <div className="p-4 border rounded-lg">
+    <h4 className="font-semibold mb-2">How do I install the CLI?</h4>
+    <p className="text-sm text-muted-foreground">Use the install script: `curl -fsS https://agentuity.sh | sh`. It automatically detects your OS and installs the right version.</p>
+  </div>
+  
+  <div className="p-4 border rounded-lg">
+    <h4 className="font-semibold mb-2">Does it work on Windows?</h4>
+    <p className="text-sm text-muted-foreground">Yes, but only in WSL (Windows Subsystem for Linux). The install script doesn't work in native Windows Command Prompt.</p>
+  </div>
+  
+  <div className="p-4 border rounded-lg">
+    <h4 className="font-semibold mb-2">How do I upgrade?</h4>
+    <p className="text-sm text-muted-foreground">Run `agentuity upgrade` to get the latest version. Check if you need an upgrade with `agentuity version check`.</p>
+  </div>
+  
+  <div className="p-4 border rounded-lg">
+    <h4 className="font-semibold mb-2">Shell completions not working?</h4>
+    <p className="text-sm text-muted-foreground">They're auto-setup for Bash/Zsh on macOS/Linux. For manual setup, use `agentuity completion [shell]` commands above.</p>
+  </div>
+</div>
+
+## Troubleshooting
+
+**Installation fails on macOS**: Make sure you have Xcode command line tools installed: `xcode-select --install`
+
+**Permission denied errors**: The install script may need sudo access. If you prefer not to use sudo, try manual installation.
+
+**CLI not found after installation**: Make sure the CLI is in your PATH. Try restarting your terminal or running `source ~/.bashrc` (or `~/.zshrc` for Zsh).
+
+**WSL issues on Windows**: Ensure you're running the install script from within WSL, not from Windows Command Prompt or PowerShell.
