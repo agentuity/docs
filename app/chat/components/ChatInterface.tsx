@@ -10,7 +10,7 @@ import { Terminal } from '@xterm/xterm';
 import { DynamicIsland } from '../../../components/DynamicIsland/DynamicIsland';
 import { useTutorial } from '../../../components/DynamicIsland/useTutorial';
 import { TutorialStep } from '../../../components/DynamicIsland/types';
-import TerminalComponent from '../../../components/terminal/TerminalComponent';
+import DynamicTerminalComponent from '../../../components/terminal/DynamicTerminalComponent';
 
 // Extended tutorial step with keywords for chat detection
 interface ChatTutorialStep extends TutorialStep {
@@ -516,7 +516,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                 </div>
               </div>
               <div className={`flex-1 p-4 ${isTerminalOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
-                <TerminalComponent
+                <DynamicTerminalComponent
                   onReady={handleTerminalReady}
                   onClose={handleTerminalClose}
                   className="h-full"

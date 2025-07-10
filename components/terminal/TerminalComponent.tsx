@@ -32,165 +32,10 @@ export default function TerminalComponent({
     if (onReady) {
       onReady(terminal);
     }
-  }, []);
+  }, [onReady]);
 
-  useEffect(() => {
-    // Prevent double initialization (for React StrictMode)
-    if (!terminalRef.current || isInitialized || initializationRef.current) return;
-    
-    initializationRef.current = true;
-
-    // Create terminal instance
-    const terminal = new Terminal({
-      cursorBlink: true,
-      fontSize: 14,
-      fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
-      theme: {
-        background: '#1a1a1a',
-        foreground: '#ffffff',
-        cursor: '#ffffff',
-        selection: '#ffffff20',
-        black: '#000000',
-        red: '#ff6b6b',
-        green: '#51cf66',
-        yellow: '#ffd43b',
-        blue: '#339af0',
-        magenta: '#f06595',
-        cyan: '#22d3ee',
-        white: '#ffffff',
-        brightBlack: '#495057',
-        brightRed: '#ff8787',
-        brightGreen: '#69db7c',
-        brightYellow: '#ffe066',
-        brightBlue: '#4dabf7',
-        brightMagenta: '#f783ac',
-        brightCyan: '#5fecff',
-        brightWhite: '#ffffff'
-      },
-      cols: 80,
-      rows: 24,
-      scrollback: 1000,
-      allowTransparency: false,
-    });
-
-    // Create fit addon
-    const fitAddon = new FitAddon();
-    terminal.loadAddon(fitAddon);
-
-    // Open terminal in DOM
-    terminal.open(terminalRef.current);
-    
-    // Store references first
-    terminalInstance.current = terminal;
-    fitAddonRef.current = fitAddon;
-    setIsInitialized(true);
-
-    // Delay fitting to ensure container is properly sized
-    setTimeout(() => {
-      try {
-        fitAddon.fit();
-        terminal.focus();
-      } catch (error) {
-        console.warn('Error fitting terminal:', error);
-      }
-    }, 100);
-
-    // Setup terminal input handling
-    const inputHandler = terminal.onData((data) => {
-      if (websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
-        websocketRef.current.send(JSON.stringify({
-          type: 'input',
-          data: data
-        }));
-      }
-    });
-
-    // Setup terminal resize handling
-    const resizeHandler = terminal.onResize(({ cols, rows }) => {
-      if (websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
-        websocketRef.current.send(JSON.stringify({
-          type: 'resize',
-          cols,
-          rows
-        }));
-      }
-    });
-
-    // Connect to WebSocket
-    connectWebSocket(terminal);
-
-    // Handle window resize
-    const handleWindowResize = () => {
-      if (fitAddonRef.current && terminalInstance.current) {
-        try {
-          fitAddonRef.current.fit();
-        } catch (error) {
-          console.warn('Error fitting terminal on resize:', error);
-        }
-      }
-    };
-
-    window.addEventListener('resize', handleWindowResize);
-
-    // Call onReady callback
-    stableOnReady(terminal);
-
-    // Cleanup on unmount
-    return () => {
-      window.removeEventListener('resize', handleWindowResize);
-      
-      // Clean up terminal handlers
-      try {
-        inputHandler?.dispose();
-        resizeHandler?.dispose();
-      } catch (error) {
-        console.warn('Error disposing terminal handlers:', error);
-      }
-      
-      if (websocketRef.current) {
-        websocketRef.current.close();
-        websocketRef.current = null;
-      }
-      
-      if (terminalInstance.current) {
-        terminalInstance.current.dispose();
-        terminalInstance.current = null;
-      }
-      
-      setIsInitialized(false);
-      initializationRef.current = false;
-    };
-  }, []); // Empty dependency array to prevent re-runs
-
-  // Add effect to handle terminal fitting when container size changes
-  useEffect(() => {
-    if (isInitialized && fitAddonRef.current && terminalRef.current) {
-      const resizeObserver = new ResizeObserver(() => {
-        if (fitAddonRef.current) {
-          try {
-            fitAddonRef.current.fit();
-          } catch (error) {
-            console.warn('Error fitting terminal on container resize:', error);
-          }
-        }
-      });
-
-      resizeObserver.observe(terminalRef.current);
-
-      return () => {
-        resizeObserver.disconnect();
-      };
-    }
-  }, [isInitialized]);
-
-  // Separate effect to handle onReady changes after initialization
-  useEffect(() => {
-    if (isInitialized && terminalInstance.current && onReady) {
-      onReady(terminalInstance.current);
-    }
-  }, [onReady, isInitialized]);
-
-  const connectWebSocket = (terminal: Terminal) => {
+  // WebSocket connection function
+  const connectWebSocket = useCallback((terminal: Terminal) => {
     // Prevent multiple connections
     if (websocketRef.current && websocketRef.current.readyState !== WebSocket.CLOSED) {
       return;
@@ -267,25 +112,184 @@ export default function TerminalComponent({
       terminal.write('\x1b[31m✗ Failed to connect to terminal server\x1b[0m\r\n');
       terminal.write('\x1b[33mMake sure the terminal server is running on port 8080\x1b[0m\r\n');
     }
-  };
+  }, [sessionId, onClose]);
 
-  const reconnect = () => {
+  // Terminal initialization
+  useEffect(() => {
+    // Prevent double initialization (for React StrictMode)
+    if (!terminalRef.current || isInitialized || initializationRef.current) return;
+    
+    initializationRef.current = true;
+
+    // Create terminal instance
+    const terminal = new Terminal({
+      cursorBlink: true,
+      fontSize: 14,
+      fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+      theme: {
+        background: '#1a1a1a',
+        foreground: '#ffffff',
+        cursor: '#ffffff',
+        selectionBackground: '#ffffff20',
+        black: '#000000',
+        red: '#ff6b6b',
+        green: '#51cf66',
+        yellow: '#ffd43b',
+        blue: '#339af0',
+        magenta: '#f06595',
+        cyan: '#22d3ee',
+        white: '#ffffff',
+        brightBlack: '#495057',
+        brightRed: '#ff8787',
+        brightGreen: '#69db7c',
+        brightYellow: '#ffe066',
+        brightBlue: '#4dabf7',
+        brightMagenta: '#f783ac',
+        brightCyan: '#5fecff',
+        brightWhite: '#ffffff'
+      },
+      cols: 80,
+      rows: 24,
+      scrollback: 1000,
+      allowTransparency: false,
+    });
+
+    // Create fit addon
+    const fitAddon = new FitAddon();
+    terminal.loadAddon(fitAddon);
+
+    // Open terminal in DOM
+    terminal.open(terminalRef.current);
+    
+    // Store references first
+    terminalInstance.current = terminal;
+    fitAddonRef.current = fitAddon;
+    setIsInitialized(true);
+
+    // Setup terminal input handling
+    const inputHandler = terminal.onData((data) => {
+      if (websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
+        websocketRef.current.send(JSON.stringify({
+          type: 'input',
+          data: data
+        }));
+      }
+    });
+
+    // Setup terminal resize handling
+    const resizeHandler = terminal.onResize(({ cols, rows }) => {
+      if (websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
+        websocketRef.current.send(JSON.stringify({
+          type: 'resize',
+          cols,
+          rows
+        }));
+      }
+    });
+
+    // Delay fitting to ensure container is properly sized
+    setTimeout(() => {
+      try {
+        fitAddon.fit();
+        terminal.focus();
+      } catch (error) {
+        console.warn('Error fitting terminal:', error);
+      }
+    }, 100);
+
+    // Connect to WebSocket
+    connectWebSocket(terminal);
+
+    // Handle window resize
+    const handleWindowResize = () => {
+      if (fitAddonRef.current) {
+        try {
+          fitAddonRef.current.fit();
+        } catch (error) {
+          console.warn('Error fitting terminal on resize:', error);
+        }
+      }
+    };
+
+    window.addEventListener('resize', handleWindowResize);
+
+    // Call onReady callback
+    stableOnReady(terminal);
+
+    // Cleanup on unmount
+    return () => {
+      window.removeEventListener('resize', handleWindowResize);
+      
+      // Clean up terminal handlers
+      try {
+        inputHandler?.dispose();
+        resizeHandler?.dispose();
+      } catch (error) {
+        console.warn('Error disposing terminal handlers:', error);
+      }
+      
+      if (websocketRef.current) {
+        websocketRef.current.close();
+        websocketRef.current = null;
+      }
+      
+      if (terminalInstance.current) {
+        terminalInstance.current.dispose();
+        terminalInstance.current = null;
+      }
+      
+      setIsInitialized(false);
+      initializationRef.current = false;
+    };
+  }, [connectWebSocket, stableOnReady]);
+
+  // Add effect to handle terminal fitting when container size changes
+  useEffect(() => {
+    if (isInitialized && fitAddonRef.current && terminalRef.current) {
+      const resizeObserver = new ResizeObserver(() => {
+        if (fitAddonRef.current) {
+          try {
+            fitAddonRef.current.fit();
+          } catch (error) {
+            console.warn('Error fitting terminal on container resize:', error);
+          }
+        }
+      });
+
+      resizeObserver.observe(terminalRef.current);
+
+      return () => {
+        resizeObserver.disconnect();
+      };
+    }
+  }, [isInitialized]);
+
+  // Separate effect to handle onReady changes after initialization
+  useEffect(() => {
+    if (isInitialized && terminalInstance.current && onReady) {
+      onReady(terminalInstance.current);
+    }
+  }, [onReady, isInitialized]);
+
+  // Reconnect function
+  const reconnect = useCallback(() => {
     if (terminalInstance.current) {
       setConnectionError(null);
       terminalInstance.current.write('\r\n');
       connectWebSocket(terminalInstance.current);
     }
-  };
+  }, [connectWebSocket]);
 
-  const executeCommand = (command: string) => {
+  // Execute command function
+  const executeCommand = useCallback((command: string) => {
     if (websocketRef.current && websocketRef.current.readyState === WebSocket.OPEN) {
       websocketRef.current.send(JSON.stringify({
         type: 'command',
         command: command
       }));
     }
-  };
-
+  }, []);
+ 
   return (
     <div className={`relative ${className}`}>
       {/* Connection Status */}
