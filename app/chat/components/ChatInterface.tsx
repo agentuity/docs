@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { ChatMessage, ChatInterfaceProps, ChatSession } from '../types';
 import { ChatMessageComponent } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { SessionSidebar } from './SessionSidebar';
-import { HelpCircle, Terminal } from 'lucide-react';
+import { HelpCircle, Terminal as TerminalIcon } from 'lucide-react';
+import { Terminal } from '@xterm/xterm';
 import { DynamicIsland } from '../../../components/DynamicIsland/DynamicIsland';
 import { useTutorial } from '../../../components/DynamicIsland/useTutorial';
 import { TutorialStep } from '../../../components/DynamicIsland/types';
@@ -148,6 +149,36 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
 
   // Tutorial state
   const tutorialHook = useTutorial(initialTutorial);
+
+  // Stabilize the onReady callback to prevent re-renders
+  const handleTerminalReady = useCallback((terminal: Terminal) => {
+    console.log('Terminal ready:', terminal);
+    // Initialize with welcome message and tutorial
+    terminal.writeln('\x1b[36m╔═══════════════════════════════════════════════════════════════╗\x1b[0m');
+    terminal.writeln('\x1b[36m║                🚀 Agentuity Interactive Tutorial 🚀           ║\x1b[0m');
+    terminal.writeln('\x1b[36m╚═══════════════════════════════════════════════════════════════╝\x1b[0m');
+    terminal.writeln('');
+    terminal.writeln('\x1b[32m✓ Terminal connected and ready!\x1b[0m');
+    terminal.writeln('');
+    terminal.writeln('\x1b[33m📚 Tutorial: Create Your First Agentuity Agent\x1b[0m');
+    terminal.writeln('');
+    terminal.writeln('\x1b[97mStep 1: Create a new agent project\x1b[0m');
+    terminal.writeln('\x1b[36m   → agentuity agent create my-first-agent\x1b[0m');
+    terminal.writeln('');
+    terminal.writeln('\x1b[97mStep 2: Configure your agent\x1b[0m');
+    terminal.writeln('\x1b[36m   → agentuity agent configure\x1b[0m');
+    terminal.writeln('');
+    terminal.writeln('\x1b[97mStep 3: Deploy your agent\x1b[0m');
+    terminal.writeln('\x1b[36m   → agentuity deploy\x1b[0m');
+    terminal.writeln('');
+    terminal.writeln('\x1b[90m💡 Tip: Type any command to get started!\x1b[0m');
+    terminal.writeln('');
+  }, []);
+
+  // Stabilize the onClose callback
+  const handleTerminalClose = useCallback(() => {
+    setIsTerminalOpen(false);
+  }, []);
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
@@ -395,8 +426,9 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
               }`}
               title={isTerminalOpen ? 'Close Terminal' : 'Open Terminal'}
             >
-              <Terminal className="w-4 h-4" />
+              <TerminalIcon className="w-4 h-4" />
             </button>
+            
             {/* Chat Messages Area */}
             <div className={`flex-1 flex flex-col ${isTerminalOpen ? 'min-w-0' : ''}`}>
               {/* Messages */}
@@ -467,54 +499,30 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
               </div>
             </div>
 
-            {/* Terminal Panel */}
-            {isTerminalOpen && (
-              <div className="w-1/2 border-l border-white/8 flex flex-col min-w-0">
-                <div className="p-4 border-b border-white/8">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-gray-200">Terminal</h3>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">Interactive Agentuity Tutorial</span>
-                      <button
-                        onClick={toggleTerminal}
-                        className="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-gray-300"
-                      >
-                        ×
-                      </button>
-                    </div>
+            {/* Terminal Panel - Always mounted but conditionally visible */}
+            <div className={`${isTerminalOpen ? 'w-1/2' : 'w-0'} border-l border-white/8 flex flex-col min-w-0 transition-all duration-300 ease-in-out overflow-hidden`}>
+              <div className={`p-4 border-b border-white/8 ${isTerminalOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-gray-200">Terminal</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">Interactive Agentuity Tutorial</span>
+                    <button
+                      onClick={toggleTerminal}
+                      className="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-gray-300"
+                    >
+                      ×
+                    </button>
                   </div>
                 </div>
-                <div className="flex-1 p-4">
-                                     <TerminalComponent
-                     onReady={(terminal) => {
-                       console.log('Terminal ready:', terminal);
-                       // Initialize with welcome message and tutorial
-                       terminal.writeln('\x1b[36m╔═══════════════════════════════════════════════════════════════╗\x1b[0m');
-                       terminal.writeln('\x1b[36m║                🚀 Agentuity Interactive Tutorial 🚀           ║\x1b[0m');
-                       terminal.writeln('\x1b[36m╚═══════════════════════════════════════════════════════════════╝\x1b[0m');
-                       terminal.writeln('');
-                       terminal.writeln('\x1b[32m✓ Terminal connected and ready!\x1b[0m');
-                       terminal.writeln('');
-                       terminal.writeln('\x1b[33m📚 Tutorial: Create Your First Agentuity Agent\x1b[0m');
-                       terminal.writeln('');
-                       terminal.writeln('\x1b[97mStep 1: Create a new agent project\x1b[0m');
-                       terminal.writeln('\x1b[36m   → agentuity agent create my-first-agent\x1b[0m');
-                       terminal.writeln('');
-                       terminal.writeln('\x1b[97mStep 2: Configure your agent\x1b[0m');
-                       terminal.writeln('\x1b[36m   → agentuity agent configure\x1b[0m');
-                       terminal.writeln('');
-                       terminal.writeln('\x1b[97mStep 3: Deploy your agent\x1b[0m');
-                       terminal.writeln('\x1b[36m   → agentuity deploy\x1b[0m');
-                       terminal.writeln('');
-                       terminal.writeln('\x1b[90m💡 Tip: Type any command to get started!\x1b[0m');
-                       terminal.writeln('');
-                     }}
-                     onClose={() => setIsTerminalOpen(false)}
-                     className="h-full"
-                   />
-                </div>
               </div>
-                         )}
+              <div className={`flex-1 p-4 ${isTerminalOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
+                <TerminalComponent
+                  onReady={handleTerminalReady}
+                  onClose={handleTerminalClose}
+                  className="h-full"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
