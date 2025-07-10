@@ -5,10 +5,11 @@ import { ChatMessage, ChatInterfaceProps, ChatSession } from '../types';
 import { ChatMessageComponent } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { SessionSidebar } from './SessionSidebar';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, Terminal } from 'lucide-react';
 import { DynamicIsland } from '../../../components/DynamicIsland/DynamicIsland';
 import { useTutorial } from '../../../components/DynamicIsland/useTutorial';
 import { TutorialStep } from '../../../components/DynamicIsland/types';
+import TerminalComponent from '../../../components/terminal/TerminalComponent';
 
 // Extended tutorial step with keywords for chat detection
 interface ChatTutorialStep extends TutorialStep {
@@ -29,11 +30,11 @@ const tutorialSteps: ChatTutorialStep[] = [
   {
     id: 'create-agent',
     title: 'Create Your First Agent',
-    description: 'Learn how to create and configure your first AI agent',
+    description: 'Learn how to create and configure your first AI agent using the terminal',
     icon: '🤖',
     estimatedTime: '10 min',
     completed: false,
-    keywords: ['create', 'agent', 'new agent', 'build', 'make']
+    keywords: ['create', 'agent', 'new agent', 'build', 'make', 'terminal', 'agentuity create']
   },
   {
     id: 'configure',
@@ -74,11 +75,11 @@ const initialTutorial = {
 };
 
 const tutorialMessages = {
-  welcome: "Welcome to Agentuity! 🚀 I'm here to help you build amazing AI agents. Let's start by creating your first agent - just ask me about creating an agent!",
-  'create-agent': "Great! Let's create your first agent. You can use the `agentuity agent create` command, or I can guide you through the process step by step. What would you prefer?",
-  configure: "Perfect! Now let's configure your agent. We'll need to set up authentication, environment variables, and other settings. What type of authentication would you like to use?",
-  deploy: "Excellent! Time to deploy your agent to the cloud. Make sure your code is ready, then we can use `agentuity deploy` to launch it live!",
-  monitor: "Amazing! Your agent is now live. Let's explore monitoring tools and optimization strategies to ensure peak performance. Check out the analytics dashboard!"
+  welcome: "Welcome to Agentuity! 🚀 I'm here to help you build amazing AI agents. Let's start by creating your first agent - click the terminal button to get started with interactive commands!",
+  'create-agent': "Great! Let's create your first agent using the terminal. Click the terminal button in the top-right corner, then run: `agentuity agent create my-first-agent`. This will guide you through the setup process step by step!",
+  configure: "Perfect! Now let's configure your agent. In the terminal, you can set up authentication and environment variables. Try running: `agentuity agent configure` to see available options.",
+  deploy: "Excellent! Time to deploy your agent to the cloud. In the terminal, run: `agentuity deploy` to launch your agent live! Make sure your code is ready first.",
+  monitor: "Amazing! Your agent is now live. Use the terminal to check logs with: `agentuity logs` and monitor performance with: `agentuity status`. You can also explore the analytics dashboard!"
 };
 
 // Generate unique IDs
@@ -142,6 +143,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
   const [sessions, setSessions] = useState<ChatSession[]>(createDummySessions());
   const [executingFiles, setExecutingFiles] = useState<Set<string>>(new Set());
   const [currentSessionId, setCurrentSessionId] = useState(sessionId);
+  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Tutorial state
@@ -179,6 +181,13 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
     if (isTutorialMessage) {
       const responseText = tutorialMessages[currentStep.id as keyof typeof tutorialMessages];
       if (responseText) {
+        // Auto-open terminal for terminal-based tutorial steps
+        if (currentStep.id === 'create-agent' || currentStep.id === 'configure' || currentStep.id === 'deploy') {
+          setTimeout(() => {
+            setIsTerminalOpen(true);
+          }, 1000); // Delay to let the message appear first
+        }
+
         return {
           id: generateId(),
           type: 'assistant',
@@ -337,6 +346,19 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
     window.history.pushState({}, '', `/chat/${newSessionId}`);
   };
 
+  // Terminal handlers
+  const toggleTerminal = () => {
+    setIsTerminalOpen(!isTerminalOpen);
+  };
+
+  const handleTerminalCommand = (command: string) => {
+    // Handle special terminal commands for tutorials
+    if (command.includes('agentuity')) {
+      // This could trigger tutorial progression
+      console.log('Agentuity command detected:', command);
+    }
+  };
+
   return (
     <div className="flex h-screen relative overflow-hidden agentuity-background chat-interface">
       <div className="relative z-10 flex w-full h-full">
@@ -352,7 +374,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
 
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col relative p-2">
-          <div className="flex-1 flex flex-col bg-black/20 border border-white/10 rounded-2xl overflow-hidden relative">
+          <div className={`flex-1 flex ${isTerminalOpen ? 'flex-row' : 'flex-col'} bg-black/20 border border-white/10 rounded-2xl overflow-hidden relative`}>
             {/* Dynamic Island - positioned at top center of chat window */}
             <div className="absolute top-4 left-0 right-0 flex justify-center z-50">
               <DynamicIsland
@@ -362,69 +384,137 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                 onSkipStep={tutorialHook.skipStep}
               />
             </div>
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 agentuity-scrollbar">
-              {messages.length === 0 && (
-                <div className="text-center py-20">
-                  <div className="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-cyan-500/20">
-                    <HelpCircle className="w-8 h-8 text-cyan-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-200 mb-3">
-                    Welcome to Agentuity
-                  </h3>
-                  <p className="text-sm text-gray-300 max-w-md mx-auto leading-relaxed mb-8">
-                    Get started with AI agents or continue your learning journey
-                  </p>
+            
+            {/* Terminal Toggle Button */}
+            <button
+              onClick={toggleTerminal}
+              className={`absolute top-4 right-4 z-50 p-2 rounded-lg transition-all duration-200 ${
+                isTerminalOpen 
+                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' 
+                  : 'bg-gray-500/20 text-gray-400 border border-gray-500/30 hover:bg-gray-500/30'
+              }`}
+              title={isTerminalOpen ? 'Close Terminal' : 'Open Terminal'}
+            >
+              <Terminal className="w-4 h-4" />
+            </button>
+            {/* Chat Messages Area */}
+            <div className={`flex-1 flex flex-col ${isTerminalOpen ? 'min-w-0' : ''}`}>
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6 agentuity-scrollbar">
+                {messages.length === 0 && (
+                  <div className="text-center py-20">
+                    <div className="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-cyan-500/20">
+                      <HelpCircle className="w-8 h-8 text-cyan-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-200 mb-3">
+                      Welcome to Agentuity
+                    </h3>
+                    <p className="text-sm text-gray-300 max-w-md mx-auto leading-relaxed mb-8">
+                      Get started with AI agents or continue your learning journey
+                    </p>
 
-                  {/* Quick Start Options */}
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto mb-8">
-                    <button
-                      onClick={() => sendMessage("Start New Tutorial")}
-                      className="flex items-center gap-2 px-4 py-3 agentuity-button-primary rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95"
-                    >
-                      <span>🚀</span>
-                      Start New Tutorial
-                    </button>
-                    <button
-                      onClick={() => sendMessage("Continue My Tutorial")}
-                      className="flex items-center gap-2 px-4 py-3 agentuity-button rounded-xl text-sm font-medium text-gray-200 transition-all duration-200 hover:scale-105 active:scale-95"
-                    >
-                      <span>📚</span>
-                      Continue My Tutorial
-                    </button>
-                  </div>
+                    {/* Quick Start Options */}
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto mb-8">
+                      <button
+                        onClick={() => {
+                          sendMessage("Create my first agent");
+                          setIsTerminalOpen(true);
+                        }}
+                        className="flex items-center gap-2 px-4 py-3 agentuity-button-primary rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95"
+                      >
+                        <span>🚀</span>
+                        Create First Agent
+                      </button>
+                      <button
+                        onClick={() => sendMessage("Continue My Tutorial")}
+                        className="flex items-center gap-2 px-4 py-3 agentuity-button rounded-xl text-sm font-medium text-gray-200 transition-all duration-200 hover:scale-105 active:scale-95"
+                      >
+                        <span>📚</span>
+                        Continue My Tutorial
+                      </button>
+                    </div>
 
-                  <div className="text-xs text-gray-400 max-w-sm mx-auto">
-                    Or start typing below for any other questions about Agentuity
+                    <div className="text-xs text-gray-400 max-w-sm mx-auto">
+                      Or start typing below for any other questions about Agentuity
+                    </div>
+                  </div>
+                )}
+
+                {messages.map((message) => (
+                  <ChatMessageComponent
+                    key={message.id}
+                    message={message}
+                    onCodeExecute={executeCode}
+                    onCodeChange={handleCodeChange}
+                    executionState={message.codeBlock?.filename && executingFiles.has(message.codeBlock.filename) ? 'running' : 'idle'}
+                  />
+                ))}
+                {/* Invisible div to scroll to */}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input */}
+              <div className="p-4 border-t border-white/8">
+                <ChatInput
+                  currentInput={currentInput}
+                  setCurrentInput={setCurrentInput}
+                  loading={loading}
+                  sendMessage={(message: string) => {
+                    sendMessage(message);
+                    setCurrentInput('');
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Terminal Panel */}
+            {isTerminalOpen && (
+              <div className="w-1/2 border-l border-white/8 flex flex-col min-w-0">
+                <div className="p-4 border-b border-white/8">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-gray-200">Terminal</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">Interactive Agentuity Tutorial</span>
+                      <button
+                        onClick={toggleTerminal}
+                        className="p-1 rounded hover:bg-white/10 text-gray-400 hover:text-gray-300"
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
                 </div>
-              )}
-
-              {messages.map((message) => (
-                <ChatMessageComponent
-                  key={message.id}
-                  message={message}
-                  onCodeExecute={executeCode}
-                  onCodeChange={handleCodeChange}
-                  executionState={message.codeBlock?.filename && executingFiles.has(message.codeBlock.filename) ? 'running' : 'idle'}
-                />
-              ))}
-              {/* Invisible div to scroll to */}
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input */}
-            <div className="p-4 border-t border-white/8">
-              <ChatInput
-                currentInput={currentInput}
-                setCurrentInput={setCurrentInput}
-                loading={loading}
-                sendMessage={(message: string) => {
-                  sendMessage(message);
-                  setCurrentInput('');
-                }}
-              />
-            </div>
+                <div className="flex-1 p-4">
+                                     <TerminalComponent
+                     onReady={(terminal) => {
+                       console.log('Terminal ready:', terminal);
+                       // Initialize with welcome message and tutorial
+                       terminal.writeln('\x1b[36m╔═══════════════════════════════════════════════════════════════╗\x1b[0m');
+                       terminal.writeln('\x1b[36m║                🚀 Agentuity Interactive Tutorial 🚀           ║\x1b[0m');
+                       terminal.writeln('\x1b[36m╚═══════════════════════════════════════════════════════════════╝\x1b[0m');
+                       terminal.writeln('');
+                       terminal.writeln('\x1b[32m✓ Terminal connected and ready!\x1b[0m');
+                       terminal.writeln('');
+                       terminal.writeln('\x1b[33m📚 Tutorial: Create Your First Agentuity Agent\x1b[0m');
+                       terminal.writeln('');
+                       terminal.writeln('\x1b[97mStep 1: Create a new agent project\x1b[0m');
+                       terminal.writeln('\x1b[36m   → agentuity agent create my-first-agent\x1b[0m');
+                       terminal.writeln('');
+                       terminal.writeln('\x1b[97mStep 2: Configure your agent\x1b[0m');
+                       terminal.writeln('\x1b[36m   → agentuity agent configure\x1b[0m');
+                       terminal.writeln('');
+                       terminal.writeln('\x1b[97mStep 3: Deploy your agent\x1b[0m');
+                       terminal.writeln('\x1b[36m   → agentuity deploy\x1b[0m');
+                       terminal.writeln('');
+                       terminal.writeln('\x1b[90m💡 Tip: Type any command to get started!\x1b[0m');
+                       terminal.writeln('');
+                     }}
+                     onClose={() => setIsTerminalOpen(false)}
+                     className="h-full"
+                   />
+                </div>
+              </div>
+                         )}
           </div>
         </div>
       </div>
