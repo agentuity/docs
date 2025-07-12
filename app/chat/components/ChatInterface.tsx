@@ -144,11 +144,96 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
   const [sessions, setSessions] = useState<ChatSession[]>(createDummySessions());
   const [executingFiles, setExecutingFiles] = useState<Set<string>>(new Set());
   const [currentSessionId, setCurrentSessionId] = useState(sessionId);
-  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+  const [editorContent, setEditorContent] = useState(`print("Hello, World!")`);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [executionResult, setExecutionResult] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Tutorial state
   const tutorialHook = useTutorial(initialTutorial);
+
+  // Add toggle function after handleTerminalClose
+  const toggleEditor = () => {
+    setEditorOpen(!editorOpen);
+  };
+
+  // Add WebSocket state for coding session
+  const [codingSocket, setCodingSocket] = useState<WebSocket | null>(null);
+  const [codingSessionReady, setCodingSessionReady] = useState(false);
+
+  // Initialize coding WebSocket connection
+  useEffect(() => {
+    if (editorOpen && !codingSocket) {
+      const ws = new WebSocket(`ws://localhost:8082/coding?sessionId=${currentSessionId}`);
+      
+      ws.onopen = () => {
+        console.log('Coding WebSocket connected');
+        setCodingSocket(ws);
+      };
+      
+      ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        
+        switch (message.type) {
+          case 'connected':
+            setCodingSessionReady(true);
+            setExecutionResult('Coding session ready! 🐍');
+            break;
+            
+          case 'execution_result':
+            if (message.success) {
+              setExecutionResult(`Output:\n${message.output || '(no output)'}`);
+            } else {
+              setExecutionResult(`Error:\n${message.error}`);
+            }
+            break;
+            
+          case 'error':
+            setExecutionResult(`Session Error: ${message.message}`);
+            break;
+        }
+      };
+      
+      ws.onclose = () => {
+        console.log('Coding WebSocket disconnected');
+        setCodingSocket(null);
+        setCodingSessionReady(false);
+      };
+      
+      ws.onerror = (error) => {
+        console.error('Coding WebSocket error:', error);
+        setExecutionResult('Connection error - please try again');
+      };
+    }
+    
+    return () => {
+      if (codingSocket) {
+        codingSocket.close();
+      }
+    };
+  }, [editorOpen, currentSessionId]);
+
+  // Update runCode to use WebSocket
+  const runCode = async () => {
+    if (!codingSocket || !codingSessionReady) {
+      setExecutionResult('Coding session not ready - please wait...');
+      return;
+    }
+    
+    setExecutionResult('Running code...');
+    
+    codingSocket.send(JSON.stringify({
+      type: 'execute',
+      code: editorContent
+    }));
+  };
+
+  // Add effect after existing useEffects
+  useEffect(() => {
+    if (tutorialHook.tutorial.isActive && tutorialHook.tutorial.currentStep > 0) {
+      setEditorOpen(true);
+    }
+  }, [tutorialHook.tutorial.currentStep, tutorialHook.tutorial.isActive]);
 
   // Stabilize the onReady callback to prevent re-renders
   const handleTerminalReady = useCallback((terminal: Terminal) => {
@@ -157,7 +242,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
 
   // Stabilize the onClose callback
   const handleTerminalClose = useCallback(() => {
-    setIsTerminalOpen(false);
+    // setIsTerminalOpen(false); // This is now handled by toggleEditor
   }, []);
 
   // Auto-scroll to bottom when new messages are added
@@ -195,8 +280,9 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
         // Auto-open terminal for terminal-based tutorial steps
         if (currentStep.id === 'create-agent' || currentStep.id === 'configure' || currentStep.id === 'deploy') {
           setTimeout(() => {
-            setIsTerminalOpen(true);
-          }, 1000); // Delay to let the message appear first
+            // setIsTerminalOpen(true);
+            setEditorOpen(true);
+          }, 1000);
         }
 
         return {
@@ -357,19 +443,6 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
     window.history.pushState({}, '', `/chat/${newSessionId}`);
   };
 
-  // Terminal handlers
-  const toggleTerminal = () => {
-    setIsTerminalOpen(!isTerminalOpen);
-  };
-
-  const handleTerminalCommand = (command: string) => {
-    // Handle special terminal commands for tutorials
-    if (command.includes('agentuity')) {
-      // This could trigger tutorial progression
-      console.log('Agentuity command detected:', command);
-    }
-  };
-
   return (
     <div className="flex h-screen relative overflow-hidden agentuity-background chat-interface">
       <div className="relative z-10 flex w-full h-full">
@@ -387,29 +460,27 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
         <div className="flex-1 flex flex-col relative p-2">
           <div className={`flex-1 flex flex-row bg-black/20 border border-white/10 rounded-2xl overflow-hidden relative`}>
             {/* Dynamic Island - positioned at top center of chat window */}
-            <div className="absolute top-4 left-0 right-0 flex justify-center z-50">
-              <DynamicIsland
-                tutorial={tutorialHook.tutorial}
-                onNextStep={tutorialHook.nextStep}
-                onPreviousStep={tutorialHook.previousStep}
-                onSkipStep={tutorialHook.skipStep}
-              />
-            </div>
+
 
             {/* Terminal Toggle Button */}
             <button
-              onClick={toggleTerminal}
-              className={`absolute top-4 right-4 z-50 p-2 rounded-lg transition-all duration-200 ${isTerminalOpen
-                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                : 'bg-gray-500/20 text-gray-400 border border-gray-500/30 hover:bg-gray-500/30'
-                }`}
-              title={isTerminalOpen ? 'Close Terminal' : 'Open Terminal'}
+              onClick={toggleEditor}
+              className={`absolute top-4 right-4 z-50 p-2 rounded-lg transition-all duration-200 ${editorOpen ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'bg-gray-500/20 text-gray-400 border border-gray-500/30 hover:bg-gray-500/30'}`}
+              title={editorOpen ? 'Close Editor' : 'Open Editor'}
             >
               <TerminalIcon className="w-4 h-4" />
             </button>
 
             {/* Chat Messages Area */}
-            <div className={`flex-1 flex flex-col ${isTerminalOpen ? 'min-w-0' : ''}`}>
+            <div className={`flex-1 flex flex-col ${editorOpen ? 'min-w-0' : ''}`}>
+              <div className="absolute top-4 left-0 right-0 flex justify-center z-50">
+                <DynamicIsland
+                  tutorial={tutorialHook.tutorial}
+                  onNextStep={tutorialHook.nextStep}
+                  onPreviousStep={tutorialHook.previousStep}
+                  onSkipStep={tutorialHook.skipStep}
+                />
+              </div>
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-6 space-y-6 agentuity-scrollbar">
                 {messages.length === 0 && (
@@ -429,7 +500,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                       <button
                         onClick={() => {
                           sendMessage("Create my first agent");
-                          setIsTerminalOpen(true);
+                          setEditorOpen(true);
                         }}
                         className="flex items-center gap-2 px-4 py-3 agentuity-button-primary rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95"
                       >
@@ -479,18 +550,30 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
             </div>
 
             {/* Terminal Panel - Always mounted but conditionally visible */}
-            <div className={`${isTerminalOpen ? 'w-1/2' : 'w-0'} border-l border-white/8 flex flex-col min-w-0 transition-all duration-300 ease-in-out overflow-hidden`}>
-              <div className={`p-4 border-b border-white/8 ${isTerminalOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
+            <div className={`${editorOpen ? 'w-1/2' : 'w-0'} border-l border-white/8 flex flex-col min-w-0 transition-all duration-300 ease-in-out overflow-hidden`}>
+              <div className={`p-4 border-b border-white/8 ${editorOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-gray-200">Terminal</h3>
+                  <h3 className="text-sm font-medium text-gray-200">Code Editor</h3>
+                  <button
+                    onClick={runCode}
+                    className="px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded-md text-sm"
+                  >
+                    Run
+                  </button>
                 </div>
               </div>
-              <div className={`flex-1 p-4 ${isTerminalOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
-                <DynamicTerminalComponent
-                  onReady={handleTerminalReady}
-                  onClose={handleTerminalClose}
-                  className="h-full"
+              <div className={`flex-1 p-4 flex flex-col ${editorOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
+                <textarea
+                  value={editorContent}
+                  onChange={(e) => setEditorContent(e.target.value)}
+                  className="flex-1 w-full bg-black/30 border border-white/10 rounded-lg p-4 text-white font-mono text-sm"
+                  placeholder="Write your Python code here..."
                 />
+                {executionResult && (
+                  <div className="mt-4 p-4 bg-black/50 rounded-lg">
+                    <pre className="text-green-400">{executionResult}</pre>
+                  </div>
+                )}
               </div>
             </div>
           </div>
