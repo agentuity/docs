@@ -157,75 +157,32 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
     setEditorOpen(!editorOpen);
   };
 
-  // Add WebSocket state for coding session
-  const [codingSocket, setCodingSocket] = useState<WebSocket | null>(null);
-  const [codingSessionReady, setCodingSessionReady] = useState(false);
-
-  // Initialize coding WebSocket connection
-  useEffect(() => {
-    if (editorOpen && !codingSocket) {
-      const ws = new WebSocket(`ws://localhost:8082/coding?sessionId=${currentSessionId}`);
-      
-      ws.onopen = () => {
-        console.log('Coding WebSocket connected');
-        setCodingSocket(ws);
-      };
-      
-      ws.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        
-        switch (message.type) {
-          case 'connected':
-            setCodingSessionReady(true);
-            setExecutionResult('Coding session ready! 🐍');
-            break;
-            
-          case 'execution_result':
-            if (message.success) {
-              setExecutionResult(`Output:\n${message.output || '(no output)'}`);
-            } else {
-              setExecutionResult(`Error:\n${message.error}`);
-            }
-            break;
-            
-          case 'error':
-            setExecutionResult(`Session Error: ${message.message}`);
-            break;
-        }
-      };
-      
-      ws.onclose = () => {
-        console.log('Coding WebSocket disconnected');
-        setCodingSocket(null);
-        setCodingSessionReady(false);
-      };
-      
-      ws.onerror = (error) => {
-        console.error('Coding WebSocket error:', error);
-        setExecutionResult('Connection error - please try again');
-      };
-    }
-    
-    return () => {
-      if (codingSocket) {
-        codingSocket.close();
-      }
-    };
-  }, [editorOpen, currentSessionId]);
-
-  // Update runCode to use WebSocket
+  // Update runCode to use REST API
   const runCode = async () => {
-    if (!codingSocket || !codingSessionReady) {
-      setExecutionResult('Coding session not ready - please wait...');
-      return;
-    }
-    
     setExecutionResult('Running code...');
     
-    codingSocket.send(JSON.stringify({
-      type: 'execute',
-      code: editorContent
-    }));
+    try {
+      const response = await fetch('http://localhost:8083/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: editorContent
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setExecutionResult(`Output:\n${result.output || '(no output)'}`);
+      } else {
+        setExecutionResult(`Error:\n${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error executing code:', error);
+      setExecutionResult('Connection error - please try again');
+    }
   };
 
   // Add effect after existing useEffects

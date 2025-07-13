@@ -15,7 +15,8 @@
 		"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
 		"validate-env": "node -e \"require('./lib/env').validateEnv()\"",
 		"terminal-server": "node scripts/start-terminal-server.js",
-		"dev:full": "concurrently \"npm run terminal-server\" \"npm run dev\""
+		"coding-server": "node lib/coding/rest-server.js",
+		"dev:full": "concurrently \"npm run terminal-server\" \"npm run coding-server\" \"npm run dev\""
 	},
 	"dependencies": {
 		"@radix-ui/react-dialog": "^1.1.14",
@@ -23,7 +24,9 @@
 		"@types/ws": "^8.18.1",
 		"@xterm/addon-fit": "^0.10.0",
 		"@xterm/xterm": "^5.5.0",
+		"axios": "^1.7.0",
 		"cmdk": "^1.1.1",
+		"express": "^4.18.0",
 		"fumadocs-core": "15.2.6",
 		"fumadocs-mdx": "11.5.8",
 		"fumadocs-twoslash": "^3.1.0",

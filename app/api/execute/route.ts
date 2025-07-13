@@ -4,25 +4,38 @@ export async function POST(request: NextRequest) {
   try {
     const { code, filename, sessionId } = await request.json();
 
-    // Simulate code execution with a delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Forward the request to the REST server
+    const response = await fetch('http://localhost:8083/execute', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        code
+      })
+    });
 
-    // For now, return a mock successful execution
-    // Later this can be connected to a real code execution sandbox
-    const result = {
-      success: true,
-      output: `// Code executed successfully!\n// File: ${filename}\n// Session: ${sessionId}\n\nconsole.log("Hello from ${filename}!");\n// Output: Hello from ${filename}!`,
-      executionTime: Math.floor(Math.random() * 500) + 100, // Random execution time
-      timestamp: new Date().toISOString(),
+    if (!response.ok) {
+      throw new Error(`REST server returned ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    // Add execution time for consistency with the old API
+    const enhancedResult = {
+      ...result,
+      executionTime: Math.floor(Math.random() * 500) + 100, // Random execution time for UI consistency
+      filename,
+      sessionId
     };
 
-    return Response.json(result);
+    return Response.json(enhancedResult);
   } catch (error) {
     console.error('Code execution error:', error);
     return Response.json(
       {
         success: false,
-        error: 'Code execution failed. This is a placeholder - real sandbox execution will be implemented soon.',
+        error: error instanceof Error ? error.message : 'Code execution failed. Make sure the REST server is running on port 8083.',
         executionTime: 0,
         timestamp: new Date().toISOString(),
       },
