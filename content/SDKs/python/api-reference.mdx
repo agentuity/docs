@@ -230,7 +230,7 @@ from agentuity import AgentRequest, AgentResponse, AgentContext
 async def handler(request: AgentRequest, response: AgentResponse, context: AgentContext):
     try:
         # Get the request data
-        data = request.data.json
+        data = await request.data.json()
         name = data.get("name")
         
         # Log the request
@@ -265,7 +265,7 @@ Retrieves a value from the key-value storage.
 
 ##### Return Value
 
-Returns a DataResult object that has an `exists` property to check if the value exists and a `data` property with accessors like `data.json` and `data.text`.
+Returns a DataResult object that has an `exists` property to check if the value exists and a `data` property with async accessors like `data.json()` and `data.text()`.
 
 ##### Example
 
@@ -277,11 +277,11 @@ try:
     value = await context.kv.get("user-preferences", "user-123")
     if value.exists:
         # Access data using the appropriate accessor
-        user_prefs = value.data.json
+        user_prefs = await value.data.json()
         context.logger.info(f"User preferences: {user_prefs}")
         
         # Or access as text if needed
-        # text_data = value.data.text
+        # text_data = await value.data.text()
         # context.logger.info(f"User preferences (text): {text_data}")
     else:
         context.logger.info("User preferences not found, using defaults")
@@ -946,7 +946,7 @@ Returns the request payload as a dictionary.
 ##### Example
 
 ```python
-data = request.data.json
+data = await request.data.json()
 print(f"Request data: {data}")
 ```
 
