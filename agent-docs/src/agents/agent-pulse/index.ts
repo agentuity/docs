@@ -14,27 +14,20 @@ interface TutorialRequest {
 
 type AgentRequestData = ChatRequest | TutorialRequest;
 
-// Type guard functions
+function isObject(val: unknown): val is Record<string, unknown> {
+  return typeof val === 'object' && val !== null;
+}
+
 function isChatRequest(data: unknown): data is ChatRequest {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    'type' in data &&
-    (data as any).type === 'chat' &&
-    'message' in data &&
-    typeof (data as any).message === 'string'
-  );
+  return isObject(data) &&
+    data.type === 'chat' &&
+    typeof data.message === 'string';
 }
 
 function isTutorialRequest(data: unknown): data is TutorialRequest {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    'type' in data &&
-    (data as any).type === 'tutorial' &&
-    'action' in data &&
-    ['start', 'next', 'previous', 'reset'].includes((data as any).action)
-  );
+  return isObject(data) &&
+    data.type === 'tutorial' &&
+    ['start', 'next', 'previous', 'reset'].includes(data.action as string);
 }
 
 function isValidRequest(data: unknown): data is AgentRequestData {
@@ -48,11 +41,11 @@ export default async function Agent(
 ) {
   const contentType = req.data.contentType;
   ctx.logger.info('Content type: %s', contentType);
-
+  const dbName = "chat";
   try {
     if (contentType === 'application/json') {
       const requestData = await req.data.json();
-      
+
       if (!isValidRequest(requestData)) {
         ctx.logger.warn('Invalid request format received');
         return resp.json({
@@ -71,12 +64,12 @@ export default async function Agent(
         ctx.logger.info('Processing tutorial request: %s', requestData.action);
         return resp.json(await handleTutorialRequest(requestData, ctx));
       }
-          } else {
-        // Handle plain text as chat message
-        const text = await req.data.text();
-        ctx.logger.info('Processing plain text as chat: %s', text);
-        return resp.json(await handleChatRequest({ type: 'chat', message: text }, ctx));
-      }
+    } else {
+      // Handle plain text as chat message
+      const text = await req.data.text();
+      ctx.logger.info('Processing plain text as chat: %s', text);
+      return resp.json(await handleChatRequest({ type: 'chat', message: text }, ctx));
+    }
 
     return resp.json({
       message: 'Request processed successfully',
@@ -92,7 +85,7 @@ export default async function Agent(
 // Handle chat requests
 async function handleChatRequest(request: ChatRequest, ctx: AgentContext) {
   ctx.logger.info('Processing chat message: %s', request.message);
-  
+
   // Here you would integrate with your preferred LLM/AI service
   // For now, returning a simple response
   return {
@@ -105,7 +98,7 @@ async function handleChatRequest(request: ChatRequest, ctx: AgentContext) {
 // Handle tutorial requests
 async function handleTutorialRequest(request: TutorialRequest, ctx: AgentContext) {
   ctx.logger.info('Processing tutorial action: %s', request.action);
-  
+
   switch (request.action) {
     case 'start':
       return getTutorialStart();
@@ -123,7 +116,12 @@ async function handleTutorialRequest(request: TutorialRequest, ctx: AgentContext
   }
 }
 
-function getTutorialStart() {
+async function getTutorialStart() {
+  const response = await fetch('http://localhost:8083/tutorials');
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  const tutorials = await response.json();
   return {
     type: 'tutorial',
     action: 'start',

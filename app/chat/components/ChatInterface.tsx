@@ -29,6 +29,15 @@ const tutorialSteps: ChatTutorialStep[] = [
     keywords: ['hello', 'start', 'begin', 'tutorial', 'help', 'getting started']
   },
   {
+    id: 'typescript-tutorial',
+    title: 'TypeScript SDK Tutorial',
+    description: 'Learn to build AI agents with the Agentuity TypeScript SDK',
+    icon: '⚡',
+    estimatedTime: '30 min',
+    completed: false,
+    keywords: ['typescript', 'sdk', 'start typescript tutorial', 'typescript tutorial', 'agent development']
+  },
+  {
     id: 'create-agent',
     title: 'Create Your First Agent',
     description: 'Learn how to create and configure your first AI agent using the terminal',
@@ -77,6 +86,7 @@ const initialTutorial = {
 
 const tutorialMessages = {
   welcome: "Welcome to Agentuity! 🚀 I'm here to help you build amazing AI agents. Let's start by creating your first agent - click the terminal button to get started with interactive commands!",
+  'typescript-tutorial': "Welcome to the Agentuity TypeScript SDK Tutorial! ⚡ We'll build a Smart Customer Support Agent step by step. The code editor is now open - let's start with creating a basic agent that responds with 'Hello World'. Try running the code to see how it works!",
   'create-agent': "Great! Let's create your first agent using the terminal. Click the terminal button in the top-right corner, then run: `agentuity agent create my-first-agent`. This will guide you through the setup process step by step!",
   configure: "Perfect! Now let's configure your agent. In the terminal, you can set up authentication and environment variables. Try running: `agentuity agent configure` to see available options.",
   deploy: "Excellent! Time to deploy your agent to the cloud. In the terminal, run: `agentuity deploy` to launch your agent live! Make sure your code is ready first.",
@@ -223,9 +233,83 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
     return false;
   };
 
+    // Fetch tutorial step content from server
+  const fetchTutorialStep = async (tutorialId: string, stepId: number) => {
+    try {
+      const response = await fetch(`http://localhost:8083/tutorial/${tutorialId}/step/${stepId}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch tutorial step: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching tutorial step:', error);
+      return null;
+    }
+  };
+
   // Generate tutorial bot response
-  const generateTutorialResponse = (userMessage: string): ChatMessage | null => {
+  const generateTutorialResponse = async (userMessage: string): Promise<ChatMessage | null> => {
     const lowerMessage = userMessage.toLowerCase();
+
+    // Check for TypeScript tutorial specifically
+    if (lowerMessage.includes('start typescript tutorial') || lowerMessage.includes('typescript tutorial')) {
+      // Fetch first step from server
+      const stepData = await fetchTutorialStep('typescript-sdk', 1);
+      
+      if (stepData) {
+        setTimeout(() => {
+          setEditorContent(stepData.initialCode);
+          setEditorOpen(true);
+        }, 500);
+
+        return {
+          id: generateId(),
+          type: 'assistant',
+          content: `Welcome to the Agentuity TypeScript SDK Tutorial! ⚡ ${stepData.description}\n\nInstructions:\n${stepData.instructions.map((inst: string, i: number) => `${i + 1}. ${inst}`).join('\n')}`,
+          timestamp: new Date(),
+          codeBlock: {
+            content: stepData.initialCode,
+            language: 'typescript',
+            filename: 'index.ts',
+            editable: true
+          }
+        };
+      } else {
+        // Fallback to hardcoded content
+        const responseText = tutorialMessages['typescript-tutorial'];
+        const initialCode = `import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx: AgentContext) {
+  // Log the incoming request
+  ctx.logger.info("Received request: %s", req.method);
+  
+  // Return a simple Hello World response
+  return resp.json({
+    message: "Hello World! Welcome to your first Agentuity TypeScript agent!",
+    timestamp: new Date().toISOString(),
+    agent: "Smart Customer Support Agent - Step 1"
+  });
+}`;
+
+        setTimeout(() => {
+          setEditorContent(initialCode);
+          setEditorOpen(true);
+        }, 500);
+
+        return {
+          id: generateId(),
+          type: 'assistant',
+          content: responseText,
+          timestamp: new Date(),
+          codeBlock: {
+            content: initialCode,
+            language: 'typescript',
+            filename: 'index.ts',
+            editable: true
+          }
+        };
+      }
+    }
 
     // Check if this is a tutorial-related message
     const currentStep = tutorialSteps[tutorialHook.tutorial.currentStep];
@@ -272,7 +356,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
       detectTutorialProgress(content);
 
       // Try to generate a tutorial response first
-      const tutorialResponse = generateTutorialResponse(content);
+      const tutorialResponse = await generateTutorialResponse(content);
 
       if (tutorialResponse) {
         // Use tutorial response
@@ -323,6 +407,11 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
   const executeCode = async (code: string, filename: string) => {
     setExecutingFiles(prev => new Set(prev).add(filename));
 
+    // Determine if this is a tutorial execution
+    const isTutorialCode = filename === 'index.ts' && code.includes('@agentuity/sdk');
+    const tutorialId = isTutorialCode ? 'typescript-sdk' : undefined;
+    const stepId = isTutorialCode ? 1 : undefined; // For now, default to step 1
+
     try {
       const response = await fetch('/api/execute', {
         method: 'POST',
@@ -333,6 +422,8 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
           code,
           filename,
           sessionId,
+          tutorialId,
+          stepId,
         }),
       });
 
@@ -453,7 +544,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                     </p>
 
                     {/* Quick Start Options */}
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto mb-8">
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-lg mx-auto mb-8">
                       <button
                         onClick={() => {
                           sendMessage("Create my first agent");
@@ -463,6 +554,16 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                       >
                         <span>🚀</span>
                         Create First Agent
+                      </button>
+                      <button
+                        onClick={() => {
+                          sendMessage("Start TypeScript Tutorial");
+                          setEditorOpen(true);
+                        }}
+                        className="flex items-center gap-2 px-4 py-3 agentuity-button-primary rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95"
+                      >
+                        <span>⚡</span>
+                        Start TypeScript Tutorial
                       </button>
                       <button
                         onClick={() => sendMessage("Continue My Tutorial")}
@@ -524,7 +625,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                   value={editorContent}
                   onChange={(e) => setEditorContent(e.target.value)}
                   className="flex-1 w-full bg-black/30 border border-white/10 rounded-lg p-4 text-white font-mono text-sm"
-                  placeholder="Write your Python code here..."
+                  placeholder="Write your TypeScript agent code here..."
                 />
                 {executionResult && (
                   <div className="mt-4 p-4 bg-black/50 rounded-lg">

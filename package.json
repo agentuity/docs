@@ -15,8 +15,8 @@
 		"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
 		"validate-env": "node -e \"require('./lib/env').validateEnv()\"",
 		"terminal-server": "node scripts/start-terminal-server.js",
-		"coding-server": "node lib/coding/rest-server.js",
-		"dev:full": "concurrently \"npm run terminal-server\" \"npm run coding-server\" \"npm run dev\""
+		"coding-server": "echo 'Tutorial APIs are now integrated into Next.js at /api/tutorials'",
+		"dev:full": "concurrently \"npm run terminal-server\" \"npm run dev\""
 	},
 	"dependencies": {
 		"@radix-ui/react-dialog": "^1.1.14",
@@ -26,12 +26,14 @@
 		"@xterm/xterm": "^5.5.0",
 		"axios": "^1.7.0",
 		"cmdk": "^1.1.1",
+		"cors": "^2.8.5",
 		"express": "^4.18.0",
 		"fumadocs-core": "15.2.6",
 		"fumadocs-mdx": "11.5.8",
 		"fumadocs-twoslash": "^3.1.0",
 		"fumadocs-ui": "^15.6.1",
 		"geist": "^1.4.2",
+		"gray-matter": "^4.0.3",
 		"lucide-react": "^0.525.0",
 		"mermaid": "^11.6.0",
 		"motion": "^12.12.2",
