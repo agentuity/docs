@@ -7,91 +7,10 @@ import { ChatInput } from './ChatInput';
 import { SessionSidebar } from './SessionSidebar';
 import { HelpCircle, Terminal as TerminalIcon } from 'lucide-react';
 import { Terminal } from '@xterm/xterm';
-import { DynamicIsland } from '../../../components/DynamicIsland/DynamicIsland';
-import { useTutorial } from '../../../components/DynamicIsland/useTutorial';
-import { TutorialStep } from '../../../components/DynamicIsland/types';
 import DynamicTerminalComponent from '../../../components/terminal/DynamicTerminalComponent';
 
-// Extended tutorial step with keywords for chat detection
-interface ChatTutorialStep extends TutorialStep {
-  keywords: string[];
-}
-
-// Tutorial configuration
-const tutorialSteps: ChatTutorialStep[] = [
-  {
-    id: 'welcome',
-    title: 'Welcome to Agentuity',
-    description: 'Learn the basics of creating and deploying AI agents',
-    icon: '🚀',
-    estimatedTime: '5 min',
-    completed: false,
-    keywords: ['hello', 'start', 'begin', 'tutorial', 'help', 'getting started']
-  },
-  {
-    id: 'typescript-tutorial',
-    title: 'TypeScript SDK Tutorial',
-    description: 'Learn to build AI agents with the Agentuity TypeScript SDK',
-    icon: '⚡',
-    estimatedTime: '30 min',
-    completed: false,
-    keywords: ['typescript', 'sdk', 'start typescript tutorial', 'typescript tutorial', 'agent development']
-  },
-  {
-    id: 'create-agent',
-    title: 'Create Your First Agent',
-    description: 'Learn how to create and configure your first AI agent using the terminal',
-    icon: '🤖',
-    estimatedTime: '10 min',
-    completed: false,
-    keywords: ['create', 'agent', 'new agent', 'build', 'make', 'terminal', 'agentuity create']
-  },
-  {
-    id: 'configure',
-    title: 'Configure Agent Settings',
-    description: 'Configure authentication, environment, and deployment settings',
-    icon: '⚙️',
-    estimatedTime: '15 min',
-    completed: false,
-    keywords: ['configure', 'settings', 'auth', 'environment', 'config']
-  },
-  {
-    id: 'deploy',
-    title: 'Deploy Your Agent',
-    description: 'Deploy your agent to the Agentuity platform',
-    icon: '🚀',
-    estimatedTime: '8 min',
-    completed: false,
-    keywords: ['deploy', 'launch', 'publish', 'release', 'live']
-  },
-  {
-    id: 'monitor',
-    title: 'Monitor & Optimize',
-    description: 'Learn to monitor your agent and optimize its performance',
-    icon: '📊',
-    estimatedTime: '12 min',
-    completed: false,
-    keywords: ['monitor', 'optimize', 'performance', 'analytics', 'logs']
-  }
-];
-
-const initialTutorial = {
-  id: 'agentuity-tutorial',
-  title: 'Agentuity Getting Started',
-  currentStep: 0,
-  totalSteps: tutorialSteps.length,
-  steps: tutorialSteps,
-  isActive: true
-};
-
-const tutorialMessages = {
-  welcome: "Welcome to Agentuity! 🚀 I'm here to help you build amazing AI agents. Let's start by creating your first agent - click the terminal button to get started with interactive commands!",
-  'typescript-tutorial': "Welcome to the Agentuity TypeScript SDK Tutorial! ⚡ We'll build a Smart Customer Support Agent step by step. The code editor is now open - let's start with creating a basic agent that responds with 'Hello World'. Try running the code to see how it works!",
-  'create-agent': "Great! Let's create your first agent using the terminal. Click the terminal button in the top-right corner, then run: `agentuity agent create my-first-agent`. This will guide you through the setup process step by step!",
-  configure: "Perfect! Now let's configure your agent. In the terminal, you can set up authentication and environment variables. Try running: `agentuity agent configure` to see available options.",
-  deploy: "Excellent! Time to deploy your agent to the cloud. In the terminal, run: `agentuity deploy` to launch your agent live! Make sure your code is ready first.",
-  monitor: "Amazing! Your agent is now live. Use the terminal to check logs with: `agentuity logs` and monitor performance with: `agentuity status`. You can also explore the analytics dashboard!"
-};
+// Agent endpoints
+const AGENT_PULSE_URL = 'http://127.0.0.1:3500/agent_ddcb59aa4473f1323be5d9f5fb62b74e';
 
 // Generate unique IDs
 const generateId = () => {
@@ -159,9 +78,6 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
   const [executionResult, setExecutionResult] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Tutorial state
-  const tutorialHook = useTutorial(initialTutorial);
-
   // Add toggle function after handleTerminalClose
   const toggleEditor = () => {
     setEditorOpen(!editorOpen);
@@ -195,12 +111,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
     }
   };
 
-  // Add effect after existing useEffects
-  useEffect(() => {
-    if (tutorialHook.tutorial.isActive && tutorialHook.tutorial.currentStep > 0) {
-      setEditorOpen(true);
-    }
-  }, [tutorialHook.tutorial.currentStep, tutorialHook.tutorial.isActive]);
+
 
   // Stabilize the onReady callback to prevent re-renders
   const handleTerminalReady = useCallback((terminal: Terminal) => {
@@ -217,125 +128,76 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Tutorial message detection
-  const detectTutorialProgress = (message: string) => {
-    const lowerMessage = message.toLowerCase();
 
-    // Check if message contains keywords for advancing tutorial
-    const currentStep = tutorialSteps[tutorialHook.tutorial.currentStep];
-    const nextStep = tutorialSteps[tutorialHook.tutorial.currentStep + 1];
 
-    if (nextStep && currentStep.keywords.some(keyword => lowerMessage.includes(keyword))) {
-      tutorialHook.nextStep();
-      return true;
-    }
+  const sendTutorialRequest = async (action: string, tutorialId?: string) => {
+    setLoading(true);
 
-    return false;
-  };
-
-    // Fetch tutorial step content from server
-  const fetchTutorialStep = async (tutorialId: string, stepId: number) => {
     try {
-      const response = await fetch(`http://localhost:8083/tutorial/${tutorialId}/step/${stepId}`);
+      // Send tutorial request to agent-pulse
+      const response = await fetch(AGENT_PULSE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'tutorial',
+          action: action,
+          tutorialId: tutorialId,
+          sessionId: currentSessionId,
+        }),
+      });
+
       if (!response.ok) {
-        throw new Error(`Failed to fetch tutorial step: ${response.status}`);
+        throw new Error('Failed to send tutorial request to agent');
       }
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching tutorial step:', error);
-      return null;
-    }
-  };
 
-  // Generate tutorial bot response
-  const generateTutorialResponse = async (userMessage: string): Promise<ChatMessage | null> => {
-    const lowerMessage = userMessage.toLowerCase();
-
-    // Check for TypeScript tutorial specifically
-    if (lowerMessage.includes('start typescript tutorial') || lowerMessage.includes('typescript tutorial')) {
-      // Fetch first step from server
-      const stepData = await fetchTutorialStep('typescript-sdk', 1);
+      const data = await response.json();
       
-      if (stepData) {
-        setTimeout(() => {
-          setEditorContent(stepData.initialCode);
-          setEditorOpen(true);
-        }, 500);
+      // Handle tutorial response
+      const assistantMessage: ChatMessage = {
+        id: generateId(),
+        type: 'assistant',
+        content: data.message || 'Tutorial request processed',
+        timestamp: new Date(),
+      };
 
-        return {
-          id: generateId(),
-          type: 'assistant',
-          content: `Welcome to the Agentuity TypeScript SDK Tutorial! ⚡ ${stepData.description}\n\nInstructions:\n${stepData.instructions.map((inst: string, i: number) => `${i + 1}. ${inst}`).join('\n')}`,
-          timestamp: new Date(),
-          codeBlock: {
-            content: stepData.initialCode,
+      if (data.tutorials && data.tutorials.data) {
+        // Tutorial list response
+        assistantMessage.content = `${data.message}\n\nAvailable tutorials:\n${data.tutorials.data.map((t: any, i: number) => `${i + 1}. **${t.title}** - ${t.description}`).join('\n')}`;
+      } else if (data.tutorialTitle) {
+        // Tutorial step response
+        assistantMessage.content = `**${data.tutorialTitle}** - Step ${data.currentStep}/${data.totalSteps}\n\n**${data.stepTitle || data.title}**\n\n${data.stepContent || data.content}\n\n${data.instructions}`;
+        
+        // Add code block if available
+        if (data.initialCode) {
+          assistantMessage.codeBlock = {
+            content: data.initialCode,
             language: 'typescript',
             filename: 'index.ts',
             editable: true
-          }
-        };
-      } else {
-        // Fallback to hardcoded content
-        const responseText = tutorialMessages['typescript-tutorial'];
-        const initialCode = `import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
-
-export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx: AgentContext) {
-  // Log the incoming request
-  ctx.logger.info("Received request: %s", req.method);
-  
-  // Return a simple Hello World response
-  return resp.json({
-    message: "Hello World! Welcome to your first Agentuity TypeScript agent!",
-    timestamp: new Date().toISOString(),
-    agent: "Smart Customer Support Agent - Step 1"
-  });
-}`;
-
-        setTimeout(() => {
-          setEditorContent(initialCode);
+          };
+          
+          // Auto-open editor for tutorial steps with code
           setEditorOpen(true);
-        }, 500);
-
-        return {
-          id: generateId(),
-          type: 'assistant',
-          content: responseText,
-          timestamp: new Date(),
-          codeBlock: {
-            content: initialCode,
-            language: 'typescript',
-            filename: 'index.ts',
-            editable: true
-          }
-        };
-      }
-    }
-
-    // Check if this is a tutorial-related message
-    const currentStep = tutorialSteps[tutorialHook.tutorial.currentStep];
-    const isTutorialMessage = currentStep.keywords.some(keyword => lowerMessage.includes(keyword));
-
-    if (isTutorialMessage) {
-      const responseText = tutorialMessages[currentStep.id as keyof typeof tutorialMessages];
-      if (responseText) {
-        // Auto-open terminal for terminal-based tutorial steps
-        if (currentStep.id === 'create-agent' || currentStep.id === 'configure' || currentStep.id === 'deploy') {
-          setTimeout(() => {
-            // setIsTerminalOpen(true);
-            setEditorOpen(true);
-          }, 1000);
+          setEditorContent(data.initialCode);
         }
-
-        return {
-          id: generateId(),
-          type: 'assistant',
-          content: responseText,
-          timestamp: new Date(),
-        };
       }
-    }
 
-    return null;
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error sending tutorial request:', error);
+      // Add error message
+      const errorMessage: ChatMessage = {
+        id: generateId(),
+        type: 'assistant',
+        content: 'Sorry, I encountered an error processing your tutorial request. Please try again.',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const sendMessage = async (content: string) => {
@@ -352,42 +214,54 @@ export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx:
     setLoading(true);
 
     try {
-      // Check for tutorial progression
-      detectTutorialProgress(content);
-
-      // Try to generate a tutorial response first
-      const tutorialResponse = await generateTutorialResponse(content);
-
-      if (tutorialResponse) {
-        // Use tutorial response
-        setMessages(prev => [...prev, tutorialResponse]);
-        setLoading(false);
-        return;
-      }
-
-      // Otherwise, use the normal API
-      const response = await fetch('/api/chat', {
+      // Send request to agent-pulse
+      const response = await fetch(AGENT_PULSE_URL, { // agent-pulse endpoint
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          type: 'chat',
           message: content,
-          sessionId,
-          conversationHistory: messages,
+          sessionId: currentSessionId,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        throw new Error('Failed to send message to agent');
       }
 
       const data = await response.json();
-      // Convert timestamp string back to Date object
+      
+      // Handle agent response
       const assistantMessage: ChatMessage = {
-        ...data.message,
-        timestamp: new Date(data.message.timestamp)
+        id: generateId(),
+        type: 'assistant',
+        content: data.response || data.message || 'No response from agent',
+        timestamp: new Date(),
       };
+
+      // If it's a tutorial response, handle tutorial-specific data
+      if (data.type === 'tutorial') {
+        if (data.tutorials && data.tutorials.data) {
+          // Tutorial list response
+          assistantMessage.content = `${data.message}\n\nAvailable tutorials:\n${data.tutorials.data.map((t: any, i: number) => `${i + 1}. **${t.title}** - ${t.description}`).join('\n')}`;
+        } else if (data.tutorialTitle) {
+          // Tutorial step response
+          assistantMessage.content = `**${data.tutorialTitle}** - Step ${data.currentStep}/${data.totalSteps}\n\n**${data.stepTitle || data.title}**\n\n${data.stepContent || data.content}\n\n${data.instructions}`;
+          
+          // Add code block if available
+          if (data.initialCode) {
+            assistantMessage.codeBlock = {
+              content: data.initialCode,
+              language: 'typescript',
+              filename: 'index.ts',
+              editable: true
+            };
+          }
+        }
+      }
+
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
@@ -507,9 +381,6 @@ export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx:
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col relative p-2">
           <div className={`flex-1 flex flex-row bg-black/20 border border-white/10 rounded-2xl overflow-hidden relative`}>
-            {/* Dynamic Island - positioned at top center of chat window */}
-
-
             {/* Terminal Toggle Button */}
             <button
               onClick={toggleEditor}
@@ -521,14 +392,7 @@ export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx:
 
             {/* Chat Messages Area */}
             <div className={`flex-1 flex flex-col ${editorOpen ? 'min-w-0' : ''}`}>
-              <div className="absolute top-4 left-0 right-0 flex justify-center z-50">
-                <DynamicIsland
-                  tutorial={tutorialHook.tutorial}
-                  onNextStep={tutorialHook.nextStep}
-                  onPreviousStep={tutorialHook.previousStep}
-                  onSkipStep={tutorialHook.skipStep}
-                />
-              </div>
+
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-6 space-y-6 agentuity-scrollbar">
                 {messages.length === 0 && (
@@ -544,33 +408,13 @@ export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx:
                     </p>
 
                     {/* Quick Start Options */}
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-lg mx-auto mb-8">
+                    <div className="flex justify-center max-w-lg mx-auto mb-8">
                       <button
-                        onClick={() => {
-                          sendMessage("Create my first agent");
-                          setEditorOpen(true);
-                        }}
-                        className="flex items-center gap-2 px-4 py-3 agentuity-button-primary rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95"
-                      >
-                        <span>🚀</span>
-                        Create First Agent
-                      </button>
-                      <button
-                        onClick={() => {
-                          sendMessage("Start TypeScript Tutorial");
-                          setEditorOpen(true);
-                        }}
-                        className="flex items-center gap-2 px-4 py-3 agentuity-button-primary rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95"
-                      >
-                        <span>⚡</span>
-                        Start TypeScript Tutorial
-                      </button>
-                      <button
-                        onClick={() => sendMessage("Continue My Tutorial")}
-                        className="flex items-center gap-2 px-4 py-3 agentuity-button rounded-xl text-sm font-medium text-gray-200 transition-all duration-200 hover:scale-105 active:scale-95"
+                        onClick={() => sendTutorialRequest('list')}
+                        className="flex items-center gap-2 px-6 py-3 agentuity-button-primary rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105 active:scale-95"
                       >
                         <span>📚</span>
-                        Continue My Tutorial
+                        Show Available Tutorials
                       </button>
                     </div>
 

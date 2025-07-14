@@ -1,25 +1,5 @@
-# User Metadata
-{
-    "email": string;
-    "completedTutorial":
-}
-
-# Message
-{
-    "sender": "username" | "Pulse";
-    "createdAt": DateTime;
-    "content": string;
-    "type": "markdown" | "action"
-}
-
-{
-    "name": string;
-    "steps": 
-}
-
-# Chat Session
-{
-    "type": "default" | "tutorial";
-    "messages": Message[];
-    "tutorial": 
-}
+User: Start Tutorial
+Pulse: Here's a list of tutorials. Which one?
+User: Let's do this one ...
+Pulse: User's picking this one ...
+Pulse: Fetching content for this one ...
