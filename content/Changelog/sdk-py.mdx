@@ -16,15 +16,6 @@ This page documents the release history of the [Agentuity Python SDK](https://gi
 **Changes:**
 - **Fixed:** DevMode: make sure certain props are set on metadata for improved development mode debugging
 
-### ⚠️ Breaking Changes
-
-The Discord interface method has been renamed from `discord_message()` to `discord()`. Update your code to use the new method name:
-
-```diff
-- message = await req.data.discord_message()
-+ message = await req.data.discord()
-```
-
 ## v0.0.100
 
 <Callout type="info">
