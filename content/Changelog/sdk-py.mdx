@@ -7,45 +7,6 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 This page documents the release history of the [Agentuity Python SDK](https://github.com/agentuity/sdk-py).
 
-## v0.0.106
-
-<Callout type="info">
-  Released: December 2024
-</Callout>
-
-**Changes:**
-- **Changed:** Updated documentation to properly reflect v0.0.106 async transition requirements
-
-### ⚠️ Breaking Changes
-
-The Python SDK now requires async/await patterns for accessing request data. This change improves performance and enables better streaming support.
-
-**Request Data Access**
-
-```diff
-# Before
-- data = request.data.text
-- json_data = request.data.json
-
-# After
-+ data = await request.data.text()
-+ json_data = await request.data.json()
-```
-
-**Storage Data Access**
-
-```diff
-# Before
-- user_prefs = result.data.json
-- text_content = result.data.text
-
-# After
-+ user_prefs = await result.data.json()
-+ text_content = await result.data.text()
-```
-
-All data accessor methods (`.text()`, `.json()`, `.binary()`, `.base64()`) now return promises and must be awaited.
-
 ## v0.0.100
 
 <Callout type="info">
