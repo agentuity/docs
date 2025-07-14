@@ -13,7 +13,7 @@ from datetime import datetime
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     # Get the request data
-    data = request.data.json
+    data = await request.data.json()
     name = data.get("name", "Guest")
     
     # Log the request
@@ -35,7 +35,7 @@ from agentuity import AgentRequest, AgentResponse, AgentContext
 import json
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    data = request.data.json
+    data = await request.data.json()
     action = data.get("action")
     user_id = data.get("userId")
     preferences = data.get("preferences")
@@ -48,7 +48,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
             return response.json({"message": "No preferences found"})
 
         # Access the data
-        user_prefs = result.data.json
+        user_prefs = await result.data.json()
 
         return response.json({"preferences": user_prefs})
     
@@ -147,7 +147,7 @@ An agent that uses vector storage for semantic search.
 from agentuity import AgentRequest, AgentResponse, AgentContext
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    data = request.data.json
+    data = await request.data.json()
     action = data.get("action")
     query = data.get("query")
     products = data.get("products")
@@ -239,7 +239,7 @@ from agentuity import AgentRequest, AgentResponse, AgentContext
 from datetime import datetime
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    data = request.data.json
+    data = await request.data.json()
     action = data.get("action")
     message = data.get("message")
     agent_id = data.get("agentId")
@@ -266,7 +266,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     
     elif action == "receive":
         # This is a handler for receiving messages from other agents
-        data = request.data.json
+        data = await request.data.json()
         
         context.logger.info(f"Received message from agent {data.get('sender')}: {data.get('message')}")
         
@@ -300,7 +300,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
             },
             {
                 "role": "user",
-                "content": request.data.text or "Why is the sky blue?",
+                "content": await request.data.text() or "Why is the sky blue?",
             },
         ],
         model="gpt-4o",
