@@ -6,6 +6,13 @@ import type {
   TutorialRequest, 
   AgentRequestData 
 } from './types';
+import { classifyTutorialIntent } from './tutorial-intent';
+import { 
+  getTutorialList as fetchTutorialList, 
+  startTutorial, 
+  nextTutorialStep, 
+  previousTutorialStep 
+} from './tutorial';
 
 // API endpoints
 const TUTORIAL_API_BASE_URL = 'http://localhost:3201';
@@ -76,10 +83,11 @@ async function saveSession(session: ChatSession, ctx: AgentContext): Promise<voi
   }
 }
 
-function createNewSession(sessionId: string): ChatSession {
+function createNewSession(sessionId: string, sessionType: 'chat' | 'tutorial' = 'chat'): ChatSession {
   const now = new Date().toISOString();
   return {
     sessionId,
+    sessionType,
     createdAt: now,
     updatedAt: now,
     lastActivity: now,
@@ -99,6 +107,138 @@ function addMessageToSession(session: ChatSession, type: 'user' | 'assistant', c
   
   session.messages.push(message);
   return message;
+}
+
+// Handle chat messages in tutorial sessions using intent classification
+async function handleTutorialChatMessage(message: string, session: ChatSession, ctx: AgentContext) {
+  ctx.logger.info('Processing tutorial chat message: %s', message);
+
+  // Add user message to session
+  addMessageToSession(session, 'user', message);
+
+  try {
+    // Always get available tutorials for intent classification
+    let availableTutorials: any[] = [];
+    const tutorialListResponse = await fetchTutorialList(ctx);
+    
+    ctx.logger.info('Fetched tutorial list response: %s', JSON.stringify(tutorialListResponse, null, 2));
+    
+    // tutorialListResponse.tutorials should now be a proper array
+    availableTutorials = Array.isArray(tutorialListResponse.tutorials) ? tutorialListResponse.tutorials : [];
+    
+    ctx.logger.info('Available tutorials count: %d', availableTutorials.length);
+    ctx.logger.info('Available tutorials: %s', JSON.stringify(availableTutorials.map(t => ({ id: t.id, title: t.title })), null, 2));
+
+    // Classify user intent
+    const intent = await classifyTutorialIntent(message, session, availableTutorials, ctx);
+    ctx.logger.info('Classified intent: %s with confidence: %f', intent.type, intent.confidence);
+    
+    // Log the full intent result for debugging
+    ctx.logger.info('Full intent classification result: %s', JSON.stringify(intent, null, 2));
+
+    let result;
+    switch (intent.type) {
+      case 'select_tutorial':
+        if (intent.tutorialId) {
+          ctx.logger.info('Attempting to start tutorial with ID: %s', intent.tutorialId);
+          try {
+            result = await startTutorial(intent.tutorialId, session, ctx);
+          } catch (error) {
+            ctx.logger.error('Failed to start tutorial %s: %s', intent.tutorialId, error);
+            // Show available tutorials on error
+            const tutorialListResponse = await fetchTutorialList(ctx);
+            
+            const errorMessage = `❌ Sorry, couldn't find tutorial "${intent.tutorialId}".\n\n${tutorialListResponse.message}`;
+            
+            result = {
+              type: 'tutorial',
+              action: 'error',
+              message: errorMessage,
+              tutorials: tutorialListResponse.tutorials,
+              error: `Tutorial "${intent.tutorialId}" not found`
+            };
+          }
+        } else {
+          // Show tutorial list if no specific tutorial identified
+          result = await fetchTutorialList(ctx);
+        }
+        break;
+
+      case 'navigate':
+        if (intent.direction === 'next') {
+          result = await nextTutorialStep(session, ctx, intent.step);
+        } else if (intent.direction === 'previous') {
+          result = await previousTutorialStep(session, ctx, intent.step);
+        } else if (intent.direction === 'specific' && intent.step) {
+          result = await nextTutorialStep(session, ctx, intent.step);
+        } else {
+          result = {
+            type: 'tutorial',
+            error: 'Could not understand navigation request'
+          };
+        }
+        break;
+
+      case 'exit_tutorial':
+        // Convert session back to chat mode
+        session.sessionType = 'chat';
+        session.currentTutorial = undefined;
+        result = {
+          type: 'chat',
+          response: 'You have exited tutorial mode. How can I help you today?',
+          timestamp: new Date().toISOString()
+        };
+        break;
+
+      case 'help':
+        result = {
+          type: 'tutorial',
+          action: 'help',
+          message: 'Tutorial Help:\n- Say "next" or "previous" to navigate\n- Ask questions about the tutorial content\n- Say "exit" to leave tutorial mode\n- Ask for "list" to see available tutorials'
+        };
+        break;
+
+      case 'question':
+      default:
+        // Handle as a tutorial-related question
+        const questionResponse = `You asked: "${intent.content || message}". This is a placeholder for tutorial Q&A functionality.`;
+        result = {
+          type: 'tutorial',
+          action: 'question',
+          response: questionResponse,
+          timestamp: new Date().toISOString()
+        };
+        break;
+    }
+
+    // Add assistant response to session
+    let responseText = 'Tutorial action completed';
+    
+    // Extract response text from different result types
+    if ('response' in result && result.response) {
+      responseText = result.response as string;
+    } else if ('message' in result && result.message) {
+      responseText = result.message as string;
+    } else if ('stepContent' in result && result.stepContent) {
+      responseText = result.stepContent as string;
+    } else if ('content' in result && result.content) {
+      responseText = result.content as string;
+    }
+    
+    addMessageToSession(session, 'assistant', responseText);
+
+    return result;
+  } catch (error) {
+    ctx.logger.error('Error handling tutorial chat message: %s', error);
+    
+    const errorResponse = 'Sorry, I encountered an error processing your tutorial request. Please try again.';
+    addMessageToSession(session, 'assistant', errorResponse);
+    
+    return {
+      type: 'tutorial',
+      error: errorResponse
+    };
+  }
 }
 
 export default async function Agent(
@@ -137,17 +277,30 @@ export default async function Agent(
     // Load existing session or create new one
     let session = await loadSession(sessionId, ctx);
     if (!session) {
-      ctx.logger.info('Creating new session: %s', sessionId);
-      session = createNewSession(sessionId);
+      // Determine session type based on request
+      const sessionType = requestData.type === 'tutorial' ? 'tutorial' : 'chat';
+      ctx.logger.info('Creating new session: %s with type: %s', sessionId, sessionType);
+      session = createNewSession(sessionId, sessionType);
     }
 
     // Process request with session context
     let result;
     if (requestData.type === 'chat') {
       ctx.logger.info('Processing chat request: %s', requestData.message);
-      result = await handleChatRequest(requestData, session, ctx);
+      
+      // Route based on session type
+      if (session.sessionType === 'tutorial') {
+        // Handle chat message in tutorial context
+        result = await handleTutorialChatMessage(requestData.message, session, ctx);
+      } else {
+        // Regular chat session
+        result = await handleChatRequest(requestData, session, ctx);
+      }
     } else if (requestData.type === 'tutorial') {
       ctx.logger.info('Processing tutorial request: %s', requestData.action);
+      
+      // Set session to tutorial mode
+      session.sessionType = 'tutorial';
       result = await handleTutorialRequest(requestData, session, ctx);
     } else {
       return resp.json({
@@ -192,263 +345,33 @@ async function handleChatRequest(request: ChatRequest, session: ChatSession, ctx
   };
 }
 
-// Handle tutorial requests
+// Handle tutorial requests  
 async function handleTutorialRequest(request: TutorialRequest, session: ChatSession, ctx: AgentContext) {
   ctx.logger.info('Processing tutorial action: %s', request.action);
 
   switch (request.action) {
     case 'list':
-      return await getTutorialList(ctx);
+      return await fetchTutorialList(ctx);
     case 'start':
-      return await getTutorialStart(request.tutorialId, session, ctx);
+      if (request.tutorialId) {
+        return await startTutorial(request.tutorialId, session, ctx);
+      } else {
+        return await fetchTutorialList(ctx);
+      }
     case 'next':
-      return await getTutorialNext(session, ctx, request.step);
+      return await nextTutorialStep(session, ctx, request.step);
     case 'previous':
-      return await getTutorialPrevious(session, ctx, request.step);
+      return await previousTutorialStep(session, ctx, request.step);
     case 'reset':
-      return await getTutorialStart(request.tutorialId, session, ctx);
+      if (request.tutorialId) {
+        return await startTutorial(request.tutorialId, session, ctx);
+      } else {
+        return await fetchTutorialList(ctx);
+      }
     default:
       return {
         type: 'tutorial',
         error: 'Invalid tutorial action'
       };
-  }
-}
-
-// Fetch list of available tutorials
-async function getTutorialList(ctx: AgentContext) {
-  try {
-    const response = await fetch(`${TUTORIAL_API_BASE_URL}/api/tutorials`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const tutorials = await response.json();
-    
-    return {
-      type: 'tutorial',
-      action: 'list',
-      tutorials: tutorials,
-      message: 'Here are the available tutorials. Which one would you like to start?'
-    };
-  } catch (error) {
-    ctx.logger.error('Failed to fetch tutorials: %s', error);
-    return {
-      type: 'tutorial',
-      action: 'list',
-      error: 'Failed to fetch available tutorials',
-      tutorials: []
-    };
-  }
-}
-
-// Start a tutorial or show available tutorials
-async function getTutorialStart(tutorialId: string | undefined, session: ChatSession, ctx: AgentContext) {
-  if (!tutorialId) {
-    // No specific tutorial requested, show list
-    return await getTutorialList(ctx);
-  }
-
-  try {
-    // Fetch specific tutorial details
-    const response = await fetch(`${TUTORIAL_API_BASE_URL}/api/tutorials/${tutorialId}`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const tutorial = await response.json() as any; // Temporary type assertion
-    
-    // Update session with tutorial state
-    session.currentTutorial = {
-      tutorialId: tutorial.id,
-      tutorialTitle: tutorial.title,
-      currentStep: 1,
-      totalSteps: tutorial.steps.length,
-      startedAt: new Date().toISOString(),
-      completed: false,
-      progress: {}
-    };
-
-    // Fetch detailed first step content
-    try {
-      const stepResponse = await fetch(`${TUTORIAL_API_BASE_URL}/api/tutorials/${tutorial.id}/steps/1`);
-      if (!stepResponse.ok) {
-        throw new Error(`HTTP error! status: ${stepResponse.status}`);
-      }
-      const stepData = await stepResponse.json() as any;
-      
-      return {
-        type: 'tutorial',
-        action: 'start',
-        tutorialId: tutorial.id,
-        tutorialTitle: tutorial.title,
-        currentStep: 1,
-        totalSteps: tutorial.steps.length,
-        stepTitle: stepData.title,
-        stepContent: stepData.description || stepData.content,
-        instructions: stepData.instructions || 'Click next to continue to the next step.',
-        initialCode: stepData.initialCode,
-        expectedOutput: stepData.expectedOutput,
-        nextAction: 'next'
-      };
-    } catch (stepError) {
-      ctx.logger.error('Failed to fetch first step details for tutorial %s: %s', tutorial.id, stepError);
-      
-      // Fallback to basic tutorial info
-      const firstStep = tutorial.steps[0];
-      return {
-        type: 'tutorial',
-        action: 'start',
-        tutorialId: tutorial.id,
-        tutorialTitle: tutorial.title,
-        currentStep: 1,
-        totalSteps: tutorial.steps.length,
-        stepTitle: firstStep.title,
-        stepContent: firstStep.description,
-        instructions: 'Click next to continue to the next step.',
-        nextAction: 'next',
-        error: 'Failed to load detailed step content'
-      };
-    }
-  } catch (error) {
-    ctx.logger.error('Failed to start tutorial %s: %s', tutorialId, error);
-    return {
-      type: 'tutorial',
-      action: 'start',
-      error: `Failed to start tutorial: ${tutorialId}`,
-      fallback: 'Please try selecting a tutorial from the available list.'
-    };
-  }
-}
-
-async function getTutorialNext(session: ChatSession, ctx: AgentContext, targetStep?: number) {
-  if (!session.currentTutorial) {
-    return {
-      type: 'tutorial',
-      action: 'next',
-      error: 'No active tutorial. Please start a tutorial first.'
-    };
-  }
-
-  const currentTutorial = session.currentTutorial;
-  const nextStep = targetStep || currentTutorial.currentStep + 1;
-  
-  if (nextStep > currentTutorial.totalSteps) {
-    // Tutorial completed
-    currentTutorial.completed = true;
-    return {
-      type: 'tutorial',
-      action: 'next',
-      currentStep: currentTutorial.totalSteps,
-      totalSteps: currentTutorial.totalSteps,
-      tutorialTitle: currentTutorial.tutorialTitle,
-      title: 'Tutorial Complete!',
-      content: `Congratulations! You've completed the ${currentTutorial.tutorialTitle} tutorial.`,
-      instructions: 'You can start a new tutorial or ask me any questions.',
-      nextAction: 'reset'
-    };
-  }
-
-  // Mark previous step as completed
-  if (currentTutorial.currentStep > 0) {
-    currentTutorial.progress[currentTutorial.currentStep.toString()] = {
-      completed: true,
-      completedAt: new Date().toISOString()
-    };
-  }
-
-  // Update current step
-  currentTutorial.currentStep = nextStep;
-
-  // Fetch step content from API
-  try {
-    const response = await fetch(`${TUTORIAL_API_BASE_URL}/api/tutorials/${currentTutorial.tutorialId}/steps/${nextStep}`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const stepData = await response.json() as any;
-
-    return {
-      type: 'tutorial',
-      action: 'next',
-      currentStep: nextStep,
-      totalSteps: currentTutorial.totalSteps,
-      tutorialTitle: currentTutorial.tutorialTitle,
-      title: stepData.title || `Step ${nextStep}`,
-      content: stepData.description || stepData.content,
-      instructions: stepData.instructions || (nextStep < currentTutorial.totalSteps ? 'Click next to continue.' : 'This is the final step!'),
-      initialCode: stepData.initialCode,
-      expectedOutput: stepData.expectedOutput,
-      nextAction: nextStep < currentTutorial.totalSteps ? 'next' : 'complete'
-    };
-  } catch (error) {
-    ctx.logger.error('Failed to fetch step %d for tutorial %s: %s', nextStep, currentTutorial.tutorialId, error);
-    
-    // Fallback response if API fails
-    return {
-      type: 'tutorial',
-      action: 'next',
-      currentStep: nextStep,
-      totalSteps: currentTutorial.totalSteps,
-      tutorialTitle: currentTutorial.tutorialTitle,
-      title: `Step ${nextStep}`,
-      content: `This is step ${nextStep} of the ${currentTutorial.tutorialTitle} tutorial.`,
-      instructions: nextStep < currentTutorial.totalSteps ? 'Click next to continue.' : 'This is the final step!',
-      nextAction: nextStep < currentTutorial.totalSteps ? 'next' : 'complete',
-      error: 'Failed to load step content'
-    };
-  }
-}
-
-async function getTutorialPrevious(session: ChatSession, ctx: AgentContext, targetStep?: number) {
-  if (!session.currentTutorial) {
-    return {
-      type: 'tutorial',
-      action: 'previous',
-      error: 'No active tutorial. Please start a tutorial first.'
-    };
-  }
-
-  const currentTutorial = session.currentTutorial;
-  const prevStep = targetStep || Math.max(1, currentTutorial.currentStep - 1);
-  
-  // Update current step
-  currentTutorial.currentStep = prevStep;
-
-  // Fetch step content from API
-  try {
-    const response = await fetch(`${TUTORIAL_API_BASE_URL}/api/tutorials/${currentTutorial.tutorialId}/steps/${prevStep}`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const stepData = await response.json() as any;
-
-    return {
-      type: 'tutorial',
-      action: 'previous',
-      currentStep: prevStep,
-      totalSteps: currentTutorial.totalSteps,
-      tutorialTitle: currentTutorial.tutorialTitle,
-      title: stepData.title || `Step ${prevStep}`,
-      content: stepData.description || stepData.content,
-      instructions: stepData.instructions || 'Navigate forward or backward through the tutorial.',
-      initialCode: stepData.initialCode,
-      expectedOutput: stepData.expectedOutput,
-      nextAction: 'next'
-    };
-  } catch (error) {
-    ctx.logger.error('Failed to fetch step %d for tutorial %s: %s', prevStep, currentTutorial.tutorialId, error);
-    
-    // Fallback response if API fails
-    return {
-      type: 'tutorial',
-      action: 'previous',
-      currentStep: prevStep,
-      totalSteps: currentTutorial.totalSteps,
-      tutorialTitle: currentTutorial.tutorialTitle,
-      title: `Step ${prevStep}`,
-      content: `This is step ${prevStep} of the ${currentTutorial.tutorialTitle} tutorial.`,
-      instructions: 'Navigate forward or backward through the tutorial.',
-      nextAction: 'next',
-      error: 'Failed to load step content'
-    };
   }
 }

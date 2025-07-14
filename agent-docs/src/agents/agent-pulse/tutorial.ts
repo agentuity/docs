@@ -16,16 +16,52 @@ const TUTORIAL_API_BASE_URL = 'http://localhost:3201';
 export async function getTutorialList(ctx: AgentContext) {
   try {
     const response = await fetch(`${TUTORIAL_API_BASE_URL}/api/tutorials`);
+    
+    ctx.logger.info('Tutorial API response status: %d', response.status);
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    const tutorials = await response.json();
+    const apiResponse = await response.json() as any;
+    
+    ctx.logger.info('Raw tutorial API response: %s', JSON.stringify(apiResponse, null, 2));
+    
+    // Extract tutorial array from API response structure
+    let tutorialArray: any[] = [];
+    if (apiResponse.success && Array.isArray(apiResponse.data)) {
+      tutorialArray = apiResponse.data;
+      ctx.logger.info('Extracted tutorials from apiResponse.data');
+    } else if (Array.isArray(apiResponse)) {
+      tutorialArray = apiResponse;
+      ctx.logger.info('Using apiResponse directly as array');
+    } else {
+      ctx.logger.warn('Unexpected API response structure, falling back to empty array');
+    }
+    
+    ctx.logger.info('Final tutorial array: %s', JSON.stringify(tutorialArray, null, 2));
+    
+    // Format tutorials into a readable message for the frontend
+    let formattedMessage = 'Here are the available tutorials:\n\n';
+    
+    if (tutorialArray.length === 0) {
+      formattedMessage = 'No tutorials are currently available. Please try again later.';
+    } else {
+      tutorialArray.forEach((tutorial, index) => {
+        formattedMessage += `${index + 1}. **${tutorial.title}**\n`;
+        if (tutorial.description) {
+          formattedMessage += `   ${tutorial.description}\n`;
+        }
+      });
+      formattedMessage += 'Which tutorial would you like to start?';
+    }
+    
+    ctx.logger.info('Formatted tutorial list message: %s', formattedMessage);
     
     return {
       type: 'tutorial',
       action: 'list',
-      tutorials: tutorials,
-      message: 'Here are the available tutorials. Which one would you like to start?'
+      tutorials: tutorialArray,  // Keep for backend processing
+      message: formattedMessage  // Formatted for frontend display
     };
   } catch (error) {
     ctx.logger.error('Failed to fetch tutorials: %s', error);
@@ -33,7 +69,8 @@ export async function getTutorialList(ctx: AgentContext) {
       type: 'tutorial',
       action: 'list',
       error: 'Failed to fetch available tutorials',
-      tutorials: []
+      tutorials: [],
+      message: '❌ Sorry, I couldn\'t load the tutorials right now. Please try again later, or contact support if the problem persists.'
     };
   }
 }
