@@ -11,6 +11,27 @@ import { Popup, PopupContent, PopupTrigger } from "fumadocs-twoslash/ui";
 import { notFound } from "next/navigation";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 
+function filterMethodsFromToc(toc: any[]): any[] {
+	if (!toc) return toc;
+	
+	const filtered = toc.filter(item => {
+		const methodPatterns = [
+			/\w+\s*\([^)]*\)/, // function signatures with parentheses
+			/^[a-z][a-zA-Z0-9]*\s*\(/, // starts with lowercase + parentheses
+			/\w+\.\w+\s*\(/, // dot notation with parentheses
+		];
+		
+		const titleText = item.title?.props?.children || item.value || '';
+		const isMethod = methodPatterns.some(pattern => pattern.test(titleText));
+		return !isMethod;
+	}).map(item => ({
+		...item,
+		children: item.children ? filterMethodsFromToc(item.children) : item.children
+	}));
+	
+	return filtered;
+}
+
 export default async function Page(props: {
 	params: Promise<{ slug?: string[] }>;
 }) {
@@ -19,9 +40,11 @@ export default async function Page(props: {
 	if (!page) notFound();
 
 	const MDX = page.data.body;
+	
+	const filteredToc = filterMethodsFromToc(page.data.toc);
 
 	return (
-		<DocsPage toc={page.data.toc} full={page.data.full}>
+		<DocsPage toc={filteredToc} full={page.data.full}>
 			<DocsTitle>{page.data.title}</DocsTitle>
 			<DocsDescription>{page.data.description}</DocsDescription>
 			<DocsBody>
