@@ -38,7 +38,7 @@ Contact us if you would like to enable custom email addresses to your organizati
 <a id="changes"></a>**Changes:**
 - **Changed:** Shortened Discord interface method name from `discord_message()` to `discord()` for improved usability
 
-**⚠️ Breaking Changes**
+<a id="breaking-changes"></a>**⚠️ Breaking Changes**
 
 The Discord interface method has been renamed from `discord_message()` to `discord()`. Update your code to use the new method name:
 
@@ -215,7 +215,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
 
 - Added AGENTUITY_SDK_KEY ([#42](https://github.com/agentuity/sdk-py/pull/42))
 
-**⚠️ Breaking Changes**
+<a id="breaking-changes"></a>**⚠️ Breaking Changes**
 
 The environment variable for API authentication has changed from `AGENTUITY_API_KEY` to `AGENTUITY_SDK_KEY`. You will need to update any references to this environment variable in your code and deployment configurations.
 
@@ -258,7 +258,7 @@ Please find all instances of AGENTUITY_API_KEY in my code and replace them with 
 - The `AgentContext` object now has a `scope` property that will have the value of `local` when the context is local or `remote` when agent is being invoked by another agent remotely. In the case of agent-to-agent invocation or handoff within the same project, the scope will be `local`.
 - Deprecated the local `/run/:agentId` route since the updated `/:agentId` route now supports streaming data to and from the agent directly. This route will be removed in a near future release.
 
-**⚠️ Breaking Changes**
+<a id="breaking-changes"></a>**⚠️ Breaking Changes**
 
 The `data` object of `AgentRequest` has changed to support fully streaming data and this required a breaking change. Most of the property accessors are now async functions to support the streaming use case.  You can read more about this change in [Pull Request #38](https://github.com/agentuity/sdk-py/pull/38).
 
