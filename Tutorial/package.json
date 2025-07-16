@@ -10,8 +10,7 @@
     "format": "biome format --write .",
     "lint": "biome lint .",
     "prestart": "agentuity bundle",
-    "start": "bun run .agentuity/index.js",
-    "coding-server": "bun run src/tutorial-server.js"
+    "start": "bun run .agentuity/index.js"
   },
   "keywords": [
     "agentuity",
@@ -33,7 +32,8 @@
     "axios": "^1.10.0",
     "express": "^5.1.0",
     "gray-matter": "^4.0.3",
-    "openai": "^5.9.0"
+    "openai": "^5.9.0",
+    "source-map-js": "^1.2.1"
   },
   "module": "index.ts"
 }

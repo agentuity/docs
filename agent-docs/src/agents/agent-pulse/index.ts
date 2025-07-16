@@ -120,21 +120,9 @@ async function handleTutorialChatMessage(message: string, session: ChatSession, 
     // Always get available tutorials for intent classification
     let availableTutorials: any[] = [];
     const tutorialListResponse = await fetchTutorialList(ctx);
-    
-    ctx.logger.info('Fetched tutorial list response: %s', JSON.stringify(tutorialListResponse, null, 2));
-    
-    // tutorialListResponse.tutorials should now be a proper array
     availableTutorials = Array.isArray(tutorialListResponse.tutorials) ? tutorialListResponse.tutorials : [];
-    
-    ctx.logger.info('Available tutorials count: %d', availableTutorials.length);
-    ctx.logger.info('Available tutorials: %s', JSON.stringify(availableTutorials.map(t => ({ id: t.id, title: t.title })), null, 2));
-
-    // Classify user intent
+  
     const intent = await classifyTutorialIntent(message, session, availableTutorials, ctx);
-    ctx.logger.info('Classified intent: %s with confidence: %f', intent.type, intent.confidence);
-    
-    // Log the full intent result for debugging
-    ctx.logger.info('Full intent classification result: %s', JSON.stringify(intent, null, 2));
 
     let result;
     switch (intent.type) {

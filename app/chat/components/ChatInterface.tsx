@@ -5,9 +5,7 @@ import { ChatMessage, ChatInterfaceProps, ChatSession } from '../types';
 import { ChatMessageComponent } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { SessionSidebar } from './SessionSidebar';
-import { HelpCircle, Terminal as TerminalIcon } from 'lucide-react';
-import { Terminal } from '@xterm/xterm';
-import DynamicTerminalComponent from '../../../components/terminal/DynamicTerminalComponent';
+import { HelpCircle, Code } from 'lucide-react';
 
 // Agent endpoints
 const AGENT_PULSE_URL = 'http://127.0.0.1:3500/agent_ddcb59aa4473f1323be5d9f5fb62b74e';
@@ -76,52 +74,173 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
   const [editorContent, setEditorContent] = useState(`print("Hello, World!")`);
   const [editorOpen, setEditorOpen] = useState(false);
   const [executionResult, setExecutionResult] = useState<string | null>(null);
+  const [serverRunning, setServerRunning] = useState(false);
+  const [serverStopping, setServerStopping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Add toggle function after handleTerminalClose
+  // Toggle function for code editor panel
   const toggleEditor = () => {
     setEditorOpen(!editorOpen);
   };
 
-  // Update runCode to use REST API
+  // Check server status
+  const checkServerStatus = async () => {
+    try {
+      const response = await fetch(`/api/execute?sessionId=${currentSessionId}`);
+      const data = await response.json();
+      setServerRunning(data.running || false);
+      
+      // You could add idle time display here if needed
+      if (data.running && data.idleTimeMs) {
+        const idleMinutes = Math.floor(data.idleTimeMs / 60000);
+        const timeoutMinutes = Math.floor(data.timeoutMs / 60000);
+        console.log(`Server idle for ${idleMinutes}/${timeoutMinutes} minutes`);
+      }
+    } catch (error) {
+      console.error('Error checking server status:', error);
+      setServerRunning(false);
+    }
+  };
+
+  // Stop server function
+  const stopServer = async () => {
+    if (!serverRunning || serverStopping) return;
+    
+    setServerStopping(true);
+    try {
+      const response = await fetch(`/api/execute?sessionId=${currentSessionId}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        setServerRunning(false);
+        setExecutionResult(prev => prev + '\n\n🛑 Server stopped by user');
+      } else {
+        const error = await response.json();
+        setExecutionResult(prev => prev + `\n\n❌ Failed to stop server: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Error stopping server:', error);
+      setExecutionResult(prev => prev + '\n\n❌ Error stopping server');
+    } finally {
+      setServerStopping(false);
+    }
+  };
+
+  // Check server status on component mount and session change
+  useEffect(() => {
+    checkServerStatus();
+  }, [currentSessionId]);
+
+  // Periodic status check when server is running
+  useEffect(() => {
+    if (!serverRunning) return;
+
+    const interval = setInterval(() => {
+      checkServerStatus();
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [serverRunning, currentSessionId]);
+
+  // Cleanup on page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (serverRunning) {
+        // Try to stop the server (best effort)
+        fetch(`/api/execute?sessionId=${currentSessionId}`, { method: 'DELETE' }).catch(() => {});
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [serverRunning, currentSessionId]);
+
+  // Update runCode to use the Next.js API with streaming support
   const runCode = async () => {
     setExecutionResult('Running code...');
+    setServerRunning(true);
     
     try {
-      const response = await fetch('http://localhost:8083/execute', {
+      const response = await fetch('/api/execute', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          code: editorContent
+          code: editorContent,
+          filename: 'editor.ts',
+          sessionId: currentSessionId,
         })
       });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        setExecutionResult(`Output:\n${result.output || '(no output)'}`);
-      } else {
-        setExecutionResult(`Error:\n${result.error}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to execute code');
+      }
+
+      // Handle streaming response
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let outputBuffer = '';
+      let errorBuffer = '';
+
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              switch (data.type) {
+                case 'status':
+                  setExecutionResult(data.message);
+                  break;
+                case 'stdout':
+                  outputBuffer += data.data;
+                  setExecutionResult(`Output:\n${outputBuffer}`);
+                  break;
+                case 'stderr':
+                  errorBuffer += data.data;
+                  setExecutionResult(`Error:\n${errorBuffer}`);
+                  break;
+                case 'close':
+                  setServerRunning(false);
+                  if (data.exitCode === 0) {
+                    setExecutionResult(`Output:\n${outputBuffer || '(no output)'}`);
+                  } else {
+                    setExecutionResult(`Process exited with code ${data.exitCode}\nError:\n${errorBuffer}`);
+                  }
+                  break;
+                case 'timeout':
+                  setServerRunning(false);
+                  setExecutionResult(prev => `${prev}\n\n🕐 ${data.message}`);
+                  break;
+                case 'error':
+                  setServerRunning(false);
+                  setExecutionResult(`Error:\n${data.error}`);
+                  break;
+              }
+            } catch (parseError) {
+              console.warn('Failed to parse SSE data:', parseError);
+            }
+          }
+        }
       }
     } catch (error) {
       console.error('Error executing code:', error);
+      setServerRunning(false);
       setExecutionResult('Connection error - please try again');
     }
   };
-
-
-
-  // Stabilize the onReady callback to prevent re-renders
-  const handleTerminalReady = useCallback((terminal: Terminal) => {
-    console.log('Terminal ready:', terminal);
-  }, []);
-
-  // Stabilize the onClose callback
-  const handleTerminalClose = useCallback(() => {
-    // setIsTerminalOpen(false); // This is now handled by toggleEditor
-  }, []);
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
@@ -258,6 +377,10 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
               filename: 'index.ts',
               editable: true
             };
+            
+            // Auto-open editor for tutorial steps with code
+            setEditorOpen(true);
+            setEditorContent(data.initialCode);
           }
         }
       }
@@ -305,16 +428,101 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
         throw new Error('Failed to execute code');
       }
 
-      const result = await response.json();
+      // Handle streaming response
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let outputBuffer = '';
+      let errorBuffer = '';
+      let currentResult = { output: '', error: undefined as string | undefined, executionTime: 0, exitCode: 0 };
 
-      // Update the message with execution results
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      // Update UI immediately to show execution started
       setMessages(prev => prev.map(msg =>
         msg.codeBlock?.filename === filename
-          ? { ...msg, execution: result }
+          ? { 
+            ...msg, 
+            execution: { 
+              output: 'Starting execution...', 
+              executionTime: 0,
+              exitCode: 0
+            } 
+          }
           : msg
       ));
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              switch (data.type) {
+                case 'status':
+                  currentResult.output = data.message;
+                  break;
+                case 'stdout':
+                  outputBuffer += data.data;
+                  currentResult.output = outputBuffer;
+                  break;
+                case 'stderr':
+                  errorBuffer += data.data;
+                  currentResult.error = errorBuffer;
+                  break;
+                case 'close':
+                  currentResult.exitCode = data.exitCode || 0;
+                  currentResult.output = outputBuffer || '(no output)';
+                  if (errorBuffer) {
+                    currentResult.error = errorBuffer;
+                  }
+                  break;
+                case 'timeout':
+                  currentResult.error = data.message;
+                  currentResult.exitCode = 1;
+                  break;
+                case 'error':
+                  currentResult.error = data.error;
+                  currentResult.exitCode = 1;
+                  break;
+              }
+
+              // Update the message with current execution results
+              setMessages(prev => prev.map(msg =>
+                msg.codeBlock?.filename === filename
+                  ? { ...msg, execution: { ...currentResult } }
+                  : msg
+              ));
+            } catch (parseError) {
+              console.warn('Failed to parse SSE data:', parseError);
+            }
+          }
+        }
+      }
     } catch (error) {
       console.error('Error executing code:', error);
+      
+      // Update with error state
+      setMessages(prev => prev.map(msg =>
+        msg.codeBlock?.filename === filename
+          ? { 
+            ...msg, 
+            execution: { 
+              output: '',
+              error: 'Connection error - please try again',
+              executionTime: 0,
+              exitCode: 1
+            }
+          }
+          : msg
+      ));
     } finally {
       setExecutingFiles(prev => {
         const newSet = new Set(prev);
@@ -381,13 +589,13 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col relative p-2">
           <div className={`flex-1 flex flex-row bg-black/20 border border-white/10 rounded-2xl overflow-hidden relative`}>
-            {/* Terminal Toggle Button */}
+            {/* Code Editor Toggle Button */}
             <button
               onClick={toggleEditor}
               className={`absolute top-4 right-4 z-50 p-2 rounded-lg transition-all duration-200 ${editorOpen ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'bg-gray-500/20 text-gray-400 border border-gray-500/30 hover:bg-gray-500/30'}`}
-              title={editorOpen ? 'Close Editor' : 'Open Editor'}
+              title={editorOpen ? 'Close Code Editor' : 'Open Code Editor'}
             >
-              <TerminalIcon className="w-4 h-4" />
+              <Code className="w-4 h-4" />
             </button>
 
             {/* Chat Messages Area */}
@@ -451,31 +659,77 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
               </div>
             </div>
 
-            {/* Terminal Panel - Always mounted but conditionally visible */}
+            {/* Code Editor Panel - Always mounted but conditionally visible */}
             <div className={`${editorOpen ? 'w-1/2' : 'w-0'} border-l border-white/8 flex flex-col min-w-0 transition-all duration-300 ease-in-out overflow-hidden`}>
-              <div className={`p-4 border-b border-white/8 ${editorOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-gray-200">Code Editor</h3>
-                  <button
-                    onClick={runCode}
-                    className="px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded-md text-sm"
-                  >
-                    Run
-                  </button>
+              {/* Code Editor Section */}
+              <div className={`${editorOpen ? 'h-1/2' : 'h-0'} border-b border-white/8 flex flex-col`}>
+                <div className={`p-4 border-b border-white/8 ${editorOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-sm font-medium text-gray-200">Code Editor</h3>
+                      {/* Server Status Indicator */}
+                      <div className={`flex items-center gap-2 px-2 py-1 rounded-md text-xs ${
+                        serverRunning 
+                          ? 'bg-green-500/20 text-green-400' 
+                          : 'bg-gray-500/20 text-gray-400'
+                      }`}>
+                        <div className={`w-2 h-2 rounded-full ${
+                          serverRunning ? 'bg-green-400 animate-pulse' : 'bg-gray-400'
+                        }`} />
+                        <span>{serverRunning ? 'Server Running' : 'Server Stopped'}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {serverRunning && (
+                        <button
+                          onClick={stopServer}
+                          disabled={serverStopping}
+                          className="px-3 py-1 bg-red-500/20 text-red-400 rounded-md text-sm hover:bg-red-500/30 disabled:opacity-50"
+                        >
+                          {serverStopping ? 'Stopping...' : 'Stop Server'}
+                        </button>
+                      )}
+                      <button
+                        onClick={runCode}
+                        disabled={serverRunning}
+                        className={`px-3 py-1 rounded-md text-sm ${
+                          serverRunning 
+                            ? 'bg-gray-500/20 text-gray-500 cursor-not-allowed' 
+                            : 'bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30'
+                        }`}
+                      >
+                        {serverRunning ? 'Server Running' : 'Run Code'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className={`flex-1 p-4 flex flex-col ${editorOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
+                  <textarea
+                    value={editorContent}
+                    onChange={(e) => setEditorContent(e.target.value)}
+                    className="flex-1 w-full bg-black/30 border border-white/10 rounded-lg p-4 text-white font-mono text-sm"
+                    placeholder="Write your TypeScript agent code here..."
+                  />
                 </div>
               </div>
-              <div className={`flex-1 p-4 flex flex-col ${editorOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
-                <textarea
-                  value={editorContent}
-                  onChange={(e) => setEditorContent(e.target.value)}
-                  className="flex-1 w-full bg-black/30 border border-white/10 rounded-lg p-4 text-white font-mono text-sm"
-                  placeholder="Write your TypeScript agent code here..."
-                />
-                {executionResult && (
-                  <div className="mt-4 p-4 bg-black/50 rounded-lg">
-                    <pre className="text-green-400">{executionResult}</pre>
-                  </div>
-                )}
+
+              {/* Execution Output Section */}
+              <div className={`${editorOpen ? 'h-1/2' : 'h-0'} flex flex-col`}>
+                <div className={`p-4 border-b border-white/8 ${editorOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
+                  <h3 className="text-sm font-medium text-gray-200">Execution Output</h3>
+                </div>
+                <div className={`flex-1 p-4 ${editorOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
+                  {executionResult && (
+                    <div className="h-full overflow-y-auto bg-black/50 rounded-lg p-4">
+                      <pre className="text-green-400 text-sm whitespace-pre-wrap font-mono">{executionResult}</pre>
+                    </div>
+                  )}
+                  {!executionResult && editorOpen && (
+                    <div className="h-full flex items-center justify-center text-gray-500">
+                      <p className="text-sm">Click "Run Code" to see output here</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -483,4 +737,4 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
       </div>
     </div>
   );
-} 
+}
