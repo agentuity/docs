@@ -16,7 +16,7 @@ This page documents the release history of the [Agentuity Python SDK](https://gi
 **Changes:**
 - **Fixed:** DevMode: make sure certain props are set on metadata for improved development mode debugging
 
-## v0.0.100
+## v0.0.100 ⚠️
 
 <Callout type="info">
   Released: June 30, 2025
@@ -25,7 +25,7 @@ This page documents the release history of the [Agentuity Python SDK](https://gi
 **Changes:**
 - **Changed:** Shortened Discord interface method name from `discord_message()` to `discord()` for improved usability
 
-### ⚠️ Breaking Changes
+**⚠️ Breaking Changes**
 
 The Discord interface method has been renamed from `discord_message()` to `discord()`. Update your code to use the new method name:
 
@@ -177,32 +177,32 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: May 22, 2025
 </Callout>
 
-### Added
+**Added:**
 
 - Added support for constructing data objects from both synchronous and asynchronous byte iterators ([#45](https://github.com/agentuity/sdk-py/pull/45))
 - Added synchronous reading methods for data objects ([#45](https://github.com/agentuity/sdk-py/pull/45))
 
-### Changed
+**Changed:**
 
 - Improved local development instructions in README ([#44](https://github.com/agentuity/sdk-py/pull/44))
 - Enhanced agent input handling to accept a broader range of data types ([#45](https://github.com/agentuity/sdk-py/pull/45))
 - Configured explicit timeout settings for agent network operations ([#45](https://github.com/agentuity/sdk-py/pull/45))
 
-### Fixed
+**Fixed:**
 
 - Improved data conversion logic to handle a wider range of input types ([#45](https://github.com/agentuity/sdk-py/pull/45))
 
-## v0.0.84
+## v0.0.84 ⚠️
 
 <Callout type="info">
   Released: May 14, 2025
 </Callout>
 
-### Added
+**Added:**
 
 - Added AGENTUITY_SDK_KEY ([#42](https://github.com/agentuity/sdk-py/pull/42))
 
-### ⚠️ Breaking Changes
+**⚠️ Breaking Changes**
 
 The environment variable for API authentication has changed from `AGENTUITY_API_KEY` to `AGENTUITY_SDK_KEY`. You will need to update any references to this environment variable in your code and deployment configurations.
 
@@ -228,24 +228,24 @@ Please find all instances of AGENTUITY_API_KEY in my code and replace them with 
   Released: May 9, 2025
 </Callout>
 
-### Fixed
+**Fixed:**
 
 - Fix issue vectors, better typing for Vector and KeyValue in context ([#40](https://github.com/agentuity/sdk-py/pull/40))
 
-## v0.0.82
+## v0.0.82 ⚠️
 
 <Callout type="info">
   Released: April 30, 2025
 </Callout>
 
-### Changes
+**Changes:**
 
 - Add support for streaming data to and from agents.  This includes streaming data to the agent via the `data` object and streaming data from the agent via the `stream` property of the `AgentResponse` object.
 - The `trigger` property of the `AgentRequest` object will have the value `agent` when the request is invoked by another agent.
 - The `AgentContext` object now has a `scope` property that will have the value of `local` when the context is local or `remote` when agent is being invoked by another agent remotely. In the case of agent-to-agent invocation or handoff within the same project, the scope will be `local`.
 - Deprecated the local `/run/:agentId` route since the updated `/:agentId` route now supports streaming data to and from the agent directly. This route will be removed in a near future release.
 
-### ⚠️ Breaking Changes
+**⚠️ Breaking Changes**
 
 The `data` object of `AgentRequest` has changed to support fully streaming data and this required a breaking change. Most of the property accessors are now async functions to support the streaming use case.  You can read more about this change in [Pull Request #38](https://github.com/agentuity/sdk-py/pull/38).
 
@@ -283,7 +283,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 7, 2025
 </Callout>
 
-### Added
+**Added:**
 
 - Add comprehensive test suite with pytest ([#27](https://github.com/agentuity/sdk-py/pull/27))
 - Expand test coverage for logger, context, and langchain instrumentation ([#28](https://github.com/agentuity/sdk-py/pull/28))
@@ -295,7 +295,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 3, 2025
 </Callout>
 
-### Fixed
+**Fixed:**
 
 - Fix Langchain instrumentation and add openai-agents dependency ([#24](https://github.com/agentuity/sdk-py/pull/24))
 
@@ -305,12 +305,12 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 1, 2025
 </Callout>
 
-### Added
+**Added:**
 
 - Add data and markdown methods to AgentResponse class ([#26](https://github.com/agentuity/sdk-py/pull/26))
 - Add PyPI release workflow ([#22](https://github.com/agentuity/sdk-py/pull/22))
 
-### Changed
+**Changed:**
 
 - Update logo URL from relative to absolute path ([#19](https://github.com/agentuity/sdk-py/pull/19))
 - Remove 'work in progress' warning from README ([#20](https://github.com/agentuity/sdk-py/pull/20))
@@ -325,7 +325,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 25, 2025
 </Callout>
 
-### Added
+**Added:**
 
 - Better support for OpenAI and Agents framework ([#16](https://github.com/agentuity/sdk-py/pull/16))
 - Add agentName to logger ([#17](https://github.com/agentuity/sdk-py/pull/17))
@@ -336,7 +336,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 19, 2025
 </Callout>
 
-### Fixed
+**Fixed:**
 
 - Fix issue with non-stream functionality ([#15](https://github.com/agentuity/sdk-py/pull/15))
 
@@ -346,11 +346,11 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 16, 2025
 </Callout>
 
-### Added
+**Added:**
 
 - Add the @agentuity/agentId to the context.logger for an agent ([#13](https://github.com/agentuity/sdk-py/pull/13))
 
-### Fixed
+**Fixed:**
 
 - Fix import issue and add ruff for formatting and linting ([#14](https://github.com/agentuity/sdk-py/pull/14))
 
@@ -360,7 +360,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 16, 2025
 </Callout>
 
-### Added
+**Added:**
 
 - SSE and Stream support with new stream() method and improved documentation ([#12](https://github.com/agentuity/sdk-py/pull/12))
 
@@ -370,7 +370,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 13, 2025
 </Callout>
 
-### Added
+**Added:**
 
 - Stream IO Input: add new facility to support stream io for input data ([#10](https://github.com/agentuity/sdk-py/pull/10))
 
@@ -380,7 +380,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 10, 2025
 </Callout>
 
-### Changes
+**Changes:**
 
 - Implemented Vector and KeyValue services
 - Reorganized types into logical files

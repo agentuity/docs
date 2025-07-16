@@ -30,11 +30,13 @@ This section provides detailed documentation for the Agentuity Python SDK API, i
 
 The Agentuity SDK allows you to customize the initial appearance of DevMode when it starts interacting with your agents by defining a `welcome()` function in your agent module. This function should return a dictionary containing a welcome message and optional example prompts.
 
-### welcome()
+### welcome
+
+`welcome() -> dict`
 
 Defines a welcome message and optional example prompts for DevMode.
 
-#### Return Value
+**Return Value**
 
 Returns a dictionary with a welcome message and optional prompts.
 
@@ -51,7 +53,7 @@ def welcome():
     }
 ```
 
-#### Example
+**Example**
 
 ```python
 def welcome():
@@ -74,11 +76,13 @@ The Agentuity SDK provides comprehensive email processing capabilities, includin
 
 The `Email` class represents an incoming email with methods to access its properties and send replies.
 
-#### `sendReply(request, context, subject=None, text=None, html=None, attachments=None)`
+#### sendReply
+
+`sendReply(request, context, subject=None, text=None, html=None, attachments=None)`
 
 Send a reply to the incoming email using the Agentuity email API.
 
-##### Parameters
+**Parameters**
 
 - `request` (AgentRequest): The triggering agent request, used to extract metadata such as email-auth-token
 - `context` (AgentContext): The agent context, used to get the base_url and agentId
@@ -87,11 +91,11 @@ Send a reply to the incoming email using the Agentuity email API.
 - `html` (str, optional): HTML body of the reply
 - `attachments` (List[OutgoingEmailAttachmentInterface], optional): List of attachments to include
 
-##### Return Value
+**Return Value**
 
 Returns `None` on successful send.
 
-##### Example
+**Example**
 
 ```python
 from agentuity import AgentRequest, AgentResponse, AgentContext
@@ -125,19 +129,19 @@ async def handler(request: AgentRequest, response: AgentResponse, context: Agent
 
 The `EmailAttachment` class represents an outgoing email attachment with streaming data support.
 
-#### Constructor
+**Constructor**
 
 ```python
 EmailAttachment(filename: str, data: DataLike, content_type: str = None)
 ```
 
-##### Parameters
+**Parameters**
 
 - `filename` (str): The filename of the attachment
 - `data` (DataLike): The attachment data (can be string, bytes, or Data object)
 - `content_type` (str, optional): MIME type of the attachment
 
-#### Properties
+**Properties**
 
 - `filename` (str): The filename of the attachment
 - `data()`: Returns the Data object containing the attachment content
@@ -146,22 +150,24 @@ EmailAttachment(filename: str, data: DataLike, content_type: str = None)
 
 The `IncomingEmailAttachment` class represents an attachment from an incoming email with support for large attachments via streaming.
 
-#### Properties
+**Properties**
 
 - `filename` (str): The filename of the attachment
 - `content_disposition` (str): The content disposition ('attachment' or 'inline')
 
-#### Methods
+**Methods**
 
-##### `async data()`
+#### data
+
+`async data()`
 
 Asynchronously retrieves the attachment data as a Data object with streaming support for large files.
 
-##### Return Value
+**Return Value**
 
 Returns a `Data` object that streams the attachment content.
 
-##### Example
+**Example**
 
 ```python
 async def handler(request: AgentRequest, response: AgentResponse, context: AgentContext):
@@ -211,17 +217,17 @@ async def agent_handler(
     return response.json({"message": "Hello, world!"})
 ```
 
-#### Parameters
+**Parameters**
 
 - `request`: An `AgentRequest` object containing the request data
 - `response`: An `AgentResponse` object for creating responses
 - `context`: An `AgentContext` object providing access to various capabilities
 
-#### Return Value
+**Return Value**
 
 The handler function should return an `AgentResponseType` object.
 
-#### Example
+**Example**
 
 ```python
 from agentuity import AgentRequest, AgentResponse, AgentContext
@@ -254,20 +260,22 @@ The Agentuity SDK provides three storage APIs: Key-Value Storage, Vector Storage
 
 The Key-Value Storage API provides a simple way to store and retrieve data. It is accessed through the `context.kv` object.
 
-#### `async get(name: str, key: str) -> "DataResult"`
+#### get
+
+`async get(name: str, key: str) -> "DataResult"`
 
 Retrieves a value from the key-value storage.
 
-##### Parameters
+**Parameters**
 
 - `name`: The name of the key-value storage
 - `key`: The key to retrieve the value for
 
-##### Return Value
+**Return Value**
 
 Returns a DataResult object that has an `exists` property to check if the value exists and a `data` property with async accessors like `data.json()` and `data.text()`.
 
-##### Example
+**Example**
 
 ```python
 from agentuity.sdk import AgentContext
@@ -292,22 +300,24 @@ except Exception as e:
     user_prefs = {"theme": "light"}
 ```
 
-#### `async set(name: str, key: str, value: Union[str, int, float, bool, list, dict, bytes, "Data"], params: Optional[dict] = None) -> None`
+#### set
+
+`async set(name: str, key: str, value: Union[str, int, float, bool, list, dict, bytes, "Data"], params: Optional[dict] = None) -> None`
 
 Stores a value in the key-value storage.
 
-##### Parameters
+**Parameters**
 
 - `name`: The name of the key-value storage
 - `key`: The key to store the value under
 - `value`: The value to store (Union[str, int, float, bool, list, dict, bytes, "Data"])
 - `params` (optional): Can have `ttl` (time-to-live in seconds)
 
-##### Return Value
+**Return Value**
 
 None
 
-##### Example
+**Example**
 
 ```python
 import json
@@ -326,20 +336,22 @@ await context.kv.set("user-data", "user-123", binary_data)
 await context.kv.set("session", "user-123", "active", {"ttl":3600})
 ```
 
-#### `async delete(name: str, key: str) -> None`
+#### delete
+
+`async delete(name: str, key: str) -> None`
 
 Deletes a value from the key-value storage.
 
-##### Parameters
+**Parameters**
 
 - `name`: The name of the key-value storage
 - `key`: The key to delete
 
-##### Return Value
+**Return Value**
 
 None
 
-##### Example
+**Example**
 
 ```python
 # Delete a value
@@ -350,20 +362,22 @@ await context.kv.delete("user-preferences", "user-123")
 
 The Vector Storage API provides a way to store and search for data using vector embeddings. It is accessed through the `context.vector` object.
 
-#### `async upsert(name: str, *documents: VectorUpsertParams) -> list[str]`
+#### upsert
+
+`async upsert(name: str, *documents: VectorUpsertParams) -> list[str]`
 
 Inserts or updates vectors in the vector storage.
 
-##### Parameters
+**Parameters**
 
 - `name`: The name of the vector storage
 - `documents`: One or more documents to upsert, each with either embeddings or text
 
-##### Return Value
+**Return Value**
 
 Returns a list of string IDs for the upserted vectors.
 
-##### Example
+**Example**
 
 ```python
 from agentuity.sdk import AgentContext
@@ -418,20 +432,22 @@ ids2 = await context.vector.upsert(
 )
 ```
 
-#### `async search(name: str, params: VectorSearchParams) -> list[VectorSearchResult]`
+#### search
+
+`async search(name: str, params: VectorSearchParams) -> list[VectorSearchResult]`
 
 Searches for vectors in the vector storage.
 
-##### Parameters
+**Parameters**
 
 - `name`: The name of the vector storage
 - `params`: Search parameters including query, limit, similarity threshold, and metadata filters
 
-##### Return Value
+**Return Value**
 
 Returns a list of search results, each containing an ID, metadata, and distance score.
 
-##### Example
+**Example**
 
 ```python
 from agentuity.sdk import AgentContext
@@ -459,20 +475,22 @@ except Exception as e:
     # Handle the error appropriately
 ```
 
-#### `async delete(name: str, key: str) -> int`
+#### delete
+
+`async delete(name: str, key: str) -> int`
 
 Deletes a vector from the vector storage.
 
-##### Parameters
+**Parameters**
 
 - `name`: The name of the vector storage
 - `key`: The ID of the vector to delete
 
-##### Return Value
+**Return Value**
 
 Returns the number of vectors that were deleted (0 or 1).
 
-##### Example
+**Example**
 
 ```python
 from agentuity.sdk import AgentContext
@@ -490,20 +508,22 @@ except Exception as e:
 
 The Object Storage API provides a way to store and retrieve objects (files, documents, media) with support for public URL generation. It is accessed through the `context.objectstore` object.
 
-#### `async get(bucket: str, key: str) -> DataResult`
+#### get
+
+`async get(bucket: str, key: str) -> DataResult`
 
 Retrieves an object from the object storage.
 
-##### Parameters
+**Parameters**
 
 - `bucket`: The bucket to get the object from
 - `key`: The key of the object to get
 
-##### Return Value
+**Return Value**
 
 Returns a DataResult object that has an `exists` property to check if the object exists and a `data` property containing the object data if found.
 
-##### Example
+**Example**
 
 ```python
 from agentuity import AgentContext
@@ -522,22 +542,24 @@ except Exception as e:
     # Handle the error appropriately
 ```
 
-#### `async put(bucket: str, key: str, data: DataLike, params: Optional[ObjectStorePutParams] = None) -> None`
+#### put
+
+`async put(bucket: str, key: str, data: DataLike, params: Optional[ObjectStorePutParams] = None) -> None`
 
 Stores an object in the object storage.
 
-##### Parameters
+**Parameters**
 
 - `bucket`: The bucket to put the object into
 - `key`: The key of the object to put
 - `data`: The data to store (can be string, bytes, or other DataLike types)
 - `params` (optional): Additional parameters for the object. The following properties map to canonical HTTP headers: `content_type` (Content-Type), `content_encoding` (Content-Encoding), `cache_control` (Cache-Control), `content_disposition` (Content-Disposition), and `content_language` (Content-Language). The optional `metadata` property accepts a dictionary of arbitrary key-value pairs that will be stored as metadata with the object but not returned as part of HTTP results when the object is fetched. The `content_type` parameter is optional - if not provided, the content type will be automatically detected based on the data type (e.g., objects will be set to `application/json`). If the content type cannot be determined, it defaults to `application/octet-stream`.
 
-##### Return Value
+**Return Value**
 
 Returns None when the object has been stored successfully.
 
-##### Example
+**Example**
 
 ```python
 from agentuity import AgentContext
@@ -597,20 +619,22 @@ await context.objectstore.put(
 )
 ```
 
-#### `async delete(bucket: str, key: str) -> bool`
+#### delete
+
+`async delete(bucket: str, key: str) -> bool`
 
 Deletes an object from the object storage.
 
-##### Parameters
+**Parameters**
 
 - `bucket`: The bucket to delete the object from
 - `key`: The key of the object to delete
 
-##### Return Value
+**Return Value**
 
 Returns a boolean indicating whether the object was deleted (True) or didn't exist (False).
 
-##### Example
+**Example**
 
 ```python
 from agentuity import AgentContext
@@ -627,21 +651,23 @@ except Exception as e:
     # Handle the error appropriately
 ```
 
-#### `async create_public_url(bucket: str, key: str, expires_duration: Optional[int] = None) -> str`
+#### create_public_url
+
+`async create_public_url(bucket: str, key: str, expires_duration: Optional[int] = None) -> str`
 
 Creates a time-limited public URL for accessing an object.
 
-##### Parameters
+**Parameters**
 
 - `bucket`: The bucket containing the object
 - `key`: The key of the object
 - `expires_duration` (optional): Duration in milliseconds until the URL expires. Defaults to 1 hour (3600000ms) if not provided. Minimum value is 1 minute (60000ms) - values less than 1 minute will be set to 1 minute.
 
-##### Return Value
+**Return Value**
 
 Returns a public URL string that can be used to access the object.
 
-##### Example
+**Example**
 
 ```python
 from agentuity import AgentContext
@@ -683,19 +709,21 @@ except Exception as e:
 
 The Agentuity SDK allows agents to communicate with each other through the `context.get_agent()` method and agent redirection.
 
-### `async get_agent(params: GetAgentRequestParams) -> RemoteAgent`
+### get_agent
+
+`async get_agent(params: GetAgentRequestParams) -> RemoteAgent`
 
 Retrieves a handle to a remote agent that can be invoked.
 
-#### Parameters
+**Parameters**
 
 - `params`: Parameters to identify the agent, either by ID or by name and project ID
 
-#### Return Value
+**Return Value**
 
 Returns a `RemoteAgent` object that can be used to invoke the agent.
 
-#### Example
+**Example**
 
 ```python
 from agentuity.sdk import AgentContext, RemoteAgent
@@ -723,7 +751,9 @@ except Exception as e:
 
 The `response.handoff()` method allows an agent to handoff the request to another agent.
 
-#### `handoff(agent: GetAgentRequestParams, payload: dict | bytes | str = None, content_type: str = None, metadata: dict = None) -> AgentRedirectResponse`
+#### handoff
+
+`handoff(agent: GetAgentRequestParams, payload: dict | bytes | str = None, content_type: str = None, metadata: dict = None) -> AgentRedirectResponse`
 
 Redirects the current request to another agent.
 
@@ -731,18 +761,18 @@ Redirects the current request to another agent.
   Handoff is currently only supported for handoff to other agents in the same project. However, we are working on remote agent handoff and should have that working soon.
 </Callout>
 
-##### Parameters
+**Parameters**
 
 - `agent`: Parameters to identify the target agent
 - `payload` (optional): The payload to send to the target agent
 - `content_type` (optional): The content type of the payload
 - `metadata` (optional): Additional metadata to include with the request
 
-##### Return Value
+**Return Value**
 
 Returns an `AgentRedirectResponse` object.
 
-##### Example
+**Example**
 
 ```python
 # Handoff to another agent
@@ -760,20 +790,20 @@ The Agentuity SDK provides various methods for creating different types of respo
 
 ### JSON Responses
 
-#### `json(data: dict, metadata: dict = None) -> AgentResponseType`
+`json(data: dict, metadata: dict = None) -> AgentResponseType`
 
 Creates a JSON response.
 
-##### Parameters
+**Parameters**
 
 - `data`: The JSON data to include in the response
 - `metadata` (optional): Additional metadata to include with the response
 
-##### Return Value
+**Return Value**
 
 Returns an `AgentResponseType` object with the JSON data.
 
-##### Example
+**Example**
 
 ```python
 return response.json({
@@ -784,20 +814,20 @@ return response.json({
 
 ### Text Responses
 
-#### `text(data: str, metadata: dict = None) -> AgentResponseType`
+`text(data: str, metadata: dict = None) -> AgentResponseType`
 
 Creates a text response.
 
-##### Parameters
+**Parameters**
 
 - `data`: The text to include in the response
 - `metadata` (optional): Additional metadata to include with the response
 
-##### Return Value
+**Return Value**
 
 Returns an `AgentResponseType` object with the text data.
 
-##### Example
+**Example**
 
 ```python
 return response.text("Hello, world!")
@@ -805,20 +835,20 @@ return response.text("Hello, world!")
 
 ### Binary Responses
 
-#### `binary(data: bytes, metadata: dict = None) -> AgentResponseType`
+`binary(data: bytes, metadata: dict = None) -> AgentResponseType`
 
 Creates a binary response.
 
-##### Parameters
+**Parameters**
 
 - `data`: The binary data to include in the response
 - `metadata` (optional): Additional metadata to include with the response
 
-##### Return Value
+**Return Value**
 
 Returns an `AgentResponseType` object with the binary data.
 
-##### Example
+**Example**
 
 ```python
 binary_data = bytes([1, 2, 3, 4])
@@ -843,7 +873,7 @@ The SDK provides specialized methods for various media types:
 
 Each method works similarly to the `binary()` method but sets the appropriate content type. The `data` method allows setting specific data with an exact content type, while the `markdown` method provides a convenient way to return markdown content.
 
-#### Example
+**Example**
 
 ```python
 # Return a PNG image
@@ -855,20 +885,20 @@ return response.mp3(audio_data, {"duration": 120})
 
 ### HTML Responses
 
-#### `html(data: str, metadata: dict = None) -> AgentResponseType`
+`html(data: str, metadata: dict = None) -> AgentResponseType`
 
 Creates an HTML response.
 
-##### Parameters
+**Parameters**
 
 - `data`: The HTML content to include in the response
 - `metadata` (optional): Additional metadata to include with the response
 
-##### Return Value
+**Return Value**
 
 Returns an `AgentResponseType` object with the HTML content.
 
-##### Example
+**Example**
 
 ```python
 return response.html("<h1>Hello, world!</h1><p>This is an HTML response.</p>")
@@ -876,19 +906,19 @@ return response.html("<h1>Hello, world!</h1><p>This is an HTML response.</p>")
 
 ### Empty Responses
 
-#### `empty(metadata: dict = None) -> AgentResponseType`
+`empty(metadata: dict = None) -> AgentResponseType`
 
 Creates an empty response.
 
-##### Parameters
+**Parameters**
 
 - `metadata` (optional): Additional metadata to include with the response
 
-##### Return Value
+**Return Value**
 
 Returns an `AgentResponseType` object with no payload.
 
-##### Example
+**Example**
 
 ```python
 return response.empty()
@@ -900,80 +930,90 @@ The Agentuity SDK provides various methods for accessing request data through th
 
 ### Accessing Request Data
 
-#### `trigger() -> str`
+#### trigger
+
+`trigger() -> str`
 
 Gets the trigger type of the request.
 
-##### Return Value
+**Return Value**
 
 Returns a string representing the trigger type (webhook, cron, manual, agent, etc.).
 
-##### Example
+**Example**
 
 ```python
 trigger_type = request.trigger()
 print(f"Request triggered by: {trigger_type}")
 ```
 
-#### `metadata(key: str, default_value = None) -> Any`
+#### metadata
+
+`metadata(key: str, default_value = None) -> Any`
 
 Gets metadata associated with the request.
 
-##### Parameters
+**Parameters**
 
 - `key`: The metadata key to retrieve
 - `default_value` (optional): A default value to return if the key does not exist
 
-##### Return Value
+**Return Value**
 
 Returns the metadata value for the specified key, or the default value if the key does not exist.
 
-##### Example
+**Example**
 
 ```python
 user_id = request.metadata("userId", "anonymous")
 print(f"User ID: {user_id}")
 ```
 
-#### `json() -> dict`
+#### json
+
+`json() -> dict`
 
 Gets the payload of the request as a JSON object.
 
-##### Return Value
+**Return Value**
 
 Returns the request payload as a dictionary.
 
-##### Example
+**Example**
 
 ```python
 data = await request.data.json()
 print(f"Request data: {data}")
 ```
 
-#### `text() -> str`
+#### text
+
+`text() -> str`
 
 Gets the payload of the request as a string.
 
-##### Return Value
+**Return Value**
 
 Returns the request payload as a string.
 
-##### Example
+**Example**
 
 ```python
 text = request.data.text
 print(f"Request text: {text}")
 ```
 
-#### `binary() -> bytes`
+#### binary
+
+`binary() -> bytes`
 
 Gets the payload of the request as bytes.
 
-##### Return Value
+**Return Value**
 
 Returns the request payload as bytes.
 
-##### Example
+**Example**
 
 ```python
 binary_data = request.binary()
@@ -996,7 +1036,7 @@ The SDK provides specialized methods for various media types:
 
 Each method returns the request payload as bytes with the appropriate content type validation, except for `email()` which returns an `Email` object.
 
-#### Example
+**Example**
 
 ```python
 # Get an image from the request
@@ -1008,15 +1048,17 @@ audio = request.mp3()
 # Process the audio...
 ```
 
-#### `email() -> Email`
+#### email
+
+`email() -> Email`
 
 Gets the payload of the request as an Email object. This method validates that the content type is `message/rfc822` before parsing.
 
-##### Return Value
+**Return Value**
 
 Returns an `Email` object with parsed email data and accessor methods.
 
-##### Example
+**Example**
 
 ```python
 # Get email from the request (content type must be message/rfc822)
@@ -1049,57 +1091,79 @@ The `Email` class provides comprehensive email parsing capabilities and is retur
 
 All email properties are accessible as attributes on the Email object:
 
-#### `subject -> str`
+#### subject
+
+`subject -> str`
 
 Returns the subject line of the email.
 
-#### `from_email -> str | None`
+#### from_email
+
+`from_email -> str | None`
 
 Returns the sender's email address. Handles both simple email strings and tuple formats like `('Name', 'email@domain.com')`.
 
-#### `from_name -> str | None`
+#### from_name
+
+`from_name -> str | None`
 
 Returns the sender's display name if available.
 
-#### `to -> str | None`
+#### to
+
+`to -> str | None`
 
 Returns the recipient's email address. Handles both simple email strings and tuple formats.
 
-#### `date -> datetime | None`
+#### date
+
+`date -> datetime | None`
 
 Returns the email date as a datetime object.
 
-#### `messageId -> str`
+#### messageId
+
+`messageId -> str`
 
 Returns the unique message ID of the email.
 
-#### `headers -> dict`
+#### headers
+
+`headers -> dict`
 
 Returns all email headers as a dictionary.
 
-#### `text -> str`
+#### text
+
+`text -> str`
 
 Returns the plain text content of the email.
 
-#### `html -> str`
+#### html
+
+`html -> str`
 
 Returns the HTML content of the email.
 
-#### `attachments -> list`
+#### attachments
+
+`attachments -> list`
 
 Returns a list of email attachments.
 
 ### Email Methods
 
-#### `to_dict() -> dict`
+#### to_dict
+
+`to_dict() -> dict`
 
 Converts the Email object to a dictionary containing all email data.
 
-##### Return Value
+**Return Value**
 
 Returns a dictionary with keys: subject, from_email, from_name, to, date, messageId, headers, text, html, attachments.
 
-##### Example
+**Example**
 
 ```python
 email_data = email.to_dict()
@@ -1171,61 +1235,69 @@ class Logger:
 
 ### Logging Methods
 
-#### `debug(message: str, *args, **kwargs) -> None`
+#### debug
+
+`debug(message: str, *args, **kwargs) -> None`
 
 Logs a debug message.
 
-##### Parameters
+**Parameters**
 
 - `message`: The message to log
 - `args`, `kwargs`: Additional arguments to include in the log
 
-##### Example
+**Example**
 
 ```python
 context.logger.debug("Processing request", request_id="123")
 ```
 
-#### `info(message: str, *args, **kwargs) -> None`
+#### info
+
+`info(message: str, *args, **kwargs) -> None`
 
 Logs an informational message.
 
-##### Parameters
+**Parameters**
 
 - `message`: The message to log
 - `args`, `kwargs`: Additional arguments to include in the log
 
-##### Example
+**Example**
 
 ```python
 context.logger.info("Request processed successfully", request_id="123")
 ```
 
-#### `warn(message: str, *args, **kwargs) -> None`
+#### warn
+
+`warn(message: str, *args, **kwargs) -> None`
 
 Logs a warning message.
 
-##### Parameters
+**Parameters**
 
 - `message`: The message to log
 - `args`, `kwargs`: Additional arguments to include in the log
 
-##### Example
+**Example**
 
 ```python
 context.logger.warn("Resource not found", resource_id="456")
 ```
 
-#### `error(message: str, *args, **kwargs) -> None`
+#### error
+
+`error(message: str, *args, **kwargs) -> None`
 
 Logs an error message.
 
-##### Parameters
+**Parameters**
 
 - `message`: The message to log
 - `args`, `kwargs`: Additional arguments to include in the log
 
-##### Example
+**Example**
 
 ```python
 try:
@@ -1237,19 +1309,21 @@ except Exception as e:
 
 ### Creating Child Loggers
 
-#### `child(**kwargs) -> Logger`
+#### child
+
+`child(**kwargs) -> Logger`
 
 Creates a child logger with additional context.
 
-##### Parameters
+**Parameters**
 
 - `kwargs`: Additional context to include in all logs from the child logger
 
-##### Return Value
+**Return Value**
 
 Returns a new `Logger` instance with the additional context.
 
-##### Example
+**Example**
 
 ```python
 request_logger = context.logger.child(request_id="123", user_id="456")
@@ -1264,7 +1338,7 @@ The Agentuity SDK integrates with OpenTelemetry for tracing and metrics.
 
 The SDK provides access to OpenTelemetry tracing through the `context.tracer` object.
 
-#### Example
+**Example**
 
 ```python
 from agentuity.sdk import AgentContext
