@@ -21,15 +21,12 @@ export async function GET(request: NextRequest) {
     const directPath = join(basePath, `${path}.mdx`);
     
     let fileContent: string;
-    let filePath: string;
     
     try {
       fileContent = await readFile(indexPath, 'utf-8');
-      filePath = indexPath;
     } catch {
       try {
         fileContent = await readFile(directPath, 'utf-8');
-        filePath = directPath;
       } catch {
         return new Response('Page not found', { status: 404 });
       }
