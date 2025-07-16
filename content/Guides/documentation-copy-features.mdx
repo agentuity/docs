@@ -1,0 +1,107 @@
+---
+title: Documentation Copy Features
+description: Implementing "Copy page" functionality for LLM-friendly documentation
+---
+
+## Why "Copy Page" Features Are High Signal
+
+Modern documentation sites benefit enormously from making their content easily accessible to AI tools and LLMs. As highlighted by industry experts, having a "Copy page" feature in your documentation is "incredibly high signal" - it shows you understand how developers actually work with AI tools today.
+
+## The Problem
+
+Developers frequently need to:
+- Copy documentation content to share with AI assistants like ChatGPT or Claude
+- Export pages as markdown for processing by LLMs
+- Quickly access clean, formatted versions of documentation content
+- Share specific documentation sections in AI-friendly formats
+
+Traditional documentation sites make this difficult, requiring manual copy-paste that often includes navigation elements, ads, and other non-content elements.
+
+## The Solution: Copy Page Functionality
+
+A well-implemented "Copy page" feature typically includes:
+
+### Core Features
+- **Copy as Markdown for LLMs** - Clean markdown export optimized for AI consumption
+- **View as Markdown** - Preview the markdown version before copying
+- **Open in ChatGPT** - Direct integration to open content in ChatGPT
+- **Open in Claude** - Direct integration to open content in Claude
+
+### Implementation Approach
+
+#### 1. Content Extraction
+Extract clean content from your documentation pages, removing:
+- Navigation elements
+- Sidebars and menus
+- Advertisements
+- Footer content
+- Interactive elements that don't translate to markdown
+
+#### 2. Markdown Conversion
+Convert your content to clean, well-formatted markdown that:
+- Preserves heading hierarchy
+- Maintains code block formatting
+- Keeps links functional
+- Includes proper spacing and structure
+
+#### 3. LLM Optimization
+Optimize the exported content for LLM consumption by:
+- Adding context about what the documentation covers
+- Including relevant metadata (title, description, section)
+- Ensuring code examples are properly formatted
+- Maintaining logical content flow
+
+## Agentuity's Implementation
+
+Agentuity already implements LLM-friendly documentation export through dedicated endpoints:
+
+- **LLM Text Export**: `/app/llms.txt/route.ts` - Provides structured documentation content for AI consumption
+- **Full Documentation Export**: `/app/llms-full.txt/route.ts` - Complete documentation export including all sections
+
+These endpoints demonstrate the value of making documentation AI-accessible by:
+- Providing clean, structured content export
+- Including helpful preambles and context
+- Filtering out non-essential content (like changelogs)
+- Maintaining proper formatting for LLM processing
+
+## Best Practices
+
+### Content Structure
+- Use clear, hierarchical headings
+- Include context and descriptions
+- Maintain consistent formatting
+- Ensure code examples are complete and runnable
+
+### User Experience
+- Make the copy feature easily discoverable
+- Provide multiple export options (markdown, plain text, etc.)
+- Include preview functionality
+- Offer direct integrations with popular AI tools
+
+### Technical Implementation
+- Generate clean markdown programmatically
+- Cache exported content for performance
+- Ensure exports stay up-to-date with content changes
+- Handle special formatting (tables, code blocks, etc.) properly
+
+## Why This Matters
+
+Documentation with good "Copy page" functionality:
+- **Improves developer experience** - Developers can quickly get help from AI tools
+- **Increases documentation usage** - Easier to share and reference content
+- **Shows technical sophistication** - Demonstrates understanding of modern workflows
+- **Enhances accessibility** - Makes content available in multiple formats
+
+As AI tools become increasingly central to development workflows, documentation sites that make their content easily accessible to these tools will provide significantly better user experiences.
+
+## Getting Started
+
+To implement similar functionality in your documentation:
+
+1. **Audit your current content structure** - Identify what should and shouldn't be exported
+2. **Create clean export endpoints** - Build APIs that serve markdown versions of your content
+3. **Add UI components** - Implement copy buttons and export options in your documentation interface
+4. **Test with AI tools** - Verify that exported content works well with ChatGPT, Claude, and other LLMs
+5. **Iterate based on usage** - Monitor how users interact with the feature and improve accordingly
+
+Remember: The goal is to make your documentation as useful as possible for developers working with AI tools, while maintaining the quality and structure that makes it valuable for human readers too.
