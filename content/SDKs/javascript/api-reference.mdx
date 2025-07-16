@@ -1052,6 +1052,13 @@ The `EmailReply` interface defines the structure for email reply configuration.
 - `text` (string): The plain text body of the reply
 - `html?` (string): The optional HTML body of the reply
 - `attachments?` (OutgoingEmailAttachment[]): Optional attachments to include
+- `from?` (object, optional): Custom sender information for the reply
+  - `name?` (string): Custom sender name. Defaults to the agent name if not provided
+  - `email?` (string): Custom sender email address. Defaults to the original recipient if not provided. Can only be overridden if custom email sending is enabled
+
+<Callout type="info">
+Using a custom email address in the reply requires organizational email domain setup. Please contact us if you would like to configure for your organization.
+</Callout>
 
 ### IncomingEmailAttachment Interface
 
