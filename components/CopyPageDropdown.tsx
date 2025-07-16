@@ -17,6 +17,10 @@ export default function CopyPageDropdown() {
   const [isLoading, setIsLoading] = useState(false);
   const pathname = usePathname();
 
+  const formatMarkdownForLLM = (content: PageContent): string => {
+    return `# ${content.title}\n\n${content.description ? `${content.description}\n\n` : ''}${content.content}`;
+  };
+
   const fetchPageContent = async (): Promise<PageContent | null> => {
     try {
       setIsLoading(true);
@@ -38,7 +42,7 @@ export default function CopyPageDropdown() {
     const content = await fetchPageContent();
     if (!content) return;
     
-    const markdownForLLM = `# ${content.title}\n\n${content.description ? `${content.description}\n\n` : ''}${content.content}`;
+    const markdownForLLM = formatMarkdownForLLM(content);
     
     try {
       await navigator.clipboard.writeText(markdownForLLM);
@@ -52,10 +56,11 @@ export default function CopyPageDropdown() {
     const content = await fetchPageContent();
     if (!content) return;
     
-    const markdownForLLM = `# ${content.title}\n\n${content.description ? `${content.description}\n\n` : ''}${content.content}`;
+    const markdownForLLM = formatMarkdownForLLM(content);
     const blob = new Blob([markdownForLLM], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 100);
     setIsOpen(false);
   };
 
@@ -63,8 +68,8 @@ export default function CopyPageDropdown() {
     const content = await fetchPageContent();
     if (!content) return;
     
-    const markdownForLLM = `# ${content.title}\n\n${content.description ? `${content.description}\n\n` : ''}${content.content}`;
-    const chatGPTUrl = `https://chat.openai.com/?q=${encodeURIComponent(`Please help me understand this documentation:\n\n${markdownForLLM}`)}`;
+    const markdownForLLM = formatMarkdownForLLM(content);
+    const chatGPTUrl = `https://chatgpt.com/?q=${encodeURIComponent(`Please help me understand this documentation:\n\n${markdownForLLM}`)}`;
     window.open(chatGPTUrl, '_blank');
     setIsOpen(false);
   };
@@ -73,8 +78,8 @@ export default function CopyPageDropdown() {
     const content = await fetchPageContent();
     if (!content) return;
     
-    const markdownForLLM = `# ${content.title}\n\n${content.description ? `${content.description}\n\n` : ''}${content.content}`;
-    const claudeUrl = `https://claude.ai/chat?q=${encodeURIComponent(`Please help me understand this documentation:\n\n${markdownForLLM}`)}`;
+    const markdownForLLM = formatMarkdownForLLM(content);
+    const claudeUrl = `https://claude.ai/new?q=${encodeURIComponent(`Please help me understand this documentation:\n\n${markdownForLLM}`)}`;
     window.open(claudeUrl, '_blank');
     setIsOpen(false);
   };
