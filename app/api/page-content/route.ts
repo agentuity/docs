@@ -12,20 +12,29 @@ export async function GET(request: NextRequest) {
       return new Response('Path parameter required', { status: 400 });
     }
     
-    let filePath;
-    const basePath = join(process.cwd(), 'content');
+    if (path.includes('..') || path.includes('\\') || path.startsWith('/')) {
+      return new Response('Invalid path parameter', { status: 400 });
+    }
     
+    const basePath = join(process.cwd(), 'content');
     const indexPath = join(basePath, path, 'index.mdx');
     const directPath = join(basePath, `${path}.mdx`);
     
+    let fileContent: string;
+    let filePath: string;
+    
     try {
-      await readFile(indexPath, 'utf-8');
+      fileContent = await readFile(indexPath, 'utf-8');
       filePath = indexPath;
     } catch {
-      filePath = directPath;
+      try {
+        fileContent = await readFile(directPath, 'utf-8');
+        filePath = directPath;
+      } catch {
+        return new Response('Page not found', { status: 404 });
+      }
     }
     
-    const fileContent = await readFile(filePath, 'utf-8');
     const { content, data } = matter(fileContent);
     
     return Response.json({
