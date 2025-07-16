@@ -11,11 +11,11 @@ Deploys a project to the Agentuity Cloud Platform.
 
 **Aliases:** deploy
 
-### Usage
+**Usage**
 
 <CLICommand command="agentuity cloud deploy" />
 
-Flags:
+**Flags:**
 - `--description string` - Description for the deployment
 - `-d, --dir string` - The directory to the project to deploy (default ".")
 - `--force` - Force the processing of environment files
@@ -26,7 +26,7 @@ Flags:
 - `--tag stringArray` - Tag(s) to associate with this deployment (can be specified multiple times)
 - `--templates-dir string` - The directory to load the templates. Defaults to loading them from the github.com/agentuity/templates repository
 
-### Examples
+**Examples**
 
 Deploy a project from the current directory:
 
@@ -44,11 +44,11 @@ Deploy a project from a specific directory:
 
 Rolls back a project to a previous version.
 
-### Usage
+**Usage**
 
 <CLICommand command="agentuity cloud rollback" />
 
-Flags:
+**Flags:**
 - `--delete` - Delete the deployment instead of rolling back
 - `--dir string` - The directory to the project to rollback if project is not specified
 - `--force` - Force the rollback or delete
@@ -56,7 +56,7 @@ Flags:
 - `--project string` - Project to rollback a deployment
 - `--tag string` - Tag of the deployment to rollback
 
-### Examples
+**Examples**
 
 Rollback the most recent deployment:
 
