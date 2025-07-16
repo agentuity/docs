@@ -7,13 +7,27 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 This page documents the release history of the [Agentuity JavaScript SDK](https://github.com/agentuity/sdk-js).
 
+## v0.0.133
+
+<Callout type="info">
+  Released: July 16, 2025
+</Callout>
+
+### Changes
+
+- **Added**: Enable the ability to use custom email domains for email replies ([PR #149](https://github.com/agentuity/sdk-js/pull/149))
+
+<Callout type="info">
+Contact us if you would like to enable custom email addresses to your organization.
+</Callout>
+
 ## v0.0.132
 
 <Callout type="info">
   Released: July 14, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - **Changed**: DevMode fallback values for headers, url and method in metadata ([PR #148](https://github.com/agentuity/sdk-js/pull/148))
 
@@ -23,7 +37,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
   Released: July 8, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - **Added**: Support for bulk delete in vector storage - The `vector.delete()` method now accepts multiple keys as variadic arguments, allowing efficient bulk deletion of vectors. Supports both single key deletion (`delete(name, key)`) and bulk deletion (`delete(name, key1, key2, key3)`) patterns. This is more efficient than making multiple individual delete calls. ([PR #145](https://github.com/agentuity/sdk-js/pull/145))
 - **Changed**: Improved documentation of vector search parameters and tightened vector search metadata type definition ([PR #146](https://github.com/agentuity/sdk-js/pull/146))
@@ -34,7 +48,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
   Released: June 30, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - **Changed**: Shortened Discord interface from `discordMessage` to `discord` for improved usability ([PR #144](https://github.com/agentuity/sdk-js/pull/144))
 
@@ -44,7 +58,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
   Released: June 30, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - **Added**: Discord IO integration with support for parsing and replying to Discord messages ([PR #130](https://github.com/agentuity/sdk-js/pull/130))
 - **Fixed**: Release stream lock in all cases especially error scenarios ([PR #136](https://github.com/agentuity/sdk-js/pull/136))
@@ -56,7 +70,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
   Released: June 19, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - **Fixed**: Release stream lock in all cases especially error scenarios ([PR #136](https://github.com/agentuity/sdk-js/pull/136))
 
@@ -66,7 +80,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
   Released: June 19, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - **Added**: SMS Twilio IO functionality with support for parsing and replying to SMS messages ([PR #124](https://github.com/agentuity/sdk-js/pull/124))
 
@@ -76,7 +90,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
   Released: June 16, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - **Added**: Enhanced ObjectStore API with additional headers and metadata support ([PR #133](https://github.com/agentuity/sdk-js/pull/133))
 - **Changed**: Better handling for yield / generators ([PR #134](https://github.com/agentuity/sdk-js/pull/134))
@@ -87,7 +101,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
   Released: June 16, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - **Added**: Support for new object store API
 - **Fixed**: Description for similarity property for vector search
@@ -99,7 +113,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
   Released: June 9, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - **Changed**: Refactored Bun handler to consolidate logic and ensure all paths go through unified method ([PR #128](https://github.com/agentuity/sdk-js/pull/128))
 
@@ -109,7 +123,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
   Released: June 9, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - **Fixed**: Improved handling of requests for common static files and enhanced support for multiple path segments and different HTTP methods ([PR #126](https://github.com/agentuity/sdk-js/pull/126))
 
@@ -119,7 +133,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
   Released: June 9, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - **Added**: Support for large email attachments ([PR #123](https://github.com/agentuity/sdk-js/pull/123))
 
@@ -129,7 +143,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
   Released: May 25, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - **Added**: Support for agents to be able to reply to incoming email ([PR #118](https://github.com/agentuity/sdk-js/pull/118))
 
@@ -139,7 +153,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
   Released: May 24, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - **Added**: Support for handling inbound email trigger type ([PR #117](https://github.com/agentuity/sdk-js/pull/117))
 
@@ -149,7 +163,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
   Released: May 21, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Logger message arg accepts number type ([PR #113](https://github.com/agentuity/sdk-js/pull/113))
 - Prevent multiple logs for the same exception ([PR #115](https://github.com/agentuity/sdk-js/pull/115))
@@ -160,7 +174,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
   Released: May 19, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Improve error handling ([PR #111](https://github.com/agentuity/sdk-js/pull/111))
 
@@ -170,7 +184,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
   Released: May 19, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - **Improvement**: Better type handling for metadata where it can be any valid JSON object ([PR #110](https://github.com/agentuity/sdk-js/pull/110))
 
@@ -180,7 +194,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
   Released: May 18, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Fixed issue where empty POST body would cause a hang ([PR #109](https://github.com/agentuity/sdk-js/pull/109))
 
@@ -190,7 +204,7 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
   Released: May 14, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Added AGENTUITY_SDK_KEY ([PR #107](https://github.com/agentuity/sdk-js/pull/107))
 
@@ -220,7 +234,7 @@ Please find all instances of AGENTUITY_API_KEY in my code and replace them with 
   Released: May 10, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Fixed issue with Vector get type being wrong ([PR #106](https://github.com/agentuity/sdk-js/pull/106))
 
@@ -230,7 +244,7 @@ Please find all instances of AGENTUITY_API_KEY in my code and replace them with 
   Released: May 8, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Cross platform support for headers.toJSON ([PR #105](https://github.com/agentuity/sdk-js/pull/105), resolves [#103](https://github.com/agentuity/sdk-js/issues/103))
 
@@ -240,7 +254,7 @@ Please find all instances of AGENTUITY_API_KEY in my code and replace them with 
   Released: May 2, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Add a bun server handler to handle unhandled errors ([PR #100](https://github.com/agentuity/sdk-js/pull/100))
 - Add missing console methods ([PR #101](https://github.com/agentuity/sdk-js/pull/101))
@@ -251,7 +265,7 @@ Please find all instances of AGENTUITY_API_KEY in my code and replace them with 
   Released: May 1, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - More fixes related to gzip compression when using keyvalue
 - Change the name of the span when doing a remote solution vs remote execution
@@ -263,7 +277,7 @@ Please find all instances of AGENTUITY_API_KEY in my code and replace them with 
   Released: April 29, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - In cloud we must bind to all addresses ([PR #96](https://github.com/agentuity/sdk-js/pull/96))
 
@@ -273,7 +287,7 @@ Please find all instances of AGENTUITY_API_KEY in my code and replace them with 
   Released: April 29, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Add the ability for an agent to return a Response object directly to provide more flexibility to integrate with existing APIs and protocols ([PR #93](https://github.com/agentuity/sdk-js/pull/93))
 - Bind explicitly to ipv4 when creating server ([PR #94](https://github.com/agentuity/sdk-js/pull/94))
@@ -284,7 +298,7 @@ Please find all instances of AGENTUITY_API_KEY in my code and replace them with 
   Released: April 25, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Fixed issue when the keyvalue returns a gzip encoded value ([PR #92](https://github.com/agentuity/sdk-js/pull/92))
 
@@ -294,7 +308,7 @@ Please find all instances of AGENTUITY_API_KEY in my code and replace them with 
   Released: April 25, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Fix issue with chunking and streaming text not matching in some cases ([PR #91](https://github.com/agentuity/sdk-js/pull/91))
 ## v0.0.106 ⚠️
@@ -303,7 +317,7 @@ Please find all instances of AGENTUITY_API_KEY in my code and replace them with 
   Released: April 25, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Add support for streaming data to and from agents.  This includes streaming data to the agent via the `data` object and streaming data from the agent via the `stream` property of the `AgentResponse` object.
 - The `trigger` property of the `AgentRequest` object will have the value `agent` when the request is invoked by another agent.
@@ -348,7 +362,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 23, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Add support for remote agent handoff ([PR #85](https://github.com/agentuity/sdk-js/pull/85)). This means you can now handoff the request to another agent outside of your current project in the same organization or even outside of your organization if the Agent is public.  The agent-to-agent invocation is secured automatically and doesn't require any additional configuration or authentication.  Internally, the SDK will request a one-time authorization token to invoke the agent on your agent's behalf.
 
@@ -358,7 +372,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 23, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Add support for remote agent-to-agent invocation ([PR #83](https://github.com/agentuity/sdk-js/pull/83)). This means you can now invoke another agent outside of your current project in the same organization or even outside of your organization if the Agent is public.  The agent-to-agent invocation is secured automatically and doesn't require any additional configuration or authentication.  Internally, the SDK will request a one-time authorization token to invoke the agent on your agent's behalf.
 
@@ -368,7 +382,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 23, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Refactor to support binary streams instead of intermediate JSON protocol ([PR #81](https://github.com/agentuity/sdk-js/pull/81))
 - Improved handling of HTTP native protocol
@@ -381,7 +395,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 16, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Fix issue where the child span had the wrong parent on outbound requests for agent-to-agent ([PR #79](https://github.com/agentuity/sdk-js/pull/79))
 
@@ -391,7 +405,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 18, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Add agent context to console logger when running inside agent scope ([PR #77](https://github.com/agentuity/sdk-js/pull/77))
 
@@ -401,7 +415,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 15, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Add permissions
 - Add more otel trace context headers, remove old trace provider ([PR #72](https://github.com/agentuity/sdk-js/pull/72))
@@ -415,7 +429,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 14, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - More debug for github workflow
 
@@ -425,7 +439,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 13, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - More debug for github release tags
 
@@ -435,7 +449,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 12, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Attempt to fix issue with github workflow not pushing tag after release
 
@@ -445,7 +459,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 11, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Fix issue with node keyvalue not correctly handling the buffer upload
 
@@ -455,7 +469,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 10, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Add more otel trace context headers, remove old trace provider
 - Base64 encode the welcome prompts
@@ -466,7 +480,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 8, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Fix regression in otel traces missing for AI SDK by change in opentelemetry-api version change
 
@@ -476,7 +490,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 7, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Add support for agent inspection discovery ([PR #70](https://github.com/agentuity/sdk-js/pull/70))
 
@@ -486,7 +500,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 5, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Add data and markdown methods to AgentResponse interface and implementation
 
@@ -496,7 +510,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 3, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Use new agentuity sdk api
 - Add GitHub workflow for npm package release triggered by version tags ([PR #53](https://github.com/agentuity/sdk-js/pull/53))
@@ -507,7 +521,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 1, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Fix Vector delete api
 
@@ -517,7 +531,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 25, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Add the agentName to the log attributes ([PR #33](https://github.com/agentuity/sdk-js/pull/33))
 - Console Logger: show max depth for any objects ([PR #32](https://github.com/agentuity/sdk-js/pull/32))
@@ -530,7 +544,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 21, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Improve loading project when using node or bun directly vs using start script or agentuity dev
 - Fix mismatch between local run vs remote run with HTTP headers as property of metadata vs the metadata object
@@ -541,7 +555,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 18, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Slight improvement in location of when context.logger for agent is created
 
@@ -551,7 +565,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 16, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Add support for agentId on context.logger
 - Fix issue with underrun on base64 stream
@@ -562,7 +576,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 15, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Streaming Support including SSE
 
@@ -572,7 +586,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 14, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Stream IO Input: add new facility to support stream io for input data ([PR #23](https://github.com/agentuity/sdk-js/pull/23))
 - Release with new transport model
@@ -583,7 +597,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 12, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Fix devmode logging when devmode environment is set by live ([PR #24](https://github.com/agentuity/sdk-js/pull/24))
 
@@ -593,7 +607,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 12, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - KeyValue compression only on upload, not download ([PR #20](https://github.com/agentuity/sdk-js/pull/20))
 
@@ -603,7 +617,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 11, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Add support for compressing keyvalue entries ([PR #19](https://github.com/agentuity/sdk-js/pull/19))
 - Better format log message if the first parameter is an object ([PR #18](https://github.com/agentuity/sdk-js/pull/18))
@@ -614,7 +628,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 10, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Refactored the types to make it easier to use
 - Fixed various small issues

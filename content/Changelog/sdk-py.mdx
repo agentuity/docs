@@ -7,13 +7,26 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 This page documents the release history of the [Agentuity Python SDK](https://github.com/agentuity/sdk-py).
 
+## v0.0.102
+
+<Callout type="info">
+  Released: July 16, 2025
+</Callout>
+
+<a id="changes"></a>**Changes:**
+- **Added:** Enable the ability to use custom email domains for email replies
+
+<Callout type="info">
+Contact us if you would like to enable custom email addresses to your organization.
+</Callout>
+
 ## v0.0.101
 
 <Callout type="info">
   Released: July 14, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Fixed:** DevMode: make sure certain props are set on metadata for improved development mode debugging
 
 ## v0.0.100 ⚠️
@@ -22,7 +35,7 @@ This page documents the release history of the [Agentuity Python SDK](https://gi
   Released: June 30, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Changed:** Shortened Discord interface method name from `discord_message()` to `discord()` for improved usability
 
 **⚠️ Breaking Changes**
@@ -40,7 +53,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: June 19, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Fixed:** Email: text and html should return a str not a list of str to match JS behavior
 
 ## v0.0.97
@@ -49,7 +62,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: June 19, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Fixed:** Filter out empty headers from headers special HTTP header
 
 ## v0.0.96
@@ -58,7 +71,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: June 19, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Added:** Enhanced ObjectStorePutParams with additional headers and metadata support
 - **Fixed:** Fixed difference in HTTP header casing and other cleanup items
 
@@ -68,7 +81,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: June 13, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Added:** ObjectStore service with comprehensive object storage capabilities including get, put, delete, and public URL generation
 ## v0.0.94
 
@@ -76,7 +89,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: June 11, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Fixed:** Fixed naming conflict with openAI Agents SDK by renaming agents directory to agentuity-agents with backward compatibility
 - **Fixed:** Removed ruff from runtime dependencies as it's only needed for development
 
@@ -86,7 +99,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: June 9, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Fixed:** Improved route handling for extra path segments and better 404 error messages
 - **Fixed:** Enhanced logging to display actual HTTP method and full request path
 - **Fixed:** Simplified health check response headers and consolidated route registration
@@ -97,7 +110,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: June 9, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Added:** Email class support for large attachments and send reply functionality
 - **Added:** Structured interfaces for agent requests, context, data, and email processing with streaming and async capabilities
 - **Added:** Ability to send reply emails with attachments and telemetry support
@@ -113,7 +126,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: May 31, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Added:** LlamaIndex instrumentation for automatic Agentuity gateway integration
 - **Added:** LlamaIndex now automatically uses Agentuity API key and gateway when no OpenAI API key is provided  
 - **Added:** OpenAI client patching within LlamaIndex for seamless Agentuity integration
@@ -124,7 +137,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: May 30, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Fixed:** Apply safe filename fix similar to CLI and always prefer to load config but fallback to yaml in dev
 
 ## v0.0.89
@@ -133,7 +146,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: May 29, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Fixed:** Fix outgoing requests missing traceid in OpenTelemetry instrumentation
 
 ## v0.0.88
@@ -142,7 +155,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: May 28, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Added:** Agent startup checks with stack trace printing in development mode
 - **Fixed:** Fixed issue with OTel trace id not getting propagated correctly and causing it not to be associated with the correct session in production
 
@@ -152,7 +165,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: May 27, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Fixed:** Fixed handoff issues by implementing deferred handoff execution with improved error handling and agent communication
 - **Fixed:** Added configurable HTTP timeouts for agent communication
 - **Fixed:** Improved connection error handling for client disconnections during streaming
@@ -163,7 +176,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: May 24, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Added:** Email class for parsing inbound email messages with support for extracting subject, sender, recipients, and attachments
 - **Added:** Async email() method to Data class for parsing RFC822 email content  
 - **Added:** mail-parser dependency for email parsing functionality
@@ -238,7 +251,7 @@ Please find all instances of AGENTUITY_API_KEY in my code and replace them with 
   Released: April 30, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Add support for streaming data to and from agents.  This includes streaming data to the agent via the `data` object and streaming data from the agent via the `stream` property of the `AgentResponse` object.
 - The `trigger` property of the `AgentRequest` object will have the value `agent` when the request is invoked by another agent.
@@ -380,7 +393,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 10, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 
 - Implemented Vector and KeyValue services
 - Reorganized types into logical files
