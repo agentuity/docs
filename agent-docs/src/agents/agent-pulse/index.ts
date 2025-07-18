@@ -1,365 +1,171 @@
-import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
-import type { 
-  ChatMessage, 
-  ChatSession, 
-  ChatRequest, 
-  TutorialRequest, 
-  AgentRequestData 
-} from './types';
-import { classifyTutorialIntent } from './tutorial-intent';
-import { 
-  getTutorialList as fetchTutorialList, 
-  startTutorial, 
-  nextTutorialStep, 
-  previousTutorialStep 
-} from './tutorial';
+import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+import { generateText } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { createTools } from "./tools";
+import { createAgentState } from "./state";
+import { fetchTutorialContent, type TutorialData } from "./tutorial-helpers";
 
-// API endpoints
-const TUTORIAL_API_BASE_URL = 'http://localhost:3201';
-
-function isObject(val: unknown): val is Record<string, unknown> {
-  return typeof val === 'object' && val !== null;
+interface ConversationMessage {
+  role: "user" | "assistant";
+  content: string;
 }
 
-function isChatRequest(data: unknown): data is ChatRequest {
-  return isObject(data) &&
-    data.type === 'chat' &&
-    typeof data.message === 'string' &&
-    (data.sessionId === undefined || typeof data.sessionId === 'string');
+// Tutorial list data structure
+interface TutorialListData {
+  type: "tutorial_list";
+  tutorials: Array<{ id: string; title: string; description: string }>;
 }
 
-function isTutorialRequest(data: unknown): data is TutorialRequest {
-  return isObject(data) &&
-    data.type === 'tutorial' &&
-    ['start', 'next', 'previous', 'reset', 'list'].includes(data.action as string) &&
-    (data.sessionId === undefined || typeof data.sessionId === 'string') &&
-    (data.step === undefined || typeof data.step === 'number') &&
-    (data.tutorialId === undefined || typeof data.tutorialId === 'string');
+// Tutorial progress data structure  
+interface TutorialProgressData {
+  type: "tutorial_progress";
+  tutorialId: string;
+  currentStep: number;
+  totalSteps: number;
+  progressPercentage: number;
 }
 
-function isValidRequest(data: unknown): data is AgentRequestData {
-  return isChatRequest(data) || isTutorialRequest(data);
-}
+// Union type for all possible tutorial data responses
+type TutorialResponseData = TutorialData | TutorialListData | TutorialProgressData;
 
-// Session management utilities
-function generateSessionId(): string {
-  return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
-
-function generateMessageId(): string {
-  return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
-
-async function loadSession(sessionId: string, ctx: AgentContext): Promise<ChatSession | null> {
+export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx: AgentContext) {
   try {
-    const result = await ctx.kv.get('chat-sessions', sessionId);
-    if (!result.exists) {
-      return null;
+    ctx.logger.info("Pulse agent received request");
+ 
+    // Parse request body safely
+    const jsonData = await req.data.json();
+    let message: string = "";
+    let conversationHistory: ConversationMessage[] = [];
+
+    if (jsonData && typeof jsonData === 'object' && !Array.isArray(jsonData)) {
+      const body = jsonData as any;
+      message = body.message || "";
+      conversationHistory = body.conversationHistory || [];
+    } else {
+      // Fallback for non-object data
+      message = String(jsonData || "");
     }
-    const sessionData = await result.data.text();
-    return JSON.parse(sessionData) as ChatSession;
-  } catch (error) {
-    ctx.logger.error("Failed to load session %s: %s", sessionId, error);
-    return null;
-  }
-}
 
-async function saveSession(session: ChatSession, ctx: AgentContext): Promise<void> {
-  try {
-    // Update timestamps
-    session.updatedAt = new Date().toISOString();
-    session.lastActivity = new Date().toISOString();
-    
-    // Keep only last 50 messages for performance
-    if (session.messages.length > 50) {
-      session.messages = session.messages.slice(-50);
-    }
-    
-    await ctx.kv.set('chat-sessions', session.sessionId, JSON.stringify(session));
-    ctx.logger.info("Session %s saved successfully", session.sessionId);
-  } catch (error) {
-    ctx.logger.error("Failed to save session %s: %s", session.sessionId, error);
-    throw error;
-  }
-}
+    ctx.logger.info("Processing message: %s", message);
+    ctx.logger.info("Conversation history length: %d", conversationHistory.length);
 
-function createNewSession(sessionId: string, sessionType: 'chat' | 'tutorial' = 'chat'): ChatSession {
-  const now = new Date().toISOString();
-  return {
-    sessionId,
-    sessionType,
-    createdAt: now,
-    updatedAt: now,
-    lastActivity: now,
-    isActive: true,
-    messages: [],
-    userProfile: {}
-  };
-}
+    // Create state manager for this request
+    const state = createAgentState();
 
-function addMessageToSession(session: ChatSession, type: 'user' | 'assistant', content: string): ChatMessage {
-  const message: ChatMessage = {
-    id: generateMessageId(),
-    type,
-    content,
-    timestamp: new Date().toISOString()
-  };
-  
-  session.messages.push(message);
-  return message;
-}
+    // Create tools with state context
+    const tools = createTools({
+      state,
+      agentContext: ctx
+    });
 
-// Handle chat messages in tutorial sessions using intent classification
-async function handleTutorialChatMessage(message: string, session: ChatSession, ctx: AgentContext) {
-  ctx.logger.info('Processing tutorial chat message: %s', message);
+    // Build messages for the conversation
+    const messages: ConversationMessage[] = [
+      ...conversationHistory,
+      { role: "user", content: message }
+    ];
 
-  // Add user message to session
-  addMessageToSession(session, 'user', message);
+    // Generate response using tools
+    const initialResult = await generateText({
+      model: openai("gpt-4o"),
+      messages: messages.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+      })),
+      tools,
+      maxSteps: 2,
+      system: `=== ROLE (what you are) ===
+You are Pulse, an AI assistant who helps developers learn and navigate the Agentuity platform through interactive tutorials.
 
-  try {
-    // Always get available tutorials for intent classification
-    let availableTutorials: any[] = [];
-    const tutorialListResponse = await fetchTutorialList(ctx);
-    availableTutorials = Array.isArray(tutorialListResponse.tutorials) ? tutorialListResponse.tutorials : [];
-  
-    const intent = await classifyTutorialIntent(message, session, availableTutorials, ctx);
+=== PERSONALITY (how you speak) ===
+- Friendly and encouraging with light humour  
+- Patient with learners at all levels  
+- Clear and concise in explanations  
+- Enthusiastic about teaching and problem-solving  
 
-    let result;
-    switch (intent.type) {
-      case 'select_tutorial':
-        if (intent.tutorialId) {
-          ctx.logger.info('Attempting to start tutorial with ID: %s', intent.tutorialId);
-          try {
-            result = await startTutorial(intent.tutorialId, session, ctx);
-          } catch (error) {
-            ctx.logger.error('Failed to start tutorial %s: %s', intent.tutorialId, error);
-            // Show available tutorials on error
-            const tutorialListResponse = await fetchTutorialList(ctx);
-            
-            const errorMessage = `❌ Sorry, couldn't find tutorial "${intent.tutorialId}".\n\n${tutorialListResponse.message}`;
-            
-            result = {
-              type: 'tutorial',
-              action: 'error',
-              message: errorMessage,
-              tutorials: tutorialListResponse.tutorials,
-              error: `Tutorial "${intent.tutorialId}" not found`
-            };
+=== CAPABILITIES (what you can do) ===
+1. Tutorial management  
+   - startTutorial - begin a chosen tutorial
+   - fetchTutorialList - list available tutorials
+   - nextTutorialStep - advance to the next tutorial step
+2. General assistance
+   - askDocsAgentTool - retrieve Agentuity documentation snippets
+   - Debug code and troubleshoot issues
+
+=== TOOL-USAGE RULES (must follow) ===
+- Call startTutorial only after the user has selected a tutorial.
+- Use fetchTutorialLists to get available tutorials information
+- Treat askDocsAgentTool as a search helper; ignore results you judge irrelevant.
+
+=== RESPONSE STYLE (format guidelines) ===
+- Begin with a short answer, then elaborate if necessary.
+- Add brief comments to complex code; skip obvious lines.
+- End with a question when further clarification could help the user.
+
+=== SAFETY & BOUNDARIES ===
+- If asked for private data or secrets, refuse.  
+- If the user requests actions outside your capabilities, apologise and explain.  
+- Keep every response < 400 words
+
+Generate a response to the user query accordingly and try to be helpful
+
+=== END OF PROMPT ===`,
+    });
+
+    let finalResponseText = initialResult.text;
+    console.log(finalResponseText)
+    // Handle tool calls if the AI requested them
+    // if (initialResult.toolCalls && initialResult.toolCalls.length > 0) {
+    //   ctx.logger.info("AI requested %d tool calls, tools executed automatically", initialResult.toolCalls.length);
+      
+    //   // For now, provide a simple response when tools are called
+    //   // The tool functions will update the state automatically
+    //   finalResponseText = "I've processed that request for you. Let me know if you need anything else!";
+    // }
+
+    const actions = state.getActions();
+    let tutorialData: TutorialResponseData | null = null;
+
+    if (actions.length > 0) {
+      ctx.logger.info("Processing %d actions from state queue", actions.length);
+
+      for (const action of actions) {
+        ctx.logger.info("Processing action: %s", JSON.stringify(action, null, 2));
+
+        if (action.type == "start_tutorial" && action.tutorialId) {
+          ctx.logger.info("Executing start_tutorial action for: %s", action.tutorialId);
+          const basicTutorialData = await fetchTutorialContent(action.tutorialId, ctx);
+          if (basicTutorialData) {
+            tutorialData = basicTutorialData;
           }
         } else {
-          // Show tutorial list if no specific tutorial identified
-          result = await fetchTutorialList(ctx);
+          ctx.logger.warn("Invalid action request")
         }
-        break;
-
-      case 'navigate':
-        if (intent.direction === 'next') {
-          result = await nextTutorialStep(session, ctx, intent.step);
-        } else if (intent.direction === 'previous') {
-          result = await previousTutorialStep(session, ctx, intent.step);
-        } else if (intent.direction === 'specific' && intent.step) {
-          result = await nextTutorialStep(session, ctx, intent.step);
-        } else {
-          result = {
-            type: 'tutorial',
-            error: 'Could not understand navigation request'
-          };
-        }
-        break;
-
-      case 'exit_tutorial':
-        // Convert session back to chat mode
-        session.sessionType = 'chat';
-        session.currentTutorial = undefined;
-        result = {
-          type: 'chat',
-          response: 'You have exited tutorial mode. How can I help you today?',
-          timestamp: new Date().toISOString()
-        };
-        break;
-
-      case 'help':
-        result = {
-          type: 'tutorial',
-          action: 'help',
-          message: 'Tutorial Help:\n- Say "next" or "previous" to navigate\n- Ask questions about the tutorial content\n- Say "exit" to leave tutorial mode\n- Ask for "list" to see available tutorials'
-        };
-        break;
-
-      case 'question':
-      default:
-        // Handle as a tutorial-related question
-        const questionResponse = `You asked: "${intent.content || message}". This is a placeholder for tutorial Q&A functionality.`;
-        result = {
-          type: 'tutorial',
-          action: 'question',
-          response: questionResponse,
-          timestamp: new Date().toISOString()
-        };
-        break;
-    }
-
-    // Add assistant response to session
-    let responseText = 'Tutorial action completed';
-    
-    // Extract response text from different result types
-    if ('response' in result && result.response) {
-      responseText = result.response as string;
-    } else if ('message' in result && result.message) {
-      responseText = result.message as string;
-    } else if ('stepContent' in result && result.stepContent) {
-      responseText = result.stepContent as string;
-    } else if ('content' in result && result.content) {
-      responseText = result.content as string;
-    }
-    
-    addMessageToSession(session, 'assistant', responseText);
-
-    return result;
-  } catch (error) {
-    ctx.logger.error('Error handling tutorial chat message: %s', error);
-    
-    const errorResponse = 'Sorry, I encountered an error processing your tutorial request. Please try again.';
-    addMessageToSession(session, 'assistant', errorResponse);
-    
-    return {
-      type: 'tutorial',
-      error: errorResponse
-    };
-  }
-}
-
-export default async function Agent(
-  req: AgentRequest,
-  resp: AgentResponse,
-  ctx: AgentContext
-) {
-  const contentType = req.data.contentType;
-  ctx.logger.info('Content type: %s', contentType);
-  
-  try {
-    let requestData: AgentRequestData;
-    
-    if (contentType === 'application/json') {
-      const jsonData = await req.data.json();
-
-      if (!isValidRequest(jsonData)) {
-        ctx.logger.warn('Invalid request format received');
-        return resp.json({
-          error: 'Invalid request format. Expected either chat or tutorial request.'
-        }, 400);
       }
-      
-      requestData = jsonData;
-    } else {
-      // Handle plain text as chat message
-      const text = await req.data.text();
-      ctx.logger.info('Processing plain text as chat: %s', text);
-      requestData = { type: 'chat', message: text };
+
+      // Clear actions after processing
+      state.clearActions();
     }
 
-    // Get or generate session ID
-    const sessionId = requestData.sessionId || generateSessionId();
-    ctx.logger.info('Processing request for session: %s', sessionId);
+    // Update conversation history
+    const updatedHistory = [
+      ...conversationHistory,
+      { role: "user", content: message },
+      { role: "assistant", content: finalResponseText }
+    ];
 
-    // Load existing session or create new one
-    let session = await loadSession(sessionId, ctx);
-    if (!session) {
-      // Determine session type based on request
-      const sessionType = requestData.type === 'tutorial' ? 'tutorial' : 'chat';
-      ctx.logger.info('Creating new session: %s with type: %s', sessionId, sessionType);
-      session = createNewSession(sessionId, sessionType);
-    }
-
-    // Process request with session context
-    let result;
-    if (requestData.type === 'chat') {
-      ctx.logger.info('Processing chat request: %s', requestData.message);
-      
-      // Route based on session type
-      if (session.sessionType === 'tutorial') {
-        // Handle chat message in tutorial context
-        result = await handleTutorialChatMessage(requestData.message, session, ctx);
-      } else {
-        // Regular chat session
-        result = await handleChatRequest(requestData, session, ctx);
-      }
-    } else if (requestData.type === 'tutorial') {
-      ctx.logger.info('Processing tutorial request: %s', requestData.action);
-      
-      // Set session to tutorial mode
-      session.sessionType = 'tutorial';
-      result = await handleTutorialRequest(requestData, session, ctx);
-    } else {
-      return resp.json({
-        error: 'Invalid request type'
-      }, 400);
-    }
-
-    // Save session after processing
-    await saveSession(session, ctx);
+    ctx.logger.info("Sending response with tutorial data: %s", tutorialData ? JSON.stringify(tutorialData, null, 2) : "none");
 
     return resp.json({
-      ...result,
-      sessionId: session.sessionId
+      response: finalResponseText,
+      conversationHistory: updatedHistory,
+      ...(tutorialData && { tutorialData })
     });
-  } catch (e) {
-    ctx.logger.error("Error processing request: %s", e instanceof Error ? e.message : String(e));
+
+  } catch (error) {
+    ctx.logger.error("Error in Pulse agent: %s", error);
     return resp.json({
-      error: 'Failed to process request'
-    }, 500);
+      error: "Sorry, I encountered an error while processing your request. Please try again.",
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 });
   }
-}
-
-// Handle chat requests
-async function handleChatRequest(request: ChatRequest, session: ChatSession, ctx: AgentContext) {
-  ctx.logger.info('Processing chat message: %s', request.message);
-
-  // Add user message to session
-  addMessageToSession(session, 'user', request.message);
-
-  // Here you would integrate with your preferred LLM/AI service
-  // For now, returning a simple response
-  const response = `You said: "${request.message}". This is a placeholder response for the chatbot functionality.`;
-  
-  // Add assistant response to session
-  addMessageToSession(session, 'assistant', response);
-
-  return {
-    type: 'chat',
-    response,
-    timestamp: new Date().toISOString(),
-    messageCount: session.messages.length
-  };
-}
-
-// Handle tutorial requests  
-async function handleTutorialRequest(request: TutorialRequest, session: ChatSession, ctx: AgentContext) {
-  ctx.logger.info('Processing tutorial action: %s', request.action);
-
-  switch (request.action) {
-    case 'list':
-      return await fetchTutorialList(ctx);
-    case 'start':
-      if (request.tutorialId) {
-        return await startTutorial(request.tutorialId, session, ctx);
-      } else {
-        return await fetchTutorialList(ctx);
-      }
-    case 'next':
-      return await nextTutorialStep(session, ctx, request.step);
-    case 'previous':
-      return await previousTutorialStep(session, ctx, request.step);
-    case 'reset':
-      if (request.tutorialId) {
-        return await startTutorial(request.tutorialId, session, ctx);
-      } else {
-        return await fetchTutorialList(ctx);
-      }
-    default:
-      return {
-        type: 'tutorial',
-        error: 'Invalid tutorial action'
-      };
-  }
-}
+} 

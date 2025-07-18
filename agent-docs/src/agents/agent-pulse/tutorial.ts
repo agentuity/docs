@@ -1,24 +1,13 @@
 import type { AgentContext } from '@agentuity/sdk';
 import type { ChatSession } from './types';
 
-import { generateObject } from 'ai';
-import { openai } from '@ai-sdk/openai';
-
-// API endpoints
 const TUTORIAL_API_BASE_URL = 'http://localhost:3201';
-
-/**
- * Tutorial Handler - manages all tutorial-related operations
- * Uses LLM for natural language understanding and intent classification
- */
 
 // Fetch list of available tutorials
 export async function getTutorialList(ctx: AgentContext) {
   try {
     const response = await fetch(`${TUTORIAL_API_BASE_URL}/api/tutorials`);
-    
-    ctx.logger.info('Tutorial API response status: %d', response.status);
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -30,17 +19,12 @@ export async function getTutorialList(ctx: AgentContext) {
     let tutorialArray: any[] = [];
     if (apiResponse.success && Array.isArray(apiResponse.data)) {
       tutorialArray = apiResponse.data;
-      ctx.logger.info('Extracted tutorials from apiResponse.data');
     } else if (Array.isArray(apiResponse)) {
       tutorialArray = apiResponse;
-      ctx.logger.info('Using apiResponse directly as array');
     } else {
       ctx.logger.warn('Unexpected API response structure, falling back to empty array');
     }
     
-    ctx.logger.info('Final tutorial array: %s', JSON.stringify(tutorialArray, null, 2));
-    
-    // Format tutorials into a readable message for the frontend
     let formattedMessage = 'Here are the available tutorials:\n\n';
     
     if (tutorialArray.length === 0) {
@@ -60,8 +44,8 @@ export async function getTutorialList(ctx: AgentContext) {
     return {
       type: 'tutorial',
       action: 'list',
-      tutorials: tutorialArray,  // Keep for backend processing
-      message: formattedMessage  // Formatted for frontend display
+      tutorials: tutorialArray,
+      message: formattedMessage 
     };
   } catch (error) {
     ctx.logger.error('Failed to fetch tutorials: %s', error);
