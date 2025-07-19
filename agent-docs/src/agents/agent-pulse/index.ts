@@ -4,6 +4,7 @@ import { openai } from "@ai-sdk/openai";
 import { createTools } from "./tools";
 import { createAgentState } from "./state";
 import { fetchTutorialContent, type TutorialData } from "./tutorial-helpers";
+import { getTutorialList } from "./tutorial";
 
 interface ConversationMessage {
   role: "user" | "assistant";
@@ -28,10 +29,27 @@ interface TutorialProgressData {
 // Union type for all possible tutorial data responses
 type TutorialResponseData = TutorialData | TutorialListData | TutorialProgressData;
 
+/**
+ * Builds a context string containing available tutorials for the system prompt
+ */
+async function buildContext(ctx: AgentContext): Promise<string> {
+  try {
+    const tutorials = await getTutorialList(ctx);
+    const tutorialContent = JSON.stringify(tutorials, null, 2);
+
+    return `===AVAILABLE TUTORIALS====
+${tutorialContent}`;
+  } catch (error) {
+    ctx.logger.error("Error building tutorial context: %s", error);
+    return `===AVAILABLE TUTORIALS====
+Unable to load tutorial list.`;
+  }
+}
+
 export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx: AgentContext) {
   try {
     ctx.logger.info("Pulse agent received request");
- 
+
     // Parse request body safely
     const jsonData = await req.data.json();
     let message: string = "";
@@ -64,6 +82,9 @@ export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx:
       { role: "user", content: message }
     ];
 
+    // Build tutorial context for the system prompt
+    const tutorialContext = await buildContext(ctx);
+
     // Generate response using tools
     const initialResult = await generateText({
       model: openai("gpt-4o"),
@@ -72,28 +93,26 @@ export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx:
         content: msg.content,
       })),
       tools,
-      maxSteps: 2,
-      system: `=== ROLE (what you are) ===
-You are Pulse, an AI assistant who helps developers learn and navigate the Agentuity platform through interactive tutorials.
+      maxSteps: 5,
+      system: `=== ROLE ===
+You are Pulse, an AI assistant designed to help developers learn and navigate the Agentuity platform through interactive tutorials and clear guidance. Your primary goal is to assist users with understanding and using the Agentuity SDK effectively. When a user’s query is vague, unclear, or lacks specific intent, subtly suggest relevant interactive tutorial to guide them toward learning the platform. For clear, specific questions related to the Agentuity SDK or other topics, provide direct, accurate, and concise answers without mentioning tutorials unless relevant. Always maintain a friendly and approachable tone to encourage engagement.
 
-=== PERSONALITY (how you speak) ===
+=== PERSONALITY ===
 - Friendly and encouraging with light humour  
 - Patient with learners at all levels  
 - Clear and concise in explanations  
-- Enthusiastic about teaching and problem-solving  
+- Enthusiastic about teaching and problem-solving
 
-=== CAPABILITIES (what you can do) ===
+=== Available Tools or Functions ===
+You have access to various tools you can use -- use when appropriate!
 1. Tutorial management  
-   - startTutorial - begin a chosen tutorial
-   - fetchTutorialList - list available tutorials
-   - nextTutorialStep - advance to the next tutorial step
+   - startTutorial: Initiates a tutorial by setting the application context, allowing the user to view tutorial content (e.g., in a UI or application interface).
+   - nextTutorialStep: Advances the user to the next step in the active tutorial.
 2. General assistance
-   - askDocsAgentTool - retrieve Agentuity documentation snippets
-   - Debug code and troubleshoot issues
+   - askDocsAgentTool: retrieve Agentuity documentation snippets
 
 === TOOL-USAGE RULES (must follow) ===
-- Call startTutorial only after the user has selected a tutorial.
-- Use fetchTutorialLists to get available tutorials information
+- startTutorial must only be used when user select a tutorial. You must also select only the available tutorial.
 - Treat askDocsAgentTool as a search helper; ignore results you judge irrelevant.
 
 === RESPONSE STYLE (format guidelines) ===
@@ -108,20 +127,15 @@ You are Pulse, an AI assistant who helps developers learn and navigate the Agent
 
 Generate a response to the user query accordingly and try to be helpful
 
+=== CONTEXT ===
+ 
+
+${tutorialContext}
+
 === END OF PROMPT ===`,
     });
 
     let finalResponseText = initialResult.text;
-    console.log(finalResponseText)
-    // Handle tool calls if the AI requested them
-    // if (initialResult.toolCalls && initialResult.toolCalls.length > 0) {
-    //   ctx.logger.info("AI requested %d tool calls, tools executed automatically", initialResult.toolCalls.length);
-      
-    //   // For now, provide a simple response when tools are called
-    //   // The tool functions will update the state automatically
-    //   finalResponseText = "I've processed that request for you. Let me know if you need anything else!";
-    // }
-
     const actions = state.getActions();
     let tutorialData: TutorialResponseData | null = null;
 
@@ -168,4 +182,5 @@ Generate a response to the user query accordingly and try to be helpful
       details: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
-} 
+}
+

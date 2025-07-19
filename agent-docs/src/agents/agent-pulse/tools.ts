@@ -36,26 +36,6 @@ export function createTools(context: ToolContext) {
         },
     });
 
-    /**
-     * Tool for fetching available tutorials - calls actual API
-     */
-    const fetchTutorialListTool = tool({
-        description: "Get a list of available tutorials",
-        parameters: z.object({}),
-        execute: async () => {
-            try {
-                const result = await getTutorialList(agentContext);
-                if (result.error) {
-                    agentContext.logger.error("Error fetching tutorial list: %s", result.error);
-                    return "Encountering problems while fetching tutorial info."
-                }
-                return result.message;
-            } catch (error) {
-                agentContext.logger.error("Error fetching tutorials: %s", error);
-                return "Sorry, I couldn't fetch the tutorials right now. Please try again later.";
-            }
-        },
-    });
 
     /**
      * Tool for proceeding to next tutorial step - adds action to state queue
@@ -112,7 +92,6 @@ export function createTools(context: ToolContext) {
     // Return tools object
     return {
         startTutorial: startTutorialTool,
-        fetchTutorialList: fetchTutorialListTool,
         nextTutorialStep: nextTutorialStepTool,
         queryOtherAgent: askDocsAgentTool,
     };
