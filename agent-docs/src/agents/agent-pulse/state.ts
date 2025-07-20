@@ -1,30 +1,39 @@
+enum ActionType {
+  START_TUTORIAL_STEP = "start_tutorial_step"
+}
+
 interface Action {
-  type: "start_tutorial" | "get_tutorials" | "next_step" | "get_progress";
-  tutorialId?: string;
-  currentStep?: number;
+  type: ActionType;
+  tutorialId: string;
+  currentStep: number;
 }
 
 interface AgentState {
-  actions: Action[];
-  
-  addAction(action: Action): void;
-  getActions(): Action[];
-  clearActions(): void;
+  action: Action | null;
+
+  setAction(action: Action): void;
+  getAction(): Action | null;
+  clearAction(): void;
+  hasAction(): boolean;
 }
 
 class SimpleAgentState implements AgentState {
-  public actions: Action[] = [];
-  
-  addAction(action: Action): void {
-    this.actions.push(action);
+  public action: Action | null = null;
+
+  setAction(action: Action): void {
+    this.action = action;
   }
-  
-  getActions(): Action[] {
-    return [...this.actions];
+
+  getAction(): Action | null {
+    return this.action;
   }
-  
-  clearActions(): void {
-    this.actions = [];
+
+  clearAction(): void {
+    this.action = null;
+  }
+
+  hasAction(): boolean {
+    return this.action !== null;
   }
 }
 
@@ -32,4 +41,5 @@ export function createAgentState(): AgentState {
   return new SimpleAgentState();
 }
 
-export type { Action, AgentState }; 
+export type { Action, AgentState };
+export { ActionType }; 

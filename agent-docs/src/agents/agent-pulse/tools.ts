@@ -1,8 +1,9 @@
 import { tool } from "ai";
 import { z } from "zod";
+import { ActionType } from "./state";
 import type { AgentState } from "./state";
 import type { AgentContext } from "@agentuity/sdk";
-import { getTutorialList } from "./tutorial";
+import { getTutorialMeta } from "./tutorial";
 
 /**
  * Context passed to tools for state management and logging
@@ -21,44 +22,37 @@ export function createTools(context: ToolContext) {
     /**
      * Tool for starting a tutorial - adds action to state queue
      */
-    const startTutorialTool = tool({
-        description: "Start a specific tutorial for the user.",
+    const startTutorialAtStep = tool({
+        description: "Start a specific tutorial for the user. This will validate the tutorial exists, modify user data state, and finally return information about the tutorial including its title, total steps, and description. The tutorial will be displayed to the user automatically. The step number should be between 1 and the total number of steps in the tutorial.",
         parameters: z.object({
-            tutorialId: z.string().describe("The ID of the tutorial to start"),
+            tutorialId: z.string().describe("The exact ID of the tutorial to start"),
+            stepNumber: z.number().describe("The step number of the tutorial to start (must be between 1 and total steps)")
         }),
-        execute: async ({ tutorialId }) => {
-            agentContext.logger.info("Adding start_tutorial action to state for: %s", tutorialId);
-            state.addAction({
-                type: "start_tutorial",
-                tutorialId
-            });
-            return `Starting the tutorial.`;
-        },
-    });
+        execute: async ({ tutorialId, stepNumber }) => {
+            // Validate tutorial exists before starting
+            const tutorialResponse = await getTutorialMeta(tutorialId, agentContext);
+            if (!tutorialResponse.success || !tutorialResponse.data) {
+                return `Error fetching tutorial information`;
+            }
 
+            const data = tutorialResponse.data
+            const totalSteps = tutorialResponse.data.totalSteps;
+            if (stepNumber > totalSteps) {
+                return `This tutorial only has ${totalSteps} steps. You either reached the end of the tutorial or selected an incorrect step number.`;
+            }
 
-    /**
-     * Tool for proceeding to next tutorial step - adds action to state queue
-     */
-    const nextTutorialStepTool = tool({
-        description: "Move to the next step in the current tutorial",
-        parameters: z.object({
-            tutorialId: z.string().describe("The ID of the current tutorial"),
-            currentStep: z.number().describe("The current step number"),
-        }),
-        execute: async ({ tutorialId, currentStep }) => {
-            agentContext.logger.info("Adding next_step action to state for: %s, step: %d", tutorialId, currentStep);
-            state.addAction({
-                type: "next_step",
-                tutorialId,
-                currentStep
+            agentContext.logger.info("Adding start_tutorial action to state for: %s at step %d", tutorialId, stepNumber);
+            state.setAction({
+                type: ActionType.START_TUTORIAL_STEP,
+                tutorialId: tutorialId,
+                currentStep: stepNumber
             });
-            return `I'll move you to the next step in the tutorial!`;
+            return `Starting "${data.title}". Total steps: ${data.totalSteps} \n\n Description: ${data.description}`;
         },
     });
 
     /**
-     * Tool for talking to other agents (non-tutorial functionality)
+     * Tool for talking to other agents (nong-tutorial functionality)
      * This tool doesn't use state - it returns data directly
      */
     const askDocsAgentTool = tool({
@@ -91,8 +85,7 @@ export function createTools(context: ToolContext) {
 
     // Return tools object
     return {
-        startTutorial: startTutorialTool,
-        nextTutorialStep: nextTutorialStepTool,
+        startTutorialById: startTutorialAtStep,
         queryOtherAgent: askDocsAgentTool,
     };
 }

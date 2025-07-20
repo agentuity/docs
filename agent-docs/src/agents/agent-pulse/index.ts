@@ -2,32 +2,13 @@ import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
 import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { createTools } from "./tools";
-import { createAgentState } from "./state";
-import { fetchTutorialContent, type TutorialData } from "./tutorial-helpers";
-import { getTutorialList } from "./tutorial";
+import { createAgentState, ActionType, type AgentState } from "./state";
+import { getTutorialList, getTutorialMeta, getTutorialStep } from "./tutorial";
 
 interface ConversationMessage {
   role: "user" | "assistant";
   content: string;
 }
-
-// Tutorial list data structure
-interface TutorialListData {
-  type: "tutorial_list";
-  tutorials: Array<{ id: string; title: string; description: string }>;
-}
-
-// Tutorial progress data structure  
-interface TutorialProgressData {
-  type: "tutorial_progress";
-  tutorialId: string;
-  currentStep: number;
-  totalSteps: number;
-  progressPercentage: number;
-}
-
-// Union type for all possible tutorial data responses
-type TutorialResponseData = TutorialData | TutorialListData | TutorialProgressData;
 
 /**
  * Builds a context string containing available tutorials for the system prompt
@@ -38,12 +19,53 @@ async function buildContext(ctx: AgentContext): Promise<string> {
     const tutorialContent = JSON.stringify(tutorials, null, 2);
 
     return `===AVAILABLE TUTORIALS====
-${tutorialContent}`;
+${tutorialContent}
+
+Note: You should not expose the details of the tutorial IDs to the user. However, you can use it to help the user
+request to the right function when starting a tutorial because it requires the exact ID to match.
+`;
   } catch (error) {
     ctx.logger.error("Error building tutorial context: %s", error);
     return `===AVAILABLE TUTORIALS====
 Unable to load tutorial list.`;
   }
+}
+
+async function processState(state: AgentState, ctx: AgentContext): Promise<any> {
+  const action = state.getAction();
+
+  if (!action) {
+    ctx.logger.info("No action to process");
+    return null;
+  }
+
+  ctx.logger.info("Processing action: %s", JSON.stringify(action, null, 2));
+
+  try {
+    switch (action.type) {
+      case ActionType.START_TUTORIAL_STEP:
+        if (action.tutorialId) {
+          const tutorialStep = await getTutorialStep(action.tutorialId, action.currentStep, ctx);
+          if (tutorialStep.success && tutorialStep.data) {
+            return {
+              type: "tutorial",
+              data: {
+                tutorialId: action.tutorialId,
+                currentStep: action.currentStep,
+                tutorialStep: tutorialStep.data,
+              }
+            };
+          }
+        }
+        break;
+      default:
+        ctx.logger.warn("Unknown action type: %s", action.type);
+    }
+  } catch (error) {
+    ctx.logger.error("Error processing action: %s", error);
+  }
+
+  return null;
 }
 
 export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx: AgentContext) {
@@ -84,7 +106,6 @@ export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx:
 
     // Build tutorial context for the system prompt
     const tutorialContext = await buildContext(ctx);
-
     // Generate response using tools
     const initialResult = await generateText({
       model: openai("gpt-4o"),
@@ -93,9 +114,13 @@ export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx:
         content: msg.content,
       })),
       tools,
-      maxSteps: 5,
+      maxSteps: 3,
       system: `=== ROLE ===
 You are Pulse, an AI assistant designed to help developers learn and navigate the Agentuity platform through interactive tutorials and clear guidance. Your primary goal is to assist users with understanding and using the Agentuity SDK effectively. When a user’s query is vague, unclear, or lacks specific intent, subtly suggest relevant interactive tutorial to guide them toward learning the platform. For clear, specific questions related to the Agentuity SDK or other topics, provide direct, accurate, and concise answers without mentioning tutorials unless relevant. Always maintain a friendly and approachable tone to encourage engagement.
+
+Your role is to ensure user have a smooth tutorial experience!
+
+When user is asking to move to the next tutorial, simply increment the step for them.
 
 === PERSONALITY ===
 - Friendly and encouraging with light humour  
@@ -106,13 +131,12 @@ You are Pulse, an AI assistant designed to help developers learn and navigate th
 === Available Tools or Functions ===
 You have access to various tools you can use -- use when appropriate!
 1. Tutorial management  
-   - startTutorial: Initiates a tutorial by setting the application context, allowing the user to view tutorial content (e.g., in a UI or application interface).
-   - nextTutorialStep: Advances the user to the next step in the active tutorial.
+   - startTutorialAtStep: Starting the user off at a specific step of a tutorial.
 2. General assistance
    - askDocsAgentTool: retrieve Agentuity documentation snippets
 
 === TOOL-USAGE RULES (must follow) ===
-- startTutorial must only be used when user select a tutorial. You must also select only the available tutorial.
+- startTutorialById must only be used when user select a tutorial. If the user starts a new tutorial, the step number should be set to one. Valid step is between 1 and totalSteps of the specific tutorial.
 - Treat askDocsAgentTool as a search helper; ignore results you judge irrelevant.
 
 === RESPONSE STYLE (format guidelines) ===
@@ -136,28 +160,11 @@ ${tutorialContext}
     });
 
     let finalResponseText = initialResult.text;
-    const actions = state.getActions();
-    let tutorialData: TutorialResponseData | null = null;
+    let tutorialData = null;
 
-    if (actions.length > 0) {
-      ctx.logger.info("Processing %d actions from state queue", actions.length);
-
-      for (const action of actions) {
-        ctx.logger.info("Processing action: %s", JSON.stringify(action, null, 2));
-
-        if (action.type == "start_tutorial" && action.tutorialId) {
-          ctx.logger.info("Executing start_tutorial action for: %s", action.tutorialId);
-          const basicTutorialData = await fetchTutorialContent(action.tutorialId, ctx);
-          if (basicTutorialData) {
-            tutorialData = basicTutorialData;
-          }
-        } else {
-          ctx.logger.warn("Invalid action request")
-        }
-      }
-
-      // Clear actions after processing
-      state.clearActions();
+    if (state.hasAction()) {
+      tutorialData = await processState(state, ctx);
+      state.clearAction();
     }
 
     // Update conversation history
@@ -166,8 +173,6 @@ ${tutorialContext}
       { role: "user", content: message },
       { role: "assistant", content: finalResponseText }
     ];
-
-    ctx.logger.info("Sending response with tutorial data: %s", tutorialData ? JSON.stringify(tutorialData, null, 2) : "none");
 
     return resp.json({
       response: finalResponseText,
@@ -183,4 +188,3 @@ ${tutorialContext}
     }, { status: 500 });
   }
 }
-
