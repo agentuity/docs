@@ -5,29 +5,32 @@ export interface AgentConfig {
   url: string;
   bearerToken?: string;
 }
-
 /**
- * Validates and returns agent configuration from environment variables
+ * Creates agent configuration from environment variables
  */
-export const getAgentConfig = (): AgentConfig => {
+const createAgentConfig = (agentIdKey: string): AgentConfig => {
   const baseUrl = process.env.AGENT_BASE_URL;
-  const agentId = process.env.AGENT_ID;
+  const agentId = process.env[agentIdKey];
   const bearerToken = process.env.AGENT_BEARER_TOKEN;
-  const fullUrl = process.env.AGENT_FULL_URL;
 
-  // Validate required environment variables
-  if (!fullUrl && (!baseUrl || !agentId)) {
+  if (!baseUrl || !agentId) {
     throw new Error(
-      'Missing required environment variables. Either set AGENT_FULL_URL or both AGENT_BASE_URL and AGENT_ID'
+      `Missing required environment variables. Set both AGENT_BASE_URL and ${agentIdKey}`
     );
   }
 
-  const url = fullUrl || `${baseUrl}/${agentId}`;
-
   return {
-    url,
+    url: `${baseUrl}/${agentId}`,
     bearerToken: bearerToken || undefined,
   };
+};
+
+export const getAgentConfig = (): AgentConfig => {
+  return createAgentConfig('AGENT_QA_ID');
+};
+
+export const getAgentPulseConfig = (): AgentConfig => {
+  return createAgentConfig('AGENT_PULSE_ID');
 };
 
 /**

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     
     // Find tutorial by meta.json ID
     const allTutorials = await readAllTutorials(basePath);
-    const tutorial = allTutorials.tutorials.find(t => t.id === id);
+    const tutorial = allTutorials.find(t => t.id === id);
     
     if (!tutorial) {
       return NextResponse.json(

@@ -13,7 +13,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     
     // Read all tutorials and find the one with matching ID from meta.json
     const allTutorials = await readAllTutorials(basePath);
-    const tutorial = allTutorials.tutorials.find(t => t.id === id);
+    const tutorial = allTutorials.find(t => t.id === id);
     
     if (!tutorial) {
       return NextResponse.json(
