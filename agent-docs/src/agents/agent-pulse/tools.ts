@@ -45,7 +45,8 @@ export function createTools(context: ToolContext) {
             state.setAction({
                 type: ActionType.START_TUTORIAL_STEP,
                 tutorialId: tutorialId,
-                currentStep: stepNumber
+                currentStep: stepNumber,
+                totalSteps: tutorialResponse.data.totalSteps
             });
             return `Starting "${data.title}". Total steps: ${data.totalSteps} \n\n Description: ${data.description}`;
         },

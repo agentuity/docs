@@ -2,7 +2,7 @@ import type { AgentContext } from '@agentuity/sdk';
 
 const TUTORIAL_API_BASE_URL = process.env.TUTORIAL_API_URL;
 
-interface Tutorial {
+export interface Tutorial {
   id: string;
   title: string;
   description: string;

@@ -6,6 +6,7 @@ interface Action {
   type: ActionType;
   tutorialId: string;
   currentStep: number;
+  totalSteps: number;
 }
 
 interface AgentState {

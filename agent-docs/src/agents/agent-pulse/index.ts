@@ -3,7 +3,7 @@ import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { createTools } from "./tools";
 import { createAgentState, ActionType, type AgentState } from "./state";
-import { getTutorialList, getTutorialMeta, getTutorialStep } from "./tutorial";
+import { getTutorialList, getTutorialStep, type Tutorial } from "./tutorial";
 
 interface ConversationMessage {
   role: "user" | "assistant";
@@ -13,32 +13,69 @@ interface ConversationMessage {
 /**
  * Builds a context string containing available tutorials for the system prompt
  */
-async function buildContext(ctx: AgentContext): Promise<string> {
+async function buildContext(ctx: AgentContext, tutorialState?: TutorialState): Promise<string> {
   try {
     const tutorials = await getTutorialList(ctx);
-    const tutorialContent = JSON.stringify(tutorials, null, 2);
+
+    // Handle API failure early
+    if (!tutorials.success || !tutorials.data) {
+      ctx.logger.warn("Failed to load tutorial list");
+      return defaultFallbackContext();
+    }
+
+    const tutorialContent = JSON.stringify(tutorials.data, null, 2);
+    const currentTutorialInfo = buildCurrentTutorialInfo(tutorials.data, tutorialState);
 
     return `===AVAILABLE TUTORIALS====
-${tutorialContent}
 
-Note: You should not expose the details of the tutorial IDs to the user. However, you can use it to help the user
-request to the right function when starting a tutorial because it requires the exact ID to match.
+    ${tutorialContent}
+
+    ${currentTutorialInfo}
+
+    Note: You should not expose the details of the tutorial IDs to the user.
 `;
   } catch (error) {
     ctx.logger.error("Error building tutorial context: %s", error);
-    return `===AVAILABLE TUTORIALS====
-Unable to load tutorial list.`;
+    return defaultFallbackContext();
   }
 }
 
-async function processState(state: AgentState, ctx: AgentContext): Promise<any> {
-  const action = state.getAction();
-
-  if (!action) {
-    ctx.logger.info("No action to process");
-    return null;
+/**
+ * Builds current tutorial information string if user is in a tutorial
+ */
+function buildCurrentTutorialInfo(tutorials: Tutorial[], tutorialState?: TutorialState): string {
+  if (!tutorialState?.tutorialId) {
+    return '';
   }
 
+  const currentTutorial = tutorials.find(t => t.id === tutorialState.tutorialId);
+  if (!currentTutorial) {
+    return '\nWarning: User appears to be in an unknown tutorial.';
+  }
+  if (tutorialState.currentStep > currentTutorial.totalSteps) {
+    return `\nUser has completed the tutorial: ${currentTutorial.title} (${currentTutorial.totalSteps} steps)`;
+  }
+  return `\nUser is currently on this tutorial: ${currentTutorial.title} (Step ${tutorialState.currentStep} of ${currentTutorial.totalSteps})`;
+}
+
+/**
+ * Returns fallback context when tutorial list can't be loaded
+ */
+function defaultFallbackContext(): string {
+  return `===AVAILABLE TUTORIALS====
+Unable to load tutorial list. Please try again later or contact support.`;
+}
+
+interface TutorialState {
+  tutorialId: string;
+  currentStep: number;
+}
+
+async function processTutorialState(state: AgentState, ctx: AgentContext): Promise<any> {
+  const action = state.getAction();
+  if (!action) {
+    throw new Error("No action found in state");
+  }
   ctx.logger.info("Processing action: %s", JSON.stringify(action, null, 2));
 
   try {
@@ -48,7 +85,6 @@ async function processState(state: AgentState, ctx: AgentContext): Promise<any> 
           const tutorialStep = await getTutorialStep(action.tutorialId, action.currentStep, ctx);
           if (tutorialStep.success && tutorialStep.data) {
             return {
-              type: "tutorial",
               data: {
                 tutorialId: action.tutorialId,
                 currentStep: action.currentStep,
@@ -76,11 +112,13 @@ export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx:
     const jsonData = await req.data.json();
     let message: string = "";
     let conversationHistory: ConversationMessage[] = [];
+    let tutorialData: TutorialState | undefined = undefined;
 
     if (jsonData && typeof jsonData === 'object' && !Array.isArray(jsonData)) {
       const body = jsonData as any;
       message = body.message || "";
       conversationHistory = body.conversationHistory || [];
+      tutorialData = body.tutorialData || undefined;
     } else {
       // Fallback for non-object data
       message = String(jsonData || "");
@@ -105,7 +143,7 @@ export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx:
     ];
 
     // Build tutorial context for the system prompt
-    const tutorialContext = await buildContext(ctx);
+    const tutorialContext = await buildContext(ctx, tutorialData);
     // Generate response using tools
     const initialResult = await generateText({
       model: openai("gpt-4o"),
@@ -160,10 +198,9 @@ ${tutorialContext}
     });
 
     let finalResponseText = initialResult.text;
-    let tutorialData = null;
 
     if (state.hasAction()) {
-      tutorialData = await processState(state, ctx);
+      tutorialData = await processTutorialState(state, ctx);
       state.clearAction();
     }
 
