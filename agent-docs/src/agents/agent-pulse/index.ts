@@ -87,6 +87,7 @@ async function processTutorialState(state: AgentState, ctx: AgentContext): Promi
             return {
               data: {
                 tutorialId: action.tutorialId,
+                totalStep: action.totalSteps,
                 currentStep: action.currentStep,
                 tutorialStep: tutorialStep.data,
               }

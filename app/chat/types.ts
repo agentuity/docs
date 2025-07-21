@@ -1,33 +1,38 @@
+// Message types
 export interface ChatMessage {
   id: string;
   type: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  codeBlock?: {
-    filename: string;
-    content: string;
-    language: string;
-    editable: boolean;
-  };
-  execution?: {
-    output: string;
-    error?: string;
-    executionTime: number;
-    exitCode: number;
-  };
+  codeBlock?: CodeBlock;
+  execution?: ExecutionResult;
 }
 
+export interface CodeBlock {
+  filename: string;
+  content: string;
+  language: string;
+  editable: boolean;
+}
+
+export interface ExecutionResult {
+  output: string;
+  error?: string;
+  executionTime: number;
+  exitCode: number;
+  success?: boolean;
+}
+
+// Session types
 export interface ChatSession {
   id: string;
   messages: ChatMessage[];
-  currentFiles: {
-    [filename: string]: string;
-  };
+  currentFiles: Record<string, string>;
   createdAt: Date;
   updatedAt: Date;
 }
 
-// API types
+// API request/response types
 export interface ExecuteRequest {
   code: string;
   filename: string;
@@ -50,16 +55,52 @@ export interface CreateSessionResponse {
 export interface ChatRequest {
   message: string;
   sessionId: string;
-  conversationHistory: ChatMessage[];
 }
 
-export interface ChatResponse {
-  message: ChatMessage;
-  suggestedCode?: {
-    filename: string;
-    content: string;
-    description: string;
-  };
+// New agent response types that match the backend
+export interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface TutorialStep {
+  title: string;
+  content: string;
+  instructions: string;
+  initialCode?: string;
+  totalSteps: number;
+}
+
+export interface TutorialData {
+  tutorialId: string;
+  currentStep: number;
+  tutorialStep: TutorialStep;
+}
+
+export interface AgentResponse {
+  response: string;
+  conversationHistory: ConversationMessage[];
+  tutorialData?: TutorialData;
+  error?: string;
+  details?: string;
+}
+
+// Execution stream event types
+export type ExecutionEventType = 
+  | 'status' 
+  | 'stdout' 
+  | 'stderr' 
+  | 'close' 
+  | 'timeout' 
+  | 'error';
+
+export interface ExecutionEvent {
+  type: ExecutionEventType;
+  data?: string;
+  message?: string;
+  exitCode?: number;
+  error?: string;
+  timestamp: string;
 }
 
 // Component props
@@ -72,8 +113,10 @@ export interface ChatMessageProps {
   message: ChatMessage;
   onCodeExecute: (code: string, filename: string) => Promise<void>;
   onCodeChange: (code: string, filename: string) => void;
-  executionState: 'idle' | 'running' | 'completed' | 'error';
+  executionState: ExecutionState;
 }
+
+export type ExecutionState = 'idle' | 'running' | 'completed' | 'error';
 
 export interface CodeBlockProps {
   filename: string;
@@ -82,7 +125,7 @@ export interface CodeBlockProps {
   editable: boolean;
   onExecute: (code: string, filename: string) => Promise<void>;
   onCodeChange: (code: string) => void;
-  executionResult?: ExecuteResponse;
+  executionResult?: ExecutionResult;
   loading?: boolean;
 }
 
@@ -98,4 +141,14 @@ export interface SessionSidebarProps {
   sessions: ChatSession[];
   onSessionSelect: (sessionId: string) => void;
   onNewSession: () => void;
+}
+
+export interface ErrorBoundaryProps {
+  children: React.ReactNode;
+  fallback: React.ReactNode;
+}
+
+export interface ErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
 } 

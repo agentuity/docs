@@ -1,26 +1,18 @@
 'use client';
 
-import { use } from 'react';
-import { notFound } from 'next/navigation';
 import { ChatInterface } from '../components/ChatInterface';
+import { ChatProvider } from '../context/ChatContext';
 
 interface ChatSessionPageProps {
-  params: Promise<{
+  params: {
     sessionId: string;
-  }>;
+  };
 }
 
 export default function ChatSessionPage({ params }: ChatSessionPageProps) {
-  const { sessionId } = use(params);
-
-  // Basic session ID validation
-  if (!sessionId || sessionId.length < 3) {
-    notFound();
-  }
-
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
-      <ChatInterface sessionId={sessionId} />
-    </div>
+    <ChatProvider initialSessionId={params.sessionId}>
+      <ChatInterface sessionId={params.sessionId} />
+    </ChatProvider>
   );
 } 
