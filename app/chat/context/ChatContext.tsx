@@ -46,7 +46,6 @@ interface ChatContextType {
   setCurrentInput: (input: string) => void;
   createNewSession: () => void;
   selectSession: (sessionId: string) => void;
-  sendTutorialRequest: (action: string, tutorialId?: string) => Promise<void>;
   setEditorContent: (content: string) => void;
 }
 
@@ -396,84 +395,6 @@ export const ChatProvider = ({ children, initialSessionId }: { children: ReactNo
     content: message.content
   });
 
-  // Send a tutorial request
-  const sendTutorialRequest = useCallback(async (action: string, tutorialId?: string) => {
-    setLoading(true);
-
-    try {
-      // Prepare the request payload
-      const payload = {
-        type: 'tutorial',
-        action: action,
-        message: `I want to ${action} ${tutorialId || ''}`.trim(),
-        sessionId: currentSessionId,
-        conversationHistory: messages.slice(-10).map(convertToConversationMessage), // Send last 10 messages
-        tutorialData: tutorialData // Send current tutorial state if any
-      };
-
-      // Send tutorial request to agent-pulse
-      const response = await fetch(AGENT_PULSE_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to send tutorial request to agent');
-      }
-
-      const data = await response.json() as AgentResponse;
-      
-      // Update conversation history from response
-      if (data.conversationHistory) {
-        setConversationHistory(data.conversationHistory);
-      }
-
-      // Update tutorial data if present
-      if (data.tutorialData) {
-        setTutorialData(data.tutorialData);
-      }
-      
-      // Create assistant message from response
-      const assistantMessage: ChatMessage = {
-        id: generateId(),
-        type: 'assistant',
-        content: data.response || 'Tutorial request processed',
-        timestamp: new Date(),
-      };
-
-      // Add code block if available in tutorial data
-      if (data.tutorialData?.tutorialStep?.initialCode) {
-        assistantMessage.codeBlock = {
-          content: data.tutorialData.tutorialStep.initialCode,
-          language: 'typescript',
-          filename: 'index.ts',
-          editable: true
-        };
-        
-        // Auto-open editor for tutorial steps with code
-        setEditorOpen(true);
-        setEditorContent(data.tutorialData.tutorialStep.initialCode);
-      }
-
-      setMessages(prev => [...prev, assistantMessage]);
-    } catch (error) {
-      console.error('Error sending tutorial request:', error);
-      // Add error message
-      const errorMessage: ChatMessage = {
-        id: generateId(),
-        type: 'assistant',
-        content: 'Sorry, I encountered an error processing your tutorial request. Please try again.',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentSessionId, messages, tutorialData]);
-
   // Send a chat message
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim()) return;
@@ -513,7 +434,6 @@ export const ChatProvider = ({ children, initialSessionId }: { children: ReactNo
       }
 
       const data = await response.json() as AgentResponse;
-      
       // Update conversation history from response
       if (data.conversationHistory) {
         setConversationHistory(data.conversationHistory);
@@ -533,9 +453,9 @@ export const ChatProvider = ({ children, initialSessionId }: { children: ReactNo
       };
 
       // Add code block if available in tutorial data
-      if (data.tutorialData?.tutorialStep?.initialCode) {
+      if (data.tutorialData?.tutorialStep?.codeContent) {
         assistantMessage.codeBlock = {
-          content: data.tutorialData.tutorialStep.initialCode,
+          content: data.tutorialData.tutorialStep.codeContent,
           language: 'typescript',
           filename: 'index.ts',
           editable: true
@@ -543,7 +463,7 @@ export const ChatProvider = ({ children, initialSessionId }: { children: ReactNo
         
         // Auto-open editor for tutorial steps with code
         setEditorOpen(true);
-        setEditorContent(data.tutorialData.tutorialStep.initialCode);
+        setEditorContent(data.tutorialData.tutorialStep.codeContent);
       }
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -588,7 +508,6 @@ export const ChatProvider = ({ children, initialSessionId }: { children: ReactNo
     setCurrentInput,
     createNewSession,
     selectSession,
-    sendTutorialRequest,
     setEditorContent
   };
 

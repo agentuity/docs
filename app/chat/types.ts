@@ -65,9 +65,9 @@ export interface ConversationMessage {
 
 export interface TutorialStep {
   title: string;
-  content: string;
+  readmeContent: string;
   instructions: string;
-  initialCode?: string;
+  codeContent?: string;
   totalSteps: number;
 }
 

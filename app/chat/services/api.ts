@@ -51,30 +51,6 @@ export const apiService = {
   },
 
   /**
-   * Send a tutorial request to the agent
-   */
-  sendTutorialRequest: async (params: TutorialRequestParams): Promise<any> => {
-    const response = await fetch(AGENT_PULSE_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        type: 'tutorial',
-        action: params.action,
-        tutorialId: params.tutorialId,
-        sessionId: params.sessionId,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to send tutorial request to agent');
-    }
-
-    return response.json();
-  },
-
-  /**
    * Execute code and return a stream for processing
    */
   executeCode: async (params: ExecuteRequestParams): Promise<ReadableStream<Uint8Array>> => {

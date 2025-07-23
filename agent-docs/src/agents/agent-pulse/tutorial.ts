@@ -83,10 +83,12 @@ export async function getTutorialStep(tutorialId: string, stepNumber: number, ct
       return { success: false, status: response.status, error: response.statusText };
     }
 
-    const stepData = await response.json() as TutorialStep;
+    const responseData = await response.json();
+    console.log(responseData);
+    const { success, data } = responseData as { success: boolean; data: TutorialStep };
     ctx.logger.info('Fetched step %d for tutorial %s', stepNumber, tutorialId);
 
-    return { success: true, data: stepData };
+    return responseData as ApiResponse<TutorialStep>;
   } catch (error) {
     ctx.logger.error('Error fetching tutorial step %d for tutorial %s: %s', stepNumber, tutorialId, error);
     throw error;

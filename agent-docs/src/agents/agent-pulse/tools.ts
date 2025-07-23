@@ -2,7 +2,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import { ActionType } from "./state";
 import type { AgentState } from "./state";
-import type { AgentContext } from "@agentuity/sdk";
+import type { AgentContext, AgentResponse } from "@agentuity/sdk";
 import { getTutorialMeta } from "./tutorial";
 
 /**
@@ -16,9 +16,10 @@ interface ToolContext {
 /**
  * Factory function that creates tools with state management context
  */
-export function createTools(context: ToolContext) {
+export async function createTools(context: ToolContext) {
     const { state, agentContext } = context;
-
+    const DOC_QA_AGENT_NAME = "doc-qa";
+    const docQaAgent = await agentContext.getAgent({ name: DOC_QA_AGENT_NAME });
     /**
      * Tool for starting a tutorial - adds action to state queue
      */
@@ -62,9 +63,18 @@ export function createTools(context: ToolContext) {
             query: z.string().describe("The question or query to send to the query function"),
         }),
         execute: async ({ query }) => {
-            //TODO: we have to do agent hand-off here
-            agentContext.logger.info("Querying agent %s with: %s", query);
-            return `Response from Agentuity Docs for query: ${query}`;
+            agentContext.logger.info("Querying agent %s with: %s", DOC_QA_AGENT_NAME, query);
+            const agentPayload = {
+                message: query,
+
+            }
+            const response = await docQaAgent.run({
+                data: agentPayload,
+                contentType: 'application/json'
+            })
+            console.log(await response.data.json());
+            const responseData = await response.data.json();
+            return responseData;
         },
     });
 

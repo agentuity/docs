@@ -83,14 +83,12 @@ async function processTutorialState(state: AgentState, ctx: AgentContext): Promi
       case ActionType.START_TUTORIAL_STEP:
         if (action.tutorialId) {
           const tutorialStep = await getTutorialStep(action.tutorialId, action.currentStep, ctx);
-          if (tutorialStep.success && tutorialStep.data) {
+          if (tutorialStep.success && tutorialStep.data && tutorialStep.success) {
             return {
-              data: {
-                tutorialId: action.tutorialId,
-                totalStep: action.totalSteps,
-                currentStep: action.currentStep,
-                tutorialStep: tutorialStep.data,
-              }
+              tutorialId: action.tutorialId,
+              totalStep: action.totalSteps,
+              currentStep: action.currentStep,
+              tutorialStep: tutorialStep.data,
             };
           }
         }
@@ -132,7 +130,7 @@ export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx:
     const state = createAgentState();
 
     // Create tools with state context
-    const tools = createTools({
+    const tools = await createTools({
       state,
       agentContext: ctx
     });
