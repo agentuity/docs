@@ -1,28 +1,154 @@
 ---
 title: Overview
-description: Introduction to the Agentuity Cloud Console and its features
+description: Complete guide to the Agentuity Cloud Console - manage projects, configure AI services, monitor agents, and access vector memory, key-value storage, and AI gateway features.
 ---
+
+import Script from 'next/script';
+
+<Script
+	id="cloud-console-faq-schema"
+	type="application/ld+json"
+	strategy="afterInteractive"
+>
+	{`
+	{
+		"@context": "https://schema.org",
+		"@type": "FAQPage",
+		"mainEntity": [
+			{
+				"@type": "Question",
+				"name": "What is the Agentuity Cloud Console?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "The Agentuity Cloud Console is a web-based interface for managing your AI agent infrastructure. It provides tools for creating projects, configuring agentic services like vector memory and AI gateway, monitoring agent deployments, and managing API keys and settings."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "What agentic services are available in the cloud?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "Agentuity Cloud provides three core agentic services: Vector Memory Storage for semantic search and knowledge bases, Key-Value Storage for fast data caching, and AI Gateway for managing access to various AI models and their usage billing."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "How do I monitor my AI agents in the cloud?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "Use the Agent Dashboard to monitor deployments and runs, view logs and telemetry data through Sessions, and track agent performance. The console provides real-time insights into agent behavior and resource usage."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "When should I use Vector Memory vs Key-Value Storage?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "Use Vector Memory Storage for semantic search, large context windows, knowledge bases, and historical data that needs similarity matching. Use Key-Value Storage for fast, simple data storage, caching, and temporary data that needs quick retrieval."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "What is the AI Gateway used for?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "The AI Gateway manages access to various AI models from providers like OpenAI, Anthropic, and others. It handles authentication, usage tracking, billing management, and provides a unified interface for accessing multiple LLM providers."
+				}
+			}
+		]
+	}
+	`}
+</Script>
 
 The Agentuity Cloud Console is a web-based interface for managing your Agentuity resources, projects, and settings. This guide provides an overview of the main features and functionality available in the Cloud Console.
 
-- Create and manage projects via the [Project Dashboard](/Cloud/project)
-- Configure settings and API keys [API Keys](/Cloud/api-keys)
-- Manage agentic services ([Vector](/Cloud/vector-memory), [Key-Value](/Cloud/key-value-memory), and [AI Gateway](/Cloud/aigateway))
-- Monitor agent deployments and runs via the [Agent Dashboard](/Cloud/agents)
-- View logs and telemetry data via the [Sessions](/Cloud/sessions)
+## What You Can Do in the Cloud Console
 
-### Agentic Services
+The Cloud Console serves as your **mission control** for AI agent operations, providing:
 
-The Services section provides tools for managing different types of agentic services:
+- **[Project Management](/Cloud/project)** - Create, configure, and manage AI agent projects
+- **[API Key Management](/Cloud/api-keys)** - Generate and manage authentication keys for your agents
+- **[Agentic Services](/Cloud/vector-memory)** - Access vector memory, key-value storage, and AI gateway
+- **[Agent Monitoring](/Cloud/agents)** - Monitor deployments, runs, and performance metrics
+- **[Session Analytics](/Cloud/sessions)** - View detailed logs and telemetry data
 
-- **[Vector Memory Storage](/Cloud/vector-memory)**: For semantic search and large context windows, ideal for knowledge bases and historical data
-- **[Key Value Storage](/Cloud/key-value-memory)**: For fast, simple, or temporary data storage or caching
-- **[AI Gateway](/Cloud/aigateway)**: For managing access to various AI models and their usage and billing
+## Core Agentic Services
 
-### Settings and Configuration
+### [Vector Memory Storage](/Cloud/vector-memory)
+**Best for:** Semantic search, knowledge bases, RAG applications, long-term memory
 
-The Settings section allows you to manage various configuration options:
+Vector Memory enables your agents to store and retrieve information based on semantic similarity rather than exact matches. Perfect for:
+- **Knowledge bases** that agents can search intelligently
+- **Historical context** that agents need to remember across sessions
+- **Document retrieval** for RAG (Retrieval Augmented Generation) workflows
+- **Large context windows** that exceed LLM token limits
 
-- **[API Keys](/Cloud/api-keys)**: Create and manage API keys for authenticating with Agentuity services
-- **[Organization Settings](/Cloud/organization)**: Manage organization details and members
-- **User Profile**: Update your user profile and preferences
+### [Key-Value Storage](/Cloud/key-value-memory)  
+**Best for:** Fast data access, caching, session state, temporary storage
+
+Key-Value Storage provides lightning-fast data retrieval for agents that need quick access to structured data:
+- **Session state** and user preferences
+- **Caching** frequently accessed data
+- **Configuration settings** for agent behavior
+- **Temporary data** that doesn't need long-term persistence
+
+### [AI Gateway](/Cloud/aigateway)
+**Best for:** Multi-model access, usage tracking, cost management, rate limiting
+
+AI Gateway centralizes access to multiple LLM providers with unified billing and monitoring:
+- **Multi-provider access** to OpenAI, Anthropic, Google, and more
+- **Usage tracking** and cost optimization
+- **Rate limiting** and quota management
+- **Unified billing** across all AI model usage
+
+## Settings and Configuration
+
+### [API Keys](/Cloud/api-keys)
+Secure authentication for your agents and applications:
+- Generate API keys for different environments (development, staging, production)
+- Set permissions and scopes for each key
+- Monitor API key usage and rotate keys for security
+
+### [Organization Settings](/Cloud/organization)
+Team collaboration and management:
+- Invite team members and manage permissions
+- Configure organization-wide settings and policies
+- Monitor team usage and billing across projects
+
+### User Profile
+Personal account management:
+- Update your profile information and preferences
+- Configure notification settings
+- Manage your personal API access
+
+## Frequently Asked Questions
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+  <div className="p-4 border rounded-lg">
+    <h4 className="font-semibold mb-2">What is the Cloud Console?</h4>
+    <p className="text-sm text-muted-foreground">A web-based interface for managing AI agent infrastructure, including projects, services, monitoring, and configuration.</p>
+  </div>
+  
+  <div className="p-4 border rounded-lg">
+    <h4 className="font-semibold mb-2">Which storage should I use?</h4>
+    <p className="text-sm text-muted-foreground">Use Vector Memory for semantic search and knowledge bases. Use Key-Value for fast data access and caching.</p>
+  </div>
+  
+  <div className="p-4 border rounded-lg">
+    <h4 className="font-semibold mb-2">How do I monitor my agents?</h4>
+    <p className="text-sm text-muted-foreground">Use the Agent Dashboard for deployments and the Sessions view for detailed logs and telemetry data.</p>
+  </div>
+  
+  <div className="p-4 border rounded-lg">
+    <h4 className="font-semibold mb-2">What is the AI Gateway for?</h4>
+    <p className="text-sm text-muted-foreground">Manages access to multiple AI model providers with unified billing, usage tracking, and rate limiting.</p>
+  </div>
+</div>
+
+## Getting Started
+
+1. **[Create a Project](/Cloud/project)** - Set up your first AI agent project
+2. **[Generate API Keys](/Cloud/api-keys)** - Create authentication keys for your agents  
+3. **[Configure Services](/Cloud/vector-memory)** - Set up vector memory, key-value storage, or AI gateway
+4. **[Deploy Agents](/Cloud/agents)** - Deploy and monitor your AI agents
+5. **[Monitor Performance](/Cloud/sessions)** - Track agent behavior and optimize performance
