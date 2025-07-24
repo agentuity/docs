@@ -11,6 +11,7 @@ import matter from 'gray-matter';
 export type Chunk = {
   id: string;
   chunkIndex: number;
+  totalChunks: number;
   contentType: string;
   heading: string;
   text: string;
@@ -144,6 +145,7 @@ export async function chunkAndEnrichDoc(fileContent: string): Promise<Chunk[]> {
     return {
       id: crypto.randomUUID(),
       chunkIndex: idx,
+      totalChunks: chunks.length,
       contentType: chunk.metadata.contentType,
       heading: currentHeading,
       text: chunk.pageContent,

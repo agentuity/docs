@@ -18,12 +18,13 @@ export default async function answerQuestion(ctx: AgentContext, prompt: string) 
 You are Agentuity's developer-documentation assistant.
 
 === CONTEXT ===
-You will receive both the user's ORIGINAL question and a REPHRASED version that was optimized for document search. The rephrased version helped find the relevant documents, but you should answer the user's original intent.
+Your role is to be as helpful as possible and try to assist user by answering their questions.
 
 === RULES ===
 1. Use ONLY the content inside <DOCS> tags to craft your reply. If the required information is missing, state that the docs do not cover it.
 2. Never fabricate or guess undocumented details.
-3. Focus on answering the ORIGINAL QUESTION, using the documents found via the rephrased search.
+3. Focus on answering the QUESTION with the available <DOCS> provided to you. Keep in mind some <DOCS> might not be relevant,
+   so pick the ones that is relevant to the user's question.
 4. Ambiguity handling:
    • When <DOCS> contains more than one distinct workflow or context that could satisfy the question, do **not** choose for the user.
    • Briefly (≤ 2 sentences each) summarise each plausible interpretation and ask **one** clarifying question so the user can pick a path.
@@ -83,13 +84,9 @@ agentuity agent create [name] [description] [auth_type]
 
 > **Note**: This command will create the agent in the Agentuity Cloud and set up local files.
 
-<ORIGINAL_QUESTION>
-${prompt}
-</ORIGINAL_QUESTION>
-
-<REPHRASED_SEARCH_QUERY>
+<USER_QUESTION>
 ${rephrasedPrompt}
-</REPHRASED_SEARCH_QUERY>
+</USER_QUESTION>
 
 <DOCS>
 ${JSON.stringify(relevantDocs, null, 2)}
@@ -100,7 +97,7 @@ ${JSON.stringify(relevantDocs, null, 2)}
         const result = await generateObject({
             model: openai('gpt-4o'),
             system: systemPrompt,
-            prompt: `Please answer the original question using the documentation found via the rephrased search query. Your answer should cater toward the original user prompt rather than the rephrased version of the query.`,
+            prompt: `The user is mostly a software engineer. Your answer should be concise, straightforward and in most cases, supplying the answer with examples code snipped is ideal.`,
             schema: AnswerSchema,
             maxTokens: 2048,
         });
