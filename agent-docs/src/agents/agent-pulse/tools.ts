@@ -2,7 +2,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import { ActionType } from "./state";
 import type { AgentState } from "./state";
-import type { AgentContext, AgentResponse } from "@agentuity/sdk";
+import type { AgentContext } from "@agentuity/sdk";
 import { getTutorialMeta } from "./tutorial";
 
 /**
