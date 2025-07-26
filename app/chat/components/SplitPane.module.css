@@ -1,0 +1,32 @@
+/* Split pane gutter styles */
+.gutter {
+  background-color: rgba(255, 255, 255, 0.1);
+  position: relative;
+  transition: background-color 0.2s ease;
+}
+
+.gutter:hover {
+  background-color: rgba(0, 200, 255, 0.3);
+}
+
+.gutter::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 1px;
+}
+
+/* Horizontal gutter */
+.horizontal .gutter::after {
+  width: 2px;
+  height: 20px;
+}
+
+/* Vertical gutter */
+.vertical .gutter::after {
+  width: 20px;
+  height: 2px;
+} 
