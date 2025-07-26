@@ -7,6 +7,8 @@ import { User } from 'lucide-react';
 import { AgentuityLogo } from '@/components/icons/AgentuityLogo';
 import { ChatMessageProps } from '../types';
 import CodeBlock from './CodeBlock';
+import { TutorialFileChip } from './TutorialFileChip';
+import { useChatContext } from '../context/ChatContext';
 
 // Helper functions for markdown processing
 const extractCodeFromChildren = (children: React.ReactNode) => {
@@ -46,6 +48,22 @@ export function ChatMessageComponent({
   onCodeChange,
   executionState
 }: ChatMessageProps) {
+  const { tutorialData, setEditorContent, setEditorOpen, editorOpen } = useChatContext();
+
+  // Check if this message has tutorial code
+  const isTutorialCode = message.codeBlock && tutorialData &&
+    message.codeBlock.filename === 'index.ts' &&
+    message.codeBlock.language === 'typescript';
+
+  const handleOpenInEditor = (code: string) => {
+    setEditorContent(code);
+    setEditorOpen(true);
+  };
+
+  const handleCloseEditor = () => {
+    setEditorOpen(false);
+  };
+
   return (
     <div className={`flex gap-4 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
       {message.type === 'assistant' && (
@@ -114,19 +132,32 @@ export function ChatMessageComponent({
           )}
         </div>
 
-        {/* Render separate code block if message has one */}
+        {/* Render tutorial file chip or regular code block */}
         {message.codeBlock && (
           <div className="mt-3">
-            <CodeBlock
-              filename={message.codeBlock.filename}
-              content={message.codeBlock.content}
-              language={message.codeBlock.language}
-              editable={message.codeBlock.editable}
-              onExecute={onCodeExecute}
-              onCodeChange={(code) => onCodeChange(code, message.codeBlock!.filename)}
-              executionResult={message.execution ? { ...message.execution, success: !message.execution.error } : undefined}
-              loading={executionState === 'running'}
-            />
+            {isTutorialCode ? (
+              <TutorialFileChip
+                codeBlock={message.codeBlock}
+                onExecute={onCodeExecute}
+                onCodeChange={onCodeChange}
+                onOpenInEditor={handleOpenInEditor}
+                onCloseEditor={handleCloseEditor}
+                executionState={executionState}
+                executionResult={message.execution ? { ...message.execution, success: !message.execution.error } : undefined}
+                isEditorOpen={editorOpen}
+              />
+            ) : (
+              <CodeBlock
+                filename={message.codeBlock.filename}
+                content={message.codeBlock.content}
+                language={message.codeBlock.language}
+                editable={message.codeBlock.editable}
+                onExecute={onCodeExecute}
+                onCodeChange={(code) => onCodeChange(code, message.codeBlock!.filename)}
+                executionResult={message.execution ? { ...message.execution, success: !message.execution.error } : undefined}
+                loading={executionState === 'running'}
+              />
+            )}
           </div>
         )}
 

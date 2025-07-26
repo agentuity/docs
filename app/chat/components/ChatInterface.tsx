@@ -140,6 +140,42 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                 direction="horizontal"
                 cursor="col-resize"
                 snapOffset={30}
+                gutter={(index, direction) => {
+                  const gutter = document.createElement('div');
+                  gutter.className = 'gutter-vscode';
+                  gutter.style.cssText = `
+                    background: transparent;
+                    position: relative;
+                    cursor: col-resize;
+                    transition: background-color 0.2s ease;
+                  `;
+                  
+                  const dots = document.createElement('div');
+                  dots.style.cssText = `
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    width: 2px;
+                    height: 20px;
+                    background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 0px, rgba(255, 255, 255, 0.3) 2px, transparent 2px, transparent 6px);
+                    border-radius: 1px;
+                    transition: background 0.2s ease;
+                  `;
+                  
+                  gutter.addEventListener('mouseenter', () => {
+                    dots.style.background = 'repeating-linear-gradient(to bottom, rgba(0, 200, 255, 0.8) 0px, rgba(0, 200, 255, 0.8) 2px, transparent 2px, transparent 6px)';
+                    gutter.style.backgroundColor = 'rgba(0, 200, 255, 0.1)';
+                  });
+                  
+                  gutter.addEventListener('mouseleave', () => {
+                    dots.style.background = 'repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 0px, rgba(255, 255, 255, 0.3) 2px, transparent 2px, transparent 6px)';
+                    gutter.style.backgroundColor = 'transparent';
+                  });
+                  
+                  gutter.appendChild(dots);
+                  return gutter;
+                }}
               >
                 {/* Chat Messages Area */}
                 <div className="flex-1 flex flex-col min-w-0">

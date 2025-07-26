@@ -15,9 +15,23 @@ export default function CodeBlock({
   executionResult,
   loading
 }: CodeBlockProps) {
+  const [displyCode, setDisplayCode] = useState(content);
   const [code, setCode] = useState(content);
+  const [collapsed, setCollapsed] = useState(false);
   const { textareaRef } = useAutoResize(code);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    setCode(content);
+  }, [content]);
+
+  const toggleCollapse = () => {
+    setCollapsed(!collapsed);
+  };
+
+  const collapseDisplayCode = () => {
+    setDisplayCode(`${code.split('\n').length} lines of code`);
+  }
 
   useEffect(() => {
     setCode(content);
@@ -28,9 +42,6 @@ export default function CodeBlock({
     onCodeChange(newCode);
   };
 
-  const handleExecute = () => {
-    onExecute(code, filename);
-  };
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(code);
@@ -67,20 +78,19 @@ export default function CodeBlock({
   return (
     <div className="agentuity-card-elevated rounded-xl overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-black/20 border-b border-white/8">
-        <span className="text-sm text-gray-200">
-          {language}
-        </span>
-        <button
-          onClick={copyToClipboard}
-          className="group flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg transition-all duration-200 agentuity-button-primary bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 text-cyan-400 hover:scale-105 active:scale-95"
-        >
-          {copied ? (
-            <Check className="w-4 h-4 transition-transform group-hover:scale-110" />
-          ) : (
-            <Copy className="w-4 h-4 transition-transform group-hover:scale-110" />
-          )}
-        </button>
+      <div className="flex items-center justify-between p-2 bg-black/20 border-b border-white/8">
+        <span className="text-sm text-gray-200">{language}</span>
+        <div className="flex gap-2">
+          <button onClick={toggleCollapse} className="text-xs text-cyan-400 hover:underline">
+            {collapsed ? 'Uncollapse' : 'Collapse'}
+          </button>
+          <button
+            onClick={copyToClipboard}
+            className="group flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg transition-all duration-200 agentuity-button-primary bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 text-cyan-400 hover:scale-105 active:scale-95"
+          >
+            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
 
       {/* Code Editor */}
@@ -88,20 +98,19 @@ export default function CodeBlock({
         {editable ? (
           <textarea
             ref={textareaRef}
-            value={code}
+            value={collapsed ? `${code.split('\n').length} lines of code` : code}
             onChange={(e) => handleCodeChange(e.target.value)}
             onKeyDown={handleKeyDown}
             className="w-full p-4 text-sm font-mono bg-transparent text-gray-800 dark:text-gray-200 placeholder-gray-500/60 dark:placeholder-gray-400/60 resize-none border-0 focus:outline-none focus:ring-0 min-h-[140px] overflow-hidden leading-relaxed"
             spellCheck={false}
-            placeholder="Enter your code here..."
+            readOnly={collapsed}
           />
         ) : (
           <pre className="p-4 text-sm font-mono text-gray-800 dark:text-gray-200 overflow-x-auto leading-relaxed">
-            <code>{code}</code>
+            <code>{collapsed ? `${code.split('\n').length} lines of code` : code}</code>
           </pre>
         )}
       </div>
-
       {/* Execution Result */}
       {executionResult && (
         <div className="border-t border-white/20 dark:border-gray-700/30">

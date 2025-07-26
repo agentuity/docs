@@ -47,6 +47,7 @@ interface ChatContextType {
   createNewSession: () => void;
   selectSession: (sessionId: string) => void;
   setEditorContent: (content: string) => void;
+  setEditorOpen: (open: boolean) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -508,7 +509,8 @@ export const ChatProvider = ({ children, initialSessionId }: { children: ReactNo
     setCurrentInput,
     createNewSession,
     selectSession,
-    setEditorContent
+    setEditorContent,
+    setEditorOpen
   };
 
   return (

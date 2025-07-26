@@ -210,6 +210,7 @@ ${tutorialContext}
       { role: "assistant", content: finalResponseText }
     ];
 
+
     return resp.json({
       response: finalResponseText,
       conversationHistory: updatedHistory,
