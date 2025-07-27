@@ -181,11 +181,11 @@ export function SessionSidebar({
         </div>
 
         {/* Action Section */}
-        <div className="p-3 border-b border-white/8">
+        <div className="p-2 border-b border-white/8">
           <button
             onClick={handleNewSession}
             className={`
-              w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
+              w-full flex items-center gap-3 p-1 rounded-lg
               bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20
               text-cyan-400 hover:text-cyan-300 transition-all duration-200
               ${isCollapsed ? 'justify-center' : 'justify-start'}
@@ -205,7 +205,7 @@ export function SessionSidebar({
             <div className="p-4 text-center">
               {!isCollapsed && (
                 <div className="text-gray-400">
-                  <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <MessageCircle className="w-4 h-4 mx-auto mb-2 opacity-50" />
                   <p className="text-xs">No conversations yet</p>
                 </div>
               )}
@@ -222,7 +222,7 @@ export function SessionSidebar({
                     key={session.id}
                     onClick={() => handleSessionClick(session.id)}
                     className={`
-                      w-full flex items-center gap-3 p-3 rounded-lg text-left
+                      w-full flex items-center gap-2 p-2 rounded-lg text-left
                       transition-all duration-200 group
                       ${isActive
                         ? 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400'
@@ -234,7 +234,7 @@ export function SessionSidebar({
                     title={isCollapsed ? preview : undefined}
                   >
                     <div className="flex-shrink-0">
-                      <MessageCircle className="w-5 h-5" />
+                      <MessageCircle className="w-4 h-4" />
                     </div>
 
                     {!isCollapsed && (

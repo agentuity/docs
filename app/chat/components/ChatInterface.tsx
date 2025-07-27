@@ -35,8 +35,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
     setCurrentInput,
     createNewSession,
     selectSession,
-    setEditorContent,
-    tutorialData
+    setEditorContent
   } = useChatContext();
 
   // Track sidebar state for mobile
