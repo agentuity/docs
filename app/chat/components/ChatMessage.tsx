@@ -138,13 +138,7 @@ export function ChatMessageComponent({
             {isTutorialCode ? (
               <TutorialFileChip
                 codeBlock={message.codeBlock}
-                onExecute={onCodeExecute}
-                onCodeChange={onCodeChange}
                 onOpenInEditor={handleOpenInEditor}
-                onCloseEditor={handleCloseEditor}
-                executionState={executionState}
-                executionResult={message.execution ? { ...message.execution, success: !message.execution.error } : undefined}
-                isEditorOpen={editorOpen}
               />
             ) : (
               <CodeBlock

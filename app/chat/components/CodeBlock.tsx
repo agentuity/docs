@@ -15,7 +15,6 @@ export default function CodeBlock({
   executionResult,
   loading
 }: CodeBlockProps) {
-  const [displyCode, setDisplayCode] = useState(content);
   const [code, setCode] = useState(content);
   const [collapsed, setCollapsed] = useState(false);
   const { textareaRef } = useAutoResize(code);
@@ -28,10 +27,6 @@ export default function CodeBlock({
   const toggleCollapse = () => {
     setCollapsed(!collapsed);
   };
-
-  const collapseDisplayCode = () => {
-    setDisplayCode(`${code.split('\n').length} lines of code`);
-  }
 
   useEffect(() => {
     setCode(content);

@@ -103,7 +103,6 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
         {/* Sidebar - Absolute positioned on mobile for overlay effect */}
         <div
           className={`${sidebarOpen ? 'block' : 'hidden'} lg:block absolute lg:relative z-40 h-full`}
-          style={{ width: '250px' }}
         >
           <SessionSidebar
             currentSessionId={currentSessionId}
@@ -149,7 +148,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                     cursor: col-resize;
                     transition: background-color 0.2s ease;
                   `;
-                  
+
                   const dots = document.createElement('div');
                   dots.style.cssText = `
                     position: absolute;
@@ -162,17 +161,17 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                     border-radius: 1px;
                     transition: background 0.2s ease;
                   `;
-                  
+
                   gutter.addEventListener('mouseenter', () => {
                     dots.style.background = 'repeating-linear-gradient(to bottom, rgba(0, 200, 255, 0.8) 0px, rgba(0, 200, 255, 0.8) 2px, transparent 2px, transparent 6px)';
                     gutter.style.backgroundColor = 'rgba(0, 200, 255, 0.1)';
                   });
-                  
+
                   gutter.addEventListener('mouseleave', () => {
                     dots.style.background = 'repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 0px, rgba(255, 255, 255, 0.3) 2px, transparent 2px, transparent 6px)';
                     gutter.style.backgroundColor = 'transparent';
                   });
-                  
+
                   gutter.appendChild(dots);
                   return gutter;
                 }}

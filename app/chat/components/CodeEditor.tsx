@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { Play, Terminal } from 'lucide-react';
+import { Play, Terminal, Square, Power, Code } from 'lucide-react';
+
+enum TabType {
+  CODE = 'code',
+  OUTPUT = 'output'
+}
 
 interface CodeEditorProps {
   editorContent: string;
@@ -20,46 +25,36 @@ export function CodeEditor({
   runCode,
   stopServer
 }: CodeEditorProps) {
-  const [activeTab, setActiveTab] = useState<'code' | 'output'>('code');
+  const [activeTab, setActiveTab] = useState<TabType>(TabType.CODE);
 
   return (
     <div className="h-full flex flex-col min-w-[400px] w-full overflow-hidden border-l border-white">
       {/* Tab Header */}
-      <div className="p-2 md:p-4">
+      <div className="p-2">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2 md:gap-3">
             {/* Tab Buttons */}
             <div className="flex items-center gap-1">
               <button
-                onClick={() => setActiveTab('code')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs md:text-sm font-medium transition-colors ${activeTab === 'code'
+                onClick={() => setActiveTab(TabType.CODE)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs md:text-sm font-medium transition-colors ${activeTab === TabType.CODE
+                  ? 'bg-gray-700/50 text-gray-200'
+                  : 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
+                  }`}
+              >
+                <Code className="w-3 h-3" />
+                Code
+              </button>
+              <button
+                onClick={() => setActiveTab(TabType.OUTPUT)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs md:text-sm font-medium transition-colors ${activeTab === TabType.OUTPUT
                   ? 'bg-gray-700/50 text-gray-200'
                   : 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
                   }`}
               >
                 <Terminal className="w-3 h-3" />
-                Code
-              </button>
-              <button
-                onClick={() => setActiveTab('output')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs md:text-sm font-medium transition-colors ${activeTab === 'output'
-                  ? 'bg-gray-700/50 text-gray-200'
-                  : 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
-                  }`}
-              >
-                <Play className="w-3 h-3" />
                 Output
               </button>
-            </div>
-
-            {/* Server Status Indicator */}
-            <div className={`flex items-center gap-1 md:gap-2 px-1 md:px-2 py-1 rounded-md text-xs ${serverRunning
-              ? 'bg-green-500/20 text-green-400'
-              : 'bg-gray-500/20 text-gray-400'
-              }`}>
-              <div className={`w-1.5 md:w-2 h-1.5 md:h-2 rounded-full ${serverRunning ? 'bg-green-400 animate-pulse' : 'bg-gray-400'
-                }`} />
-              <span className="text-xs">{serverRunning ? 'Server Running' : 'Server Stopped'}</span>
             </div>
           </div>
 
@@ -67,22 +62,28 @@ export function CodeEditor({
             {serverRunning && (
               <button
                 onClick={stopServer}
-                className="px-2 md:px-3 py-1 bg-red-500/20 text-red-400 rounded-md text-xs md:text-sm hover:bg-red-500/30 disabled:opacity-50"
+                className="p-2 bg-red-500/20 text-red-400 rounded-md hover:bg-red-500/30 disabled:opacity-50 transition-colors"
                 aria-label="Stop server"
+                title="Stop Server"
               >
-                Stop Server
+                <Square className="w-4 h-4" />
               </button>
             )}
             <button
               onClick={runCode}
               disabled={serverRunning}
-              className={`px-2 md:px-3 py-1 rounded-md text-xs md:text-sm ${serverRunning
+              className={`p-2 rounded-md transition-colors ${serverRunning
                 ? 'bg-gray-500/20 text-gray-500 cursor-not-allowed'
                 : 'bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30'
                 }`}
               aria-label={serverRunning ? 'Server is running' : 'Run code'}
+              title={serverRunning ? 'Server Running' : 'Run Code'}
             >
-              {serverRunning ? 'Server Running' : 'Run Code'}
+              {serverRunning ? (
+                <Power className="w-4 h-4" />
+              ) : (
+                <Play className="w-4 h-4" />
+              )}
             </button>
           </div>
         </div>
@@ -90,7 +91,7 @@ export function CodeEditor({
 
       {/* Tab Content */}
       <div className="flex-1 p-2 md:p-4 min-h-0">
-        {activeTab === 'code' && (
+        {activeTab === TabType.CODE && (
           <div className="h-full flex flex-col min-h-0">
             <textarea
               value={editorContent}
@@ -102,7 +103,7 @@ export function CodeEditor({
           </div>
         )}
 
-        {activeTab === 'output' && (
+        {activeTab === TabType.OUTPUT && (
           <div className="h-full overflow-y-auto bg-black/50 rounded-lg p-2 md:p-4 min-h-0">
             <pre className="text-green-400 text-sm whitespace-pre-wrap font-mono">
               {executionResult || 'Click "Run Code" to see output here'}
