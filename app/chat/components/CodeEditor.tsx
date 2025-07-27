@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Terminal, Square, Power, Code } from 'lucide-react';
+import { Play, Terminal, Square, Power, Code, X } from 'lucide-react';
 
 enum TabType {
   CODE = 'code',
@@ -14,6 +14,7 @@ interface CodeEditorProps {
   handleEditorContentChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   runCode: () => void;
   stopServer: () => void;
+  onClose: () => void;
 }
 
 export function CodeEditor({
@@ -23,7 +24,8 @@ export function CodeEditor({
   executingFiles,
   handleEditorContentChange,
   runCode,
-  stopServer
+  stopServer,
+  onClose
 }: CodeEditorProps) {
   const [activeTab, setActiveTab] = useState<TabType>(TabType.CODE);
 
@@ -84,6 +86,14 @@ export function CodeEditor({
               ) : (
                 <Play className="w-4 h-4" />
               )}
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 text-gray-400 hover:text-gray-300 hover:bg-white/5 rounded-md transition-colors"
+              aria-label="Close editor"
+              title="Close Editor"
+            >
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>

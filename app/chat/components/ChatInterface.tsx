@@ -213,6 +213,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                   handleEditorContentChange={handleEditorContentChange}
                   runCode={runCode}
                   stopServer={stopServer}
+                  onClose={toggleEditor}
                 />
               </Split>
             ) : (
