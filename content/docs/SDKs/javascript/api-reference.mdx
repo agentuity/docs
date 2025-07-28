@@ -1,0 +1,279 @@
+---
+title: JavaScript SDK API Reference
+description: Complete API reference for the Agentuity JavaScript SDK
+---
+
+# JavaScript SDK API Reference
+
+The Agentuity JavaScript SDK provides a comprehensive set of APIs for building AI agents that can process diverse inputs, communicate with each other, and integrate with external services.
+
+## Agent Context
+
+The `AgentContext` object provides access to platform services and is available as the third parameter in all agent handler functions.
+
+### Properties
+
+- `sdkVersion: string` - The version of the Agentuity SDK
+- `devmode: boolean` - Returns true if the agent is running in development mode
+- `runId: string` - Unique identifier for the current execution
+- `orgId: string` - Organization identifier
+- `deploymentId: string` - Deployment identifier
+- `projectId: string` - Project identifier
+- `agent: AgentConfig` - Agent configuration
+- `logger: Logger` - Logging interface
+- `tracer: Tracer` - OpenTelemetry tracer
+- `agents: ServerAgent[]` - List of all agents in the project
+- `kv: KeyValueStorage` - Key-value storage interface
+- `vector: VectorStorage` - Vector storage interface
+
+### Methods
+
+#### getAgent(params)
+
+Get a handle to a remote agent that you can invoke.
+
+**Parameters:**
+- `params: GetAgentRequestParams` - Agent identification parameters
+
+**Returns:** `Promise<RemoteAgent>`
+
+## Key-Value Storage
+
+The key-value storage API provides persistent storage with GZIP compression and TTL support.
+
+### Methods
+
+#### get(key, defaultValue?)
+
+Retrieve a value from key-value storage.
+
+**Parameters:**
+- `key: string` - The key to retrieve
+- `defaultValue?: Json` - Optional default value if key doesn't exist
+
+**Returns:** `Promise<Json | null>`
+
+#### set(key, value, ttl?)
+
+Store a value in key-value storage.
+
+**Parameters:**
+- `key: string` - The key to store
+- `value: Json` - The value to store
+- `ttl?: number` - Optional time-to-live in seconds
+
+**Returns:** `Promise<void>`
+
+#### delete(key)
+
+Delete a value from key-value storage.
+
+**Parameters:**
+- `key: string` - The key to delete
+
+**Returns:** `Promise<boolean>`
+
+## Vector Storage
+
+The vector storage API provides semantic search capabilities with embedding operations.
+
+### Methods
+
+#### upsert(name, ...documents)
+
+Insert or update vectors in the vector storage.
+
+**Parameters:**
+- `name: string` - The name of the vector storage
+- `documents: VectorUpsertParams[]` - The documents to upsert
+
+**Returns:** `Promise<string[]>` - Array of vector IDs that were upserted
+
+**Example:**
+```javascript
+const ids = await context.vector.upsert('my-docs', {
+  key: 'doc-1',
+  document: 'This is a sample document',
+  metadata: { category: 'example' }
+});
+```
+
+#### get(name, key)
+
+Retrieve a specific vector by its key from the vector storage.
+
+**Parameters:**
+- `name: string` - The name of the vector storage
+- `key: string` - The key of the vector to retrieve
+
+**Returns:** `Promise<VectorSearchResult | null>` - The vector data including document content, or null if not found
+
+**Example:**
+```javascript
+// First, search for relevant vectors
+const searchResults = await context.vector.search('my-docs', {
+  query: 'sample query',
+  limit: 5
+});
+
+// Then retrieve the full document content for each result
+const documents = await Promise.all(
+  searchResults.map(async (result) => {
+    const vector = await context.vector.get('my-docs', result.key);
+    return vector ? vector.document : null;
+  })
+);
+```
+
+#### search(name, params)
+
+Search for vectors in the vector storage using semantic similarity.
+
+**Parameters:**
+- `name: string` - The name of the vector storage
+- `params: VectorSearchParams` - Search parameters including query, limit, and filters
+
+**Returns:** `Promise<VectorSearchResult[]>` - Array of search results with similarity scores
+
+**Example:**
+```javascript
+const results = await context.vector.search('my-docs', {
+  query: 'artificial intelligence',
+  limit: 10,
+  similarity: 0.7,
+  metadata: { category: 'tech' }
+});
+```
+
+#### delete(name, ...ids)
+
+Delete vectors from the vector storage.
+
+**Parameters:**
+- `name: string` - The name of the vector storage
+- `ids: string[]` - Array of vector IDs to delete
+
+**Returns:** `Promise<number>` - Number of vectors that were deleted
+
+**Example:**
+```javascript
+const deletedCount = await context.vector.delete('my-docs', 'doc-1', 'doc-2');
+```
+
+## Agent Request
+
+The `AgentRequest` object encapsulates incoming data and metadata for agent processing.
+
+### Properties
+
+- `trigger: string` - The trigger type of the request (webhook, cron, email, etc.)
+
+### Methods
+
+#### metadata(key, defaultValue?)
+
+Get metadata from the request.
+
+**Parameters:**
+- `key: string` - The metadata key
+- `defaultValue?: Json` - Optional default value
+
+**Returns:** `Json`
+
+#### json()
+
+Get the request payload as a JSON object.
+
+**Returns:** `Json`
+
+#### text()
+
+Get the request payload as a string.
+
+**Returns:** `string`
+
+#### binary()
+
+Get the request payload as an ArrayBuffer.
+
+**Returns:** `ArrayBuffer`
+
+## Agent Response
+
+The `AgentResponse` object provides methods for constructing various response types.
+
+### Methods
+
+#### json(data, metadata?)
+
+Return a JSON response.
+
+**Parameters:**
+- `data: Json` - The response data
+- `metadata?: Record<string, Json>` - Optional response metadata
+
+**Returns:** `AgentResponseType`
+
+#### text(data, metadata?)
+
+Return a text response.
+
+**Parameters:**
+- `data: string` - The response text
+- `metadata?: Record<string, Json>` - Optional response metadata
+
+**Returns:** `AgentResponseType`
+
+#### redirect(agent, payload?, contentType?, metadata?)
+
+Redirect the request to another agent.
+
+**Parameters:**
+- `agent: GetAgentRequestParams` - Target agent identification
+- `payload?: Json | ArrayBuffer | string` - Optional payload to pass
+- `contentType?: string` - Optional content type
+- `metadata?: Record<string, Json>` - Optional metadata
+
+**Returns:** `AgentRedirectResponse`
+
+## Types
+
+### VectorUpsertParams
+
+Parameters for upserting vectors.
+
+```typescript
+interface VectorUpsertParams {
+  key: string;
+  document: string;
+  metadata?: Record<string, Json>;
+  embedding?: number[];
+}
+```
+
+### VectorSearchParams
+
+Parameters for vector search operations.
+
+```typescript
+interface VectorSearchParams {
+  query: string;
+  limit?: number;
+  similarity?: number;
+  metadata?: Record<string, Json>;
+}
+```
+
+### VectorSearchResult
+
+Result from vector search operations.
+
+```typescript
+interface VectorSearchResult {
+  id: string;
+  key: string;
+  similarity: number;
+  metadata?: Record<string, Json>;
+  document?: string;
+}
+```
