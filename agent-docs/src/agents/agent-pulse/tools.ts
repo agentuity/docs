@@ -41,14 +41,14 @@ export async function createTools(context: ToolContext) {
             if (stepNumber > totalSteps) {
                 return `This tutorial only has ${totalSteps} steps. You either reached the end of the tutorial or selected an incorrect step number.`;
             }
-
-            agentContext.logger.info("Adding start_tutorial action to state for: %s at step %d", tutorialId, stepNumber);
             state.setAction({
                 type: ActionType.START_TUTORIAL_STEP,
                 tutorialId: tutorialId,
                 currentStep: stepNumber,
                 totalSteps: tutorialResponse.data.totalSteps
             });
+            agentContext.logger.info("Added start_tutorial action to state for: %s at step %d", tutorialId, stepNumber);
+            agentContext.logger.info(JSON.stringify(data))
             return `Starting "${data.title}". Total steps: ${data.totalSteps} \n\n Description: ${data.description}`;
         },
     });

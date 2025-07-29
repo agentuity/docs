@@ -19,18 +19,17 @@ export function ChatInput({ currentInput, setCurrentInput, loading, sendMessage 
     }
   }, [loading]);
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && (!e.shiftKey || e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      if (currentInput.trim()) {
-        sendMessage(currentInput);
-      }
+  const handleSend = () => {
+    if (currentInput.trim() && !loading) {
+      sendMessage(currentInput);
+      setCurrentInput('');
     }
   };
 
-  const handleSend = () => {
-    if (currentInput.trim()) {
-      sendMessage(currentInput);
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && (!e.shiftKey || e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      handleSend();
     }
   };
 

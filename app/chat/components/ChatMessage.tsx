@@ -80,6 +80,18 @@ export function ChatMessageComponent({
 
           {message.type === 'assistant' ? (
             <div className="prose prose-sm max-w-none prose-invert text-sm text-gray-200">
+              {/* Show typing indicator if content is empty */}
+              {message.content === '' && (
+                <div className="flex items-center gap-2 text-gray-400 mb-2">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                  <span className="text-xs">Agent is thinking...</span>
+                </div>
+              )}
+              
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{

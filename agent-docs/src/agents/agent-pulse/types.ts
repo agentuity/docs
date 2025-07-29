@@ -35,16 +35,16 @@ export interface ChatSession {
   sessionType: 'chat' | 'tutorial'; // Session mode: regular chat or tutorial mode
   createdAt: string;
   updatedAt: string;
-  
+
   // Conversation history for context (keep last 50 messages for performance)
   messages: ChatMessage[];
-  
+
   // Tutorial state
   currentTutorial?: CurrentTutorial;
-  
+
   // User context
   userProfile?: UserProfile;
-  
+
   // Session metadata
   lastActivity: string;
   isActive: boolean;
@@ -66,40 +66,3 @@ export interface TutorialRequest {
 }
 
 export type AgentRequestData = ChatRequest | TutorialRequest;
-
-// Tutorial intent classification types
-export interface TutorialSelectIntent {
-  type: 'select_tutorial';
-  tutorialId?: string;
-  confidence: number;
-}
-
-export interface TutorialNavigateIntent {
-  type: 'navigate';
-  direction: 'next' | 'previous' | 'specific';
-  step?: number;
-  confidence: number;
-}
-
-export interface TutorialQuestionIntent {
-  type: 'question';
-  content: string;
-  confidence: number;
-}
-
-export interface TutorialExitIntent {
-  type: 'exit_tutorial';
-  confidence: number;
-}
-
-export interface TutorialHelpIntent {
-  type: 'help';
-  confidence: number;
-}
-
-export type TutorialIntent = 
-  | TutorialSelectIntent 
-  | TutorialNavigateIntent 
-  | TutorialQuestionIntent 
-  | TutorialExitIntent 
-  | TutorialHelpIntent; 

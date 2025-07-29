@@ -85,6 +85,23 @@ export interface AgentResponse {
   details?: string;
 }
 
+// Streaming support types
+export interface StreamingChunk {
+  type: 'text-delta' | 'status' | 'tutorial-data' | 'error' | 'finish';
+  textDelta?: string;
+  message?: string;
+  category?: string;
+  tutorialData?: TutorialData;
+  error?: string;
+  details?: string;
+}
+
+export interface AgentStreamingRequest {
+  message: string;
+  conversationHistory: ConversationMessage[];
+  tutorialData?: TutorialData;
+}
+
 // Execution stream event types
 export type ExecutionEventType = 
   | 'status' 

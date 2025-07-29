@@ -76,9 +76,6 @@ export default function CodeBlock({
       <div className="flex items-center justify-between p-2 bg-black/20 border-b border-white/8">
         <span className="text-sm text-gray-200">{language}</span>
         <div className="flex gap-2">
-          <button onClick={toggleCollapse} className="text-xs text-cyan-400 hover:underline">
-            {collapsed ? 'Uncollapse' : 'Collapse'}
-          </button>
           <button
             onClick={copyToClipboard}
             className="group flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg transition-all duration-200 agentuity-button-primary bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 text-cyan-400 hover:scale-105 active:scale-95"
@@ -93,16 +90,16 @@ export default function CodeBlock({
         {editable ? (
           <textarea
             ref={textareaRef}
-            value={collapsed ? `${code.split('\n').length} lines of code` : code}
+            value={code}
             onChange={(e) => handleCodeChange(e.target.value)}
             onKeyDown={handleKeyDown}
             className="w-full p-4 text-sm font-mono bg-transparent text-gray-800 dark:text-gray-200 placeholder-gray-500/60 dark:placeholder-gray-400/60 resize-none border-0 focus:outline-none focus:ring-0 min-h-[140px] overflow-hidden leading-relaxed"
             spellCheck={false}
-            readOnly={collapsed}
+            readOnly={true}
           />
         ) : (
           <pre className="p-4 text-sm font-mono text-gray-800 dark:text-gray-200 overflow-x-auto leading-relaxed">
-            <code>{collapsed ? `${code.split('\n').length} lines of code` : code}</code>
+            <code>{code}</code>
           </pre>
         )}
       </div>

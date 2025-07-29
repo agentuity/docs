@@ -1,98 +1,92 @@
 import { useState, useCallback } from 'react';
-import { ExecutionEvent } from '../types';
-import { apiService } from '../services/api';
+import { ChatMessage, ExecutionResult } from '../types';
 
-interface UseCodeExecutionOptions {
-  sessionId: string;
-  onExecutionStart?: () => void;
-  onExecutionComplete?: (success: boolean) => void;
-  onExecutionError?: (error: Error) => void;
-}
-
-interface UseCodeExecutionResult {
-  executeCode: (code: string, filename: string, tutorialId?: string, stepId?: string) => Promise<void>;
-  stopServer: () => Promise<void>;
-  checkServerStatus: () => Promise<void>;
-  executionResult: string | null;
-  serverRunning: boolean;
-  serverStopping: boolean;
+interface UseCodeExecutionProps {
+  currentSessionId: string;
+  messages: ChatMessage[];
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+  setExecutionResult: React.Dispatch<React.SetStateAction<string | null>>;
+  setServerRunning: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export function useCodeExecution({
-  sessionId,
-  onExecutionStart,
-  onExecutionComplete,
-  onExecutionError
-}: UseCodeExecutionOptions): UseCodeExecutionResult {
-  const [executionResult, setExecutionResult] = useState<string | null>(null);
-  const [serverRunning, setServerRunning] = useState(false);
+  currentSessionId,
+  messages,
+  setMessages,
+  setExecutionResult,
+  setServerRunning
+}: UseCodeExecutionProps) {
   const [serverStopping, setServerStopping] = useState(false);
+  const [executingFiles, setExecutingFiles] = useState<Set<string>>(new Set());
 
+  // Check server status
   const checkServerStatus = useCallback(async () => {
     try {
-      const data = await apiService.checkServerStatus(sessionId);
+      const response = await fetch(`/api/execute?sessionId=${currentSessionId}`);
+      const data = await response.json();
       setServerRunning(data.running || false);
-      
-      // You could add idle time display here if needed
-      if (data.running && data.idleTimeMs) {
-        const idleMinutes = Math.floor(data.idleTimeMs / 60000);
-        const timeoutMinutes = Math.floor(data.timeoutMs / 60000);
-        console.log(`Server idle for ${idleMinutes}/${timeoutMinutes} minutes`);
-      }
     } catch (error) {
       console.error('Error checking server status:', error);
       setServerRunning(false);
     }
-  }, [sessionId]);
+  }, [currentSessionId, setServerRunning]);
 
+  // Stop server
   const stopServer = useCallback(async () => {
-    if (!serverRunning || serverStopping) return;
-    
+    if (serverStopping) return;
+
     setServerStopping(true);
     try {
-      await apiService.stopServer(sessionId);
-      setServerRunning(false);
-      setExecutionResult(prev => prev + '\n\n🛑 Server stopped by user');
+      const response = await fetch(`/api/execute?sessionId=${currentSessionId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setServerRunning(false);
+        setExecutionResult(prev => prev + '\n\n🛑 Server stopped by user');
+      } else {
+        const error = await response.json();
+        setExecutionResult(prev => prev + `\n\n❌ Failed to stop server: ${error.message}`);
+      }
     } catch (error) {
       console.error('Error stopping server:', error);
-      if (error instanceof Error) {
-        setExecutionResult(prev => prev + `\n\n❌ ${error.message}`);
-      } else {
-        setExecutionResult(prev => prev + '\n\n❌ Error stopping server');
-      }
+      setExecutionResult(prev => prev + '\n\n❌ Error stopping server');
     } finally {
       setServerStopping(false);
     }
-  }, [serverRunning, serverStopping, sessionId]);
+  }, [currentSessionId, setServerRunning, setExecutionResult, serverStopping]);
 
-  const executeCode = useCallback(async (
-    code: string, 
-    filename: string,
-    tutorialId?: string,
-    stepId?: string
-  ) => {
-    if (onExecutionStart) {
-      onExecutionStart();
-    }
-    
+  // Run code in the editor
+  const runCode = useCallback(async (editorContent: string) => {
     setExecutionResult('Running code...');
     setServerRunning(true);
-    
+
     try {
-      const stream = await apiService.executeCode({
-        code,
-        filename,
-        sessionId,
-        tutorialId,
-        stepId: stepId?.toString()
+      const response = await fetch('/api/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: editorContent,
+          filename: 'editor.ts',
+          sessionId: currentSessionId,
+        })
       });
-      
+
+      if (!response.ok) {
+        throw new Error('Failed to execute code');
+      }
+
       // Handle streaming response
-      const reader = stream.getReader();
+      const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let outputBuffer = '';
       let errorBuffer = '';
-      let success = false;
+
+      if (!reader) {
+        throw new Error('No response body');
+      }
 
       while (true) {
         const { done, value } = await reader.read();
@@ -104,40 +98,35 @@ export function useCodeExecution({
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             try {
-              const data = JSON.parse(line.slice(6)) as ExecutionEvent;
-              
+              const data = JSON.parse(line.slice(6));
+
               switch (data.type) {
                 case 'status':
-                  setExecutionResult(data.message || 'Running code...');
+                  setExecutionResult(data.message);
                   break;
                 case 'stdout':
-                  if (data.data) {
-                    outputBuffer += data.data;
-                    setExecutionResult(`Output:\n${outputBuffer}`);
-                  }
+                  outputBuffer += data.data;
+                  setExecutionResult(`Output:\n${outputBuffer}`);
                   break;
                 case 'stderr':
-                  if (data.data) {
-                    errorBuffer += data.data;
-                    setExecutionResult(`Error:\n${errorBuffer}`);
-                  }
+                  errorBuffer += data.data;
+                  setExecutionResult(`Error:\n${errorBuffer}`);
                   break;
                 case 'close':
                   setServerRunning(false);
                   if (data.exitCode === 0) {
                     setExecutionResult(`Output:\n${outputBuffer || '(no output)'}`);
-                    success = true;
                   } else {
                     setExecutionResult(`Process exited with code ${data.exitCode}\nError:\n${errorBuffer}`);
                   }
                   break;
                 case 'timeout':
                   setServerRunning(false);
-                  setExecutionResult(prev => `${prev || ''}\n\n🕐 ${data.message || 'Server timed out due to inactivity'}`);
+                  setExecutionResult(prev => `${prev}\n\n🕐 ${data.message}`);
                   break;
                 case 'error':
                   setServerRunning(false);
-                  setExecutionResult(`Error:\n${data.error || 'Unknown error occurred'}`);
+                  setExecutionResult(`Error:\n${data.error}`);
                   break;
               }
             } catch (parseError) {
@@ -146,27 +135,180 @@ export function useCodeExecution({
           }
         }
       }
-
-      if (onExecutionComplete) {
-        onExecutionComplete(success);
-      }
     } catch (error) {
       console.error('Error executing code:', error);
       setServerRunning(false);
       setExecutionResult('Connection error - please try again');
-      
-      if (onExecutionError && error instanceof Error) {
-        onExecutionError(error);
-      }
     }
-  }, [sessionId, onExecutionStart, onExecutionComplete, onExecutionError]);
+  }, [currentSessionId, setServerRunning, setExecutionResult]);
+
+  // Execute code from a message
+  const executeCode = useCallback(async (code: string, filename: string) => {
+    setExecutingFiles(prev => new Set(prev).add(filename));
+
+    // Determine if this is a tutorial execution
+    const isTutorialCode = filename === 'index.ts' && code.includes('@agentuity/sdk');
+    const tutorialId = isTutorialCode ? 'typescript-sdk' : undefined;
+    const stepId = isTutorialCode ? 1 : undefined; // For now, default to step 1
+
+    try {
+      const response = await fetch('/api/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code,
+          filename,
+          sessionId: currentSessionId,
+          tutorialId,
+          stepId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to execute code');
+      }
+
+      // Handle streaming response
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let outputBuffer = '';
+      let errorBuffer = '';
+      let currentResult: ExecutionResult = { output: '', error: undefined, executionTime: 0, exitCode: 0 };
+
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      // Update UI immediately to show execution started
+      setMessages(prevMessages =>
+        prevMessages.map(msg => {
+          if (msg.codeBlock?.filename === filename) {
+            return {
+              ...msg,
+              execution: {
+                output: 'Starting execution...',
+                executionTime: 0,
+                exitCode: 0
+              }
+            };
+          }
+          return msg;
+        })
+      );
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              switch (data.type) {
+                case 'status':
+                  currentResult.output = data.message;
+                  break;
+                case 'stdout':
+                  outputBuffer += data.data;
+                  currentResult.output = outputBuffer;
+                  break;
+                case 'stderr':
+                  errorBuffer += data.data;
+                  currentResult.error = errorBuffer;
+                  break;
+                case 'close':
+                  currentResult.exitCode = data.exitCode || 0;
+                  currentResult.output = outputBuffer || '(no output)';
+                  if (errorBuffer) {
+                    currentResult.error = errorBuffer;
+                  }
+                  break;
+                case 'timeout':
+                  currentResult.error = data.message;
+                  currentResult.exitCode = 1;
+                  break;
+                case 'error':
+                  currentResult.error = data.error;
+                  currentResult.exitCode = 1;
+                  break;
+              }
+
+              // Update the message with current execution results
+              setMessages(prevMessages =>
+                prevMessages.map(msg => {
+                  if (msg.codeBlock?.filename === filename) {
+                    return {
+                      ...msg,
+                      execution: { ...currentResult }
+                    };
+                  }
+                  return msg;
+                })
+              );
+            } catch (parseError) {
+              console.warn('Failed to parse SSE data:', parseError);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error executing code:', error);
+
+      // Update with error state
+      setMessages(prevMessages =>
+        prevMessages.map(msg => {
+          if (msg.codeBlock?.filename === filename) {
+            return {
+              ...msg,
+              execution: {
+                output: '',
+                error: 'Connection error - please try again',
+                executionTime: 0,
+                exitCode: 1
+              }
+            };
+          }
+          return msg;
+        })
+      );
+    } finally {
+      setExecutingFiles(prev => {
+        const newFiles = new Set(prev);
+        newFiles.delete(filename);
+        return newFiles;
+      });
+    }
+  }, [currentSessionId, setMessages]);
+
+  // Handle code changes in messages
+  const handleCodeChange = useCallback((code: string, filename: string) => {
+    setMessages(prevMessages =>
+      prevMessages.map(msg => {
+        if (msg.codeBlock?.filename === filename) {
+          return {
+            ...msg,
+            codeBlock: { ...msg.codeBlock, content: code },
+            execution: undefined // Clear previous execution results
+          };
+        }
+        return msg;
+      })
+    );
+  }, [setMessages]);
 
   return {
-    executeCode,
-    stopServer,
+    serverStopping,
+    executingFiles,
     checkServerStatus,
-    executionResult,
-    serverRunning,
-    serverStopping
+    stopServer,
+    runCode,
+    executeCode,
+    handleCodeChange
   };
 } 
