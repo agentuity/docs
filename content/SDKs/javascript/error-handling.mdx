@@ -141,9 +141,6 @@ const handler: AgentHandler = async (request, response, context) => {
         error: 'Failed to process request',
         message: (error as Error).message
       });
-    } finally {
-      // End the span
-      span.end();
     }
   });
 };
@@ -246,9 +243,6 @@ context.tracer.startActiveSpan('operation-name', async (span) => {
     // Record the exception
     span.recordException(error);
     throw error;
-  } finally {
-    // Always end the span
-    span.end();
   }
 });
 ```
