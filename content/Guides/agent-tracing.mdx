@@ -48,10 +48,8 @@ const handler: AgentHandler = async (request, response, context) => {
       span.recordException(error);
       span.setStatus({ code: SpanStatusCode.ERROR });
       throw error;
-    } finally {
-      // Spans are automatically ended
-      span.end();
     }
+    // Span automatically ends when async callback completes
   });
 };
 
@@ -124,9 +122,8 @@ const handler: AgentHandler = async (request, response, context) => {
             message: error.message
           });
           throw error;
-        } finally {
-          childSpan.end();
         }
+        // Span automatically ends when async callback completes
       });
     } catch (error) {
       parentSpan.recordException(error);
@@ -140,9 +137,8 @@ const handler: AgentHandler = async (request, response, context) => {
         error: 'Request failed',
         message: error.message
       });
-    } finally {
-      parentSpan.end();
     }
+    // Span automatically ends when async callback completes
   });
 };
 

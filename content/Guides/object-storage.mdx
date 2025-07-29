@@ -30,7 +30,7 @@ You can create object storage buckets either through the Cloud Console or progra
 
 Navigate to **Services > Object Store** and click **Create Storage**. Choose a descriptive bucket name that reflects its purpose (e.g., `user-uploads`, `processed-documents`, `media-assets`).
 
-{/* TODO: Add object-store screenshot images to public/images */}
+<ThemeImage baseName="object-store" alt="Object Storage Overview" />
 
 ### Via SDK
 
@@ -240,7 +240,9 @@ Use hierarchical paths for better organization:
 
 Always set appropriate content types for better browser handling:
 
-<CodeExample js={`const contentTypes = {
+<CodeExample js={`import path from 'path';
+
+const contentTypes = {
   '.jpg': 'image/jpeg',
   '.png': 'image/png',
   '.pdf': 'application/pdf',
@@ -253,7 +255,9 @@ const contentType = contentTypes[extension] || 'application/octet-stream';
 
 await context.objectstore.put('uploads', filename, data, {
   contentType
-});`} py={`content_types = {
+});`} py={`import os
+
+content_types = {
     ".jpg": "image/jpeg",
     ".png": "image/png",
     ".pdf": "application/pdf",

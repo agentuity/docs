@@ -55,6 +55,7 @@ import OpenAI from 'openai';
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });`} py={`# Uses your API key directly, bypasses the AI Gateway
+import os
 from openai import OpenAI
 
 client = OpenAI(
