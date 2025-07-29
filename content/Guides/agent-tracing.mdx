@@ -1,0 +1,223 @@
+---
+title: Agent Tracing
+description: Understanding how to use tracing in your agents
+---
+
+Agent tracing provides deep visibility into your agent's execution flow, performance, and behavior using OpenTelemetry. This enables debugging, performance monitoring, and understanding complex agent workflows.
+
+**Key benefits:**
+- **Track execution flow** through agent operations
+- **Identify performance bottlenecks** and slow operations  
+- **Debug errors** with detailed context and stack traces
+- **Monitor agent performance** and resource usage
+- Understand complex **multi-agent interactions**
+
+## OpenTelemetry Integration
+
+Agentuity integrates with OpenTelemetry, the industry-standard observability framework. The SDK provides access to tracing capabilities through the `context.tracer` object, allowing you to create spans that track your agent's operations.
+
+Traces consist of spans that represent individual operations. Spans can be nested to show parent-child relationships and include attributes, events, and timing information.
+
+## Basic Tracing
+
+### Creating Spans
+
+Create spans to track specific operations in your agent:
+
+<CodeExample js={`import { AgentHandler } from '@agentuity/sdk';
+import { SpanStatusCode } from '@opentelemetry/api';
+
+const handler: AgentHandler = async (request, response, context) => {
+  return context.tracer.startActiveSpan('process-request', async (span) => {
+    try {
+      // Add attributes to identify the span
+      span.setAttribute('userId', '123');
+      span.setAttribute('requestType', 'data-processing');
+      
+      // Perform work
+      const result = await processData();
+      
+      // Add events to mark important moments
+      span.addEvent('data-processed', { 
+        itemCount: result.length 
+      });
+      
+      return response.json(result);
+    } catch (error) {
+      // Record errors in the span
+      span.recordException(error);
+      span.setStatus({ code: SpanStatusCode.ERROR });
+      throw error;
+    } finally {
+      // Spans are automatically ended
+      span.end();
+    }
+  });
+};
+
+export default handler;`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
+from opentelemetry.trace.status import Status, StatusCode
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    async with context.tracer.start_as_current_span("process-request") as span:
+        try:
+            # Add attributes to identify the span
+            span.set_attribute("userId", "123")
+            span.set_attribute("requestType", "data-processing")
+            
+            # Perform work
+            result = await process_data()
+            
+            # Add events to mark important moments
+            span.add_event("data-processed", {
+                "itemCount": len(result)
+            })
+            
+            return response.json(result)
+        except Exception as error:
+            # Record errors in the span
+            span.record_exception(error)
+            span.set_status(Status(StatusCode.ERROR))
+            context.logger.error(f"Error processing: {str(error)}")
+            raise error`}/>
+
+### Span Attributes and Events
+
+**Attributes** provide metadata about the span (user IDs, operation types, parameters)  
+**Events** mark specific moments in time with additional context (milestones, state changes)
+
+## Advanced Tracing Patterns
+
+### Nested Spans
+
+Create nested spans to trace complex operations with multiple steps:
+
+<CodeExample js={`import { AgentHandler } from '@agentuity/sdk';
+import { SpanStatusCode } from '@opentelemetry/api';
+
+const handler: AgentHandler = async (request, response, context) => {
+  return context.tracer.startActiveSpan('agent-request', async (parentSpan) => {
+    try {
+      parentSpan.setAttribute('trigger', request.trigger());
+      const data = await request.data.json();
+      
+      // Create child span for data processing
+      return await context.tracer.startActiveSpan('process-data', async (childSpan) => {
+        try {
+          childSpan.addEvent('processing-started', {
+            timestamp: Date.now()
+          });
+          
+          const result = await complexDataProcessing(data);
+          
+          childSpan.addEvent('processing-completed', {
+            timestamp: Date.now(),
+            resultSize: JSON.stringify(result).length
+          });
+          
+          childSpan.setStatus({ code: SpanStatusCode.OK });
+          return response.json(result);
+        } catch (error) {
+          childSpan.recordException(error);
+          childSpan.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: error.message
+          });
+          throw error;
+        } finally {
+          childSpan.end();
+        }
+      });
+    } catch (error) {
+      parentSpan.recordException(error);
+      parentSpan.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message
+      });
+      
+      context.logger.error('Request failed', error);
+      return response.json({
+        error: 'Request failed',
+        message: error.message
+      });
+    } finally {
+      parentSpan.end();
+    }
+  });
+};
+
+export default handler;`} py={`import time
+from agentuity import AgentRequest, AgentResponse, AgentContext
+from opentelemetry.trace.status import Status, StatusCode
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    async with context.tracer.start_as_current_span("agent-request") as parent_span:
+        try:
+            parent_span.set_attribute("trigger", request.trigger())
+            data = await request.data.json()
+            
+            # Create child span for data processing
+            async with context.tracer.start_as_current_span("process-data") as child_span:
+                try:
+                    child_span.add_event("processing-started", {
+                        "timestamp": time.time()
+                    })
+                    
+                    result = await complex_data_processing(data)
+                    
+                    child_span.add_event("processing-completed", {
+                        "timestamp": time.time(),
+                        "resultSize": len(str(result))
+                    })
+                    
+                    child_span.set_status(Status(StatusCode.OK))
+                    return response.json(result)
+                except Exception as error:
+                    child_span.record_exception(error)
+                    child_span.set_status(Status(StatusCode.ERROR))
+                    raise error
+        except Exception as error:
+            parent_span.record_exception(error)
+            parent_span.set_status(Status(StatusCode.ERROR))
+            
+            context.logger.error(f"Request failed: {str(error)}")
+            return response.json({
+                "error": "Request failed",
+                "message": str(error)
+            })`}/>
+
+## Best Practices
+
+### When to Use Tracing
+- **Complex operations**: Multi-step processes that could fail at various points
+- **Performance monitoring**: Operations that might have performance issues
+- **External calls**: API calls, database queries, or agent-to-agent communication
+- **Error debugging**: Operations where you need detailed error context
+
+### Optimization Tips
+- **Meaningful span names**: Use descriptive names that indicate the operation
+- **Relevant attributes**: Include contextual information like user IDs, operation types
+- **Strategic events**: Mark important milestones, not every small step
+- **Error handling**: Always record exceptions and set appropriate status codes
+- **Resource cleanup**: Ensure spans are properly ended (automatic in most cases)
+
+### Common Attributes
+- `userId`: Identify which user triggered the operation
+- `requestId`: Link related operations across agents
+- `operationType`: Categorize different types of operations
+- `resourceId`: Track operations on specific resources
+
+## Integration with Agent Operations
+
+Tracing works seamlessly with other Agentuity features:
+
+- **Storage operations**: Trace vector searches, key-value operations
+- **Agent communication**: Track calls between agents
+- **External integrations**: Monitor API calls and third-party services
+- **Streaming responses**: Trace streaming operations and chunks
+
+You can view traces in the session timeline visualization:
+
+<ThemeImage baseName="agent-session-detail" alt="Trace Visualization with Span Hierarchy" />
+
+For more details on observability, see [Agent Logging](/Guides/agent-logging) for application logs and [Agent Telemetry](/Guides/agent-telemetry) for metrics and monitoring.

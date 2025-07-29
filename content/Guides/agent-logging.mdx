@@ -1,0 +1,186 @@
+---
+title: Agent Logging
+description: How to use logging in your agents
+---
+
+## What is Agent Logging?
+
+Agent logging provides structured, real-time insights into your agent's execution. Effective logging helps you debug issues, monitor behavior, and understand agent decision-making.
+
+## Logging Interface
+
+The Agentuity platform provides persistent, searchable logs with real-time streaming for all deployed agents.
+
+<ThemeImage baseName="agent-logs" alt="Logs Overview" />
+
+### Log Overview
+
+The Logs dashboard displays:
+
+- **Timestamps**: Precise timing for each log entry
+- **Severity levels**: INFO, WARN, ERROR for categorization  
+- **Source identification**: Which component generated the log
+- **Detailed messages**: Context about agent actions
+
+### Search and Filtering
+
+**AI-Powered Search:**
+Use natural language queries to find log entries. Click the purple sparkle icon and enter your search:
+
+<ThemeImage baseName="agent-logs-filter" alt="AI-Powered Log Search" />
+
+**Filtering Options:**
+- **Severity**: Filter by log level (INFO, WARN, ERROR, etc.)
+- **Project**: Scope logs to specific projects
+- **Agent**: View logs from specific agents
+- **Session ID**: Filter logs for a particular session
+- **Deployment ID**: View logs from specific deployments
+- **Time Range**: Focus on specific time periods
+
+### Detailed Log Analysis
+
+Each log entry provides comprehensive context and can be expanded for full details:
+
+<ThemeImage baseName="agent-logs-detail" alt="Detailed Log Entry View" />
+
+## Logging Best Practices
+
+### 1. Use Appropriate Log Levels
+
+<CodeExample js={`// INFO: Normal flow and state changes
+context.logger.info('Processing user request', { userId, action });
+
+// WARN: Potential issues that don't stop execution
+context.logger.warn('Rate limit approaching', { remaining: 5 });
+
+// ERROR: Failures requiring attention
+context.logger.error('Failed to fetch data', { error: err.message });`} py={`# INFO: Normal flow and state changes
+context.logger.info("Processing user request", user_id=user_id, action=action)
+
+# WARN: Potential issues that don't stop execution
+context.logger.warn("Rate limit approaching", remaining=5)
+
+# ERROR: Failures requiring attention
+context.logger.error("Failed to fetch data", error=str(err))`} />
+
+### 2. Include Relevant Context
+
+Log enough information to understand what happened without re-running:
+
+<CodeExample js={`// Good - includes context
+context.logger.info('Order processed', {
+  orderId: order.id,
+  customerId: customer.id,
+  total: order.total,
+  itemCount: order.items.length
+});
+
+// Less helpful
+context.logger.info('Order done');`} py={`# Good - includes context
+context.logger.info(
+    "Order processed",
+    order_id=order.id,
+    customer_id=customer.id,
+    total=order.total,
+    item_count=len(order.items)
+)
+
+# Less helpful
+context.logger.info("Order done")`} />
+
+### 3. Log Decision Points
+
+Help future debugging by logging key decisions:
+
+<CodeExample js={`if (useCache) {
+  context.logger.info('Using cached response', { 
+    cacheKey, 
+    age: cacheAge 
+  });
+} else {
+  context.logger.info('Cache miss, fetching fresh data', { 
+    cacheKey,
+    reason: 'expired' 
+  });
+}`} py={`if use_cache:
+    context.logger.info(
+        "Using cached response", 
+        cache_key=cache_key, 
+        age=cache_age
+    )
+else:
+    context.logger.info(
+        "Cache miss, fetching fresh data", 
+        cache_key=cache_key,
+        reason="expired"
+    )`} />
+
+### 4. Avoid Logging Sensitive Data
+
+Never log passwords, tokens, or personal information:
+
+<CodeExample js={`// Don't log sensitive data
+context.logger.info('User authenticated', { userId });
+
+// Not this
+context.logger.info('Login attempt', { 
+  username, 
+  password  // Never log passwords!
+});`} py={`# Don't log sensitive data
+context.logger.info("User authenticated", user_id=user_id)
+
+# Not this
+context.logger.info(
+    "Login attempt", 
+    username=username, 
+    password=password  # Never log passwords!
+)`} />
+
+### 5. Use Child Loggers for Request Context
+
+Create child loggers to automatically include context in all related logs:
+
+<CodeExample js={`// Create a child logger with request context
+const requestLogger = context.logger.child({ 
+  requestId: req.id, 
+  userId: req.userId,
+  endpoint: req.path
+});
+
+// All logs from this logger include the context
+requestLogger.info('Starting request processing');
+requestLogger.info('User authenticated');
+requestLogger.error('Failed to fetch user data', error);`} py={`# Create a child logger with request context
+request_logger = context.logger.child(
+    request_id=req.id,
+    user_id=req.user_id,
+    endpoint=req.path
+)
+
+# All logs from this logger include the context
+request_logger.info("Starting request processing")
+request_logger.info("User authenticated")
+request_logger.error("Failed to fetch user data", error=str(e))`} />
+
+## Structured Logging
+
+Use structured data for easier parsing and analysis:
+
+<CodeExample js={`// Structured approach
+context.logger.info('API call completed', {
+  endpoint: '/api/users',
+  method: 'GET',
+  duration: 234,
+  status: 200,
+  userId: req.userId
+});`} py={`# Structured approach
+context.logger.info(
+    "API call completed",
+    endpoint="/api/users",
+    method="GET",
+    duration=234,
+    status=200,
+    user_id=req.user_id
+)`} />
+
+For more observability features, see [Agent Telemetry](/Guides/agent-telemetry) and [Agent Tracing](/Guides/agent-tracing).

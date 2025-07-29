@@ -4,10 +4,14 @@
 		"what-is-an-agent",
 		"agent-native-cloud",
 		"agent-engineering",
+		"devmode",
+		"agent-logging",
+		"agent-telemetry",
 		"...",
 		"ai-gateway",
 		"key-value",
 		"vector-db",
+		"object-storage",
 		"security"
 	]
 }
