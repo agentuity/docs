@@ -5,13 +5,15 @@ description: Commands for managing agents
 
 The `agent` commands allow you to create, list, delete, and manage agents in your Agentuity project.
 
-## agent create
+## Commands
+
+### agent create
 
 Creates a new agent in your project.
 
 **Aliases:** new
 
-### Usage
+**Usage**
 
 <CLICommand command="agentuity agent create [name] [description] [auth_type]" />
 
@@ -33,7 +35,7 @@ After providing this information, the command will:
 2. Set up the necessary local files for the agent
 3. Update your project configuration to include the new agent
 
-### Example
+**Example**
 
 <CLICommand command="agentuity agent create">
 	What should we name the agent? MyNewAgent
@@ -41,13 +43,13 @@ After providing this information, the command will:
 	✓ Agent created successfully
 </CLICommand>
 
-## agent list
+### agent list
 
 Lists all agents in your project.
 
 **Aliases:** ls
 
-### Usage
+**Usage**
 
 <CLICommand command="agentuity agent list" />
 
@@ -60,7 +62,7 @@ This command will display a list of all agents in your project, including:
 - Agent description
 - Status (whether the agent exists locally, remotely, or both)
 
-### Example
+**Example**
 
 <CLICommand command="agentuity agent list">
 src/agents
@@ -73,13 +75,13 @@ src/agents
    └── Description: This agent processes customer support requests
 </CLICommand>
 
-## agent delete
+### agent delete
 
 Deletes one or more agents from your project.
 
 **Aliases:** rm, del
 
-### Usage
+**Usage**
 
 <CLICommand command="agentuity agent delete" />
 
@@ -92,7 +94,7 @@ This command will:
 3. Ask for confirmation before deleting the selected agents
 4. Delete the selected agents from both the Agentuity Cloud and your local project
 
-### Example
+**Example**
 
 <CLICommand command="agentuity agent delete">
 Select one or more agents to delete:
@@ -103,13 +105,13 @@ Are you sure you want to delete the selected agents? This action cannot be undon
 ✓ Agent deleted successfully
 </CLICommand>
 
-## agent apikey
+### agent apikey
 
 Gets the API key for an agent.
 
 **Aliases:** key
 
-### Usage
+**Usage**
 
 <CLICommand command="agentuity agent apikey [agent_name]" />
 
@@ -124,7 +126,7 @@ This command will:
 2. If no agent name is provided and there's only one agent in the project, retrieve the API key for that agent
 3. If no agent name is provided and there are multiple agents, display a list of agents to select from
 
-### Example
+**Example**
 
 Get an API key for a specific agent:
 

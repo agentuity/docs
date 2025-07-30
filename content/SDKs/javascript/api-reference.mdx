@@ -51,17 +51,17 @@ type AgentHandler = (
 ) => Promise<AgentResponseType>;
 ```
 
-#### Parameters
+**Parameters**
 
 - `request`: An `AgentRequest` object containing the request data
 - `response`: An `AgentResponse` object for creating responses
 - `context`: An `AgentContext` object providing access to various capabilities
 
-#### Return Value
+**Return Value**
 
 The handler function should return a Promise that resolves to an `AgentResponseType` object.
 
-#### Example
+**Example**
 
 ```typescript
 import { AgentHandler } from '@agentuity/sdk';
@@ -97,20 +97,22 @@ The Agentuity SDK provides three storage APIs: Key-Value Storage, Vector Storage
 
 The Key-Value Storage API provides a simple way to store and retrieve data. It is accessed through the `context.kv` object.
 
-#### `get(name: string, key: string): Promise<DataResult>`
+#### get
+
+`get(name: string, key: string): Promise<DataResult>`
 
 Retrieves a value from the key-value storage.
 
-##### Parameters
+**Parameters**
 
 - `name`: The name of the key-value storage
 - `key`: The key to retrieve the value for
 
-##### Return Value
+**Return Value**
 
 Returns a Promise that resolves to a DataResult object. The DataResult has an `exists` boolean property and a `data` property containing the value if found.
 
-##### Example
+**Example**
 
 ```typescript
 // Retrieve a value from key-value storage
@@ -124,22 +126,24 @@ if (result.exists) {
 }
 ```
 
-#### `set(name: string, key: string, value: ArrayBuffer | string | Json, ttl?: number): Promise<void>`
+#### set
+
+`set(name: string, key: string, value: ArrayBuffer | string | Json, ttl?: number): Promise<void>`
 
 Stores a value in the key-value storage.
 
-##### Parameters
+**Parameters**
 
 - `name`: The name of the key-value storage
 - `key`: The key to store the value under
 - `value`: The value to store (can be an ArrayBuffer, string, or JSON object)
 - `ttl` (optional): Time-to-live in seconds (minimum 60 seconds)
 
-##### Return Value
+**Return Value**
 
 Returns a Promise that resolves when the value has been stored.
 
-##### Example
+**Example**
 
 ```typescript
 // Store a string value
@@ -156,20 +160,22 @@ await context.kv.set('user-data', 'user-123', binaryData);
 await context.kv.set('session', 'user-123', 'active', 3600);
 ```
 
-#### `delete(name: string, key: string): Promise<void>`
+#### delete
+
+`delete(name: string, key: string): Promise<void>`
 
 Deletes a value from the key-value storage.
 
-##### Parameters
+**Parameters**
 
 - `name`: The name of the key-value storage
 - `key`: The key to delete
 
-##### Return Value
+**Return Value**
 
 Returns a Promise that resolves when the value has been deleted.
 
-##### Example
+**Example**
 
 ```typescript
 // Delete a value
@@ -180,20 +186,22 @@ await context.kv.delete('user-preferences', 'user-123');
 
 The Vector Storage API provides a way to store and search for data using vector embeddings. It is accessed through the `context.vector` object.
 
-#### `upsert(name: string, ...documents: VectorUpsertParams[]): Promise<string[]>`
+#### upsert
+
+`upsert(name: string, ...documents: VectorUpsertParams[]): Promise<string[]>`
 
 Inserts or updates vectors in the vector storage.
 
-##### Parameters
+**Parameters**
 
 - `name`: The name of the vector storage
 - `documents`: One or more documents to upsert, each with either embeddings or text
 
-##### Return Value
+**Return Value**
 
 Returns a Promise that resolves to an array of string IDs for the upserted vectors.
 
-##### Example
+**Example**
 
 ```typescript
 // Upsert documents with text
@@ -211,11 +219,13 @@ const ids2 = await context.vector.upsert(
 );
 ```
 
-#### `search(name: string, params: VectorSearchParams): Promise<VectorSearchResult[]>`
+#### search
+
+`search(name: string, params: VectorSearchParams): Promise<VectorSearchResult[]>`
 
 Searches for vectors in the vector storage.
 
-##### Parameters
+**Parameters**
 
 - `name`: The name of the vector storage
 - `params`: Search parameters object with the following properties:
@@ -224,11 +234,11 @@ Searches for vectors in the vector storage.
   - `similarity` (number, optional): Minimum similarity threshold for results (0.0-1.0). Only vectors with similarity scores greater than or equal to this value will be returned. 1.0 means exact match, 0.0 means no similarity requirement.
   - `metadata` (object, optional): Metadata filters to apply to the search. Only vectors whose metadata matches all specified key-value pairs will be included in results. Must be a valid JSON object.
 
-##### Return Value
+**Return Value**
 
 Returns a Promise that resolves to an array of search results, each containing an ID, key, metadata, and similarity score.
 
-##### Examples
+**Examples**
 
 ```typescript
 // Basic search with query only
@@ -259,20 +269,22 @@ for (const result of results) {
 }
 ```
 
-#### `delete(name: string, ...keys: string[]): Promise<number>`
+#### delete
+
+`delete(name: string, ...keys: string[]): Promise<number>`
 
 Deletes one or more vectors from the vector storage.
 
-##### Parameters
+**Parameters**
 
 - `name`: The name of the vector storage
 - `keys`: One or more keys of the vectors to delete
 
-##### Return Value
+**Return Value**
 
 Returns a Promise that resolves to the number of vectors that were deleted.
 
-##### Examples
+**Examples**
 
 ```typescript
 // Delete a single vector
@@ -296,20 +308,22 @@ console.log(`Deleted ${deletedCount} vector(s)`); // Output: Deleted 1 vector(s)
 
 The Object Storage API provides a way to store and retrieve objects (files, documents, media) with support for public URL generation. It is accessed through the `context.objectstore` object.
 
-#### `get(bucket: string, key: string): Promise<DataResult>`
+#### get
+
+`get(bucket: string, key: string): Promise<DataResult>`
 
 Retrieves an object from the object storage.
 
-##### Parameters
+**Parameters**
 
 - `bucket`: The bucket to get the object from
 - `key`: The key of the object to get
 
-##### Return Value
+**Return Value**
 
 Returns a Promise that resolves to a DataResult object. The DataResult has an `exists` boolean property and a `data` property containing the object data if found.
 
-##### Example
+**Example**
 
 ```typescript
 // Retrieve an object from object storage
@@ -323,22 +337,24 @@ if (result.exists) {
 }
 ```
 
-#### `put(bucket: string, key: string, data: DataType, params?: ObjectStorePutParams): Promise<void>`
+#### put
+
+`put(bucket: string, key: string, data: DataType, params?: ObjectStorePutParams): Promise<void>`
 
 Stores an object in the object storage.
 
-##### Parameters
+**Parameters**
 
 - `bucket`: The bucket to put the object into
 - `key`: The key of the object to put
 - `data`: The data to store (can be ArrayBuffer, string, or other DataType)
 - `params` (optional): Additional parameters for the object. The following properties map to canonical HTTP headers: `contentType` (Content-Type), `contentEncoding` (Content-Encoding), `cacheControl` (Cache-Control), `contentDisposition` (Content-Disposition), and `contentLanguage` (Content-Language). The optional `metadata` property accepts a dictionary of arbitrary key-value pairs that will be stored as metadata with the object but not returned as part of HTTP results when the object is fetched. The `contentType` parameter is optional - if not provided, the content type will be automatically detected based on the data type (e.g., objects will be set to `application/json`). If the content type cannot be determined, it defaults to `application/octet-stream`.
 
-##### Return Value
+**Return Value**
 
 Returns a Promise that resolves when the object has been stored.
 
-##### Example
+**Example**
 
 ```typescript
 // Store a text file with explicit content type
@@ -379,20 +395,22 @@ await context.objectstore.put('uploads', 'document.pdf', pdfData, {
 });
 ```
 
-#### `delete(bucket: string, key: string): Promise<boolean>`
+#### delete
+
+`delete(bucket: string, key: string): Promise<boolean>`
 
 Deletes an object from the object storage.
 
-##### Parameters
+**Parameters**
 
 - `bucket`: The bucket to delete the object from
 - `key`: The key of the object to delete
 
-##### Return Value
+**Return Value**
 
 Returns a Promise that resolves to a boolean indicating whether the object was deleted (true) or didn't exist (false).
 
-##### Example
+**Example**
 
 ```typescript
 // Delete an object
@@ -404,21 +422,23 @@ if (wasDeleted) {
 }
 ```
 
-#### `createPublicURL(bucket: string, key: string, expiresDuration?: number): Promise<string>`
+#### createPublicURL
+
+`createPublicURL(bucket: string, key: string, expiresDuration?: number): Promise<string>`
 
 Creates a time-limited public URL for accessing an object.
 
-##### Parameters
+**Parameters**
 
 - `bucket`: The bucket containing the object
 - `key`: The key of the object
 - `expiresDuration` (optional): Duration in milliseconds until the URL expires. Defaults to 1 hour (3600000ms) if not provided. Minimum value is 1 minute (60000ms) - values less than 1 minute will be set to 1 minute.
 
-##### Return Value
+**Return Value**
 
 Returns a Promise that resolves to a public URL string that can be used to access the object.
 
-##### Example
+**Example**
 
 ```typescript
 // Create a public URL that expires in 1 hour
@@ -453,19 +473,21 @@ const autoMinUrl = await context.objectstore.createPublicURL(
 
 The Agentuity SDK allows agents to communicate with each other through the `context.getAgent()` method and agent redirection.
 
-### `getAgent(params: GetAgentRequestParams): Promise<RemoteAgent>`
+#### getAgent
+
+`getAgent(params: GetAgentRequestParams): Promise<RemoteAgent>`
 
 Retrieves a handle to a remote agent that can be invoked.
 
-#### Parameters
+**Parameters**
 
 - `params`: Parameters to identify the agent, either by ID or by name and project ID
 
-#### Return Value
+**Return Value**
 
 Returns a Promise that resolves to a `RemoteAgent` object that can be used to invoke the agent.
 
-#### Example
+**Example**
 
 ```typescript
 // Get an agent by ID
@@ -485,22 +507,24 @@ const result = await agent.run({ data: 'process this' }, 'application/json');
 
 The `response.handoff()` method allows an agent to handoff the request to another agent.
 
-#### `handoff(agent: GetAgentRequestParams, payload?: Json | ArrayBuffer | string, contentType?: string, metadata?: Record<string, Json>): AgentRedirectResponse`
+#### handoff
+
+`handoff(agent: GetAgentRequestParams, payload?: Json | ArrayBuffer | string, contentType?: string, metadata?: Record<string, Json>): AgentRedirectResponse`
 
 Redirects the current request to another agent.
 
-##### Parameters
+**Parameters**
 
 - `agent`: Parameters to identify the target agent
 - `payload` (optional): The payload to send to the target agent
 - `contentType` (optional): The content type of the payload
 - `metadata` (optional): Additional metadata to include with the request
 
-##### Return Value
+**Return Value**
 
 Returns an `AgentRedirectResponse` object.
 
-##### Examples
+**Examples**
 
 ```typescript
 // By ID
@@ -534,20 +558,20 @@ The Agentuity SDK provides various methods for creating different types of respo
 
 ### JSON Responses
 
-#### `json(data: Json, metadata?: Record<string, Json>): AgentResponseType`
+`json(data: Json, metadata?: Record<string, Json>): AgentResponseType`
 
 Creates a JSON response.
 
-##### Parameters
+**Parameters**
 
 - `data`: The JSON data to include in the response
 - `metadata` (optional): Additional metadata to include with the response
 
-##### Return Value
+**Return Value**
 
 Returns an `AgentResponseType` object with the JSON data.
 
-##### Example
+**Example**
 
 ```typescript
 return response.json({ 
@@ -558,20 +582,20 @@ return response.json({
 
 ### Text Responses
 
-#### `text(data: string, metadata?: Record<string, Json>): AgentResponseType`
+`text(data: string, metadata?: Record<string, Json>): AgentResponseType`
 
 Creates a text response.
 
-##### Parameters
+**Parameters**
 
 - `data`: The text to include in the response
 - `metadata` (optional): Additional metadata to include with the response
 
-##### Return Value
+**Return Value**
 
 Returns an `AgentResponseType` object with the text data.
 
-##### Example
+**Example**
 
 ```typescript
 return response.text('Hello, world!');
@@ -579,20 +603,20 @@ return response.text('Hello, world!');
 
 ### Binary Responses
 
-#### `binary(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
+`binary(data: ArrayBuffer, metadata?: Record<string, Json>): AgentResponseType`
 
 Creates a binary response.
 
-##### Parameters
+**Parameters**
 
 - `data`: The binary data to include in the response
 - `metadata` (optional): Additional metadata to include with the response
 
-##### Return Value
+**Return Value**
 
 Returns an `AgentResponseType` object with the binary data.
 
-##### Example
+**Example**
 
 ```typescript
 const binaryData = new Uint8Array([1, 2, 3, 4]).buffer;
@@ -620,7 +644,7 @@ The SDK provides specialized methods for various media types:
 
 Each method works similarly to the `binary()` method but sets the appropriate content type. The `data` method allows setting specific data with an exact content type, while the `markdown` method provides a convenient way to return markdown content.
 
-#### Example
+**Example**
 
 ```typescript
 // Return a PNG image
@@ -632,20 +656,20 @@ return response.mp3(audioData, { duration: 120 });
 
 ### HTML Responses
 
-#### `html(data: string, metadata?: Record<string, Json>): AgentResponseType`
+`html(data: string, metadata?: Record<string, Json>): AgentResponseType`
 
 Creates an HTML response.
 
-##### Parameters
+**Parameters**
 
 - `data`: The HTML content to include in the response
 - `metadata` (optional): Additional metadata to include with the response
 
-##### Return Value
+**Return Value**
 
 Returns an `AgentResponseType` object with the HTML content.
 
-##### Example
+**Example**
 
 ```typescript
 return response.html('<h1>Hello, world!</h1><p>This is an HTML response.</p>');
@@ -653,19 +677,19 @@ return response.html('<h1>Hello, world!</h1><p>This is an HTML response.</p>');
 
 ### Empty Responses
 
-#### `empty(metadata?: Record<string, Json>): AgentResponseType`
+`empty(metadata?: Record<string, Json>): AgentResponseType`
 
 Creates an empty response.
 
-##### Parameters
+**Parameters**
 
 - `metadata` (optional): Additional metadata to include with the response
 
-##### Return Value
+**Return Value**
 
 Returns an `AgentResponseType` object with no payload.
 
-##### Example
+**Example**
 
 ```typescript
 return response.empty();
@@ -677,41 +701,45 @@ The Agentuity SDK provides various methods for accessing request data through th
 
 ### Accessing Request Data
 
-#### `get trigger(): string`
+#### get trigger
+
+`get trigger(): string`
 
 Gets the trigger type of the request.
 
-##### Return Value
+**Return Value**
 
 Returns a string representing the trigger type (webhook, cron, manual, agent, etc.).
 
-##### Example
+**Example**
 
 ```typescript
 const triggerType = request.trigger;
 console.log(`Request triggered by: ${triggerType}`);
 ```
 
-#### `get(key: string, defaultValue?: Json): Json`
+#### get
+
+`get(key: string, defaultValue?: Json): Json`
 
 Gets a value from the request. The available properties depend on the trigger type.
 
-##### Parameters
+**Parameters**
 
 - `key`: The key to retrieve
 - `defaultValue` (optional): A default value to return if the key does not exist
 
-##### Return Value
+**Return Value**
 
 Returns the value for the specified key, or the default value if the key does not exist.
 
-##### Trigger-specific Properties
+**Trigger-specific Properties**
 
 Different trigger types provide different properties:
 
 - **Webhook**: Includes a `headers` property containing the HTTP headers from the webhook request.
 
-##### Example
+**Example**
 
 ```typescript
 // For webhook triggers, access headers
@@ -723,60 +751,68 @@ const githubSignature = headers['x-hub-signature'];
 const userId = request.get('userId', 'anonymous');
 ```
 
-#### `metadata(key: string, defaultValue?: Json): Json`
+#### metadata
+
+`metadata(key: string, defaultValue?: Json): Json`
 
 **Note:** This method is deprecated. Use `get(key, defaultValue)` instead.
 
 Gets metadata associated with the request.
 
-##### Parameters
+**Parameters**
 
 - `key`: The metadata key to retrieve
 - `defaultValue` (optional): A default value to return if the key does not exist
 
-##### Return Value
+**Return Value**
 
 Returns the metadata value for the specified key, or the default value if the key does not exist.
 
-#### `json(): Promise<Json>`
+#### json
+
+`json(): Promise<Json>`
 
 Gets the payload of the request as a JSON object.
 
-##### Return Value
+**Return Value**
 
 Returns a Promise that resolves to the request payload as a JSON object.
 
-##### Example
+**Example**
 
 ```typescript
 const data = await request.data.json();
 console.log(`Request data: ${JSON.stringify(data)}`);
 ```
 
-#### `text(): Promise<string>`
+#### text
+
+`text(): Promise<string>`
 
 Gets the payload of the request as a string.
 
-##### Return Value
+**Return Value**
 
 Returns a Promise that resolves to the request payload as a string.
 
-##### Example
+**Example**
 
 ```typescript
 const text = await request.data.text();
 console.log(`Request text: ${text}`);
 ```
 
-#### `binary(): Promise<ArrayBuffer>`
+#### binary
+
+`binary(): Promise<ArrayBuffer>`
 
 Gets the payload of the request as an ArrayBuffer.
 
-##### Return Value
+**Return Value**
 
 Returns a Promise that resolves to the request payload as an ArrayBuffer.
 
-##### Example
+**Example**
 
 ```typescript
 const binaryData = await request.data.binary();
@@ -803,7 +839,7 @@ The SDK provides specialized methods for various media types, all of which now r
 
 Each method returns a Promise that resolves to the request payload as an ArrayBuffer with the appropriate content type validation, except for `email()` which returns an Email object.
 
-#### Example
+**Example**
 
 ```typescript
 // Get an image from the request
@@ -827,15 +863,17 @@ The Agentuity SDK provides an `Email` class for parsing and processing inbound e
 
 The `Email` class represents a parsed email message with methods to access various email properties.
 
-#### `date(): Date | null`
+#### date
+
+`date(): Date | null`
 
 Returns the date of the email.
 
-##### Return Value
+**Return Value**
 
 Returns a `Date` object representing the email's date, or `null` if no date is available.
 
-##### Example
+**Example**
 
 ```typescript
 const email = await request.data.email();
@@ -843,15 +881,17 @@ const emailDate = email.date();
 console.log('Email received on:', emailDate);
 ```
 
-#### `messageId(): string | null`
+#### messageId
+
+`messageId(): string | null`
 
 Returns the message ID of the email.
 
-##### Return Value
+**Return Value**
 
 Returns a string containing the email's message ID, or `null` if no message ID is available.
 
-##### Example
+**Example**
 
 ```typescript
 const email = await request.data.email();
@@ -859,15 +899,17 @@ const msgId = email.messageId();
 console.log('Message ID:', msgId);
 ```
 
-#### `headers(): Headers`
+#### headers
+
+`headers(): Headers`
 
 Returns the headers of the email.
 
-##### Return Value
+**Return Value**
 
 Returns a `Headers` object containing all email headers.
 
-##### Example
+**Example**
 
 ```typescript
 const email = await request.data.email();
@@ -875,15 +917,17 @@ const headers = email.headers();
 console.log('Email headers:', headers);
 ```
 
-#### `to(): string | null`
+#### to
+
+`to(): string | null`
 
 Returns the email address of the recipient(s).
 
-##### Return Value
+**Return Value**
 
 Returns a string containing the recipient email address. If there are multiple recipients, they are comma-separated. Returns `null` if no recipient is available.
 
-##### Example
+**Example**
 
 ```typescript
 const email = await request.data.email();
@@ -891,15 +935,17 @@ const recipients = email.to();
 console.log('Recipients:', recipients);
 ```
 
-#### `fromEmail(): string | null`
+#### fromEmail
+
+`fromEmail(): string | null`
 
 Returns the email address of the sender.
 
-##### Return Value
+**Return Value**
 
 Returns a string containing the sender's email address, or `null` if no sender email is available.
 
-##### Example
+**Example**
 
 ```typescript
 const email = await request.data.email();
@@ -907,15 +953,17 @@ const senderEmail = email.fromEmail();
 console.log('From email:', senderEmail);
 ```
 
-#### `fromName(): string | null`
+#### fromName
+
+`fromName(): string | null`
 
 Returns the name of the sender.
 
-##### Return Value
+**Return Value**
 
 Returns a string containing the sender's name, or `null` if no sender name is available.
 
-##### Example
+**Example**
 
 ```typescript
 const email = await request.data.email();
@@ -923,15 +971,17 @@ const senderName = email.fromName();
 console.log('From name:', senderName);
 ```
 
-#### `subject(): string | null`
+#### subject
+
+`subject(): string | null`
 
 Returns the subject of the email.
 
-##### Return Value
+**Return Value**
 
 Returns a string containing the email subject, or `null` if no subject is available.
 
-##### Example
+**Example**
 
 ```typescript
 const email = await request.data.email();
@@ -939,15 +989,17 @@ const subject = email.subject();
 console.log('Subject:', subject);
 ```
 
-#### `text(): string | null`
+#### text
+
+`text(): string | null`
 
 Returns the plain text body of the email.
 
-##### Return Value
+**Return Value**
 
 Returns a string containing the plain text body, or `null` if no plain text body is available.
 
-##### Example
+**Example**
 
 ```typescript
 const email = await request.data.email();
@@ -955,15 +1007,17 @@ const textBody = email.text();
 console.log('Text content:', textBody);
 ```
 
-#### `html(): string | null`
+#### html
+
+`html(): string | null`
 
 Returns the HTML body of the email.
 
-##### Return Value
+**Return Value**
 
 Returns a string containing the HTML body, or `null` if no HTML body is available.
 
-##### Example
+**Example**
 
 ```typescript
 const email = await request.data.email();
@@ -971,15 +1025,17 @@ const htmlBody = email.html();
 console.log('HTML content:', htmlBody);
 ```
 
-#### `attachments(): IncomingEmailAttachment[]`
+#### attachments
+
+`attachments(): IncomingEmailAttachment[]`
 
 Returns the attachments of the email.
 
-##### Return Value
+**Return Value**
 
 Returns an array of `IncomingEmailAttachment` objects. Returns an empty array if there are no attachments.
 
-##### Example
+**Example**
 
 ```typescript
 const email = await request.data.email();
@@ -993,11 +1049,13 @@ for (const attachment of attachments) {
 }
 ```
 
-#### `sendReply(request, context, reply, from?): Promise<void>`
+#### sendReply
+
+`sendReply(request, context, reply, from?): Promise<void>`
 
 Send a reply to the incoming email using the Agentuity email API.
 
-##### Parameters
+**Parameters**
 
 - `request` (AgentRequest): The triggering agent request containing email-auth-token in metadata
 - `context` (AgentContext): The agent context providing access to email services
@@ -1006,11 +1064,11 @@ Send a reply to the incoming email using the Agentuity email API.
   - `name?` (string): Custom sender name. Defaults to the agent name if not provided
   - `email?` (string): Custom sender email address. Defaults to the original recipient if not provided
 
-##### Return Value
+**Return Value**
 
 Returns a `Promise<void>` that resolves when the reply is sent successfully.
 
-##### Example
+**Example**
 
 ```typescript
 async function handler(request, response, context) {
@@ -1046,7 +1104,7 @@ async function handler(request, response, context) {
 
 The `EmailReply` interface defines the structure for email reply configuration.
 
-#### Properties
+**Properties**
 
 - `subject?` (string): The subject of the reply. If not provided, defaults to 'RE: &lt;original subject&gt;'
 - `text` (string): The plain text body of the reply
@@ -1064,18 +1122,20 @@ Using a custom email address in the reply requires organizational email domain s
 
 The `IncomingEmailAttachment` interface represents an attachment from an incoming email.
 
-#### Properties
+**Properties**
 
 - `filename` (string): The filename of the attachment
 - `contentDisposition` ('attachment' | 'inline'): The content disposition of the attachment
 
-#### Methods
+**Methods**
 
-##### `data(): Promise<Data>`
+#### data
+
+`data(): Promise<Data>`
 
 Asynchronously retrieves the attachment data as a Data object. For large attachments, this uses streaming to efficiently handle the data transfer.
 
-##### Example
+**Example**
 
 ```typescript
 async function handler(request, response, context) {
@@ -1100,7 +1160,7 @@ async function handler(request, response, context) {
 
 The `OutgoingEmailAttachment` interface represents an attachment to be included in an outgoing email reply.
 
-#### Properties
+**Properties**
 
 - `filename` (string): The filename of the attachment
 - `data` (DataType): The data of the attachment
@@ -1126,61 +1186,69 @@ interface Logger {
 
 ### Logging Methods
 
-#### `debug(message: string, ...args: unknown[]): void`
+#### debug
+
+`debug(message: string, ...args: unknown[]): void`
 
 Logs a debug message.
 
-##### Parameters
+**Parameters**
 
 - `message`: The message to log
 - `args`: Additional arguments to include in the log
 
-##### Example
+**Example**
 
 ```typescript
 context.logger.debug('Processing request', { requestId: '123' });
 ```
 
-#### `info(message: string, ...args: unknown[]): void`
+#### info
+
+`info(message: string, ...args: unknown[]): void`
 
 Logs an informational message.
 
-##### Parameters
+**Parameters**
 
 - `message`: The message to log
 - `args`: Additional arguments to include in the log
 
-##### Example
+**Example**
 
 ```typescript
 context.logger.info('Request processed successfully', { requestId: '123' });
 ```
 
-#### `warn(message: string, ...args: unknown[]): void`
+#### warn
+
+`warn(message: string, ...args: unknown[]): void`
 
 Logs a warning message.
 
-##### Parameters
+**Parameters**
 
 - `message`: The message to log
 - `args`: Additional arguments to include in the log
 
-##### Example
+**Example**
 
 ```typescript
 context.logger.warn('Resource not found', { resourceId: '456' });
 ```
 
-#### `error(message: string, ...args: unknown[]): void`
+#### error
+
+`error(message: string, ...args: unknown[]): void`
 
 Logs an error message.
 
-##### Parameters
+**Parameters**
 
 - `message`: The message to log
 - `args`: Additional arguments to include in the log
 
-##### Example
+**Example**
 
 ```typescript
 context.logger.error('Failed to process request', error);
@@ -1188,19 +1256,21 @@ context.logger.error('Failed to process request', error);
 
 ### Creating Child Loggers
 
-#### `child(opts: Record<string, unknown>): Logger`
+#### child
+
+`child(opts: Record<string, unknown>): Logger`
 
 Creates a child logger with additional context.
 
-##### Parameters
+**Parameters**
 
 - `opts`: Additional context to include in all logs from the child logger
 
-##### Return Value
+**Return Value**
 
 Returns a new `Logger` instance with the additional context.
 
-##### Example
+**Example**
 
 ```typescript
 const requestLogger = context.logger.child({ requestId: '123', userId: '456' });
@@ -1237,15 +1307,17 @@ export interface AgentWelcomeResult {
 }
 ```
 
-### welcome()
+### welcome
+
+`welcome(): AgentWelcomeResult`
 
 Defines a welcome message and optional example prompts for DevMode.
 
-#### Return Value
+**Return Value**
 
 Returns an `AgentWelcomeResult` object with a welcome message and optional prompts.
 
-#### Example
+**Example**
 
 ```typescript
 export const welcome = (): AgentWelcomeResult => {
@@ -1280,7 +1352,7 @@ The Agentuity SDK integrates with OpenTelemetry for tracing and metrics.
 
 The SDK provides access to OpenTelemetry tracing through the `context.tracer` object.
 
-#### Example
+**Example**
 
 ```typescript
 // Create a span
@@ -1314,7 +1386,7 @@ context.tracer.startActiveSpan('process-data', async (span) => {
 
 In version X.X.X, the Data API was refactored to use async methods instead of static properties to better support streaming capabilities:
 
-#### Before:
+**Before:**
 ```typescript
 // Accessing data properties directly
 const jsonData = request.data.json;
@@ -1322,7 +1394,7 @@ const textData = request.data.text;
 const base64Data = request.data.base64;
 ```
 
-#### After:
+**After:**
 ```typescript
 // Using async methods to access data
 const jsonData = await request.data.json();
