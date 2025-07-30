@@ -1,0 +1,197 @@
+---
+title: Using Key Value
+description: Using Key Value storage in your Agents
+---
+
+## When to Use Key-Value Storage
+
+Key-value storage is your go-to solution for fast, ephemeral data that agents need to access quickly. Think of it as your agent's short-term memory — perfect for session state, configuration, caching, and temporary data.
+
+Choose the right storage for your use case:
+
+- **Key-Value**: Fast lookups, simple data, temporary state
+- **[Vector Storage](/Cloud/vector-memory)**: Semantic search, embeddings, similarity matching
+- **[Object Storage](/Cloud/object-storage)**: Large files, media, backups
+
+## Common Use Cases
+
+- **Session Management**: Store user sessions, authentication tokens, and temporary state between agent interactions
+- **Configuration Storage**: Keep agent-specific settings, feature flags, and runtime configuration that can be updated without redeployment
+- **Caching**: Cache expensive computation results, API responses, or frequently accessed data to improve agent performance
+- **Inter-Agent Communication**: Share state between agents working together on complex workflows
+- **Rate Limiting**: Track API usage, request counts, and implement throttling mechanisms
+
+## Creating Key-Value Storage
+
+You can create key-value storage either through the Cloud Console or programmatically in your agent code.
+
+### Via Cloud Console
+
+Navigate to **Services > Key Value** and click **Create Storage**. Choose a descriptive name that reflects the storage purpose (e.g., `user-sessions`, `agent-config`, `api-cache`).
+
+<ThemeImage baseName="keyvalue" alt="Key Value Storage Overview" />
+
+### Via SDK
+
+Both JavaScript and Python SDKs automatically create key-value storage when you first access it:
+
+<CodeExample js={`// JavaScript/TypeScript
+import { AgentHandler } from '@agentuity/sdk';
+
+const handler: AgentHandler = async (request, response, context) => {
+  // Storage is created automatically on first use
+  await context.kv.set('user-sessions', 'user-123', {
+    lastSeen: new Date().toISOString(),
+    preferences: { theme: 'dark' }
+  });
+  
+  return response.json({ message: 'Session stored' });
+};
+
+export default handler;`} py={`# Python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+from datetime import datetime
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    # Storage is created automatically on first use
+    await context.kv.set("user-sessions", "user-123", {
+        "lastSeen": datetime.now().isoformat(),
+        "preferences": {"theme": "dark"}
+    })
+    
+    return response.json({"message": "Session stored"})
+`} />
+
+## Working with Key-Value Storage
+
+The key-value API provides three core operations: `get`, `set`, and `delete`. All operations are asynchronous and support various data types.
+
+### Storing Data
+
+Store strings, objects, or binary data with optional TTL (time-to-live):
+
+<CodeExample js={`// Store a string
+await context.kv.set('cache', 'api-response', responseData);
+
+// Store an object (automatically serialized)
+await context.kv.set('user-prefs', userId, {
+  language: 'en',
+  timezone: 'UTC'
+});
+
+// Store with TTL (expires after 1 hour)
+await context.kv.set('sessions', sessionId, userData, 3600);
+
+// Store binary data
+const buffer = Buffer.from('binary data');
+await context.kv.set('files', 'document.pdf', buffer);`} py={`# Store a string
+await context.kv.set("cache", "api-response", response_data)
+
+# Store an object (automatically serialized)
+await context.kv.set("user-prefs", user_id, {
+    "language": "en",
+    "timezone": "UTC"
+})
+
+# Store with TTL (expires after 1 hour)
+await context.kv.set("sessions", session_id, user_data, {"ttl": 3600})
+
+# Store binary data
+binary_data = b"binary data"
+await context.kv.set("files", "document.pdf", binary_data)`} />
+
+### Retrieving Data
+
+Retrieve stored values with automatic deserialization:
+
+<CodeExample js={`// Get a value
+const result = await context.kv.get('user-prefs', userId);
+
+if (result.exists) {
+  // Access data using the Data interface
+  const preferences = await result.data.json();
+  console.log('User preferences:', preferences);
+} else {
+  console.log('No preferences found for user');
+}
+
+// Handle missing keys gracefully
+const result = await context.kv.get('config', 'app-settings');
+const config = result.exists ? await result.data.json() : defaultConfig;`} py={`# Get a value
+result = await context.kv.get("user-prefs", user_id)
+
+if result.exists:
+    # Access data using the Data interface
+    preferences = await result.data.json()
+    print(f"User preferences: {preferences}")
+else:
+    print("No preferences found for user")
+
+# Handle missing keys gracefully
+result = await context.kv.get("config", "app-settings")
+config = await result.data.json() if result.exists else default_config`} />
+
+### Deleting Data
+
+Remove keys when they're no longer needed:
+
+<CodeExample js={`// Delete a single key
+await context.kv.delete('sessions', sessionId);
+console.log('Session deleted successfully');`} py={`# Delete a single key
+await context.kv.delete("sessions", session_id)
+print("Session deleted successfully")`} />
+
+## Best Practices
+
+### Key Naming Conventions
+
+Use hierarchical, descriptive keys to organize your data:
+- `user:{userId}:preferences`
+- `session:{sessionId}:data`
+- `cache:api:{endpoint}:{params}`
+
+### Error Handling
+
+Always handle potential storage errors gracefully:
+
+<CodeExample js={`try {
+  const result = await context.kv.get('config', 'settings');
+  if (!result.exists) {
+    // Initialize with defaults
+    await context.kv.set('config', 'settings', defaultSettings);
+  }
+} catch (error) {
+  context.logger.error('Storage error:', error);
+  // Fall back to in-memory defaults
+}`} py={`try:
+    result = await context.kv.get("config", "settings")
+    if not result.exists:
+        # Initialize with defaults
+        await context.kv.set("config", "settings", default_settings)
+except Exception as e:
+    context.logger.error(f"Storage error: {e}")
+    # Fall back to in-memory defaults`} />
+
+### TTL Strategy
+
+Use TTL for temporary data to prevent storage bloat:
+- **Session data**: 24-48 hours
+- **API cache**: 5-60 minutes
+- **Rate limiting counters**: Until period reset
+
+### Data Size Considerations
+
+Key-value storage is optimized for small to medium-sized values. For large files or documents, consider using [Object Storage](/Cloud/object-storage) instead.
+
+## Monitoring Usage
+
+Track your key-value storage usage through the Cloud Console:
+
+1. Navigate to **Services > Key Value**
+2. View storage size and record count for each instance
+3. Click on an instance to browse stored keys and values
+4. Monitor [agent telemetry](/Guides/agent-telemetry) for KV operation performance
+
+<ThemeImage baseName="keyvalue-detail" alt="Key Value Storage Detail View" />
+
+For more complex data relationships or query needs, consider combining storage types or using external databases through your agent.

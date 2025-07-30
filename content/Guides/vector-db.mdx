@@ -1,0 +1,206 @@
+---
+title: Using Vector DB
+description: Using the Vector DB for search and retrieval
+---
+
+Vector storage enables semantic search for your agents, allowing them to find information by meaning rather than keywords. Ideal for knowledge bases, RAG systems, and persistent agent memory.
+
+## Understanding Vector Storage
+
+Vector storage works by converting text into high-dimensional numerical representations (embeddings) that capture semantic meaning. When you search, the system finds documents with similar meanings rather than just keyword matches.
+
+**Key use cases:**
+- Knowledge bases and documentation search
+- Long-term memory across agent sessions
+- RAG systems combining retrieval with AI generation
+- Semantic similarity search
+
+## Managing Vector Instances
+
+### Viewing Vector Storage in the Cloud Console
+
+Navigate to **Services > Vector** in the Agentuity Cloud Console to view all your vector storage instances. The interface shows:
+
+- **Database Name**: The identifier for your vector storage
+- **Projects**: Which projects are using this storage
+- **Agents**: Which agents have access
+- **Size**: Storage utilization
+
+You can filter instances by name using the search box and create new vector storage instances with the **Create Storage** button.
+
+<ThemeImage baseName="vector" alt="Vector Storage Overview" />
+
+### Creating Vector Storage
+
+You can create vector storage either through the Cloud Console or programmatically in your agent code.
+
+#### Via Cloud Console
+
+Navigate to **Services > Vector** and click **Create Storage**. Choose a descriptive name that reflects the storage purpose (e.g., `knowledge-base`, `agent-memory`, `product-catalog`).
+
+#### Via SDK
+
+Vector storage is created automatically when your agent first calls `context.vector.upsert()` with an instance name:
+
+## Vector Storage API
+
+### Upserting Documents
+
+The `upsert` operation inserts new documents or updates existing ones. You can provide either text (which gets automatically converted to embeddings) or pre-computed embeddings.
+
+<CodeExample>
+```javascript
+// JavaScript/TypeScript
+// Upsert documents with text (automatic embedding)
+const ids = await context.vector.upsert(
+  'knowledge-base',
+  { 
+    document: 'Agentuity is an agent-native cloud platform', 
+    metadata: { category: 'platform', source: 'docs' } 
+  },
+  { 
+    document: 'Vector storage enables semantic search capabilities', 
+    metadata: { category: 'features', source: 'docs' } 
+  }
+);
+
+// Upsert with pre-computed embeddings
+const embeddingIds = await context.vector.upsert(
+  'custom-embeddings',
+  { 
+    embeddings: [0.1, 0.2, 0.3, 0.4], 
+    metadata: { id: 'doc-1', type: 'custom' } 
+  }
+);
+```
+
+```python
+# Python
+# Upsert documents with text
+documents = [
+    {
+        "document": "Agentuity is an agent-native cloud platform",
+        "metadata": {"category": "platform", "source": "docs"}
+    },
+    {
+        "document": "Vector storage enables semantic search capabilities", 
+        "metadata": {"category": "features", "source": "docs"}
+    }
+]
+
+ids = await context.vector.upsert("knowledge-base", *documents)
+
+# Upsert with embeddings
+embedding_docs = [
+    {
+        "embeddings": [0.1, 0.2, 0.3, 0.4],
+        "metadata": {"id": "doc-1", "type": "custom"}
+    }
+]
+
+ids = await context.vector.upsert("custom-embeddings", *embedding_docs)
+```
+</CodeExample>
+
+### Searching Vector Storage
+
+Search operations find semantically similar documents based on a text query. You can control the number of results, similarity threshold, and filter by metadata.
+
+<CodeExample>
+```javascript
+// JavaScript/TypeScript
+// Basic semantic search
+const results = await context.vector.search('knowledge-base', {
+  query: 'What is an agent platform?',
+  limit: 5,
+  similarity: 0.7,
+  metadata: { category: 'platform' }
+});
+
+// Process results
+results.forEach(result => {
+  console.log(`Found: ${result.metadata.source}`);
+  console.log(`Similarity: ${1 - result.distance}`);
+});
+```
+
+```python
+# Python
+# Semantic search with parameters
+results = await context.vector.search(
+    "knowledge-base",
+    query="What is an agent platform?",
+    limit=5,
+    similarity=0.7,
+    metadata={"category": "platform"}
+)
+
+# Process results
+for result in results:
+    similarity_score = 1.0 - result.distance
+    print(f"Found: {result.metadata['source']}")
+    print(f"Similarity: {similarity_score}")
+```
+</CodeExample>
+
+**Search Parameters:**
+- `query` (required): Text query to search for
+- `limit` (optional): Maximum number of results to return
+- `similarity` (optional): Minimum similarity threshold (0.0-1.0)
+- `metadata` (optional): Filter results by metadata key-value pairs
+
+### Deleting Vectors
+
+Remove specific vectors from storage using their IDs.
+
+<CodeExample>
+```javascript
+// JavaScript/TypeScript
+// Delete single vector
+const deletedCount = await context.vector.delete('knowledge-base', 'vector-id-1');
+
+// Delete multiple vectors
+const bulkDeleteCount = await context.vector.delete(
+  'knowledge-base', 
+  'id-1', 'id-2', 'id-3'
+);
+```
+
+```python
+# Python
+# Delete single vector
+count = await context.vector.delete("knowledge-base", "vector-id-1")
+
+# Note: Python SDK currently supports single deletion
+# For bulk operations, call delete multiple times
+```
+</CodeExample>
+
+
+## Best Practices
+
+### Document Structure
+- **Include context in documents**: Store enough context so documents are meaningful when retrieved
+- **Use descriptive metadata**: Include relevant metadata for filtering and identification
+- **Consistent formatting**: Use consistent document formatting for better embeddings
+
+### Search Optimization
+- **Adjust similarity thresholds**: Start with 0.7 and adjust based on result quality
+- **Use metadata filtering**: Combine semantic search with metadata filters for precise results  
+- **Limit result sets**: Use appropriate limits to balance performance and relevance
+
+### Performance Considerations
+- **Batch upsert operations**: Use bulk upsert instead of individual calls
+- **Monitor storage usage**: Track vector storage size in the Cloud Console
+- **Consider document chunking**: Break large documents into smaller, focused chunks
+
+## Integration with Agent Memory
+
+Vector storage serves as long-term memory for agents, enabling them to:
+
+- Remember past conversations and context across sessions
+- Access organizational knowledge bases
+- Retrieve relevant examples for few-shot learning
+- Build and maintain agent-specific knowledge repositories
+
+For more information on memory patterns, see the [Key-Value Storage guide](/Guides/key-value) for short-term memory or explore [Agent Communication](/Guides/agent-communication) for sharing knowledge between agents.
