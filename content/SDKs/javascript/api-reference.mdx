@@ -1367,9 +1367,6 @@ context.tracer.startActiveSpan('process-data', async (span) => {
     // Add events to the span
     span.addEvent('data-processed', { itemCount: result.length });
     
-    // End the span
-    span.end();
-    
     return result;
   } catch (error) {
     // Record the error

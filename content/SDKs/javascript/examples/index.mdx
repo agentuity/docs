@@ -391,9 +391,6 @@ const handler: AgentHandler = async (request, response, context) => {
           });
           
           throw error;
-        } finally {
-          // End the child span
-          childSpan.end();
         }
       });
     } catch (error) {
@@ -412,9 +409,6 @@ const handler: AgentHandler = async (request, response, context) => {
         error: 'Failed to process request',
         message: (error as Error).message
       });
-    } finally {
-      // End the parent span
-      span.end();
     }
   });
 };
