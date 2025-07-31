@@ -74,7 +74,7 @@ The Agentuity SDK provides comprehensive email processing capabilities, includin
 
 The `Email` class represents an incoming email with methods to access its properties and send replies.
 
-#### `sendReply(request, context, subject=None, text=None, html=None, attachments=None)`
+#### `sendReply(request, context, subject=None, text=None, html=None, attachments=None, from_email=None, from_name=None)`
 
 Send a reply to the incoming email using the Agentuity email API.
 
@@ -86,6 +86,8 @@ Send a reply to the incoming email using the Agentuity email API.
 - `text` (str, optional): Plain text body of the reply
 - `html` (str, optional): HTML body of the reply
 - `attachments` (List[OutgoingEmailAttachmentInterface], optional): List of attachments to include
+- `from_email` (str, optional): Email address of the sender. Defaults to the original recipient if not provided. Can only be overridden if custom email sending is enabled
+- `from_name` (str, optional): Name of the sender. Defaults to the agent name if not provided
 
 ##### Return Value
 
@@ -115,7 +117,9 @@ async def handler(request: AgentRequest, response: AgentResponse, context: Agent
         subject="Re: Your inquiry",
         text="Thank you for contacting us. We'll get back to you soon.",
         html="<p>Thank you for contacting us. We'll get back to you soon.</p>",
-        attachments=[attachment]
+        attachments=[attachment],
+        from_email="support@yourcompany.com",
+        from_name="Support Team"
     )
     
     return response.json({"status": "Reply sent successfully"})

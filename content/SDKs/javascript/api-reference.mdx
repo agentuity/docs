@@ -993,7 +993,7 @@ for (const attachment of attachments) {
 }
 ```
 
-#### `sendReply(request, context, reply): Promise<void>`
+#### `sendReply(request, context, reply, from?): Promise<void>`
 
 Send a reply to the incoming email using the Agentuity email API.
 
@@ -1002,6 +1002,9 @@ Send a reply to the incoming email using the Agentuity email API.
 - `request` (AgentRequest): The triggering agent request containing email-auth-token in metadata
 - `context` (AgentContext): The agent context providing access to email services
 - `reply` (EmailReply): The reply configuration object
+- `from?` (object, optional): Custom sender information for the reply
+  - `name?` (string): Custom sender name. Defaults to the agent name if not provided
+  - `email?` (string): Custom sender email address. Defaults to the original recipient if not provided
 
 ##### Return Value
 
@@ -1024,6 +1027,9 @@ async function handler(request, response, context) {
         text: "Thank you for contacting us. We'll get back to you soon.",
         html: "<p>Thank you for contacting us. We'll get back to you soon.</p>",
         attachments: [attachment]
+    }, {
+        name: "Support Team",
+        email: "support@yourcompany.com"
     });
     
     context.logger.info("Reply sent successfully");
@@ -1046,6 +1052,13 @@ The `EmailReply` interface defines the structure for email reply configuration.
 - `text` (string): The plain text body of the reply
 - `html?` (string): The optional HTML body of the reply
 - `attachments?` (OutgoingEmailAttachment[]): Optional attachments to include
+- `from?` (object, optional): Custom sender information for the reply
+  - `name?` (string): Custom sender name. Defaults to the agent name if not provided
+  - `email?` (string): Custom sender email address. Defaults to the original recipient if not provided. Can only be overridden if custom email sending is enabled
+
+<Callout type="info">
+Using a custom email address in the reply requires organizational email domain setup. Please contact us if you would like to configure for your organization.
+</Callout>
 
 ### IncomingEmailAttachment Interface
 
