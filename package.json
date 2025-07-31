@@ -50,6 +50,9 @@
 		"wrangler": "^4.10.0"
 	},
 	"overrides": {
-		"esbuild": ">=0.25.0"
+		"esbuild": ">=0.25.0",
+		"gray-matter": {
+			"js-yaml": "^3.14.1"
+		}
 	}
 }
