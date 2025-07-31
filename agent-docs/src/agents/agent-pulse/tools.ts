@@ -35,7 +35,7 @@ export async function createTools(context: ToolContext) {
             if (!tutorialResponse.success || !tutorialResponse.data) {
                 return `Error fetching tutorial information`;
             }
-
+            
             const data = tutorialResponse.data
             const totalSteps = tutorialResponse.data.totalSteps;
             if (stepNumber > totalSteps) {
@@ -48,7 +48,6 @@ export async function createTools(context: ToolContext) {
                 totalSteps: tutorialResponse.data.totalSteps
             });
             agentContext.logger.info("Added start_tutorial action to state for: %s at step %d", tutorialId, stepNumber);
-            agentContext.logger.info(JSON.stringify(data))
             return `Starting "${data.title}". Total steps: ${data.totalSteps} \n\n Description: ${data.description}`;
         },
     });

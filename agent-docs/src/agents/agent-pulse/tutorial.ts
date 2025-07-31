@@ -58,13 +58,33 @@ export async function getTutorialMeta(tutorialId: string, ctx: AgentContext): Pr
       return { success: false, status: response.status, error: response.statusText };
     }
 
-    const tutorialData = await response.json() as Tutorial;
+    const tutorialData = await response.json() as ApiResponse<Tutorial>;
+    ctx.logger.info("tutorialData: " + JSON.stringify(tutorialData))
+
+    // Check if the API response indicates success
+    if (!tutorialData.success) {
+      ctx.logger.error('Tutorial API returned error: %s', tutorialData.error);
+      return {
+        success: false,
+        status: tutorialData.status,
+        error: tutorialData.error || 'Unknown error from tutorial API'
+      };
+    }
+
+    // Only proceed if we have valid data
+    if (!tutorialData.data) {
+      ctx.logger.error('Tutorial API returned success but no data');
+      return {
+        success: false,
+        error: 'No tutorial data received from API'
+      };
+    }
 
     const tutorial: Tutorial = {
-      id: tutorialData.id,
-      title: tutorialData.title,
-      description: tutorialData.description,
-      totalSteps: tutorialData.totalSteps
+      id: tutorialData.data.id,
+      title: tutorialData.data.title,
+      description: tutorialData.data.description,
+      totalSteps: tutorialData.data.totalSteps
     };
 
     return { success: true, data: tutorial };
