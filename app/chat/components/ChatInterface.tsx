@@ -8,6 +8,7 @@ import { SessionSidebar } from './SessionSidebar';
 import { useChatContext } from '../context/ChatContext';
 import { WelcomeScreen } from './WelcomeScreen';
 import { CodeEditor } from './CodeEditor';
+import { ChatMessagesArea } from './ChatMessagesArea';
 import { Menu, X } from 'lucide-react';
 import Split from 'react-split';
 import styles from './SplitPane.module.css';
@@ -42,6 +43,8 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
 
   // Check server status on component mount and session change
   useEffect(() => {
@@ -72,10 +75,29 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [serverRunning, currentSessionId]);
 
-  // Auto-scroll to bottom when new messages are added
+  // Check if user has scrolled up
+  const handleScroll = () => {
+    if (!messagesContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10;
+    setShouldAutoScroll(isAtBottom);
+  };
+
+  // Auto-scroll only if user is at bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (shouldAutoScroll) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, shouldAutoScroll]);
+
+  // Add scroll listener to the messages container
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      return () => container.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
 
   // Handle editor content change
   const handleEditorContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -127,7 +149,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
 
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col relative p-2 items-center">
-          <div className={`flex-1 flex flex-row overflow-hidden relative ${editorOpen ? 'w-full' : 'w-full md:w-3/4 max-w-4xl'}`}>
+          <div className={`flex-1 flex flex-row overflow-hidden relative w-full ${editorOpen ? 'max-w-none' : 'max-w-4xl mx-auto'}`}>
             {editorOpen ? (
               <Split
                 className={`flex w-full h-full ${styles.horizontal}`}
@@ -156,7 +178,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                     transform: translate(-50%, -50%);
                     width: 2px;
                     height: 20px;
-                    background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 0px, rgba(255, 255, 255, 0.3) 2px, transparent 2px, transparent 6px);
+                    background: repeating-linear-gradient(to bottom, rgba(0, 200, 255, 0.4) 0px, rgba(0, 200, 255, 0.4) 2px, transparent 2px, transparent 6px);
                     border-radius: 1px;
                     transition: background 0.2s ease;
                   `;
@@ -167,7 +189,7 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                   });
 
                   gutter.addEventListener('mouseleave', () => {
-                    dots.style.background = 'repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 0px, rgba(255, 255, 255, 0.3) 2px, transparent 2px, transparent 6px)';
+                    dots.style.background = 'repeating-linear-gradient(to bottom, rgba(0, 200, 255, 0.4) 0px, rgba(0, 200, 255, 0.4) 2px, transparent 2px, transparent 6px)';
                     gutter.style.backgroundColor = 'transparent';
                   });
 
@@ -176,32 +198,18 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
                 }}
               >
                 {/* Chat Messages Area */}
-                <div className="flex-1 flex flex-col min-w-0">
-                  {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 agentuity-scrollbar">
-                    {messages.length === 0 && (
-                      <WelcomeScreen sendMessage={sendMessage} />
-                    )}
-
-                    {messages.map((message) => (
-                      <ChatMessageComponent
-                        key={message.id}
-                        message={message}
-                        onCodeExecute={executeCode}
-                        onCodeChange={handleCodeChange}
-                        executionState={message.codeBlock?.filename && executingFiles.has(message.codeBlock.filename) ? 'running' : 'idle'}
-                      />
-                    ))}
-                    <div ref={messagesEndRef} />
-                  </div>
-
-                  <ChatInput
-                    currentInput={currentInput}
-                    setCurrentInput={setCurrentInput}
-                    loading={loading}
-                    sendMessage={sendMessage}
-                  />
-                </div>
+                <ChatMessagesArea
+                  messages={messages}
+                  messagesContainerRef={messagesContainerRef}
+                  messagesEndRef={messagesEndRef}
+                  currentInput={currentInput}
+                  setCurrentInput={setCurrentInput}
+                  loading={loading}
+                  sendMessage={sendMessage}
+                  executeCode={executeCode}
+                  handleCodeChange={handleCodeChange}
+                  executingFiles={executingFiles}
+                />
 
                 {/* Code Editor Component */}
                 <CodeEditor
@@ -217,32 +225,18 @@ export function ChatInterface({ sessionId }: ChatInterfaceProps) {
               </Split>
             ) : (
               // Regular chat view when editor is closed
-              <div className="flex-1 flex flex-col min-w-0">
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 agentuity-scrollbar">
-                  {messages.length === 0 && (
-                    <WelcomeScreen sendMessage={sendMessage} />
-                  )}
-
-                  {messages.map((message) => (
-                    <ChatMessageComponent
-                      key={message.id}
-                      message={message}
-                      onCodeExecute={executeCode}
-                      onCodeChange={handleCodeChange}
-                      executionState={message.codeBlock?.filename && executingFiles.has(message.codeBlock.filename) ? 'running' : 'idle'}
-                    />
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                <ChatInput
-                  currentInput={currentInput}
-                  setCurrentInput={setCurrentInput}
-                  loading={loading}
-                  sendMessage={sendMessage}
-                />
-              </div>
+              <ChatMessagesArea
+                messages={messages}
+                messagesContainerRef={messagesContainerRef}
+                messagesEndRef={messagesEndRef}
+                currentInput={currentInput}
+                setCurrentInput={setCurrentInput}
+                loading={loading}
+                sendMessage={sendMessage}
+                executeCode={executeCode}
+                handleCodeChange={handleCodeChange}
+                executingFiles={executingFiles}
+              />
             )}
           </div>
         </div>

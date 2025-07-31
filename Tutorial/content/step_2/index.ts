@@ -1,4 +1,5 @@
 import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+import OpenAI from "openai";
 
 export default async function CustomerSupportAgent(
   request: AgentRequest,
@@ -7,23 +8,32 @@ export default async function CustomerSupportAgent(
 ) {
   // Log that we received a request
   context.logger.info("Customer support agent received request");
-  
+
   // Get the trigger type and request data
   const triggerType = request.trigger;
   const requestText = await request.data.text();
-  
-  // Log request details
-  context.logger.info("Request details", {
-    trigger: triggerType,
-    data: requestText,
-    timestamp: new Date().toISOString()
-  });
 
-  // Return a JSON response acknowledging the user's request
-  return response.json({
-    message: `Thank you for your request. Our agent is working on your request: ${JSON.stringify(requestText)}`,
-    status: "processing",
-    trigger: triggerType,
-    timestamp: new Date().toISOString(),
-  });
+  // Initialize OpenAI client
+  const openai = new OpenAI();
+
+  try {
+    // Call OpenAI API
+    const completion = await openai.chat.completions.create({
+      messages: [{ role: "user", content: requestText }],
+      model: "gpt-3.5-turbo",
+    });
+    const aiResponse = completion.choices[0]?.message?.content ?? "No response generated";
+
+    return response.json({
+      message: aiResponse,
+      status: "success"
+    });
+
+  } catch (error) {
+    context.logger.error("OpenAI API error: %s", error);
+    return response.json({
+      message: "Sorry, I encountered an error processing your request.",
+      status: "error"
+    });
+  }
 }

@@ -8,7 +8,6 @@ import {
   ChevronRight,
   User,
   X,
-  Calendar,
   Clock
 } from 'lucide-react';
 import { AgentuityLogo } from '@/components/icons/AgentuityLogo';

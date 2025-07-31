@@ -8,13 +8,10 @@ export default async function CustomerSupportAgent(
   // Log that we received a request
   context.logger.info("Customer support agent received request");
   
-  // Get the trigger type and request data
-  const triggerType = request.trigger;
   const requestText = await request.data.text();
   
   // Log request details
   context.logger.info("Request details", {
-    trigger: triggerType,
     data: requestText,
     timestamp: new Date().toISOString()
   });
@@ -22,8 +19,6 @@ export default async function CustomerSupportAgent(
   // Return a JSON response acknowledging the user's request
   return response.json({
     message: `Thank you for your request. Our agent is working on your request: ${JSON.stringify(requestText)}`,
-    status: "processing",
-    trigger: triggerType,
     timestamp: new Date().toISOString(),
   });
 }

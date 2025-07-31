@@ -1,47 +1,15 @@
 'use client';
 
 import React from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { User } from 'lucide-react';
 import { AgentuityLogo } from '@/components/icons/AgentuityLogo';
 import { ChatMessageProps } from '../types';
 import CodeBlock from './CodeBlock';
 import { TutorialFileChip } from './TutorialFileChip';
 import { useChatContext } from '../context/ChatContext';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
-// Helper functions for markdown processing
-const extractCodeFromChildren = (children: React.ReactNode) => {
-  const codeElement = React.Children.toArray(children)[0] as React.ReactElement<{
-    className?: string;
-    children?: React.ReactNode;
-  }>;
-  const className = codeElement?.props?.className || '';
-  const language = className.replace('language-', '');
-  const code = typeof codeElement?.props?.children === 'string'
-    ? codeElement.props.children
-    : String(codeElement?.props?.children || '');
 
-  return { code, language };
-};
-
-const isExecutableLanguage = (language: string) => {
-  const executableExtensions = ['js', 'javascript', 'py', 'python', 'ts', 'typescript'];
-  return executableExtensions.includes(language);
-};
-
-const getFilenameForLanguage = (language: string) => {
-  switch (language) {
-    case 'py':
-    case 'python':
-      return 'index.py';
-    case 'ts':
-    case 'typescript':
-      return 'agent.ts';
-    default:
-      return 'index.js';
-  }
-};
 export function ChatMessageComponent({
   message,
   onCodeExecute,
@@ -80,64 +48,21 @@ export function ChatMessageComponent({
 
           {message.type === 'assistant' ? (
             <div className="prose prose-sm max-w-none prose-invert text-sm text-gray-200">
-              {/* Show typing indicator if content is empty */}
-              {message.content === '' && (
-                <div className="flex items-center gap-2 text-gray-400 mb-2">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              {/* Enhanced typing indicator */}
+              {message.content === '' ? (
+                <div className="flex items-center gap-4 text-gray-300 mb-4">
+                  <div className="flex space-x-2">
+                    <div className="w-3 h-3 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite]"></div>
+                    <div className="w-3 h-3 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite_0.2s]"></div>
+                    <div className="w-3 h-3 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite_0.4s]"></div>
                   </div>
-                  <span className="text-xs">Agent is thinking...</span>
+                  <span className="text-sm tracking-wide text-gray-200">Agent is processing...</span>
                 </div>
+              ) : (
+                <MarkdownRenderer
+                  content={message.content}
+                />
               )}
-              
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  pre: ({ children }) => {
-                    const { code, language } = extractCodeFromChildren(children);
-
-                    if (isExecutableLanguage(language)) {
-                      const filename = getFilenameForLanguage(language);
-
-                      return (
-                        <CodeBlock
-                          filename={filename}
-                          content={code}
-                          language={language}
-                          editable={true}
-                          onExecute={onCodeExecute}
-                          onCodeChange={(code) => onCodeChange(code, filename)}
-                          executionResult={message.execution ? { ...message.execution, success: !message.execution.error } : undefined}
-                          loading={executionState === 'running'}
-                        />
-                      );
-                    }
-
-                    // Regular code block (non-executable)
-                    return (
-                      <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg overflow-x-auto">
-                        <code className={`text-sm language-${language}`}>
-                          {code}
-                        </code>
-                      </pre>
-                    );
-                  },
-                  code: ({ children, className, ...props }) => {
-                    if (!className) {
-                      return (
-                        <code className="break-words whitespace-pre-wrap bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm" {...props}>
-                          {children}
-                        </code>
-                      );
-                    }
-                    return <code {...props}>{children}</code>;
-                  }
-                }}
-              >
-                {message.content}
-              </ReactMarkdown>
             </div>
           ) : (
             <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
@@ -154,14 +79,8 @@ export function ChatMessageComponent({
               />
             ) : (
               <CodeBlock
-                filename={message.codeBlock.filename}
                 content={message.codeBlock.content}
                 language={message.codeBlock.language}
-                editable={message.codeBlock.editable}
-                onExecute={onCodeExecute}
-                onCodeChange={(code) => onCodeChange(code, message.codeBlock!.filename)}
-                executionResult={message.execution ? { ...message.execution, success: !message.execution.error } : undefined}
-                loading={executionState === 'running'}
               />
             )}
           </div>

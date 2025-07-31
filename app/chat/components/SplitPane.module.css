@@ -21,12 +21,12 @@
   height: 20px !important;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(255, 255, 255, 0.3) 0px,
-    rgba(255, 255, 255, 0.3) 2px,
+    rgba(0, 200, 255, 0.4) 0px,
+    rgba(0, 200, 255, 0.4) 2px,
     transparent 2px,
     transparent 6px
   ) !important;
-  border-radius: 1px !important;
+
   transition: background 0.2s ease !important;
 }
 
@@ -52,8 +52,8 @@
   height: 2px !important;
   background: repeating-linear-gradient(
     to right,
-    rgba(255, 255, 255, 0.3) 0px,
-    rgba(255, 255, 255, 0.3) 2px,
+    rgba(0, 200, 255, 0.4) 0px,
+    rgba(0, 200, 255, 0.4) 2px,
     transparent 2px,
     transparent 6px
   ) !important;
