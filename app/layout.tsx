@@ -7,7 +7,10 @@ import "./global.css";
 
 // Validate environment variables at startup (server-side only)
 if (typeof window === 'undefined') {
-	validateEnv();
+	const isValid = validateEnv();
+	if (!isValid) {
+		console.warn('Environment validation failed during build – this is expected at build time');
+	}
 }
 
 export const metadata: Metadata = {
