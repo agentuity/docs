@@ -24,7 +24,6 @@
 		"fumadocs-twoslash": "^3.1.0",
 		"fumadocs-ui": "^15.6.1",
 		"geist": "^1.4.2",
-		"gray-matter": "^4.0.3",
 		"lucide-react": "^0.525.0",
 		"mermaid": "^11.6.0",
 		"motion": "^12.12.2",
@@ -50,9 +49,6 @@
 		"wrangler": "^4.10.0"
 	},
 	"overrides": {
-		"esbuild": ">=0.25.0",
-		"gray-matter": {
-			"js-yaml": "^3.14.1"
-		}
+		"esbuild": ">=0.25.0"
 	}
 }
