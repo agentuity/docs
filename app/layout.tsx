@@ -7,7 +7,10 @@ import "./global.css";
 
 // Validate environment variables at startup (server-side only)
 if (typeof window === 'undefined') {
-	validateEnv();
+	const isValid = validateEnv();
+	if (!isValid) {
+		console.warn('Environment validation failed during build – this is expected at build time');
+	}
 }
 
 export const metadata: Metadata = {
@@ -88,7 +91,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 	return (
 		<html lang="en" className={GeistSans.className} suppressHydrationWarning>
 			<body className="flex flex-col min-h-screen antialiased">
-				<RootProvider 
+				<RootProvider
 					theme={{ enabled: true, enableSystem: true }}
 				>
 					{children}

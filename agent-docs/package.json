@@ -34,5 +34,10 @@
     "langchain": "^0.3.28",
     "vitest": "^3.2.3"
   },
+  "overrides": {
+    "gray-matter": {
+      "js-yaml": "^3.14.1"
+    }
+  },
   "module": "index.ts"
 }
