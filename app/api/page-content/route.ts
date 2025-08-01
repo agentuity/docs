@@ -1,7 +1,13 @@
 import { NextRequest } from 'next/server';
-import { readFile } from 'fs/promises';
-import { join } from 'path';
-import matter from 'gray-matter';
+import docsJson from '@/content/docs.json';
+
+interface Doc {
+  file: string;
+  meta: Record<string, unknown>;
+  content: string;
+}
+
+const docs = docsJson.docs as Doc[];
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,28 +22,20 @@ export async function GET(request: NextRequest) {
       return new Response('Invalid path parameter', { status: 400 });
     }
     
-    const basePath = join(process.cwd(), 'content');
-    const indexPath = join(basePath, path, 'index.mdx');
-    const directPath = join(basePath, `${path}.mdx`);
+    const doc = docs.find(d => 
+      d.file === `${path}.mdx` ||
+      d.file === `${path}/index.mdx` ||
+      d.file === path
+    );
     
-    let fileContent: string;
-    
-    try {
-      fileContent = await readFile(indexPath, 'utf-8');
-    } catch {
-      try {
-        fileContent = await readFile(directPath, 'utf-8');
-      } catch {
-        return new Response('Page not found', { status: 404 });
-      }
+    if (!doc) {
+      return new Response('Page not found', { status: 404 });
     }
     
-    const { content, data } = matter(fileContent);
-    
     return Response.json({
-      content,
-      title: data.title || '',
-      description: data.description || '',
+      content: doc.content,
+      title: doc.meta.title || '',
+      description: doc.meta.description || '',
       path
     });
   } catch (error) {
