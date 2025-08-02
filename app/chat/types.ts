@@ -5,7 +5,6 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   codeBlock?: CodeBlock;
-  execution?: ExecutionResult;
 }
 
 export interface CodeBlock {
@@ -13,14 +12,6 @@ export interface CodeBlock {
   content: string;
   language: string;
   editable: boolean;
-}
-
-export interface ExecutionResult {
-  output: string;
-  error?: string;
-  executionTime: number;
-  exitCode: number;
-  success?: boolean;
 }
 
 // Session types
@@ -47,15 +38,6 @@ export interface ExecuteResponse {
   exitCode?: number;
 }
 
-export interface CreateSessionResponse {
-  sessionId: string;
-  createdAt: string;
-}
-
-export interface ChatRequest {
-  message: string;
-  sessionId: string;
-}
 
 // New agent response types that match the backend
 export interface ConversationMessage {
@@ -103,22 +85,13 @@ export interface AgentStreamingRequest {
 }
 
 // Execution stream event types
-export type ExecutionEventType = 
-  | 'status' 
-  | 'stdout' 
-  | 'stderr' 
-  | 'close' 
-  | 'timeout' 
+export type ExecutionEventType =
+  | 'status'
+  | 'stdout'
+  | 'stderr'
+  | 'close'
+  | 'timeout'
   | 'error';
-
-export interface ExecutionEvent {
-  type: ExecutionEventType;
-  data?: string;
-  message?: string;
-  exitCode?: number;
-  error?: string;
-  timestamp: string;
-}
 
 // Component props
 export interface ChatInterfaceProps {
@@ -135,17 +108,6 @@ export interface ChatMessageProps {
 
 export type ExecutionState = 'idle' | 'running' | 'completed' | 'error';
 
-export interface CodeBlockProps {
-  filename: string;
-  content: string;
-  language: string;
-  editable: boolean;
-  onExecute: (code: string, filename: string) => Promise<void>;
-  onCodeChange: (code: string) => void;
-  executionResult?: ExecutionResult;
-  loading?: boolean;
-}
-
 export interface ChatInputProps {
   currentInput: string;
   setCurrentInput: (value: string) => void;
@@ -159,13 +121,3 @@ export interface SessionSidebarProps {
   onSessionSelect: (sessionId: string) => void;
   onNewSession: () => void;
 }
-
-export interface ErrorBoundaryProps {
-  children: React.ReactNode;
-  fallback: React.ReactNode;
-}
-
-export interface ErrorBoundaryState {
-  hasError: boolean;
-  error?: Error;
-} 
