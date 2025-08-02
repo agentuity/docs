@@ -105,6 +105,7 @@ export function CodeEditor({
           <div className="h-full flex flex-col min-h-0">
             <textarea
               value={editorContent}
+              spellCheck={false}
               onChange={handleEditorContentChange}
               className="flex-1 w-full p-2 md:p-4 text-white font-mono text-sm resize-none min-h-0 bg-transparent border-none outline-none "
               placeholder="Write your TypeScript agent code here..."
