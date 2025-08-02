@@ -39,12 +39,6 @@ export interface ExecuteResponse {
 }
 
 
-// New agent response types that match the backend
-export interface ConversationMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
-
 export interface TutorialStep {
   title: string;
   readmeContent: string;
@@ -59,14 +53,6 @@ export interface TutorialData {
   tutorialStep: TutorialStep;
 }
 
-export interface AgentResponse {
-  response: string;
-  conversationHistory: ConversationMessage[];
-  tutorialData?: TutorialData;
-  error?: string;
-  details?: string;
-}
-
 // Streaming support types
 export interface StreamingChunk {
   type: 'text-delta' | 'status' | 'tutorial-data' | 'error' | 'finish';
@@ -78,20 +64,17 @@ export interface StreamingChunk {
   details?: string;
 }
 
+// New agent response types that match the backend
+export interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export interface AgentStreamingRequest {
   message: string;
   conversationHistory: ConversationMessage[];
   tutorialData?: TutorialData;
 }
-
-// Execution stream event types
-export type ExecutionEventType =
-  | 'status'
-  | 'stdout'
-  | 'stderr'
-  | 'close'
-  | 'timeout'
-  | 'error';
 
 // Component props
 export interface ChatInterfaceProps {
