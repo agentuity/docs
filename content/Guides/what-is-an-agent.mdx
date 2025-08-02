@@ -1,7 +1,64 @@
 ---
 title: What is an Agent?
-description: How we define an Agent
+description: How we define an Agent - Understanding the difference between APIs and AI agents, and why agents need specialized cloud infrastructure
 ---
+
+import Script from 'next/script';
+
+<Script
+	id="faq-schema"
+	type="application/ld+json"
+	strategy="afterInteractive"
+>
+	{`
+	{
+		"@context": "https://schema.org",
+		"@type": "FAQPage",
+		"mainEntity": [
+			{
+				"@type": "Question",
+				"name": "What is an AI agent?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "An AI agent is more like a smart assistant that can reason, plan, and act independently. Unlike APIs that just respond to commands, agents understand goals, adapt to changing conditions, and decide what to do next based on context. They don't just respond to commands; they can proactively get things done."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "How are agents different from APIs?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "APIs are like vending machines — you make a specific request, and they return exactly what you asked for. They're passive and require constant human coordination. Agents are autonomous actors that can decide how to achieve a goal, operate continuously, respond to changing context, and coordinate complex tasks without being told every step."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "Why isn't a traditional chatbot an AI agent?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "A traditional chatbot is like a scripted receptionist — it follows predefined rules, matches keywords, and responds with canned answers. An AI agent is more like a smart collaborator that can interpret intent, reason through complex tasks, take independent actions, and adapt in real time. A chatbot talks; an agent thinks and acts."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "What makes building agents different from traditional development?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "Traditional development is logic-driven where every behavior is explicitly programmed. Agent development is intent-driven — you use natural language prompts to guide behavior, and the agent interprets these prompts and autonomously figures out what to do. This allows you to build flexible systems with far less code and far more adaptability."
+				}
+			},
+			{
+				"@type": "Question",
+				"name": "Why do agents need an agent-native cloud?",
+				"acceptedAnswer": {
+					"@type": "Answer",
+					"text": "Traditional cloud computing is optimized for low latency and sessionless architectures. Agents demand a new paradigm — they focus on long-running, complex tasks that require context and coordination. They are stateful and require both short and long term memory. They need to be centralized, often close to data resources or high-bandwidth GPU clusters."
+				}
+			}
+		]
+	}
+	`}
+</Script>
 
 > But aren't agents just smart chat bots? 🤖
 
