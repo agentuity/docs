@@ -41,7 +41,10 @@ export default async function Page(props: {
 				path: `content/${page.file.path}`,
 			}}
 		>
-			<DocsTitle>{page.data.title}</DocsTitle>
+			<div className="flex items-center justify-between mb-4">
+				<DocsTitle className="mb-0">{page.data.title}</DocsTitle>
+				<CopyPageDropdown enhanced={true} />
+			</div>
 			<DocsDescription>{page.data.description}</DocsDescription>
 			<DocsBody>
 				<MDX

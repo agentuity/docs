@@ -94,9 +94,9 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
         {enhanced ? (
           <button 
             aria-label="Copy page options"
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors duration-200 shadow-sm"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors duration-200"
           >
-            <Copy className="size-4" />
+            <Copy className="size-3.5" />
             Copy page
           </button>
         ) : (
