@@ -239,12 +239,12 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
     <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
       <Popover.Trigger asChild>
         {enhanced ? (
-          <div className="inline-flex border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden">
+          <div className="inline-flex rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
             <button 
               onClick={handlePrimaryAction}
               disabled={isLoading}
               aria-label={`${primaryAction.label} (primary action)`}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 disabled:opacity-50 min-h-[44px] touch-manipulation"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 disabled:opacity-50 min-h-[44px] touch-manipulation rounded-l-md border-r border-gray-200 dark:border-gray-700"
             >
               <primaryAction.icon className="size-3.5" />
               {primaryAction.label}
@@ -252,7 +252,7 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
             <Popover.Trigger asChild>
               <button 
                 aria-label="More copy options"
-                className="inline-flex items-center px-2 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 min-h-[44px] min-w-[44px] touch-manipulation"
+                className="inline-flex items-center px-2 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 min-h-[44px] min-w-[44px] touch-manipulation rounded-r-md"
               >
                 <ChevronDown className="size-3.5" />
               </button>
