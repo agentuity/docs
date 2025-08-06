@@ -43,9 +43,6 @@ export default async function Page(props: {
 		>
 			<DocsTitle>{page.data.title}</DocsTitle>
 			<DocsDescription>{page.data.description}</DocsDescription>
-			<div className="mb-6">
-				<CopyPageDropdown enhanced={true} />
-			</div>
 			<DocsBody>
 				<MDX
 					components={{

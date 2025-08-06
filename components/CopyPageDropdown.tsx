@@ -93,11 +93,11 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
       <Popover.Trigger asChild>
         {enhanced ? (
           <button 
-            aria-label="Get AI assistance with this page"
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
+            aria-label="Copy page options"
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors duration-200 shadow-sm"
           >
-            <MessageSquare className="size-4" />
-            Ask AI
+            <Copy className="size-4" />
+            Copy page
           </button>
         ) : (
           <button 
