@@ -86,9 +86,36 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
     const markdownForLLM = formatMarkdownForLLM(content);
     
     try {
-      await navigator.clipboard.writeText(markdownForLLM);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(markdownForLLM);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = markdownForLLM;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
+      const textArea = document.createElement('textarea');
+      textArea.value = markdownForLLM;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+      } catch (fallbackError) {
+        console.error('Fallback copy also failed:', fallbackError);
+      }
+      document.body.removeChild(textArea);
     }
     setIsOpen(false);
   };
@@ -100,8 +127,28 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
     const markdownForLLM = formatMarkdownForLLM(content);
     const blob = new Blob([markdownForLLM], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-    setTimeout(() => URL.revokeObjectURL(url), 100);
+    
+    try {
+      const newWindow = window.open(url, '_blank');
+      if (!newWindow) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${content.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      console.error('Failed to open markdown view:', error);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${content.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
     setIsOpen(false);
   };
 
@@ -111,7 +158,16 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
     
     const markdownForLLM = formatMarkdownForLLM(content);
     const chatGPTUrl = `https://chatgpt.com/?q=${encodeURIComponent(`Please help me understand this documentation:\n\n${markdownForLLM}`)}`;
-    window.open(chatGPTUrl, '_blank');
+    
+    try {
+      const newWindow = window.open(chatGPTUrl, '_blank');
+      if (!newWindow) {
+        window.location.href = chatGPTUrl;
+      }
+    } catch (error) {
+      console.error('Failed to open ChatGPT:', error);
+      window.location.href = chatGPTUrl;
+    }
     setIsOpen(false);
   };
 
@@ -121,7 +177,16 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
     
     const markdownForLLM = formatMarkdownForLLM(content);
     const claudeUrl = `https://claude.ai/new?q=${encodeURIComponent(`Please help me understand this documentation:\n\n${markdownForLLM}`)}`;
-    window.open(claudeUrl, '_blank');
+    
+    try {
+      const newWindow = window.open(claudeUrl, '_blank');
+      if (!newWindow) {
+        window.location.href = claudeUrl;
+      }
+    } catch (error) {
+      console.error('Failed to open Claude:', error);
+      window.location.href = claudeUrl;
+    }
     setIsOpen(false);
   };
 
@@ -179,7 +244,7 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
               onClick={handlePrimaryAction}
               disabled={isLoading}
               aria-label={`${primaryAction.label} (primary action)`}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 disabled:opacity-50 min-h-[44px] touch-manipulation"
             >
               <primaryAction.icon className="size-3.5" />
               {primaryAction.label}
@@ -187,7 +252,7 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
             <Popover.Trigger asChild>
               <button 
                 aria-label="More copy options"
-                className="inline-flex items-center px-1.5 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                className="inline-flex items-center px-2 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 min-h-[44px] min-w-[44px] touch-manipulation"
               >
                 <ChevronDown className="size-3.5" />
               </button>
@@ -208,6 +273,7 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
         className="w-64 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50"
         align="end"
         sideOffset={8}
+        onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div className="flex flex-col gap-1">
           {actionConfigs.map((action) => (
@@ -215,7 +281,7 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
               key={action.id}
               onClick={() => handleActionSelect(action.id)} 
               disabled={isLoading}
-              className={`flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-left disabled:opacity-50 ${
+              className={`flex items-center gap-2 w-full p-3 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-left disabled:opacity-50 min-h-[44px] touch-manipulation ${
                 action.id === preferredAction ? 'bg-gray-100 dark:bg-gray-700' : ''
               }`}
             >
