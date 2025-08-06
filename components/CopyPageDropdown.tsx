@@ -33,6 +33,7 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [preferredAction, setPreferredAction] = useState<ActionType>('copy-markdown');
+  const [isInitialized, setIsInitialized] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -43,6 +44,8 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
       }
     } catch (error) {
       console.error('Failed to load copy preference:', error);
+    } finally {
+      setIsInitialized(true);
     }
   }, []);
 
@@ -162,6 +165,10 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
       await action.handler();
     }
   };
+
+  if (!isInitialized) {
+    return null;
+  }
 
   return (
     <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
