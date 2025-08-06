@@ -12,7 +12,11 @@ interface PageContent {
   path: string;
 }
 
-export default function CopyPageDropdown() {
+interface CopyPageDropdownProps {
+  enhanced?: boolean;
+}
+
+export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const pathname = usePathname();
@@ -87,12 +91,22 @@ export default function CopyPageDropdown() {
   return (
     <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
       <Popover.Trigger asChild>
-        <button 
-          aria-label="Copy page options"
-          className="flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 transform-origin-center border border-gray-200 dark:border-cyan-900 rounded-md size-10 hover:border-cyan-300 dark:hover:border-cyan-600"
-        >
-          <Copy className="size-4 text-cyan-700 dark:text-cyan-500" />
-        </button>
+        {enhanced ? (
+          <button 
+            aria-label="Get AI assistance with this page"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
+          >
+            <MessageSquare className="size-4" />
+            Ask AI
+          </button>
+        ) : (
+          <button 
+            aria-label="Copy page options"
+            className="flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 transform-origin-center border border-gray-200 dark:border-cyan-900 rounded-md size-10 hover:border-cyan-300 dark:hover:border-cyan-600"
+          >
+            <Copy className="size-4 text-cyan-700 dark:text-cyan-500" />
+          </button>
+        )}
       </Popover.Trigger>
       <Popover.Content 
         className="w-64 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50"

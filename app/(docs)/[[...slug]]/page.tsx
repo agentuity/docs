@@ -18,6 +18,7 @@ import {
 import { notFound } from "next/navigation";
 import { CommunityButton } from "../../../components/Community";
 import { NavButton } from "../../../components/NavButton";
+import CopyPageDropdown from "../../../components/CopyPageDropdown";
 
 export default async function Page(props: {
 	params: Promise<{ slug?: string[] }>;
@@ -42,6 +43,9 @@ export default async function Page(props: {
 		>
 			<DocsTitle>{page.data.title}</DocsTitle>
 			<DocsDescription>{page.data.description}</DocsDescription>
+			<div className="mb-6">
+				<CopyPageDropdown enhanced={true} />
+			</div>
 			<DocsBody>
 				<MDX
 					components={{
