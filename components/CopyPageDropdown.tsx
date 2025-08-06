@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Copy, ExternalLink, FileText, MessageSquare } from 'lucide-react';
+import { Copy, FileText, ChevronDown } from 'lucide-react';
 import * as Popover from '@radix-ui/react-popover';
+import { OpenAIIcon } from './icons/OpenAIIcon';
+import { ClaudeIcon } from './icons/ClaudeIcon';
 
 interface PageContent {
   content: string;
@@ -12,14 +14,46 @@ interface PageContent {
   path: string;
 }
 
+type ActionType = 'copy-markdown' | 'view-markdown' | 'open-chatgpt' | 'open-claude';
+
+interface ActionConfig {
+  id: ActionType;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  handler: () => Promise<void>;
+}
+
 interface CopyPageDropdownProps {
   enhanced?: boolean;
 }
 
+const STORAGE_KEY = 'agentuity-copy-preference';
+
 export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [preferredAction, setPreferredAction] = useState<ActionType>('copy-markdown');
   const pathname = usePathname();
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored && ['copy-markdown', 'view-markdown', 'open-chatgpt', 'open-claude'].includes(stored)) {
+        setPreferredAction(stored as ActionType);
+      }
+    } catch (error) {
+      console.error('Failed to load copy preference:', error);
+    }
+  }, []);
+
+  const savePreference = (action: ActionType) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, action);
+      setPreferredAction(action);
+    } catch (error) {
+      console.error('Failed to save copy preference:', error);
+    }
+  };
 
   const formatMarkdownForLLM = (content: PageContent): string => {
     return `# ${content.title}\n\n${content.description ? `${content.description}\n\n` : ''}${content.content}`;
@@ -88,24 +122,79 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
     setIsOpen(false);
   };
 
+  const actionConfigs: ActionConfig[] = [
+    {
+      id: 'copy-markdown',
+      label: 'Copy as Markdown',
+      icon: Copy,
+      handler: handleCopyMarkdown
+    },
+    {
+      id: 'view-markdown',
+      label: 'View as Markdown',
+      icon: FileText,
+      handler: handleViewMarkdown
+    },
+    {
+      id: 'open-chatgpt',
+      label: 'Open in ChatGPT',
+      icon: OpenAIIcon,
+      handler: handleOpenInChatGPT
+    },
+    {
+      id: 'open-claude',
+      label: 'Open in Claude',
+      icon: ClaudeIcon,
+      handler: handleOpenInClaude
+    }
+  ];
+
+  const primaryAction = actionConfigs.find(action => action.id === preferredAction) || actionConfigs[0];
+
+  const handlePrimaryAction = async () => {
+    await primaryAction.handler();
+  };
+
+  const handleActionSelect = async (actionId: ActionType) => {
+    savePreference(actionId);
+    const action = actionConfigs.find(a => a.id === actionId);
+    if (action) {
+      await action.handler();
+    }
+  };
+
   return (
     <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
       <Popover.Trigger asChild>
         {enhanced ? (
-          <button 
-            aria-label="Copy page options"
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors duration-200"
-          >
-            <Copy className="size-3.5" />
-            Copy page
-          </button>
+          <div className="inline-flex border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden">
+            <button 
+              onClick={handlePrimaryAction}
+              disabled={isLoading}
+              aria-label={`${primaryAction.label} (primary action)`}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 disabled:opacity-50"
+            >
+              <primaryAction.icon className="size-3.5" />
+              {primaryAction.label}
+            </button>
+            <Popover.Trigger asChild>
+              <button 
+                aria-label="More copy options"
+                className="inline-flex items-center px-1.5 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+              >
+                <ChevronDown className="size-3.5" />
+              </button>
+            </Popover.Trigger>
+          </div>
         ) : (
-          <button 
-            aria-label="Copy page options"
-            className="flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 transform-origin-center border border-gray-200 dark:border-cyan-900 rounded-md size-10 hover:border-cyan-300 dark:hover:border-cyan-600"
-          >
-            <Copy className="size-4 text-cyan-700 dark:text-cyan-500" />
-          </button>
+          <Popover.Trigger asChild>
+            <button 
+              aria-label="Copy page options"
+              className="flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 transform-origin-center border border-gray-200 dark:border-cyan-900 rounded-md size-10 hover:border-cyan-300 dark:hover:border-cyan-600"
+            >
+              <Copy className="size-4 text-cyan-700 dark:text-cyan-500" />
+            </button>
+          </Popover.Trigger>
         )}
       </Popover.Trigger>
       <Popover.Content 
@@ -114,38 +203,22 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
         sideOffset={8}
       >
         <div className="flex flex-col gap-1">
-          <button 
-            onClick={handleCopyMarkdown} 
-            disabled={isLoading}
-            className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-left disabled:opacity-50"
-          >
-            <Copy className="size-4" />
-            Copy as Markdown for LLMs
-          </button>
-          <button 
-            onClick={handleViewMarkdown} 
-            disabled={isLoading}
-            className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-left disabled:opacity-50"
-          >
-            <FileText className="size-4" />
-            View as Markdown
-          </button>
-          <button 
-            onClick={handleOpenInChatGPT} 
-            disabled={isLoading}
-            className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-left disabled:opacity-50"
-          >
-            <MessageSquare className="size-4" />
-            Open in ChatGPT
-          </button>
-          <button 
-            onClick={handleOpenInClaude} 
-            disabled={isLoading}
-            className="flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-left disabled:opacity-50"
-          >
-            <ExternalLink className="size-4" />
-            Open in Claude
-          </button>
+          {actionConfigs.map((action) => (
+            <button 
+              key={action.id}
+              onClick={() => handleActionSelect(action.id)} 
+              disabled={isLoading}
+              className={`flex items-center gap-2 w-full p-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-left disabled:opacity-50 ${
+                action.id === preferredAction ? 'bg-gray-100 dark:bg-gray-700' : ''
+              }`}
+            >
+              <action.icon className="size-4" />
+              {action.label}
+              {action.id === preferredAction && (
+                <span className="ml-auto text-xs text-gray-500 dark:text-gray-400">Default</span>
+              )}
+            </button>
+          ))}
         </div>
       </Popover.Content>
     </Popover.Root>
