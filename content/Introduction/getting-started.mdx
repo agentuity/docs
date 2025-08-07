@@ -1,9 +1,119 @@
 ---
 title: Getting Started
-description: Get started with Agentuity in minutes
+description: Get started with Agentuity in minutes - Learn how to deploy AI agents to the cloud with our step-by-step guide
 ---
 
 import { Step, Steps } from 'fumadocs-ui/components/steps';
+import Script from 'next/script';
+
+<Script
+	id="howto-schema"
+	type="application/ld+json"
+	strategy="afterInteractive"
+>
+	{`
+	{
+		"@context": "https://schema.org",
+		"@type": "HowTo",
+		"name": "How to Get Started with Agentuity - Deploy AI Agents to the Cloud",
+		"description": "Complete step-by-step guide to get started with Agentuity, from creating an account to deploying your first AI agent to the cloud in minutes.",
+		"image": "https://www.agentuity.dev/og-image.png",
+		"totalTime": "PT10M",
+		"estimatedCost": {
+			"@type": "MonetaryAmount",
+			"currency": "USD",
+			"value": "0"
+		},
+		"supply": [
+			{
+				"@type": "HowToSupply",
+				"name": "Computer with internet connection"
+			},
+			{
+				"@type": "HowToSupply", 
+				"name": "Terminal or command line access"
+			}
+		],
+		"tool": [
+			{
+				"@type": "HowToTool",
+				"name": "Agentuity CLI",
+				"url": "https://agentuity.dev/CLI/installation"
+			}
+		],
+		"step": [
+			{
+				"@type": "HowToStep",
+				"position": 1,
+				"name": "Create a Free Account",
+				"text": "Create a free Agentuity account or sign in to the cloud portal. You can also signup using the CLI if you prefer.",
+				"url": "https://app.agentuity.com/sign-up",
+				"image": "https://www.agentuity.dev/og-image.png"
+			},
+			{
+				"@type": "HowToStep",
+				"position": 2,
+				"name": "Install the CLI",
+				"text": "Install the Agentuity CLI, a cross-platform command-line tool for working with Agentuity Cloud. It supports Windows (using WSL), MacOS, and Linux.",
+				"url": "https://agentuity.dev/CLI/installation",
+				"image": "https://www.agentuity.dev/og-image.png"
+			},
+			{
+				"@type": "HowToStep",
+				"position": 3,
+				"name": "Sign up for an Account with the CLI",
+				"text": "You can sign up for a free account using the CLI or skip this step if you already have an account.",
+				"url": "https://agentuity.dev/CLI/auth",
+				"image": "https://www.agentuity.dev/og-image.png"
+			},
+			{
+				"@type": "HowToStep",
+				"position": 4,
+				"name": "Login to Agentuity",
+				"text": "You can skip this step if you used the CLI to sign up for an account, otherwise you must login to your account using the CLI.",
+				"url": "https://agentuity.dev/CLI/auth",
+				"image": "https://www.agentuity.dev/og-image.png"
+			},
+			{
+				"@type": "HowToStep",
+				"position": 5,
+				"name": "Create Your First Project",
+				"text": "You can select a template to get started quickly with pre-built agent examples.",
+				"url": "https://agentuity.dev/CLI/project",
+				"image": "https://www.agentuity.dev/og-image.png"
+			},
+			{
+				"@type": "HowToStep",
+				"position": 6,
+				"name": "Run Your Agent Locally",
+				"text": "You can run your agent locally to test it out before you deploy it to the cloud.",
+				"url": "https://agentuity.dev/CLI/dev",
+				"image": "https://www.agentuity.dev/og-image.png"
+			},
+			{
+				"@type": "HowToStep",
+				"position": 7,
+				"name": "Deploy Your Project to the Cloud",
+				"text": "Deploy your agent to the cloud and start using it! The deployment process is automated and takes just a few minutes.",
+				"url": "https://agentuity.dev/CLI/cloud",
+				"image": "https://www.agentuity.dev/og-image.png"
+			}
+		],
+		"about": [
+			{
+				"@type": "Thing",
+				"name": "AI Agents",
+				"description": "Autonomous artificial intelligence systems"
+			},
+			{
+				"@type": "Thing",
+				"name": "Cloud Deployment",
+				"description": "Deploying applications to cloud infrastructure"
+			}
+		]
+	}
+	`}
+</Script>
 
 <Steps>
 <Step>
