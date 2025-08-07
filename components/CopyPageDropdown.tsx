@@ -237,38 +237,36 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
 
   return (
     <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
-      <Popover.Trigger asChild>
-        {enhanced ? (
-          <div className="inline-flex rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
-            <button 
-              onClick={handlePrimaryAction}
-              disabled={isLoading}
-              aria-label={`${primaryAction.label} (primary action)`}
-              className="inline-flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 disabled:opacity-50 touch-manipulation rounded-l-md border-r border-gray-200 dark:border-gray-700"
-            >
-              <primaryAction.icon className="size-3.5" />
-              {primaryAction.label}
-            </button>
-            <Popover.Trigger asChild>
-              <button 
-                aria-label="More copy options"
-                className="inline-flex items-center px-1.5 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation rounded-r-md"
-              >
-                <ChevronDown className="size-3.5" />
-              </button>
-            </Popover.Trigger>
-          </div>
-        ) : (
+      {enhanced ? (
+        <div className="inline-flex rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
+          <button 
+            onClick={handlePrimaryAction}
+            disabled={isLoading}
+            aria-label={`${primaryAction.label} (primary action)`}
+            className="inline-flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 disabled:opacity-50 touch-manipulation rounded-l-md border-r border-gray-200 dark:border-gray-700"
+          >
+            <primaryAction.icon className="size-3.5" />
+            {primaryAction.label}
+          </button>
           <Popover.Trigger asChild>
             <button 
-              aria-label="Copy page options"
-              className="flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 transform-origin-center border border-gray-200 dark:border-cyan-900 rounded-md size-10 hover:border-cyan-300 dark:hover:border-cyan-600"
+              aria-label="More copy options"
+              className="inline-flex items-center px-1.5 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 touch-manipulation rounded-r-md"
             >
-              <Copy className="size-4 text-cyan-700 dark:text-cyan-500" />
+              <ChevronDown className="size-3.5" />
             </button>
           </Popover.Trigger>
-        )}
-      </Popover.Trigger>
+        </div>
+      ) : (
+        <Popover.Trigger asChild>
+          <button 
+            aria-label="Copy page options"
+            className="flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 transform-origin-center border border-gray-200 dark:border-cyan-900 rounded-md size-10 hover:border-cyan-300 dark:hover:border-cyan-600"
+          >
+            <Copy className="size-4 text-cyan-700 dark:text-cyan-500" />
+          </button>
+        </Popover.Trigger>
+      )}
       <Popover.Content 
         className="w-64 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50"
         align="end"
