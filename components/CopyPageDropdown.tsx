@@ -153,11 +153,8 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
   };
 
   const handleOpenInChatGPT = async () => {
-    const content = await fetchPageContent();
-    if (!content) return;
-    
-    const markdownForLLM = formatMarkdownForLLM(content);
-    const chatGPTUrl = `https://chatgpt.com/?q=${encodeURIComponent(`Please help me understand this documentation:\n\n${markdownForLLM}`)}`;
+    const currentUrl = `${window.location.origin}${pathname}`;
+    const chatGPTUrl = `https://chatgpt.com/?hints=search&prompt=${encodeURIComponent(`Read from ${currentUrl} so I can ask questions about it`)}`;
     
     try {
       const newWindow = window.open(chatGPTUrl, '_blank');
@@ -172,11 +169,8 @@ export default function CopyPageDropdown({ enhanced = false }: CopyPageDropdownP
   };
 
   const handleOpenInClaude = async () => {
-    const content = await fetchPageContent();
-    if (!content) return;
-    
-    const markdownForLLM = formatMarkdownForLLM(content);
-    const claudeUrl = `https://claude.ai/new?q=${encodeURIComponent(`Please help me understand this documentation:\n\n${markdownForLLM}`)}`;
+    const currentUrl = `${window.location.origin}${pathname}`;
+    const claudeUrl = `https://claude.ai/new?q=${encodeURIComponent(`Read from ${currentUrl} so I can ask questions about it`)}`;
     
     try {
       const newWindow = window.open(claudeUrl, '_blank');
