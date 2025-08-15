@@ -1,18 +1,25 @@
 'use client';
 
-import { useEffect, KeyboardEvent, useState, useRef } from 'react';
+import { useEffect, KeyboardEvent, useState } from 'react';
 import { Send } from 'lucide-react';
-import { ChatInputProps } from '../types';
-import { useAutoResize } from '../hooks/useAutoResize';
+import { useAutoResize } from '../utils/useAutoResize';
 
-export function ChatInput({ currentInput, setCurrentInput, loading, sendMessage }: ChatInputProps) {
-  const { textareaRef, triggerResize } = useAutoResize(currentInput, { maxHeight: 320 });
+interface ChatInputProps {
+  loading?: boolean;
+  onSendMessage: (message: string) => void;
+}
+
+export function ChatInput({
+  loading = false,
+  onSendMessage
+}: ChatInputProps) {
+  const [currentInput, setCurrentInput] = useState('');
+  const { textareaRef } = useAutoResize(currentInput, { maxHeight: 320 });
 
   useEffect(() => {
     textareaRef.current?.focus();
   }, []);
 
-  // Refocus when loading completes
   useEffect(() => {
     if (!loading) {
       textareaRef.current?.focus();
@@ -21,7 +28,7 @@ export function ChatInput({ currentInput, setCurrentInput, loading, sendMessage 
 
   const handleSend = () => {
     if (currentInput.trim() && !loading) {
-      sendMessage(currentInput);
+      onSendMessage(currentInput.trim());
       setCurrentInput('');
     }
   };
@@ -64,4 +71,4 @@ export function ChatInput({ currentInput, setCurrentInput, loading, sendMessage 
       </button>
     </div>
   );
-} 
+}

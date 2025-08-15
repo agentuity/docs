@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
-import { FileText, Eye, ExternalLink, X, ChevronDown } from 'lucide-react';
-import { CodeBlock } from '../types';
-import CodeBlockComponent from './CodeBlock';
+import React from 'react';
+import { FileText } from 'lucide-react';
+import { TutorialData, CodeFile } from '../types';
 
 interface TutorialFileChipProps {
-    codeBlock: CodeBlock;
+    codeBlock: CodeFile;
     onOpenInEditor: (code: string) => void;
 }
 

@@ -7,27 +7,34 @@ enum TabType {
 }
 
 interface CodeEditorProps {
-  editorContent: string;
   executionResult: string | null;
   serverRunning: boolean;
-  executingFiles: Set<string>;
-  handleEditorContentChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  runCode: () => void;
+  executingFiles: string[];
+  runCode: (code: string) => void;
   stopServer: () => void;
-  onClose: () => void;
+  editorContent: string;
+  setEditorContent: (content: string) => void;
+  toggleEditor: () => void;
 }
 
 export function CodeEditor({
-  editorContent,
   executionResult,
   serverRunning,
-  executingFiles,
-  handleEditorContentChange,
   runCode,
   stopServer,
-  onClose
+  editorContent,
+  setEditorContent,
+  toggleEditor
 }: CodeEditorProps) {
   const [activeTab, setActiveTab] = useState<TabType>(TabType.CODE);
+
+  const handleEditorContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditorContent(e.target.value);
+  };
+
+  const handleRunCode = () => {
+    runCode(editorContent);
+  };
 
   return (
     <div className="h-full flex flex-col min-w-[400px] w-full overflow-hidden border-l border-white">
@@ -72,7 +79,7 @@ export function CodeEditor({
               </button>
             )}
             <button
-              onClick={runCode}
+              onClick={handleRunCode}
               disabled={serverRunning}
               className={`p-2 rounded-md transition-colors ${serverRunning
                 ? 'bg-gray-500/20 text-gray-500 cursor-not-allowed'
@@ -88,7 +95,7 @@ export function CodeEditor({
               )}
             </button>
             <button
-              onClick={onClose}
+              onClick={toggleEditor}
               className="p-2 text-gray-400 hover:text-gray-300 hover:bg-white/5 rounded-md transition-colors"
               aria-label="Close editor"
               title="Close Editor"
@@ -100,25 +107,26 @@ export function CodeEditor({
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 p-2 md:p-4 min-h-0">
-        {activeTab === TabType.CODE && (
-          <div className="h-full flex flex-col min-h-0">
+      <div className="flex-1 overflow-hidden">
+        {activeTab === TabType.CODE ? (
+          <div className="h-full p-4">
             <textarea
               value={editorContent}
-              spellCheck={false}
               onChange={handleEditorContentChange}
-              className="flex-1 w-full p-2 md:p-4 text-white font-mono text-sm resize-none min-h-0 bg-transparent border-none outline-none "
-              placeholder="Write your TypeScript agent code here..."
-              aria-label="Code editor"
+              className="w-full h-full bg-gray-900/50 border border-gray-700/50 rounded-lg p-3 text-sm font-mono text-gray-200 resize-none focus:outline-none focus:border-cyan-500/50"
+              placeholder="Enter your code here..."
+              spellCheck={false}
             />
           </div>
-        )}
-
-        {activeTab === TabType.OUTPUT && (
-          <div className="h-full overflow-y-auto bg-black/50 rounded-lg p-2 md:p-4 min-h-0">
-            <pre className="text-green-400 text-sm whitespace-pre-wrap font-mono">
-              {executionResult || 'Click "Run Code" to see output here'}
-            </pre>
+        ) : (
+          <div className="h-full p-4">
+            <div className="w-full h-full bg-gray-900/50 border border-gray-700/50 rounded-lg p-3 text-sm font-mono text-gray-200 overflow-auto">
+              {executionResult ? (
+                <pre className="whitespace-pre-wrap">{executionResult}</pre>
+              ) : (
+                <span className="text-gray-400">No output yet. Run some code to see results.</span>
+              )}
+            </div>
           </div>
         )}
       </div>

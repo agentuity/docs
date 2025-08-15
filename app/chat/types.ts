@@ -1,59 +1,62 @@
-// Message types
-export interface ChatMessage {
+// Core message type
+export interface Message {
   id: string;
-  type: 'user' | 'assistant';
+  author: 'USER' | 'ASSISTANT';
   content: string;
-  timestamp: Date;
-  codeBlock?: CodeBlock;
+  timestamp: string;
+  tutorialData?: TutorialData;
 }
 
-export interface CodeBlock {
+// Tutorial data type
+export interface TutorialData {
+  tutorialId: string;
+  totalStep: number;
+  currentStep: number;
+  tutorialStep: {
+    title: string;
+    readmeContent: string;
+    instructions: string;
+    codeContent?: string;
+    totalSteps: number;
+  };
+}
+
+// Code file type
+export interface CodeFile {
   filename: string;
   content: string;
   language: string;
-  editable: boolean;
 }
 
-// Session types
-export interface ChatSession {
-  id: string;
-  messages: ChatMessage[];
-  currentFiles: Record<string, string>;
-  createdAt: Date;
-  updatedAt: Date;
+// Session type
+export interface Session {
+  messages: Message[];
+  sessionId: string;
 }
 
-// API request/response types
+export interface SessionSidebarProps {
+  currentSessionId: string;
+  sessions: Session[];
+  onSessionSelect: (sessionId: string) => void;
+  onNewSession: () => void;
+}
+
+// // API request/response types
 export interface ExecuteRequest {
   code: string;
   filename: string;
   sessionId: string;
 }
 
-export interface ExecuteResponse {
-  success: boolean;
-  output?: string;
-  error?: string;
-  executionTime?: number;
-  exitCode?: number;
-}
+// export interface ExecuteResponse {
+//   success: boolean;
+//   output?: string;
+//   error?: string;
+//   executionTime?: number;
+//   exitCode?: number;
+// }
 
-
-export interface TutorialStep {
-  title: string;
-  readmeContent: string;
-  instructions: string;
-  codeContent?: string;
-  totalSteps: number;
-}
-
-export interface TutorialData {
-  tutorialId: string;
-  currentStep: number;
-  tutorialStep: TutorialStep;
-}
-
-// Streaming support types
+// // Streaming support types
 export interface StreamingChunk {
   type: 'text-delta' | 'status' | 'tutorial-data' | 'error' | 'finish';
   textDelta?: string;
@@ -64,43 +67,19 @@ export interface StreamingChunk {
   details?: string;
 }
 
-// New agent response types that match the backend
-export interface ConversationMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
+// // Agent request type
+// export interface AgentStreamingRequest {
+//   message: string;
+//   conversationHistory: Message[];
+//   tutorialData?: TutorialData;
+// }
 
-export interface AgentStreamingRequest {
-  message: string;
-  conversationHistory: ConversationMessage[];
-  tutorialData?: TutorialData;
-}
+// export interface ChatMessageProps {
+//   message: Message;
+//   onCodeExecute: (code: string, filename: string) => Promise<void>;
+//   onCodeChange: (code: string, filename: string) => void;
+//   executionState: ExecutionState;
+// }
 
-// Component props
-export interface ChatInterfaceProps {
-  sessionId: string;
-  initialMessages?: ChatMessage[];
-}
+// export type ExecutionState = 'idle' | 'running' | 'completed' | 'error';
 
-export interface ChatMessageProps {
-  message: ChatMessage;
-  onCodeExecute: (code: string, filename: string) => Promise<void>;
-  onCodeChange: (code: string, filename: string) => void;
-  executionState: ExecutionState;
-}
-
-export type ExecutionState = 'idle' | 'running' | 'completed' | 'error';
-
-export interface ChatInputProps {
-  currentInput: string;
-  setCurrentInput: (value: string) => void;
-  loading: boolean;
-  sendMessage: (message: string) => void;
-}
-
-export interface SessionSidebarProps {
-  currentSessionId: string;
-  sessions: ChatSession[];
-  onSessionSelect: (sessionId: string) => void;
-  onNewSession: () => void;
-}
