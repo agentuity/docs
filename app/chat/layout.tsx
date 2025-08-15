@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Session } from "./types";
 import { sessionService } from "./services/sessionService";
 import { SessionSidebar } from "./components/SessionSidebar";
+import { SessionContext } from './SessionContext';
 
 // Create a key for localStorage
 const SESSIONS_CACHE_KEY = 'agentuity-chat-sessions';
@@ -38,7 +39,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
             const response = await sessionService.getAllSessions();
             if (response.success && response.data) {
                 setSessions(response.data);
-                // Cache the sessions in localStorage
+                console.log('Fetched sessions', response.data);
                 if (typeof window !== 'undefined') {
                     localStorage.setItem(SESSIONS_CACHE_KEY, JSON.stringify(response.data));
                 }
@@ -67,11 +68,13 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
                     onNewSession={handleNewSession}
                 />
             </div>
-
+        
             {/* Main Content */}
-            <div className="flex-1 flex flex-col min-w-0">
-                {children}
-            </div>
+            <SessionContext.Provider value={{ sessions, setSessions, currentSessionId: sessionId }}>
+                <div className="flex-1 flex flex-col min-w-0">
+                    {children}
+                </div>
+            </SessionContext.Provider>
         </div>
     );
 }

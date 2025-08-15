@@ -7,9 +7,7 @@ export default function ChatPage() {
     const router = useRouter();
 
     const handleMessageSend = (message: string) => {
-        // Store the initial message in sessionStorage
         sessionStorage.setItem('initialMessage', message);
-        // Navigate to the special "new" route
         router.push('/chat/new');
     };
 

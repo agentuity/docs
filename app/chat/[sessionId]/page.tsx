@@ -8,6 +8,7 @@ import Split from 'react-split';
 import styles from '../components/SplitPane.module.css';
 import { CodeEditor } from '../components/CodeEditor';
 import { Session } from '../types';
+import { useSessions } from '../SessionContext';
 
 export default function ChatSessionPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -16,11 +17,13 @@ export default function ChatSessionPage() {
   const [editorContent, setEditorContent] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
 
+
   const toggleEditor = () => setEditorOpen(!editorOpen);
   const stopServer = () => { };
 
+  const { sessions, setSessions } = useSessions();
+
   async function fetchCurrentSessionData() {
-    // Get the specific session
     const sessionResponse = await sessionService.getSession(sessionId);
     if (sessionResponse.success && sessionResponse.data) {
       setSession(sessionResponse.data);
@@ -28,7 +31,6 @@ export default function ChatSessionPage() {
   }
 
   async function handleSession() {
-    // Check if this is a request for a new session
     if (sessionId === 'new') {
       const initialMessage = sessionStorage.getItem('initialMessage');
       sessionStorage.removeItem('initialMessage');
@@ -45,23 +47,26 @@ export default function ChatSessionPage() {
           }]
         };
         setSession(newSession);
-
         const response = await sessionService.createSession(newSession);
         if (response.success && response.data) {
+          setSessions(prev => [...prev, response.data!]);
           router.replace(`/chat/${newSessionId}`);
           setSession(response.data);
-          return;
         }
       }
-    }
-    else {
-      fetchCurrentSessionData();
+    } else {
+      const foundSession = sessions.find(s => s.sessionId === sessionId);
+      if (foundSession) {
+        setSession(foundSession);
+      } else {
+        fetchCurrentSessionData();
+      }
     }
   }
 
   useEffect(() => {
     handleSession();
-  }, [sessionId]);
+  }, [sessionId, sessions]);
 
   return (
     <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
