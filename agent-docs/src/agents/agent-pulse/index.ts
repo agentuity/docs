@@ -84,7 +84,7 @@ export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx:
     // Build messages for the conversation
     const messages: ConversationMessage[] = [
       ...parsedRequest.conversationHistory,
-      { role: "user", content: parsedRequest.message }
+      { author: "USER", content: parsedRequest.message }
     ];
 
     // Build tutorial context and system prompt
@@ -95,7 +95,7 @@ export default async function Agent(req: AgentRequest, resp: AgentResponse, ctx:
     const result = await streamText({
       model: openai("gpt-4o"),
       messages: messages.map(msg => ({
-        role: msg.role,
+        role: msg.author === "USER" ? "user" : "assistant",
         content: msg.content,
       })),
       tools,
