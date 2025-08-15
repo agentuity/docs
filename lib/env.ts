@@ -47,7 +47,7 @@ export const validateEnv = (): boolean => {
     console.error('❌ Environment validation failed:', error);
     console.error('💡 Make sure to set either:');
     console.error('   - AGENT_FULL_URL, or');
-    console.error('   - Both AGENT_BASE_URL and AGENT_ID');
+    console.error('   - Both AGENT_BASE_URL and AGENT_QA_ID');
     console.error('💡 Optionally set AGENT_BEARER_TOKEN for authentication');
     return false;
   }
@@ -60,7 +60,7 @@ export const validateEnv = (): boolean => {
 declare global {
   interface ProcessEnv {
     AGENT_BASE_URL?: string;
-    AGENT_ID?: string;
+    AGENT_QA_ID?: string;
     AGENT_BEARER_TOKEN?: string;
     AGENT_FULL_URL?: string;
   }

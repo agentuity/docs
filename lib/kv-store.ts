@@ -219,4 +219,71 @@ export async function deleteKVValue(
       error: error instanceof Error ? error.message : 'Unknown error occurred'
     };
   }
+}
+
+/**
+ * Search for keys in the KV store by keyword pattern
+ * @param keyword - The keyword pattern to search for
+ * @param options - Optional configuration
+ * @returns Promise<KVStoreResponse<Array<{key: string, value: any, metadata?: any}>>>
+ */
+export async function searchKVByKeyword<T = any>(
+  keyword: string,
+  options: KVStoreOptions = {}
+): Promise<KVStoreResponse<Array<{key: string, value: T, metadata?: any}>>> {
+  const { storeName } = options;
+  const finalStoreName = storeName || config.defaultStoreName;
+
+  // Validate API key
+  if (!process.env.AGENTUITY_API_KEY) {
+    return {
+      success: false,
+      error: 'AGENTUITY_API_KEY environment variable is required'
+    };
+  }
+
+  try {
+    const url = `${config.baseUrl}/sdk/kv/search/${encodeURIComponent(finalStoreName)}/${encodeURIComponent(keyword)}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${process.env.AGENTUITY_API_KEY}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'Next.js KV Client'
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return {
+        success: false,
+        error: `HTTP ${response.status}: ${errorText}`,
+        statusCode: response.status
+      };
+    }
+
+    const data = await response.text();
+
+    try {
+      const jsonData = JSON.parse(data);
+      return {
+        success: true,
+        data: jsonData,
+        statusCode: response.status
+      };
+    } catch (parseError) {
+      return {
+        success: false,
+        error: 'Failed to parse search results as JSON',
+        statusCode: response.status
+      };
+    }
+
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
+  }
 } 
