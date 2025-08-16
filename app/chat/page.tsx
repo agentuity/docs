@@ -2,13 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { ChatInput } from "./components/ChatInput";
+import { v4 as uuidv4 } from 'uuid';
 
 export default function ChatPage() {
     const router = useRouter();
 
     const handleMessageSend = (message: string) => {
         sessionStorage.setItem('initialMessage', message);
-        router.push('/chat/new');
+        const newSessionId = uuidv4();
+        router.push(`/chat/${newSessionId}`);
     };
 
     return (

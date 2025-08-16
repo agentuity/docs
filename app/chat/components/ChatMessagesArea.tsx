@@ -2,26 +2,24 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { ChatMessageComponent } from './ChatMessage';
-import { WelcomeScreen } from './WelcomeScreen';
 import { ChatInput } from './ChatInput';
-import { sessionService } from '../services/sessionService';
 import { Message, Session } from '../types';
-import { v4 as uuidv4 } from 'uuid';
 
 export interface ChatMessagesAreaProps {
     session: Session
+    handleSendMessage: (content: string, sessionId: string) => void;
     setEditorContent?: (content: string) => void;
     setEditorOpen?: (isOpen: boolean) => void;
 }
 
 export function ChatMessagesArea({
     session,
+    handleSendMessage,
     setEditorContent = () => { },
     setEditorOpen = () => { }
 }: ChatMessagesAreaProps) {
     // State for messages and loading
     const [messages, setMessages] = useState<Message[]>([]);
-    const [loading, setLoading] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -57,96 +55,6 @@ export function ChatMessagesArea({
         }
     }, []);
 
-    // Handle sending a new message
-    const handleSendMessage = async (content: string) => {
-        setLoading(true);
-
-        // Create a new message object
-        const newMessage: Message = {
-            id: uuidv4(),
-            author: 'USER',
-            content: content.trim(),
-            timestamp: new Date().toISOString()
-        };
-
-        // Create assistant message placeholder
-        const assistantMessage: Message = {
-            id: uuidv4(),
-            author: 'ASSISTANT',
-            content: '', // Will be populated during streaming
-            timestamp: new Date().toISOString()
-        };
-
-        try {
-            // Optimistically append user message locally first
-            setMessages(prevMessages => [...prevMessages, newMessage]);
-
-            // Add assistant placeholder to show typing effect
-            setMessages(prevMessages => [...prevMessages, assistantMessage]);
-
-            // Use streaming API for real-time updates
-            await sessionService.addMessageToSessionStreaming(
-                session.sessionId,
-                newMessage,
-                {
-                    onTextDelta: (textDelta) => {
-                        // Update the assistant message content in real-time
-                        setMessages(prev => {
-                            const updatedMessages = prev.map(msg => {
-                                if (msg.id === assistantMessage.id) {
-                                    return {
-                                        ...msg,
-                                        content: msg.content + textDelta
-                                    };
-                                }
-                                return msg;
-                            });
-                            return updatedMessages;
-                        });
-                    },
-
-                    onTutorialData: (tutorialData) => {
-                        // Update the assistant message with tutorial data
-                        setMessages(prev =>
-                            prev.map(msg =>
-                                msg.id === assistantMessage.id
-                                    ? { ...msg, tutorialData: tutorialData }
-                                    : msg
-                            )
-                        );
-                    },
-
-                    onFinish: (finalSession) => {
-                        // Replace our local messages with the final session messages
-                        // This ensures we have the complete and correct state from the server
-                        setMessages(finalSession.messages);
-                    },
-
-                    onError: (error) => {
-                        console.error('Error in streaming response:', error);
-                        // Update the assistant message with error
-                        setMessages(prev =>
-                            prev.map(msg =>
-                                msg.id === assistantMessage.id
-                                    ? { ...msg, content: 'Sorry, I encountered an error. Please try again.' }
-                                    : msg
-                            )
-                        );
-                    }
-                }
-            );
-        } catch (error) {
-            console.error('Error sending message:', error);
-            // Remove both messages if there was an error
-            setMessages(prevMessages =>
-                prevMessages.filter(msg =>
-                    msg.id !== newMessage.id && msg.id !== assistantMessage.id
-                )
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
 
     return (
         <div className="flex-1 flex flex-col min-w-0 h-full">
@@ -165,7 +73,7 @@ export function ChatMessagesArea({
                 ))}
                 <div ref={messagesEndRef} />
             </div>
-            <ChatInput loading={loading} onSendMessage={handleSendMessage} />
+            <ChatInput loading={false} onSendMessage={(content) => handleSendMessage(content, session.sessionId)} />
         </div>
     );
 } 

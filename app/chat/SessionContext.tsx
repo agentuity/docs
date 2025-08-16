@@ -1,10 +1,12 @@
 import { createContext, useContext } from 'react';
 import { Session } from './types';
+import { KeyedMutator } from 'swr';
 
 interface SessionContextType {
   sessions: Session[];
-  setSessions: React.Dispatch<React.SetStateAction<Session[]>>;
+  setSessions: (updater: React.SetStateAction<Session[]>, options?: { revalidate: boolean }) => void;
   currentSessionId: string;
+  revalidateSessions?: KeyedMutator<Session[]>;
 }
 
 export const SessionContext = createContext<SessionContextType | undefined>(undefined);

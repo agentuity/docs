@@ -191,7 +191,7 @@ export function useStreaming({
 
         // Auto-open editor for tutorial steps with code
         setEditorOpen(true);
-        setEditorContent(finalTutorialData.tutorialStep || '');
+        setEditorContent(finalTutorialData.tutorialStep?.codeContent || '');
       }
 
     } catch (error) {

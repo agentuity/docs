@@ -6,48 +6,51 @@ import { Session } from "./types";
 import { sessionService } from "./services/sessionService";
 import { SessionSidebar } from "./components/SessionSidebar";
 import { SessionContext } from './SessionContext';
+import useSWR from 'swr';
 
-// Create a key for localStorage
+
+
 const SESSIONS_CACHE_KEY = 'agentuity-chat-sessions';
+
+const fetcher = async (key: string): Promise<Session[]> => {
+    const response = await sessionService.getAllSessions();
+    if (!response.success) throw new Error(response.error || 'Failed to fetch sessions');
+    return response.data || [];
+};
 
 export default function ChatLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
-    const [sessions, setSessions] = useState<Session[]>([]);
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
     // Extract sessionId from pathname
     const sessionId = pathname.startsWith('/chat/') ? pathname.split('/chat/')[1] : '';
 
-    // Load from localStorage first if available
+
+    // New: Add client-side localStorage loading
+    const [cachedSessions, setCachedSessions] = useState<Session[]>([]);
+
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            const cachedSessions = localStorage.getItem(SESSIONS_CACHE_KEY);
-            if (cachedSessions) {
-                try {
-                    setSessions(JSON.parse(cachedSessions));
-                } catch (e) {
-                    console.error('Failed to parse cached sessions', e);
-                }
+            const stored = localStorage.getItem(SESSIONS_CACHE_KEY);
+            if (stored) {
+                setCachedSessions(JSON.parse(stored));
             }
         }
     }, []);
 
-    // Fetch all sessions only once when layout mounts
-    useEffect(() => {
-        async function fetchSessions() {
-            const response = await sessionService.getAllSessions();
-            if (response.success && response.data) {
-                setSessions(response.data);
-                console.log('Fetched sessions', response.data);
-                if (typeof window !== 'undefined') {
-                    localStorage.setItem(SESSIONS_CACHE_KEY, JSON.stringify(response.data));
-                }
+    // Updated useSWR with client-side fallback
+    const { data: sessions = [], error, mutate, isLoading } = useSWR<Session[]>('sessions', fetcher, {
+        fallbackData: cachedSessions,
+        onSuccess: (data) => {
+            if (typeof window !== 'undefined') {
+                localStorage.setItem(SESSIONS_CACHE_KEY, JSON.stringify(data));
             }
-        }
-
-        fetchSessions();
-    }, []);
+        },
+        revalidateOnFocus: true,
+        revalidateOnReconnect: true,
+        refreshInterval: 0,
+    });
 
     // Use Next.js router for client-side navigation
     const handleSessionSelect = (id: string) => {
@@ -57,6 +60,10 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
     const handleNewSession = () => {
         router.push('/chat');
     };
+
+    // Handle loading/error in render
+    if (isLoading) return <div>Loading sessions...</div>; // Or skeleton UI
+    if (error) return <div>Error: {error.message} <button onClick={() => mutate()}>Retry</button></div>;
 
     return (
         <div className="agentuity-background flex h-screen text-white overflow-hidden">
@@ -68,9 +75,23 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
                     onNewSession={handleNewSession}
                 />
             </div>
-        
+
             {/* Main Content */}
-            <SessionContext.Provider value={{ sessions, setSessions, currentSessionId: sessionId }}>
+            <SessionContext.Provider value={{
+                sessions,
+                setSessions: (updater, options = { revalidate: true }) => {
+                    let newData;
+                    if (typeof updater === 'function') {
+                        newData = updater(sessions);
+                    } else {
+                        newData = updater;
+                    }
+                    console.log('Mutating with new data:', newData);
+                    mutate(newData, options);
+                },
+                currentSessionId: sessionId,
+                revalidateSessions: mutate
+            }}>
                 <div className="flex-1 flex flex-col min-w-0">
                     {children}
                 </div>
