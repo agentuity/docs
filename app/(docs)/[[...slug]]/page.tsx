@@ -18,6 +18,7 @@ import {
 import { notFound } from "next/navigation";
 import { CommunityButton } from "../../../components/Community";
 import { NavButton } from "../../../components/NavButton";
+import CopyPageDropdown from "../../../components/CopyPageDropdown";
 
 export default async function Page(props: {
 	params: Promise<{ slug?: string[] }>;
@@ -40,7 +41,12 @@ export default async function Page(props: {
 				path: `content/${page.file.path}`,
 			}}
 		>
-			<DocsTitle>{page.data.title}</DocsTitle>
+			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
+				<DocsTitle className="mb-0">{page.data.title}</DocsTitle>
+				<div className="hidden sm:flex justify-end">
+					<CopyPageDropdown enhanced={true} />
+				</div>
+			</div>
 			<DocsDescription>{page.data.description}</DocsDescription>
 			<DocsBody>
 				<MDX

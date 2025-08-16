@@ -14,6 +14,7 @@ This section provides detailed documentation for the Agentuity JavaScript SDK AP
   - [Object Storage](#object-storage)
 - [Agent Communication](#agent-communication)
 - [Response Types](#response-types)
+  - [Stream Method](#stream-method)
 - [Request Handling](#request-handling)
 - [Logging](#logging)
 - [Telemetry](#telemetry)
@@ -555,6 +556,182 @@ return response.handoff(
 ## Response Types
 
 The Agentuity SDK provides various methods for creating different types of responses through the `response` object.
+
+### Stream Method
+
+The `stream` method allows you to stream responses back to the client, supporting both `ReadableStream` and `AsyncIterable` inputs with optional transformer functions for filtering and transforming stream data.
+
+#### Method Signature
+
+```typescript
+stream<T = unknown, U = T, M = unknown>(
+  stream: ReadableStream<T> | AsyncIterable<T>,
+  contentType?: string,
+  metadata?: M,
+  transformer?:
+    | ((item: T) => U | null | undefined)
+    | ((item: T) => Generator<U, void, unknown>)
+): Promise<AgentResponseData>
+```
+
+#### Parameters
+
+- `stream`: The stream to return - can be a `ReadableStream` or `AsyncIterable`
+- `contentType` (optional): The content type of the stream. If not provided, the SDK will auto-detect based on the stream content
+- `metadata` (optional): Metadata to return as headers
+- `transformer` (optional): Function or generator to transform/filter each stream item
+  - **Function transformer**: `(item: T) => U | null | undefined` - returns single value or skips with null/undefined
+  - **Generator transformer**: `(item: T) => Generator<U, void, unknown>` - yields transformed values
+
+#### Auto-Conversion Features
+
+The stream method automatically detects object streams and converts them to JSON newline format with the appropriate `application/json` content type. This makes it seamless to work with structured data from AI SDKs.
+
+#### Basic Usage
+
+```typescript
+import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext,
+) {
+  // Stream from another source
+  const dataStream = getDataStream();
+  
+  return resp.stream(dataStream);
+}
+```
+
+#### Vercel AI SDK Integration
+
+The stream method works seamlessly with Vercel AI SDK's `streamObject` for structured streaming:
+
+```typescript
+import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+import { openai } from '@ai-sdk/openai';
+import { streamObject } from 'ai';
+import { z } from 'zod';
+
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext,
+) {
+  const { elementStream } = streamObject({
+    model: openai('gpt-4o'),
+    output: 'array',
+    schema: z.object({
+      name: z.string(),
+      class: z
+        .string()
+        .describe('Character class, e.g. warrior, mage, or thief.'),
+      description: z.string(),
+    }),
+    prompt: 'Generate 3 hero descriptions for a fantasy role playing game.',
+  });
+
+  return resp.stream(elementStream);
+}
+```
+
+#### Function Transformers
+
+Use function transformers to filter and transform stream items:
+
+```typescript
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext,
+) {
+  const dataStream = getUserStream();
+  
+  // Transform and filter items
+  const transformer = (user: any) => {
+    // Filter out inactive users (return null to skip)
+    if (!user.active) return null;
+    
+    // Transform the user object
+    return {
+      id: user.id,
+      name: user.name.toUpperCase(),
+      timestamp: Date.now()
+    };
+  };
+
+  return resp.stream(dataStream, undefined, {}, transformer);
+}
+```
+
+#### Generator Transformers
+
+Use generator transformers for more complex transformations:
+
+```typescript
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext,
+) {
+  const batchStream = getBatchStream();
+  
+  // Generator that can yield multiple items or filter
+  function* transformer(batch: any) {
+    if (batch.type === 'user_batch') {
+      // Yield multiple items from a batch
+      for (const user of batch.users) {
+        if (user.active) {
+          yield { ...user, processed: true };
+        }
+      }
+    } else if (batch.valid) {
+      // Yield single transformed item
+      yield { ...batch, enhanced: true };
+    }
+    // Return nothing to filter out invalid batches
+  }
+
+  return resp.stream(batchStream, undefined, {}, transformer);
+}
+```
+
+#### Error Handling
+
+Transformer errors are propagated when the stream is consumed:
+
+```typescript
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext,
+) {
+  const dataStream = getDataStream();
+  
+  const transformer = (item: any) => {
+    // Validate item before transformation
+    if (!item || typeof item !== 'object') {
+      throw new Error(`Invalid item: ${JSON.stringify(item)}`);
+    }
+    
+    return { ...item, validated: true };
+  };
+
+  return resp.stream(dataStream, undefined, {}, transformer);
+}
+```
+
+#### Backward Compatibility
+
+The transformer parameter is optional, so all existing stream usage continues to work unchanged:
+
+```typescript
+// This continues to work exactly as before
+return resp.stream(textStream);
+return resp.stream(dataStream, 'application/json');
+return resp.stream(binaryStream, 'application/octet-stream', { version: '1.0' });
+```
 
 ### JSON Responses
 

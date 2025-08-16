@@ -7,6 +7,89 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 This page documents the release history of the [Agentuity JavaScript SDK](https://github.com/agentuity/sdk-js).
 
+## v0.0.138
+
+<Callout type="info">
+  Released: August 8, 2025
+</Callout>
+
+### Changes
+
+- **Fixed**: Fix the sms error ([PR #158](https://github.com/agentuity/sdk-js/pull/158))
+
+## v0.0.137
+
+<Callout type="info">
+  Released: August 7, 2025
+</Callout>
+
+### Changes
+
+- **Added**: Expose ts and ts_thread in the payload for Slack IO integration ([PR #157](https://github.com/agentuity/sdk-js/pull/157))
+
+## v0.0.136
+
+<Callout type="info">
+  Released: August 4, 2025
+</Callout>
+
+### Changes
+
+- **Changed**: The AgentResponse.stream() method now supports both function and generator transformers while maintaining full backward compatibility! The enhancement includes:
+
+  **Original Requirements:**
+  - Generic object streaming with automatic JSON conversion
+  - Runtime type detection between ReadableDataType and objects
+  - Auto-conversion to JSON newline format for objects
+  - Intelligent content-type detection (application/json for objects)
+  - Full backward compatibility
+
+  **Function Transformer Enhancement:**
+  - Optional transformer function as 4th parameter
+  - Data transformation and filtering capabilities
+  - Type safety with generic types
+  - Error handling and edge cases
+
+  **Generator Transformer Enhancement:**
+  - Support for generator functions as alternative syntax
+  - One-to-one transformation with yield syntax
+  - Filtering support: generators can yield nothing to skip items
+  - Same capabilities as regular functions but with generator syntax
+
+  **Key Benefits:**
+  - Maximum Flexibility: Choose between function or generator syntax
+  - Developer Choice: Use familiar function syntax or expressive generator syntax
+  - Consistent Behavior: Both approaches work identically
+  - Type Safety: Full TypeScript support with generic types
+  - Performance: Efficient one-to-one transformations
+  - Backward Compatibility: Existing code continues to work unchanged
+
+  **Test Coverage:**
+  - 26 test cases covering all functionality
+  - Function transformer scenarios (8 tests)
+  - Generator transformer scenarios (7 tests)
+  - Backward compatibility verified
+  - Error handling tested
+  - Mixed scenarios validated
+  - Both ReadableStream and AsyncIterable support
+
+  **Files Modified:**
+  - src/types.ts - Enhanced interface with generator support
+  - src/router/response.ts - Full implementation with generator detection and processing
+  - test/router/response-stream.test.ts - Comprehensive test coverage
+
+  The Agentuity SDK now provides the most flexible and powerful streaming API that supports object auto-conversion, intelligent content-type detection, data transformation, filtering, and both function and generator transformer syntaxes! ([PR #155](https://github.com/agentuity/sdk-js/pull/155))
+
+## v0.0.135
+
+<Callout type="info">
+  Released: August 4, 2025
+</Callout>
+
+### Changes
+
+- **Added**: Slack IO integration with support for parsing and replying to Slack messages ([PR #153](https://github.com/agentuity/sdk-js/pull/153))
+
 ## v0.0.134
 
 <Callout type="info">

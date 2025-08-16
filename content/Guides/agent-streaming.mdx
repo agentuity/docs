@@ -78,6 +78,84 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     return response.stream(chat_completion, lambda chunk: chunk.choices[0].delta.content)
 `} />
 
+### Structured Object Streaming with Vercel AI SDK
+
+The stream method now supports transformer functions that can filter and transform stream items. This is particularly useful when working with structured data from AI SDKs like Vercel AI SDK's `streamObject`.
+
+<CodeExample js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+import { openai } from '@ai-sdk/openai';
+import { streamObject } from 'ai';
+import { z } from 'zod';
+
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext,
+) {
+  const { elementStream } = streamObject({
+    model: openai('gpt-4o'),
+    output: 'array',
+    schema: z.object({
+      name: z.string(),
+      class: z
+        .string()
+        .describe('Character class, e.g. warrior, mage, or thief.'),
+      description: z.string(),
+    }),
+    prompt: 'Generate 3 hero descriptions for a fantasy role playing game.',
+  });
+
+  return resp.stream(elementStream);
+}`} />
+
+The SDK automatically detects object streams and converts them to JSON newline format with the appropriate `application/json` content type.
+
+### Stream Transformers
+
+You can provide transformer functions to filter and transform stream data:
+
+<CodeExample js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext,
+) {
+  // Get stream from another source
+  const dataStream = getDataStream();
+  
+  // Transform and filter items
+  const transformer = (item: any) => {
+    // Filter out items (return null/undefined to skip)
+    if (!item.active) return null;
+    
+    // Transform the item
+    return {
+      id: item.id,
+      name: item.name.toUpperCase(),
+      timestamp: Date.now()
+    };
+  };
+
+  return resp.stream(dataStream, undefined, {}, transformer);
+}`} />
+
+You can also use generator functions for more complex transformations:
+
+<CodeExample js={`// Generator transformer that can yield multiple items or filter
+function* transformer(item: any) {
+  if (item.type === 'batch') {
+    // Yield multiple items from a batch
+    for (const subItem of item.items) {
+      yield { ...subItem, processed: true };
+    }
+  } else if (item.valid) {
+    // Yield single transformed item
+    yield { ...item, enhanced: true };
+  }
+  // Return nothing to filter out invalid items
+}`} />
+
 ### Agent-to-Agent Streaming
 
 In this example, we use the Agentuity SDK to stream the response from one agent to another.
