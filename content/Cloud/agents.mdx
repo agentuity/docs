@@ -162,16 +162,27 @@ For Discord sources, you can configure your agent to receive messages from a Dis
 
 <ThemeImage baseName="agent-io-discord-source" alt="Agent New Discord Source"  />
 
+<Callout type="info">
+  You must have a Discord account linked to your Agentuity account to use Discord Integration. The bot must be invited to your Discord server before it can receive messages.
+</Callout>
+
+**Prerequisite: Connecting Your Account**
+
+Before configuring a Discord source, you must first link your personal Discord account to Agentuity. This one-time setup allows Agentuity to see your available servers.
+
+1.  Click your user profile name in the bottom-left corner of the App.
+2.  Select **Account** from the menu that appears.
+3.  In your Profile settings, find the **Connected accounts** section and click the **Connect account** button to add Discord.
+4.  Follow the authorization flow in the pop-up window to grant the requested permissions.
+
+**Configuration Steps**
+
 To set up Discord Integration:
 
 1. **Add Discord IO**: Click the plus button in the agent IO visualization and select Discord
 2. **Select Server**: Choose a Discord server from your connected servers
 3. **Invite Bot**: If the bot isn't already in the server, use the provided invite link to add the Agentuity bot to your Discord server
 4. **Tag Bot**: Once configured, tag the bot (@Agentuity) in Discord messages to forward them to your agent
-
-<Callout type="info">
-  You must have a Discord account linked to your Agentuity account to use Discord Integration. The bot must be invited to your Discord server before it can receive messages.
-</Callout>
 
 The Discord Integration provides the following data when a message is forwarded:
 
@@ -236,6 +247,19 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
 <Callout type="warn">
   Discord sources can only be triggered by messages where the bot is tagged in a Discord server. The bot cannot receive all messages in a channel for privacy reasons.
 </Callout>
+
+#### Agent SMS Source
+
+For SMS sources, you can connect your Twilio account to allow your agent to be triggered by incoming text messages. This requires providing your Twilio API credentials.
+
+<ThemeImage baseName="agent-io-sms-source" alt="Agent New SMS Source" />
+
+To configure an SMS source, you will need the following credentials from your Twilio console:
+- **Account SID**
+- **API SID**
+- **API Secret**
+
+Once validated, you can select one or more of your Twilio numbers to forward incoming messages to your agent.
 
 #### Agent Schedule Source
 

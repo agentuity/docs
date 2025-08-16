@@ -7,16 +7,54 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 This page documents the release history of the [Agentuity Python SDK](https://github.com/agentuity/sdk-py).
 
-## v0.0.100
+## v0.0.103
+
+<Callout type="info">
+  Released: August 8, 2025
+</Callout>
+
+**Added:**
+
+- Telegram IO support with comprehensive Telegram integration capabilities
+- New Telegram API module for Telegram-specific operations and utilities
+- Telegram data processing support in the data layer for handling Telegram-specific content types
+
+**Changed:**
+
+- Updated agent directory structure to prefer `agentuity_agents` over `agentuity-agents` for improved Python compatibility
+
+## v0.0.102
+
+<Callout type="info">
+  Released: July 16, 2025
+</Callout>
+
+<a id="changes"></a>**Changes:**
+- **Added:** Enable the ability to use custom email domains for email replies
+
+<Callout type="info">
+Contact us if you would like to enable custom email addresses to your organization.
+</Callout>
+
+## v0.0.101
+
+<Callout type="info">
+  Released: July 14, 2025
+</Callout>
+
+<a id="changes"></a>**Changes:**
+- **Fixed:** DevMode: make sure certain props are set on metadata for improved development mode debugging
+
+## v0.0.100 ⚠️
 
 <Callout type="info">
   Released: June 30, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Changed:** Shortened Discord interface method name from `discord_message()` to `discord()` for improved usability
 
-### ⚠️ Breaking Changes
+<a id="breaking-changes"></a>**⚠️ Breaking Changes**
 
 The Discord interface method has been renamed from `discord_message()` to `discord()`. Update your code to use the new method name:
 
@@ -31,7 +69,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: June 19, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Fixed:** Email: text and html should return a str not a list of str to match JS behavior
 
 ## v0.0.97
@@ -40,7 +78,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: June 19, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Fixed:** Filter out empty headers from headers special HTTP header
 
 ## v0.0.96
@@ -49,7 +87,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: June 19, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Added:** Enhanced ObjectStorePutParams with additional headers and metadata support
 - **Fixed:** Fixed difference in HTTP header casing and other cleanup items
 
@@ -59,7 +97,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: June 13, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Added:** ObjectStore service with comprehensive object storage capabilities including get, put, delete, and public URL generation
 ## v0.0.94
 
@@ -67,7 +105,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: June 11, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Fixed:** Fixed naming conflict with openAI Agents SDK by renaming agents directory to agentuity-agents with backward compatibility
 - **Fixed:** Removed ruff from runtime dependencies as it's only needed for development
 
@@ -77,7 +115,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: June 9, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Fixed:** Improved route handling for extra path segments and better 404 error messages
 - **Fixed:** Enhanced logging to display actual HTTP method and full request path
 - **Fixed:** Simplified health check response headers and consolidated route registration
@@ -88,7 +126,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: June 9, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Added:** Email class support for large attachments and send reply functionality
 - **Added:** Structured interfaces for agent requests, context, data, and email processing with streaming and async capabilities
 - **Added:** Ability to send reply emails with attachments and telemetry support
@@ -104,7 +142,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: May 31, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Added:** LlamaIndex instrumentation for automatic Agentuity gateway integration
 - **Added:** LlamaIndex now automatically uses Agentuity API key and gateway when no OpenAI API key is provided  
 - **Added:** OpenAI client patching within LlamaIndex for seamless Agentuity integration
@@ -115,7 +153,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: May 30, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Fixed:** Apply safe filename fix similar to CLI and always prefer to load config but fallback to yaml in dev
 
 ## v0.0.89
@@ -124,7 +162,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: May 29, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Fixed:** Fix outgoing requests missing traceid in OpenTelemetry instrumentation
 
 ## v0.0.88
@@ -133,7 +171,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: May 28, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Added:** Agent startup checks with stack trace printing in development mode
 - **Fixed:** Fixed issue with OTel trace id not getting propagated correctly and causing it not to be associated with the correct session in production
 
@@ -143,7 +181,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: May 27, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Fixed:** Fixed handoff issues by implementing deferred handoff execution with improved error handling and agent communication
 - **Fixed:** Added configurable HTTP timeouts for agent communication
 - **Fixed:** Improved connection error handling for client disconnections during streaming
@@ -154,7 +192,7 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: May 24, 2025
 </Callout>
 
-**Changes:**
+<a id="changes"></a>**Changes:**
 - **Added:** Email class for parsing inbound email messages with support for extracting subject, sender, recipients, and attachments
 - **Added:** Async email() method to Data class for parsing RFC822 email content  
 - **Added:** mail-parser dependency for email parsing functionality
@@ -168,32 +206,32 @@ The Discord interface method has been renamed from `discord_message()` to `disco
   Released: May 22, 2025
 </Callout>
 
-### Added
+**Added:**
 
 - Added support for constructing data objects from both synchronous and asynchronous byte iterators ([#45](https://github.com/agentuity/sdk-py/pull/45))
 - Added synchronous reading methods for data objects ([#45](https://github.com/agentuity/sdk-py/pull/45))
 
-### Changed
+**Changed:**
 
 - Improved local development instructions in README ([#44](https://github.com/agentuity/sdk-py/pull/44))
 - Enhanced agent input handling to accept a broader range of data types ([#45](https://github.com/agentuity/sdk-py/pull/45))
 - Configured explicit timeout settings for agent network operations ([#45](https://github.com/agentuity/sdk-py/pull/45))
 
-### Fixed
+**Fixed:**
 
 - Improved data conversion logic to handle a wider range of input types ([#45](https://github.com/agentuity/sdk-py/pull/45))
 
-## v0.0.84
+## v0.0.84 ⚠️
 
 <Callout type="info">
   Released: May 14, 2025
 </Callout>
 
-### Added
+**Added:**
 
 - Added AGENTUITY_SDK_KEY ([#42](https://github.com/agentuity/sdk-py/pull/42))
 
-### ⚠️ Breaking Changes
+<a id="breaking-changes"></a>**⚠️ Breaking Changes**
 
 The environment variable for API authentication has changed from `AGENTUITY_API_KEY` to `AGENTUITY_SDK_KEY`. You will need to update any references to this environment variable in your code and deployment configurations.
 
@@ -219,24 +257,24 @@ Please find all instances of AGENTUITY_API_KEY in my code and replace them with 
   Released: May 9, 2025
 </Callout>
 
-### Fixed
+**Fixed:**
 
 - Fix issue vectors, better typing for Vector and KeyValue in context ([#40](https://github.com/agentuity/sdk-py/pull/40))
 
-## v0.0.82
+## v0.0.82 ⚠️
 
 <Callout type="info">
   Released: April 30, 2025
 </Callout>
 
-### Changes
+<a id="changes"></a>**Changes:**
 
 - Add support for streaming data to and from agents.  This includes streaming data to the agent via the `data` object and streaming data from the agent via the `stream` property of the `AgentResponse` object.
 - The `trigger` property of the `AgentRequest` object will have the value `agent` when the request is invoked by another agent.
 - The `AgentContext` object now has a `scope` property that will have the value of `local` when the context is local or `remote` when agent is being invoked by another agent remotely. In the case of agent-to-agent invocation or handoff within the same project, the scope will be `local`.
 - Deprecated the local `/run/:agentId` route since the updated `/:agentId` route now supports streaming data to and from the agent directly. This route will be removed in a near future release.
 
-### ⚠️ Breaking Changes
+<a id="breaking-changes"></a>**⚠️ Breaking Changes**
 
 The `data` object of `AgentRequest` has changed to support fully streaming data and this required a breaking change. Most of the property accessors are now async functions to support the streaming use case.  You can read more about this change in [Pull Request #38](https://github.com/agentuity/sdk-py/pull/38).
 
@@ -274,7 +312,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 7, 2025
 </Callout>
 
-### Added
+**Added:**
 
 - Add comprehensive test suite with pytest ([#27](https://github.com/agentuity/sdk-py/pull/27))
 - Expand test coverage for logger, context, and langchain instrumentation ([#28](https://github.com/agentuity/sdk-py/pull/28))
@@ -286,7 +324,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 3, 2025
 </Callout>
 
-### Fixed
+**Fixed:**
 
 - Fix Langchain instrumentation and add openai-agents dependency ([#24](https://github.com/agentuity/sdk-py/pull/24))
 
@@ -296,12 +334,12 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: April 1, 2025
 </Callout>
 
-### Added
+**Added:**
 
 - Add data and markdown methods to AgentResponse class ([#26](https://github.com/agentuity/sdk-py/pull/26))
 - Add PyPI release workflow ([#22](https://github.com/agentuity/sdk-py/pull/22))
 
-### Changed
+**Changed:**
 
 - Update logo URL from relative to absolute path ([#19](https://github.com/agentuity/sdk-py/pull/19))
 - Remove 'work in progress' warning from README ([#20](https://github.com/agentuity/sdk-py/pull/20))
@@ -316,7 +354,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 25, 2025
 </Callout>
 
-### Added
+**Added:**
 
 - Better support for OpenAI and Agents framework ([#16](https://github.com/agentuity/sdk-py/pull/16))
 - Add agentName to logger ([#17](https://github.com/agentuity/sdk-py/pull/17))
@@ -327,7 +365,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 19, 2025
 </Callout>
 
-### Fixed
+**Fixed:**
 
 - Fix issue with non-stream functionality ([#15](https://github.com/agentuity/sdk-py/pull/15))
 
@@ -337,11 +375,11 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 16, 2025
 </Callout>
 
-### Added
+**Added:**
 
 - Add the @agentuity/agentId to the context.logger for an agent ([#13](https://github.com/agentuity/sdk-py/pull/13))
 
-### Fixed
+**Fixed:**
 
 - Fix import issue and add ruff for formatting and linting ([#14](https://github.com/agentuity/sdk-py/pull/14))
 
@@ -351,7 +389,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 16, 2025
 </Callout>
 
-### Added
+**Added:**
 
 - SSE and Stream support with new stream() method and improved documentation ([#12](https://github.com/agentuity/sdk-py/pull/12))
 
@@ -361,7 +399,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 13, 2025
 </Callout>
 
-### Added
+**Added:**
 
 - Stream IO Input: add new facility to support stream io for input data ([#10](https://github.com/agentuity/sdk-py/pull/10))
 
@@ -371,7 +409,7 @@ Review this PR, make a plan to change the agents to the latest agentuity SDK wit
   Released: March 10, 2025
 </Callout>
 
-### Changes
+<a id="changes"></a>**Changes:**
 
 - Implemented Vector and KeyValue services
 - Reorganized types into logical files

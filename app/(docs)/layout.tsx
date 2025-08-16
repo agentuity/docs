@@ -12,12 +12,12 @@ export default function Layout({ children }: { children: ReactNode }) {
 			tree={source.pageTree}
 			searchToggle={{
 				components: {
-					lg: (
-						<div className="flex gap-1.5 max-md:hidden">
-							<LargeSearchToggle className="flex-1" />
-							<AISearchToggle />
-						</div>
-					),
+				lg: (
+					<div className="flex gap-1.5 max-md:hidden">
+						<LargeSearchToggle className="flex-1" />
+						<AISearchToggle />
+					</div>
+				),
 				},
 			}}
 		>
