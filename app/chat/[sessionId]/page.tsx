@@ -15,6 +15,7 @@ export default function ChatSessionPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const [session, setSession] = useState<Session | undefined>();
   const [editorOpen, setEditorOpen] = useState(false);
+  const [editorContent, setEditorContent] = useState<string>('');
   const { sessions, setSessions, revalidateSessions } = useSessions();
 
   const [creationError, setCreationError] = useState<string | null>(null);
@@ -164,7 +165,7 @@ export default function ChatSessionPage() {
     return <div>Session not found</div>;
   }
 
-  const toggleEditor = () => {setEditorOpen(false)};
+  const toggleEditor = () => { setEditorOpen(false) };
   const stopServer = () => { };
 
 
@@ -188,8 +189,8 @@ export default function ChatSessionPage() {
               <ChatMessagesArea
                 session={session}
                 handleSendMessage={handleSendMessage}
-                setEditorContent={() => { }}
-                setEditorOpen={() => {setEditorOpen(true)}}
+                setEditorContent={setEditorContent}
+                setEditorOpen={() => { setEditorOpen(true) }}
               />
             )}
           </div>
@@ -203,13 +204,13 @@ export default function ChatSessionPage() {
               executingFiles={[]}
               runCode={() => { }}
               stopServer={stopServer}
-              editorContent={''}
-              setEditorContent={() => { }}
+              editorContent={editorContent}
+              setEditorContent={setEditorContent}
               toggleEditor={toggleEditor}
             />
           </div>)
         }
-        
+
       </Split>
     </div>
   );
