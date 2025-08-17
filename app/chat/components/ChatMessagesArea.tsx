@@ -60,7 +60,7 @@ export function ChatMessagesArea({
         <div className="flex-1 flex flex-col min-w-0 h-full">
             <div
                 ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 agentuity-scrollbar h-full"
+                className="flex-1 p-4 md:p-6 space-y-6 h-full"
                 style={{ maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' }}
             >
                 {messages.map((message) => (

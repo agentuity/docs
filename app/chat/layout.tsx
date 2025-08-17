@@ -67,15 +67,12 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
 
     return (
         <div className="agentuity-background flex h-screen text-white overflow-hidden">
-            <div className={`fixed lg:static inset-y-0 left-0 z-50 transform transition-all duration-300 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} w-70 lg:w-70`}>
-                <SessionSidebar
-                    currentSessionId={sessionId}
-                    sessions={sessions}
-                    onSessionSelect={handleSessionSelect}
-                    onNewSession={handleNewSession}
-                />
-            </div>
-
+            <SessionSidebar
+                currentSessionId={sessionId}
+                sessions={sessions}
+                onSessionSelect={handleSessionSelect}
+                onNewSession={handleNewSession}
+            />
             {/* Main Content */}
             <SessionContext.Provider value={{
                 sessions,

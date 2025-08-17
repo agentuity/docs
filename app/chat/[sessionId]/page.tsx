@@ -164,12 +164,12 @@ export default function ChatSessionPage() {
     return <div>Session not found</div>;
   }
 
-  const toggleEditor = () => { };
+  const toggleEditor = () => {setEditorOpen(false)};
   const stopServer = () => { };
 
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+    <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden  overflow-y-auto agentuity-scrollbar">
       <Split
         className={styles.split}
         sizes={[60, 40]}
@@ -182,29 +182,34 @@ export default function ChatSessionPage() {
         style={{ height: '100%', display: 'flex', overflow: 'hidden' }}
       >
         {/* Chat Messages */}
-        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-          {session && (
-            <ChatMessagesArea
-              session={session}
-              handleSendMessage={handleSendMessage}
-              setEditorContent={() => { }}
-              setEditorOpen={() => { }}
-            />
-          )}
+        <div className="flex-1 flex flex-col items-center h-full overflow-hidden">
+          <div className="w-full max-w-3xl flex-1 flex flex-col h-full">
+            {session && (
+              <ChatMessagesArea
+                session={session}
+                handleSendMessage={handleSendMessage}
+                setEditorContent={() => { }}
+                setEditorOpen={() => {setEditorOpen(true)}}
+              />
+            )}
+          </div>
         </div>
         {/* Code Editor */}
-        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-          <CodeEditor
-            executionResult={''}
-            serverRunning={false}
-            executingFiles={[]}
-            runCode={() => { }}
-            stopServer={stopServer}
-            editorContent={''}
-            setEditorContent={() => { }}
-            toggleEditor={toggleEditor}
-          />
-        </div>
+        {
+          editorOpen && (<div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+            <CodeEditor
+              executionResult={''}
+              serverRunning={false}
+              executingFiles={[]}
+              runCode={() => { }}
+              stopServer={stopServer}
+              editorContent={''}
+              setEditorContent={() => { }}
+              toggleEditor={toggleEditor}
+            />
+          </div>)
+        }
+        
       </Split>
     </div>
   );
