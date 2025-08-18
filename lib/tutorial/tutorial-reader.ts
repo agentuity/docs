@@ -73,7 +73,7 @@ export async function readSteps(contentPath: string): Promise<Step[]> {
       // Read README.md and parse front-matter
       const readmePath = join(stepPath, "README.md");
       const readmeContent = await readFile(readmePath, "utf-8");
-      const { data: frontmatter } = matter(readmeContent);
+      const { data: frontmatter, content } = matter(readmeContent);
       
       // Validate front-matter has required fields
       if (!frontmatter.title || !frontmatter.description) {
@@ -89,7 +89,7 @@ export async function readSteps(contentPath: string): Promise<Step[]> {
         title: frontmatter.title,
         description: frontmatter.description,
         directory: stepDir.name,
-        readmeContent,
+        readmeContent: content, // Use content without frontmatter
         codeContent
       });
     }

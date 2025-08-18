@@ -104,8 +104,6 @@ export async function getTutorialStep(tutorialId: string, stepNumber: number, ct
     }
 
     const responseData = await response.json();
-    console.log(responseData);
-    const { success, data } = responseData as { success: boolean; data: TutorialStep };
     ctx.logger.info('Fetched step %d for tutorial %s', stepNumber, tutorialId);
 
     return responseData as ApiResponse<TutorialStep>;

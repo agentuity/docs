@@ -32,7 +32,7 @@ export async function handleTutorialState(
               tutorialStep: {
                 title: tutorialStep.data.title,
                 readmeContent: tutorialStep.data.readmeContent,
-                instructions: tutorialStep.data.description, // Map description to instructions
+                instructions: tutorialStep.data.description,
                 codeContent: tutorialStep.data.codeContent,
                 totalSteps: action.totalSteps
               }

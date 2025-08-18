@@ -23,7 +23,13 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
     setEditorContent = () => { },
     setEditorOpen = () => { }
 }: ChatMessageProps) {
-    const tutorialContent = message.tutorialData?.tutorialStep.codeContent;
+    const tutorialCodeContent = message.tutorialData?.tutorialStep.codeContent;
+    // Step description
+    const tutorialInstructions = message.tutorialData?.tutorialStep.instructions;
+    // Step README content
+    const tutorialReadme = message.tutorialData?.tutorialStep.readmeContent;
+    const currentStep = message.tutorialData?.currentStep;
+    const totalSteps = message.tutorialData?.totalStep;
     const handleOpenInEditor = (code: string) => {
         setEditorContent(code);
         setEditorOpen(true);
@@ -60,6 +66,19 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                                     content={message.content}
                                 />
                             )}
+                            {/* Render tutorial README content if present */}
+                            {tutorialReadme && (
+                                <div className="mt-4 p-3 bg-gray-700/30 rounded-lg">
+                                    <h4 className="text-sm font-semibold mb-2 text-gray-100">Step {currentStep} of {totalSteps}</h4>
+                                    <MarkdownRenderer content={tutorialReadme} />
+                                </div>
+                            )}
+
+                            {tutorialCodeContent && (
+                                <div className="mt-4">
+                                    <p className="text-sm text-gray-400">Click the file icon below to view the tutorial code.</p>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
@@ -67,12 +86,12 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                 </div>
 
                 {/* Render tutorial file chip if message has tutorial data */}
-                {tutorialContent && (
+                {tutorialCodeContent && (
                     <div className="mt-3">
                         <TutorialFileChip
                             codeBlock={{
                                 filename: 'index.ts',
-                                content: tutorialContent,
+                                content: tutorialCodeContent,
                                 language: 'typescript'
                             }}
                             onOpenInEditor={handleOpenInEditor}
