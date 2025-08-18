@@ -1,15 +1,15 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useParams } from "next/navigation";
-import { sessionService } from '../services/sessionService';
-import { useEffect, useState, useCallback } from 'react';
-import { ChatMessagesArea } from '../components/ChatMessagesArea';
 import Split from 'react-split';
-import styles from '../components/SplitPane.module.css';
+import { v4 as uuidv4 } from 'uuid';
+import { ChatMessagesArea } from '../components/ChatMessagesArea';
 import { CodeEditor } from '../components/CodeEditor';
+import styles from '../components/SplitPane.module.css';
 import { Session, Message } from '../types';
 import { useSessions } from '../SessionContext';
-import { v4 as uuidv4 } from 'uuid';
+import { sessionService } from '../services/sessionService';
 
 export default function ChatSessionPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -17,10 +17,9 @@ export default function ChatSessionPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorContent, setEditorContent] = useState<string>('');
   const { sessions, setSessions, revalidateSessions } = useSessions();
-
   const [creationError, setCreationError] = useState<string | null>(null);
 
-  // Handle sending a new message
+
   const handleSendMessage = async (content: string, sessionId: string) => {
     if (!content || !sessionId) return;
     const newMessage: Message = {
@@ -55,7 +54,6 @@ export default function ChatSessionPage() {
         };
       });
 
-      // Use streaming API for real-time updates
       await sessionService.addMessageToSessionStreaming(
         sessionId,
         newMessage,
@@ -78,9 +76,8 @@ export default function ChatSessionPage() {
           },
 
           onTutorialData: (tutorialData) => {
-            // Update the assistant message with tutorial data
             setSession(prev => {
-              if (!prev) return prev; // Guard against undefined
+              if (!prev) return prev;
               const updatedMessages = prev.messages.map(msg =>
                 msg.id === assistantMessage.id
                   ? { ...msg, tutorialData: tutorialData }
@@ -121,7 +118,6 @@ export default function ChatSessionPage() {
     }
   };
 
-  // Modified useEffect to handle creation
   useEffect(() => {
     const foundSession = sessions.find(s => s.sessionId === sessionId);
     if (foundSession) {
@@ -141,7 +137,6 @@ export default function ChatSessionPage() {
 
     setSession(newSession);
 
-    // Persist to server
     sessionService.createSession(newSession)
       .then(async response => {
         if (response.success && response.data) {
@@ -182,7 +177,6 @@ export default function ChatSessionPage() {
         })}
         style={{ height: '100%', display: 'flex', overflow: 'hidden' }}
       >
-        {/* Chat Messages */}
         <div className="flex-1 flex flex-col items-center h-full overflow-hidden">
           <div className="w-full max-w-3xl flex-1 flex flex-col h-full">
             {session && (
@@ -195,7 +189,6 @@ export default function ChatSessionPage() {
             )}
           </div>
         </div>
-        {/* Code Editor */}
         {
           editorOpen && (<div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
             <CodeEditor
