@@ -106,7 +106,7 @@ from agentuity.io.email import EmailAttachment
 async def handler(request: AgentRequest, response: AgentResponse, context: AgentContext):
     # Get the incoming email
     email = request.data.email()
-
+    email = await request.data.email()
     # Create an attachment
     attachment = EmailAttachment(
         filename="response.txt",
