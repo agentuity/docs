@@ -156,7 +156,7 @@ For Email sources, you can configure your agent at a unique agent email address.
   An email source can only be triggered by an email sent to the agent's email address and not via the API.
 </Callout>
 
-The response from the API will contain an informational message if successful.  Additionally, the `Location` header will contain the URL that can be used to read the agent output.  This URL will block until the agent has started streaming the output response.
+After an email is received, the platform will enqueue processing and your agent will handle the message asynchronously. Any replies will be delivered via the configured destination(s).
 
 #### Discord Source
 

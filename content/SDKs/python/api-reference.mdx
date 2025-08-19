@@ -105,7 +105,6 @@ from agentuity.io.email import EmailAttachment
 
 async def handler(request: AgentRequest, response: AgentResponse, context: AgentContext):
     # Get the incoming email
-    email = request.data.email()
     email = await request.data.email()
     # Create an attachment
     attachment = EmailAttachment(
@@ -368,14 +367,14 @@ The Vector Storage API provides a way to store and search for data using vector 
 
 #### upsert
 
-`async upsert(name: str, *documents: VectorUpsertParams) -> list[str]`
+`async upsert(name: str, documents: List[VectorUpsertParams]) -> list[str]`
 
 Inserts or updates vectors in the vector storage.
 
 **Parameters**
 
 - `name`: The name of the vector storage
-- `documents`: An array of documents to upsert, each with either embeddings or text
+- `documents`: A list of documents to upsert. Each document must include a unique `key` and either `document` (text) or `embeddings`
 
 **Return Value**
 
@@ -402,6 +401,7 @@ async def index_products(context: AgentContext, products: List[Dict[str, Any]]) 
     documents = []
     for product in products:
         documents.append({
+            "key": product["id"],  # REQUIRED: unique key for each document
             "document": product["description"],
             "metadata": {
                 "product_id": product["id"],
@@ -442,14 +442,17 @@ ids2 = await context.vector.upsert(
 
 #### search
 
-`async search(name: str, query: str, limit: int, similarity: float, metadata: Optional[dict]) -> list[VectorSearchResult]`
+`async search(name: str, query: str, limit: int = 10, similarity: float = 0.5, metadata: Optional[dict] = None) -> list[VectorSearchResult]`
 
 Searches for vectors in the vector storage.
 
 **Parameters**
 
 - `name`: The name of the vector storage
-- `params`: Search parameters including query, limit, similarity threshold, and metadata filters
+- `query`: The query text to search against
+- `limit`: (optional) Maximum number of results to return. Defaults to 10
+- `similarity`: (optional) Minimum similarity threshold (0.0-1.0). Defaults to 0.5
+- `metadata`: (optional) Exact-match metadata filters applied at search time. Defaults to None
 
 **Return Value**
 
@@ -463,8 +466,9 @@ from typing import List, Dict, Any
 
 # Search for similar products with error handling
 try:
-    results = await context.vector.search("product-descriptions",
-        query="comfortable office chair",
+    results = await context.vector.search(
+        "product-descriptions",
+        "comfortable office chair",
         limit=5,
         similarity=0.7,
         metadata={"category": "furniture"}
@@ -505,7 +509,7 @@ from agentuity.sdk import AgentContext
 
 # Delete a single vector with error handling
 try:
-    deleted_count = await context.vector.delete("product-descriptions", "id1")
+    deleted_count = await context.vector.delete("product-descriptions", "key_123")
     context.logger.info(f"Deleted {deleted_count} vector(s)")
 except Exception as e:
     context.logger.error(f"Failed to delete vector: {str(e)}")
