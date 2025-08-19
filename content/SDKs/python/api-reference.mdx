@@ -442,7 +442,7 @@ ids2 = await context.vector.upsert(
 
 #### search
 
-`async search(name: str, params: VectorSearchParams) -> list[VectorSearchResult]`
+`async search(name: str, query: str, limit: int = 10, similarity: float = 0.5,metadata: Optional[dict] = {}, -> list[VectorSearchResult]`
 
 Searches for vectors in the vector storage.
 
@@ -463,12 +463,12 @@ from typing import List, Dict, Any
 
 # Search for similar products with error handling
 try:
-    results = await context.vector.search("product-descriptions", {
-        "query": "comfortable office chair",
-        "limit": 5,
-        "similarity": 0.7,
-        "metadata": {"category": "furniture"}
-    })
+    results = await context.vector.search("product-descriptions",
+        query="comfortable office chair",
+        limit=5,
+        similarity=0.7,
+        metadata={"category": "furniture"}
+    )
 
     # Process search results
     if results:
