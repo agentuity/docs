@@ -48,6 +48,13 @@ Vector storage is created automatically when your agent first calls `context.vec
 
 The `upsert` operation inserts new documents or updates existing ones. You can provide either text (which gets automatically converted to embeddings) or pre-computed embeddings.
 
+**SDK Differences:**
+- **JavaScript SDK**: No key field required, search returns `distance` (0 = perfect match)
+- **Python SDK**: Requires `key` field for each document, search returns `similarity` (1.0 = perfect match)
+
+**Idempotent Behavior:**
+The upsert operation is idempotent - upserting with an existing key updates the existing vector rather than creating a duplicate. The same internal vector ID is reused, ensuring your vector storage remains clean and efficient.
+
 <CodeExample>
 ```javascript
 // JavaScript/TypeScript
@@ -79,26 +86,29 @@ const embeddingIds = await context.vector.upsert(
 # Upsert documents with text
 documents = [
     {
+        "key": "doc_1",  # Required: unique identifier for this vector
         "document": "Agentuity is an agent-native cloud platform",
         "metadata": {"category": "platform", "source": "docs"}
     },
     {
+        "key": "doc_2",  # Required: unique identifier for this vector
         "document": "Vector storage enables semantic search capabilities", 
         "metadata": {"category": "features", "source": "docs"}
     }
 ]
 
-ids = await context.vector.upsert("knowledge-base", *documents)
+ids = await context.vector.upsert("knowledge-base", documents)
 
 # Upsert with embeddings
 embedding_docs = [
     {
+        "key": "embedding_1",  # Required: unique identifier for this vector
         "embeddings": [0.1, 0.2, 0.3, 0.4],
         "metadata": {"id": "doc-1", "type": "custom"}
     }
 ]
 
-ids = await context.vector.upsert("custom-embeddings", *embedding_docs)
+ids = await context.vector.upsert("custom-embeddings", embedding_docs)
 ```
 </CodeExample>
 
@@ -137,9 +147,8 @@ results = await context.vector.search(
 
 # Process results
 for result in results:
-    similarity_score = 1.0 - result.distance
     print(f"Found: {result.metadata['source']}")
-    print(f"Similarity: {similarity_score}")
+    print(f"Similarity: {result.similarity}")
 ```
 </CodeExample>
 

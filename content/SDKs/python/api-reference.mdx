@@ -378,7 +378,9 @@ Inserts or updates vectors in the vector storage.
 
 **Return Value**
 
-Returns a list of string IDs for the upserted vectors.
+Returns a list of string IDs for the upserted vectors (internal system IDs, not your provided keys).
+
+Note: Upserting with an existing `key` updates that vector (idempotent operation).
 
 **Example**
 
@@ -456,7 +458,11 @@ Searches for vectors in the vector storage.
 
 **Return Value**
 
-Returns a list of search results, each containing an ID, metadata, and distance score.
+Returns a list of search results with the following attributes:
+- `id`: Internal vector ID (e.g., "vector_94c98660c8afa3a2")
+- `key`: The unique key for this vector
+- `similarity`: Similarity score from 0.0 to 1.0 (1.0 = perfect match)
+- `metadata`: The associated metadata dictionary
 
 **Example**
 
@@ -478,7 +484,7 @@ try:
     if results:
         context.logger.info(f"Found {len(results)} matching products")
         for result in results:
-            print(f"Product ID: {result.id}, Similarity: {result.distance}")
+            print(f"Product ID: {result.id}, Similarity: {result.similarity}")
             print(f"Metadata: {result.metadata}")
     else:
         context.logger.info("No matching products found")
@@ -500,7 +506,7 @@ Deletes a vector from the vector storage.
 
 **Return Value**
 
-Returns the number of vectors that were deleted (0 or 1).
+Returns the number of vectors that were deleted (0 if the key didn't exist, 1 if successfully deleted).
 
 **Example**
 
