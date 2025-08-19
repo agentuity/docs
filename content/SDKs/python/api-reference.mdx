@@ -106,14 +106,14 @@ from agentuity.io.email import EmailAttachment
 async def handler(request: AgentRequest, response: AgentResponse, context: AgentContext):
     # Get the incoming email
     email = request.data.email()
-    
+    email = await request.data.email()
     # Create an attachment
     attachment = EmailAttachment(
         filename="response.txt",
         data="Thank you for your inquiry!",
         content_type="text/plain"
     )
-    
+
     # Send a reply
     await email.sendReply(
         request=request,
@@ -125,7 +125,7 @@ async def handler(request: AgentRequest, response: AgentResponse, context: Agent
         from_email="support@yourcompany.com",
         from_name="Support Team"
     )
-    
+
     return response.json({"status": "Reply sent successfully"})
 ```
 
@@ -175,19 +175,19 @@ Returns a `Data` object that streams the attachment content.
 
 ```python
 async def handler(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    email = request.data.email()
-    
+    email = await request.data.email()
+
     # Process attachments
     for attachment in email.attachments:
         context.logger.info(f"Processing attachment: {attachment.filename}")
-        
+
         # Stream large attachment data
         data = await attachment.data()
         content = await data.binary()
-        
+
         # Process the attachment content
         context.logger.info(f"Attachment size: {len(content)} bytes")
-    
+
     return response.json({"attachments_processed": len(email.attachments)})
 ```
 
@@ -209,12 +209,12 @@ async def agent_handler(
 ) -> AgentResponseType:
     """
     Handler function for an agent.
-    
+
     Args:
         request: An AgentRequest object containing the request data
         response: An AgentResponse object for creating responses
         context: An AgentContext object providing access to various capabilities
-        
+
     Returns:
         An AgentResponseType object representing the response
     """
@@ -242,10 +242,10 @@ async def handler(request: AgentRequest, response: AgentResponse, context: Agent
         # Get the request data
         data = await request.data.json()
         name = data.get("name")
-        
+
         # Log the request
         context.logger.info(f"Received greeting request for {name}")
-        
+
         # Return a personalized greeting
         return response.json({
             "message": f"Hello, {name}! Welcome to Agentuity."
@@ -291,7 +291,7 @@ try:
         # Access data using the appropriate accessor
         user_prefs = await value.data.json()
         context.logger.info(f"User preferences: {user_prefs}")
-        
+
         # Or access as text if needed
         # text_data = await value.data.text()
         # context.logger.info(f"User preferences (text): {text_data}")
@@ -375,7 +375,7 @@ Inserts or updates vectors in the vector storage.
 **Parameters**
 
 - `name`: The name of the vector storage
-- `documents`: One or more documents to upsert, each with either embeddings or text
+- `documents`: An array of documents to upsert, each with either embeddings or text
 
 **Return Value**
 
@@ -390,11 +390,11 @@ from typing import List, Dict, Any
 async def index_products(context: AgentContext, products: List[Dict[str, Any]]) -> List[str]:
     """
     Index product descriptions in vector storage for semantic search.
-    
+
     Args:
         context: The agent context
         products: List of product dictionaries with name, description, and category
-        
+
     Returns:
         List of vector IDs for the indexed products
     """
@@ -410,10 +410,10 @@ async def index_products(context: AgentContext, products: List[Dict[str, Any]]) 
                 "price": product["price"]
             }
         })
-    
+
     # Upsert documents to vector storage
     try:
-        ids = await context.vector.upsert("product-descriptions", *documents)
+        ids = await context.vector.upsert("product-descriptions", documents)
         context.logger.info(f"Indexed {len(ids)} products in vector storage")
         return ids
     except Exception as e:
@@ -424,21 +424,25 @@ async def index_products(context: AgentContext, products: List[Dict[str, Any]]) 
 # Upsert documents with text
 ids = await context.vector.upsert(
     "product-descriptions",
-    {"document": "Ergonomic office chair with lumbar support", "metadata": {"category": "furniture"}},
-    {"document": "Wireless noise-cancelling headphones", "metadata": {"category": "electronics"}}
+    [
+        {"key": "key_123", "document": "Ergonomic office chair with lumbar support", "metadata": {"category": "furniture"}},
+        {"key": "key_456", "document": "Wireless noise-cancelling headphones", "metadata": {"category": "electronics"}}
+    ]
 )
 
 # Upsert documents with embeddings
 ids2 = await context.vector.upsert(
     "product-embeddings",
-    {"embeddings": [0.1, 0.2, 0.3, 0.4], "metadata": {"productId": "123"}},
-    {"embeddings": [0.5, 0.6, 0.7, 0.8], "metadata": {"productId": "456"}}
+    [
+        {"key": "key_123", "embeddings": [0.1, 0.2, 0.3, 0.4], "metadata": {"productId": "123"}},
+        {"key": "key_456", "embeddings": [0.5, 0.6, 0.7, 0.8], "metadata": {"productId": "456"}}
+    ]
 )
 ```
 
 #### search
 
-`async search(name: str, params: VectorSearchParams) -> list[VectorSearchResult]`
+`async search(name: str, query: str, limit: int, similarity: float, metadata: Optional[dict]) -> list[VectorSearchResult]`
 
 Searches for vectors in the vector storage.
 
@@ -459,13 +463,13 @@ from typing import List, Dict, Any
 
 # Search for similar products with error handling
 try:
-    results = await context.vector.search("product-descriptions", {
-        "query": "comfortable office chair",
-        "limit": 5,
-        "similarity": 0.7,
-        "metadata": {"category": "furniture"}
-    })
-    
+    results = await context.vector.search("product-descriptions",
+        query="comfortable office chair",
+        limit=5,
+        similarity=0.7,
+        metadata={"category": "furniture"}
+    )
+
     # Process search results
     if results:
         context.logger.info(f"Found {len(results)} matching products")
@@ -488,7 +492,7 @@ Deletes a vector from the vector storage.
 **Parameters**
 
 - `name`: The name of the vector storage
-- `key`: The ID of the vector to delete
+- `key`: The key of the vector to delete
 
 **Return Value**
 
@@ -571,8 +575,8 @@ from agentuity.server.objectstore import ObjectStorePutParams
 
 # Store a text file with explicit content type
 await context.objectstore.put(
-    "documents", 
-    "readme.txt", 
+    "documents",
+    "readme.txt",
     "Hello, world!",
     ObjectStorePutParams(content_type="text/plain")
 )
@@ -584,8 +588,8 @@ await context.objectstore.put("users", "user-123.json", user_data)
 # Store binary data
 image_data = bytes([/* image bytes */])
 await context.objectstore.put(
-    "images", 
-    "photo.jpg", 
+    "images",
+    "photo.jpg",
     image_data,
     ObjectStorePutParams(content_type="image/jpeg")
 )
@@ -595,8 +599,8 @@ await context.objectstore.put("files", "unknown-data", some_data)
 
 # Store with custom encoding and cache control
 await context.objectstore.put(
-    "compressed", 
-    "data.gz", 
+    "compressed",
+    "data.gz",
     compressed_data,
     ObjectStorePutParams(
         content_type="application/octet-stream",
@@ -607,8 +611,8 @@ await context.objectstore.put(
 
 # Store with metadata (not returned in HTTP results when fetched)
 await context.objectstore.put(
-    "uploads", 
-    "document.pdf", 
+    "uploads",
+    "document.pdf",
     pdf_data,
     ObjectStorePutParams(
         content_type="application/pdf",
@@ -679,31 +683,31 @@ from agentuity import AgentContext
 # Create a public URL that expires in 1 hour
 try:
     public_url = await context.objectstore.create_public_url(
-        "user-uploads", 
-        "document.pdf", 
+        "user-uploads",
+        "document.pdf",
         expires_duration=3600000  # 1 hour in milliseconds
     )
-    
+
     # Share the URL with users
     context.logger.info(f"Download link: {public_url}")
-    
+
     # Create a URL with default expiration (1 hour)
     default_url = await context.objectstore.create_public_url("images", "photo.jpg")
-    
+
     # Create a URL with minimum expiration (1 minute)
     short_url = await context.objectstore.create_public_url(
-        "temp-files", 
-        "quick-access.txt", 
+        "temp-files",
+        "quick-access.txt",
         expires_duration=60000  # 1 minute in milliseconds
     )
-    
+
     # Values less than 1 minute will be automatically set to 1 minute
     auto_min_url = await context.objectstore.create_public_url(
-        "temp-files", 
-        "auto-min.txt", 
+        "temp-files",
+        "auto-min.txt",
         expires_duration=30000  # Will be set to 60000ms (1 minute)
     )
-    
+
 except Exception as e:
     context.logger.error(f"Failed to create public URL: {str(e)}")
     # Handle the error appropriately
@@ -762,7 +766,9 @@ The `response.handoff()` method allows an agent to handoff the request to anothe
 Redirects the current request to another agent.
 
 <Callout type="warn" title="Handoff">
-  Handoff is currently only supported for handoff to other agents in the same project. However, we are working on remote agent handoff and should have that working soon.
+  Handoff is currently only supported for handoff to other agents in the same
+  project. However, we are working on remote agent handoff and should have that
+  working soon.
 </Callout>
 
 **Parameters**
@@ -1219,19 +1225,19 @@ class Logger:
     def debug(self, message: str, *args, **kwargs) -> None:
         """Log a debug message."""
         pass
-        
+
     def info(self, message: str, *args, **kwargs) -> None:
         """Log an informational message."""
         pass
-        
+
     def warn(self, message: str, *args, **kwargs) -> None:
         """Log a warning message."""
         pass
-        
+
     def error(self, message: str, *args, **kwargs) -> None:
         """Log an error message."""
         pass
-        
+
     def child(self, **kwargs) -> 'Logger':
         """Create a child logger with additional context."""
         pass
@@ -1353,13 +1359,13 @@ async with context.tracer.start_as_current_span("process-data") as span:
     try:
         # Add attributes to the span
         span.set_attribute("userId", "123")
-        
+
         # Perform some work
         result = await process_data()
-        
+
         # Add events to the span
         span.add_event("data-processed", {"itemCount": len(result)})
-        
+
         return result
     except Exception as error:
         # Record the error
