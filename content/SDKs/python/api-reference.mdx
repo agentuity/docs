@@ -442,7 +442,7 @@ ids2 = await context.vector.upsert(
 
 #### search
 
-`async search(name: str, query: str, limit: int = 10, similarity: float = 0.5,metadata: Optional[dict] = {}, -> list[VectorSearchResult]`
+`async search(name: str, query: str, limit: int = 10, similarity: float = 0.5, metadata: Optional[dict] = {}) -> list[VectorSearchResult]`
 
 Searches for vectors in the vector storage.
 
