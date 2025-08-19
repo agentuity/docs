@@ -425,8 +425,8 @@ async def index_products(context: AgentContext, products: List[Dict[str, Any]]) 
 ids = await context.vector.upsert(
     "product-descriptions",
     [
-        {"document": "Ergonomic office chair with lumbar support", "metadata": {"category": "furniture"}},
-        {"document": "Wireless noise-cancelling headphones", "metadata": {"category": "electronics"}}
+        {"key": "key_123", "document": "Ergonomic office chair with lumbar support", "metadata": {"category": "furniture"}},
+        {"key": "key_456", "document": "Wireless noise-cancelling headphones", "metadata": {"category": "electronics"}}
     ]
 )
 
@@ -434,15 +434,15 @@ ids = await context.vector.upsert(
 ids2 = await context.vector.upsert(
     "product-embeddings",
     [
-        {"embeddings": [0.1, 0.2, 0.3, 0.4], "metadata": {"productId": "123"}},
-        {"embeddings": [0.5, 0.6, 0.7, 0.8], "metadata": {"productId": "456"}}
+        {"key": "key_123", "embeddings": [0.1, 0.2, 0.3, 0.4], "metadata": {"productId": "123"}},
+        {"key": "key_456", "embeddings": [0.5, 0.6, 0.7, 0.8], "metadata": {"productId": "456"}}
     ]
 )
 ```
 
 #### search
 
-`async search(name: str, query: str, limit: int = 10, similarity: float = 0.5, metadata: Optional[dict] = {}) -> list[VectorSearchResult]`
+`async search(name: str, query: str, limit: int, similarity: float, metadata: Optional[dict]) -> list[VectorSearchResult]`
 
 Searches for vectors in the vector storage.
 
@@ -492,7 +492,7 @@ Deletes a vector from the vector storage.
 **Parameters**
 
 - `name`: The name of the vector storage
-- `key`: The ID of the vector to delete
+- `key`: The key of the vector to delete
 
 **Return Value**
 
