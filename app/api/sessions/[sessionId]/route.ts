@@ -3,10 +3,6 @@ import { getKVValue, setKVValue, deleteKVValue } from '@/lib/kv-store';
 import { Session, Message } from '@/app/chat/types';
 import { toISOString } from '@/app/chat/utils/dateUtils';
 
-// KV Store keys
-const SESSIONS_KEY = 'session_master_list';
-const SESSION_PREFIX = 'session_';
-
 /**
  * GET /api/sessions/[sessionId] - Get a specific session
  */
@@ -15,9 +11,15 @@ export async function GET(
   { params }: { params: { sessionId: string } }
 ) {
   try {
+    const userId = request.cookies.get('chat_user_id')?.value;
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
+    }
+
     const paramsData = await params;
     const sessionId = paramsData.sessionId;
-    const response = await getKVValue<Session>(`${SESSION_PREFIX}${sessionId}`, { storeName: 'chat-sessions' });
+    const sessionKey = `${userId}_${sessionId}`;
+    const response = await getKVValue<Session>(sessionKey, { storeName: 'chat-sessions' });
 
     if (!response.success) {
       return NextResponse.json(
@@ -43,9 +45,15 @@ export async function PUT(
   { params }: { params: { sessionId: string } }
 ) {
   try {
+    const userId = request.cookies.get('chat_user_id')?.value;
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
+    }
+
     const paramsData = await params;
     const sessionId = paramsData.sessionId;
     const session = await request.json() as Session;
+    const sessionKey = `${userId}_${sessionId}`;
 
     if (!session || session.sessionId !== sessionId) {
       return NextResponse.json(
@@ -69,7 +77,7 @@ export async function PUT(
 
     // Update the individual session
     const response = await setKVValue(
-      `${SESSION_PREFIX}${sessionId}`,
+      sessionKey,
       session,
       { storeName: 'chat-sessions' }
     );
@@ -82,15 +90,15 @@ export async function PUT(
     }
 
     // Update the master list if needed (ensure the session ID is in the list)
-    const allSessionsResponse = await getKVValue<string[]>(SESSIONS_KEY, { storeName: 'chat-sessions' });
+    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: 'chat-sessions' });
     const sessionIds = allSessionsResponse.success ? allSessionsResponse.data || [] : [];
-    
+
     // If the session ID isn't in the list, add it to the beginning
-    if (!sessionIds.includes(sessionId)) {
-      const updatedSessionIds = [sessionId, ...sessionIds];
-      
+    if (!sessionIds.includes(sessionKey)) {
+      const updatedSessionIds = [sessionKey, ...sessionIds];
+
       const sessionsListResponse = await setKVValue(
-        SESSIONS_KEY,
+        userId,
         updatedSessionIds,
         { storeName: 'chat-sessions' }
       );
@@ -118,12 +126,17 @@ export async function DELETE(
   { params }: { params: { sessionId: string } }
 ) {
   try {
+    const userId = request.cookies.get('chat_user_id')?.value;
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
+    }
+
     const paramsData = await params;
     const sessionId = paramsData.sessionId;
-
+    const sessionKey = `${userId}_${sessionId}`;
     // Delete the session data
     const sessionResponse = await deleteKVValue(
-      `${SESSION_PREFIX}${sessionId}`,
+      sessionKey,
       { storeName: 'chat-sessions' }
     );
 
@@ -135,13 +148,13 @@ export async function DELETE(
     }
 
     // Remove from sessions list
-    const allSessionsResponse = await getKVValue<string[]>(SESSIONS_KEY, { storeName: 'chat-sessions' });
+    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: 'chat-sessions' });
     const sessionIds = allSessionsResponse.success ? allSessionsResponse.data || [] : [];
 
-    const updatedSessionIds = sessionIds.filter(id => id !== sessionId);
+    const updatedSessionIds = sessionIds.filter(id => id !== sessionKey);
 
     const sessionsListResponse = await setKVValue(
-      SESSIONS_KEY,
+      userId,
       updatedSessionIds,
       { storeName: 'chat-sessions' }
     );
@@ -170,8 +183,14 @@ export async function POST(
   { params }: { params: { sessionId: string } }
 ) {
   try {
+    const userId = request.cookies.get('chat_user_id')?.value;
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
+    }
+
     const paramsData = await params;
     const sessionId = paramsData.sessionId;
+    const sessionKey = `${userId}_${sessionId}`;
     const { message } = await request.json() as { message: Message };
 
     if (!message) {
@@ -182,7 +201,7 @@ export async function POST(
     }
 
     // Get current session
-    const sessionResponse = await getKVValue<Session>(`${SESSION_PREFIX}${sessionId}`, { storeName: 'chat-sessions' });
+    const sessionResponse = await getKVValue<Session>(sessionKey, { storeName: 'chat-sessions' });
     if (!sessionResponse.success || !sessionResponse.data) {
       return NextResponse.json(
         { error: 'Session not found' },
@@ -198,7 +217,7 @@ export async function POST(
 
     // Update the individual session
     const updateResponse = await setKVValue(
-      `${SESSION_PREFIX}${sessionId}`,
+      sessionKey,
       updatedSession,
       { storeName: 'chat-sessions' }
     );
@@ -211,15 +230,15 @@ export async function POST(
     }
 
     // Move this session ID to the top of the master list (most recently used)
-    const allSessionsResponse = await getKVValue<string[]>(SESSIONS_KEY, { storeName: 'chat-sessions' });
+    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: 'chat-sessions' });
     const sessionIds = allSessionsResponse.success ? allSessionsResponse.data || [] : [];
-    
+
     // Remove the current session ID if it exists and add it to the beginning
-    const filteredSessionIds = sessionIds.filter(id => id !== sessionId);
-    const updatedSessionIds = [sessionId, ...filteredSessionIds];
-    
+    const filteredSessionIds = sessionIds.filter(id => id !== sessionKey);
+    const updatedSessionIds = [sessionKey, ...filteredSessionIds];
+
     const sessionsListResponse = await setKVValue(
-      SESSIONS_KEY,
+      userId,
       updatedSessionIds,
       { storeName: 'chat-sessions' }
     );

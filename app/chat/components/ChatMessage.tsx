@@ -23,10 +23,8 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
     setEditorContent = () => { },
     setEditorOpen = () => { }
 }: ChatMessageProps) {
+
     const tutorialCodeContent = message.tutorialData?.tutorialStep.codeContent;
-    // Step description
-    const tutorialInstructions = message.tutorialData?.tutorialStep.instructions;
-    // Step README content
     const tutorialReadme = message.tutorialData?.tutorialStep.readmeContent;
     const currentStep = message.tutorialData?.currentStep;
     const totalSteps = message.tutorialData?.totalStep;
@@ -51,7 +49,6 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
 
                     {message.author === 'ASSISTANT' ? (
                         <div className="prose prose-sm max-w-none prose-invert text-sm text-gray-200">
-                            {/* Enhanced typing indicator */}
                             {message.content === '' ? (
                                 <div className="flex items-center gap-4 text-gray-300 mb-4">
                                     <div className="flex space-x-2">

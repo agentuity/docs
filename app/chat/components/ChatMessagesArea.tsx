@@ -18,7 +18,6 @@ export function ChatMessagesArea({
     setEditorContent = () => { },
     setEditorOpen = () => { }
 }: ChatMessagesAreaProps) {
-    // State for messages and loading
     const [messages, setMessages] = useState<Message[]>([]);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);

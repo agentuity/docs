@@ -1,10 +1,7 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getKVValue, setKVValue } from '@/lib/kv-store';
 import { Session, Message, StreamingChunk, TutorialData } from '@/app/chat/types';
 import { toISOString, getCurrentTimestamp } from '@/app/chat/utils/dateUtils';
-
-// KV Store keys
-const SESSION_PREFIX = 'session_';
 
 /**
  * POST /api/sessions/[sessionId]/messages - Add a message to a session and process with streaming
@@ -20,6 +17,11 @@ export async function POST(
   { params }: { params: { sessionId: string } }
 ) {
   try {
+    const userId = request.cookies.get('chat_user_id')?.value;
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
+    }
+
     const paramsData = await params;
     const sessionId = paramsData.sessionId;
     const body = await request.json();
@@ -29,9 +31,9 @@ export async function POST(
     };
 
     if (!message) {
-      return new Response(
-        JSON.stringify({ error: 'Message data is required' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      return NextResponse.json(
+        { error: 'Message data is required' },
+        { status: 400 }
       );
     }
 
@@ -39,11 +41,12 @@ export async function POST(
     if (message.timestamp) {
       message.timestamp = toISOString(message.timestamp);
     }
-    const sessionResponse = await getKVValue<Session>(`${SESSION_PREFIX}${sessionId}`, { storeName: 'chat-sessions' });
+    const sessionKey = `${userId}_${sessionId}`;
+    const sessionResponse = await getKVValue<Session>(sessionKey, { storeName: 'chat-sessions' });
     if (!sessionResponse.success || !sessionResponse.data) {
-      return new Response(
-        JSON.stringify({ error: 'Session not found' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      return NextResponse.json(
+        { error: 'Session not found' },
+        { status: 404 }
       );
     }
 
@@ -54,16 +57,16 @@ export async function POST(
       messages: [...session.messages, message]
     };
 
-    const updateResult = await setKVValue(
-      `${SESSION_PREFIX}${sessionId}`,
+    await setKVValue(
+      sessionKey,
       updatedSession,
       { storeName: 'chat-sessions' }
     );
 
     if (!processWithAgent || message.author !== 'USER') {
-      return new Response(
-        JSON.stringify({ success: true, session: updatedSession }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      return NextResponse.json(
+        { success: true, session: updatedSession },
+        { status: 200 }
       );
     }
 
@@ -130,8 +133,8 @@ export async function POST(
                   messages: [...updatedSession.messages, assistantMessage]
                 };
 
-                const finalUpdateResult = await setKVValue(
-                  `${SESSION_PREFIX}${sessionId}`,
+                await setKVValue(
+                  sessionKey,
                   finalSession,
                   { storeName: 'chat-sessions' }
                 );
@@ -180,7 +183,7 @@ export async function POST(
     })();
 
 
-    return new Response(transformStream.readable, {
+    return new NextResponse(transformStream.readable, {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
@@ -199,7 +202,4 @@ export async function POST(
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
-
-  // This should never be reached, but adding for completeness
-  console.log('[DEBUG] End of function reached unexpectedly');
 }

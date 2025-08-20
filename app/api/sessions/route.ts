@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getKVValue, setKVValue, searchKVByKeyword } from '@/lib/kv-store';
+import { getKVValue, setKVValue } from '@/lib/kv-store';
 import { Session } from '@/app/chat/types';
 import { toISOString } from '@/app/chat/utils/dateUtils';
-
-// KV Store keys. TODO: The master list will need to be updated when user Auth is implemented
-const SESSIONS_KEY = 'session_master_list';
-const SESSION_PREFIX = 'session_';
 
 // This store service is set up on Agentuity cloud
 const KV_STORE_NAME = 'chat-sessions';
@@ -13,9 +9,14 @@ const KV_STORE_NAME = 'chat-sessions';
 /**
  * GET /api/sessions - Get all sessions
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const response = await getKVValue<string[]>(SESSIONS_KEY, { storeName: KV_STORE_NAME });
+    const userId = request.cookies.get('chat_user_id')?.value;
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
+    }
+
+    const response = await getKVValue<string[]>(userId, { storeName: KV_STORE_NAME });
     if (!response.success || !response.data) {
       return NextResponse.json({ sessions: [] });
     }
@@ -24,9 +25,9 @@ export async function GET() {
       return NextResponse.json({ sessions: [] });
     }
     const limitedSessionIds = sessionIds.slice(0, 10);
-    
+
     const sessionPromises = limitedSessionIds.map(sessionId =>
-      getKVValue<Session>(`${SESSION_PREFIX}${sessionId}`, { storeName: KV_STORE_NAME })
+      getKVValue<Session>(sessionId, { storeName: KV_STORE_NAME })
     );
 
     const sessionResults = await Promise.all(sessionPromises);
@@ -48,6 +49,10 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
+    const userId = request.cookies.get('chat_user_id')?.value;
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
+    }
     const session = await request.json() as Session;
 
     if (!session || !session.sessionId) {
@@ -70,9 +75,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const sessionKey = `${userId}_${session.sessionId}`;
+
     // Save the session data
     const sessionResponse = await setKVValue(
-      `${SESSION_PREFIX}${session.sessionId}`,
+      sessionKey,
       session,
       { storeName: KV_STORE_NAME }
     );
@@ -85,14 +92,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Update the sessions list with just the session ID
-    const allSessionsResponse = await getKVValue<string[]>(SESSIONS_KEY, { storeName: KV_STORE_NAME });
+    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: KV_STORE_NAME });
     const sessionIds = allSessionsResponse.success ? allSessionsResponse.data || [] : [];
 
     // Add the new session ID to the beginning of the array
-    const updatedSessionIds = [session.sessionId, ...sessionIds.filter(id => id !== session.sessionId)];
+    const updatedSessionIds = [sessionKey, ...sessionIds.filter(id => id !== sessionKey)];
 
     const sessionsListResponse = await setKVValue(
-      SESSIONS_KEY,
+      userId,
       updatedSessionIds,
       { storeName: KV_STORE_NAME }
     );

@@ -93,6 +93,7 @@ export default function ChatSessionPage() {
           },
 
           onError: (error) => {
+            console.error('Error sending message:', error);
             setSession(prev => {
               if (!prev) return prev;
               const updatedMessages = prev.messages.map(msg =>
