@@ -160,7 +160,7 @@ for result in results:
 
 ### Deleting Vectors
 
-Remove specific vectors from storage using their IDs.
+Remove specific vectors from storage using their IDs (JavaScript) or keys (Python).
 
 <CodeExample>
 ```javascript
@@ -178,7 +178,7 @@ const bulkDeleteCount = await context.vector.delete(
 ```python
 # Python
 # Delete single vector
-count = await context.vector.delete("knowledge-base", "vector-id-1")
+count = await context.vector.delete("knowledge-base", "doc_1")
 
 # Note: Python SDK currently supports single deletion
 # For bulk operations, call delete multiple times
