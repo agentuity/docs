@@ -105,7 +105,6 @@ from agentuity.io.email import EmailAttachment
 
 async def handler(request: AgentRequest, response: AgentResponse, context: AgentContext):
     # Get the incoming email
-    email = request.data.email()
     email = await request.data.email()
     # Create an attachment
     attachment = EmailAttachment(
@@ -368,18 +367,20 @@ The Vector Storage API provides a way to store and search for data using vector 
 
 #### upsert
 
-`async upsert(name: str, *documents: VectorUpsertParams) -> list[str]`
+`async upsert(name: str, documents: List[VectorUpsertParams]) -> list[str]`
 
 Inserts or updates vectors in the vector storage.
 
 **Parameters**
 
 - `name`: The name of the vector storage
-- `documents`: An array of documents to upsert, each with either embeddings or text
+- `documents`: A list of documents to upsert. Each document must include a unique `key` and either `document` (text) or `embeddings`
 
 **Return Value**
 
-Returns a list of string IDs for the upserted vectors.
+Returns a list of string IDs for the upserted vectors (internal system IDs, not your provided keys).
+
+Note: Upserting with an existing `key` updates that vector (idempotent operation).
 
 **Example**
 
@@ -402,6 +403,7 @@ async def index_products(context: AgentContext, products: List[Dict[str, Any]]) 
     documents = []
     for product in products:
         documents.append({
+            "key": product["id"],  # REQUIRED: unique key for each document
             "document": product["description"],
             "metadata": {
                 "product_id": product["id"],
@@ -442,18 +444,25 @@ ids2 = await context.vector.upsert(
 
 #### search
 
-`async search(name: str, query: str, limit: int, similarity: float, metadata: Optional[dict]) -> list[VectorSearchResult]`
+`async search(name: str, query: str, limit: int = 10, similarity: float = 0.5, metadata: Optional[dict] = None) -> list[VectorSearchResult]`
 
 Searches for vectors in the vector storage.
 
 **Parameters**
 
 - `name`: The name of the vector storage
-- `params`: Search parameters including query, limit, similarity threshold, and metadata filters
+- `query`: The query text to search against
+- `limit`: (optional) Maximum number of results to return. Defaults to 10
+- `similarity`: (optional) Minimum similarity threshold (0.0-1.0). Defaults to 0.5
+- `metadata`: (optional) Exact-match metadata filters applied at search time. Defaults to None
 
 **Return Value**
 
-Returns a list of search results, each containing an ID, metadata, and distance score.
+Returns a list of search results with the following attributes:
+- `id`: Internal vector ID (e.g., "vector_94c98660c8afa3a2")
+- `key`: The unique key for this vector
+- `similarity`: Similarity score from 0.0 to 1.0 (1.0 = perfect match)
+- `metadata`: The associated metadata dictionary
 
 **Example**
 
@@ -463,8 +472,9 @@ from typing import List, Dict, Any
 
 # Search for similar products with error handling
 try:
-    results = await context.vector.search("product-descriptions",
-        query="comfortable office chair",
+    results = await context.vector.search(
+        "product-descriptions",
+        "comfortable office chair",
         limit=5,
         similarity=0.7,
         metadata={"category": "furniture"}
@@ -474,7 +484,7 @@ try:
     if results:
         context.logger.info(f"Found {len(results)} matching products")
         for result in results:
-            print(f"Product ID: {result.id}, Similarity: {result.distance}")
+            print(f"Product ID: {result.id}, Similarity: {result.similarity}")
             print(f"Metadata: {result.metadata}")
     else:
         context.logger.info("No matching products found")
@@ -496,7 +506,7 @@ Deletes a vector from the vector storage.
 
 **Return Value**
 
-Returns the number of vectors that were deleted (0 or 1).
+Returns the number of vectors that were deleted (0 if the key didn't exist, 1 if successfully deleted).
 
 **Example**
 
@@ -505,7 +515,7 @@ from agentuity.sdk import AgentContext
 
 # Delete a single vector with error handling
 try:
-    deleted_count = await context.vector.delete("product-descriptions", "id1")
+    deleted_count = await context.vector.delete("product-descriptions", "key_123")
     context.logger.info(f"Deleted {deleted_count} vector(s)")
 except Exception as e:
     context.logger.error(f"Failed to delete vector: {str(e)}")
