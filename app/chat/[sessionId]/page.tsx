@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from "next/navigation";
-import Split from 'react-split';
+import { Allotment } from "allotment";
+import "allotment/dist/style.css";
 import { v4 as uuidv4 } from 'uuid';
 import { ChatMessagesArea } from '../components/ChatMessagesArea';
 import { CodeEditor } from '../components/CodeEditor';
-import styles from '../components/SplitPane.module.css';
 import { Session, Message } from '../types';
 import { useSessions } from '../SessionContext';
 import { sessionService } from '../services/sessionService';
@@ -166,46 +166,39 @@ export default function ChatSessionPage() {
 
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden  overflow-y-auto agentuity-scrollbar">
-      <Split
-        className={styles.split}
-        sizes={[60, 40]}
-        minSize={300}
-        gutterSize={4}
-        gutterStyle={() => ({
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          cursor: 'col-resize'
-        })}
-        style={{ height: '100%', display: 'flex', overflow: 'hidden' }}
-      >
-        <div className="flex-1 flex flex-col items-center h-full overflow-hidden">
-          <div className="w-full max-w-3xl flex-1 flex flex-col h-full">
-            {session && (
-              <ChatMessagesArea
-                session={session}
-                handleSendMessage={handleSendMessage}
-                setEditorContent={setEditorContent}
-                setEditorOpen={() => { setEditorOpen(true) }}
-              />
-            )}
+    <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden overflow-y-auto agentuity-scrollbar">
+      <Allotment>
+        <Allotment.Pane minSize={300}>
+          <div className="flex-1 flex flex-col items-center h-full overflow-hidden">
+            <div className="w-full max-w-3xl flex-1 flex flex-col h-full">
+              {session && (
+                <ChatMessagesArea
+                  session={session}
+                  handleSendMessage={handleSendMessage}
+                  setEditorContent={setEditorContent}
+                  setEditorOpen={() => { setEditorOpen(true) }}
+                />
+              )}
+            </div>
           </div>
-        </div>
-        {
-          editorOpen && (<div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-            <CodeEditor
-              executionResult={''}
-              serverRunning={false}
-              executingFiles={[]}
-              runCode={() => { }}
-              stopServer={stopServer}
-              editorContent={editorContent}
-              setEditorContent={setEditorContent}
-              toggleEditor={toggleEditor}
-            />
-          </div>)
-        }
-
-      </Split>
+        </Allotment.Pane>
+        {editorOpen && (
+          <Allotment.Pane>
+            <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+              <CodeEditor
+                executionResult={''}
+                serverRunning={false}
+                executingFiles={[]}
+                runCode={() => { }}
+                stopServer={stopServer}
+                editorContent={editorContent}
+                setEditorContent={setEditorContent}
+                toggleEditor={toggleEditor}
+              />
+            </div>
+          </Allotment.Pane>
+        )}
+      </Allotment>
     </div>
   );
 } 
