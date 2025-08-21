@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getKVValue, setKVValue } from '@/lib/kv-store';
 import { Session } from '@/app/chat/types';
 import { toISOString } from '@/app/chat/utils/dateUtils';
+import { config } from '@/lib/config';
 
-// This store service is set up on Agentuity cloud
-const KV_STORE_NAME = 'chat-sessions';
+// Constants
+const DEFAULT_SESSIONS_LIMIT = 10;
+const MAX_SESSIONS_LIMIT = 50;
 
 /**
- * GET /api/sessions - Get all sessions
+ * GET /api/sessions - Get all sessions (paginated)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -16,26 +18,38 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
     }
 
-    const response = await getKVValue<string[]>(userId, { storeName: KV_STORE_NAME });
-    if (!response.success || !response.data) {
-      return NextResponse.json({ sessions: [] });
-    }
-    const sessionIds = response.data || [];
-    if (sessionIds.length === 0) {
-      return NextResponse.json({ sessions: [] });
-    }
-    const limitedSessionIds = sessionIds.slice(0, 10);
+    const searchParams = request.nextUrl.searchParams;
+    const parsedLimit = Number.parseInt(searchParams.get('limit') ?? String(DEFAULT_SESSIONS_LIMIT));
+    const parsedCursor = Number.parseInt(searchParams.get('cursor') ?? '0');
 
-    const sessionPromises = limitedSessionIds.map(sessionId =>
-      getKVValue<Session>(sessionId, { storeName: KV_STORE_NAME })
-    );
+    const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), MAX_SESSIONS_LIMIT) : DEFAULT_SESSIONS_LIMIT;
+    const cursor = Number.isFinite(parsedCursor) ? Math.max(parsedCursor, 0) : 0;
 
+    const response = await getKVValue<string[]>(userId, { storeName: config.defaultStoreName });
+    if (!response.success || !response.data?.length) {
+      return NextResponse.json({ sessions: [], pagination: { cursor, nextCursor: null, hasMore: false, total: 0, limit } });
+    }
+
+    const sessionIds = response.data;
+    const total = sessionIds.length;
+
+    const start = Math.min(cursor, total);
+    const end = Math.min(start + limit, total);
+    const pageIds = sessionIds.slice(start, end);
+
+    const sessionPromises = pageIds.map(sessionId => getKVValue<Session>(sessionId, { storeName: config.defaultStoreName }));
     const sessionResults = await Promise.all(sessionPromises);
     const sessions = sessionResults
       .filter(result => result.success && result.data)
       .map(result => result.data as Session);
 
-    return NextResponse.json({ sessions });
+    const hasMore = end < total;
+    const nextCursor = hasMore ? end : null;
+
+    return NextResponse.json({
+      sessions,
+      pagination: { cursor: start, nextCursor, hasMore, total, limit }
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error occurred' },
@@ -81,7 +95,7 @@ export async function POST(request: NextRequest) {
     const sessionResponse = await setKVValue(
       sessionKey,
       session,
-      { storeName: KV_STORE_NAME }
+      { storeName: config.defaultStoreName }
     );
 
     if (!sessionResponse.success) {
@@ -92,7 +106,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update the sessions list with just the session ID
-    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: KV_STORE_NAME });
+    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: config.defaultStoreName });
     const sessionIds = allSessionsResponse.success ? allSessionsResponse.data || [] : [];
 
     // Add the new session ID to the beginning of the array
@@ -101,7 +115,7 @@ export async function POST(request: NextRequest) {
     const sessionsListResponse = await setKVValue(
       userId,
       updatedSessionIds,
-      { storeName: KV_STORE_NAME }
+      { storeName: config.defaultStoreName }
     );
 
     if (!sessionsListResponse.success) {
