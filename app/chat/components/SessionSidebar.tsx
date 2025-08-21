@@ -37,7 +37,10 @@ export function SessionSidebar({
   currentSessionId,
   sessions,
   onSessionSelect,
-  onNewSession
+  onNewSession,
+  hasMore,
+  onLoadMore,
+  isLoadingMore
 }: SessionSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(true);
 
@@ -186,6 +189,19 @@ export function SessionSidebar({
 
       {/* Footer Section */}
       <div className="p-3 border-t border-white/8">
+        {!isCollapsed && (
+          <>
+            {typeof onLoadMore === 'function' && hasMore && (
+              <button
+                onClick={onLoadMore}
+                disabled={isLoadingMore}
+                className="w-full px-2 py-1 text-sm rounded-md bg-white/5 hover:bg-white/10 disabled:opacity-60"
+              >
+                {isLoadingMore ? 'Loading...' : 'Load more'}
+              </button>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

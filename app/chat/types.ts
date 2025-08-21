@@ -39,6 +39,9 @@ export interface SessionSidebarProps {
   sessions: Session[];
   onSessionSelect: (sessionId: string) => void;
   onNewSession: () => void;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
 }
 
 // // API request/response types

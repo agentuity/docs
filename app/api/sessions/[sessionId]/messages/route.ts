@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getKVValue, setKVValue } from '@/lib/kv-store';
 import { Session, Message, StreamingChunk, TutorialData } from '@/app/chat/types';
 import { toISOString, getCurrentTimestamp } from '@/app/chat/utils/dateUtils';
+import { getAgentPulseConfig } from '@/lib/env';
+import { config } from '@/lib/config';
+
+// Constants
+const DEFAULT_CONVERSATION_HISTORY_LIMIT = 10;
+const AGENT_REQUEST_TIMEOUT = 30000; // 30 seconds
 
 /**
  * POST /api/sessions/[sessionId]/messages - Add a message to a session and process with streaming
@@ -42,7 +48,7 @@ export async function POST(
       message.timestamp = toISOString(message.timestamp);
     }
     const sessionKey = `${userId}_${sessionId}`;
-    const sessionResponse = await getKVValue<Session>(sessionKey, { storeName: 'chat-sessions' });
+    const sessionResponse = await getKVValue<Session>(sessionKey, { storeName: config.defaultStoreName });
     if (!sessionResponse.success || !sessionResponse.data) {
       return NextResponse.json(
         { error: 'Session not found' },
@@ -60,7 +66,7 @@ export async function POST(
     await setKVValue(
       sessionKey,
       updatedSession,
-      { storeName: 'chat-sessions' }
+      { storeName: config.defaultStoreName }
     );
 
     if (!processWithAgent || message.author !== 'USER') {
@@ -76,20 +82,29 @@ export async function POST(
     const assistantMessageId = crypto.randomUUID();
 
     // Process with agent and stream response
-    const agentUrl = 'http://127.0.0.1:3500/agent_ddcb59aa4473f1323be5d9f5fb62b74e';
+    const agentConfig = getAgentPulseConfig();
+    const agentUrl = agentConfig.url;
 
     const agentPayload = {
       message: message.content,
-      conversationHistory: updatedSession.messages.slice(-10),
+      conversationHistory: updatedSession.messages.slice(-DEFAULT_CONVERSATION_HISTORY_LIMIT),
       tutorialData: message.tutorialData
     };
 
+    // Prepare headers with optional bearer token
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (agentConfig.bearerToken) {
+      headers['Authorization'] = `Bearer ${agentConfig.bearerToken}`;
+    }
+
     const agentResponse = await fetch(agentUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(agentPayload),
+      signal: AbortSignal.timeout(AGENT_REQUEST_TIMEOUT),
     });
 
     if (!agentResponse.ok) {
@@ -136,7 +151,7 @@ export async function POST(
                 await setKVValue(
                   sessionKey,
                   finalSession,
-                  { storeName: 'chat-sessions' }
+                  { storeName: config.defaultStoreName }
                 );
 
                 // Send the final session in the finish event

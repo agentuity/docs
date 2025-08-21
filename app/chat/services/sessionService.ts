@@ -6,10 +6,52 @@ export interface SessionServiceResponse<T = any> {
   error?: string;
 }
 
+export interface SessionsPage {
+  sessions: Session[];
+  pagination: {
+    cursor: number;
+    nextCursor: number | null;
+    hasMore: boolean;
+    total: number;
+    limit: number;
+  };
+}
+
 
 export class SessionService {
   /**
-   * Get all sessions from API
+   * Get a page of sessions
+   */
+  async getSessionsPage(params: { cursor?: number; limit?: number } = {}): Promise<SessionServiceResponse<SessionsPage>> {
+    const { cursor = 0, limit = 10 } = params;
+    try {
+      const response = await fetch(`/api/sessions?cursor=${cursor}&limit=${limit}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.error || `Failed to fetch sessions: ${response.status}`
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          sessions: data.sessions || [],
+          pagination: data.pagination || { cursor, nextCursor: null, hasMore: false, total: 0, limit }
+        }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
+    }
+  }
+
+  /**
+   * Get all sessions from API (first page fallback)
    */
   async getAllSessions(): Promise<SessionServiceResponse<Session[]>> {
     try {

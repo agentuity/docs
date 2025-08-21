@@ -6,64 +6,67 @@ import { Session } from "./types";
 import { sessionService } from "./services/sessionService";
 import { SessionSidebar } from "./components/SessionSidebar";
 import { SessionContext } from './SessionContext';
-import useSWR from 'swr';
+import useSWRInfinite from 'swr/infinite';
 
 
-
-const SESSIONS_CACHE_KEY = 'agentuity-chat-sessions';
-
-const fetcher = async (key: string): Promise<Session[]> => {
-    const response = await sessionService.getAllSessions();
-    if (!response.success) throw new Error(response.error || 'Failed to fetch sessions');
-    return response.data || [];
-};
 
 export default function ChatLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
-    // Extract sessionId from pathname
     const sessionId = pathname.startsWith('/chat/') ? pathname.split('/chat/')[1] : '';
 
+    const getKey = (pageIndex: number, previousPageData: any) => {
+        if (previousPageData && !previousPageData.pagination?.hasMore) return null;
+        const cursor = previousPageData ? previousPageData.pagination.nextCursor : 0;
+        return ['sessions', cursor];
+    };
 
-    // New: Add client-side localStorage loading
-    const [cachedSessions, setCachedSessions] = useState<Session[]>([]);
+    const fetchPage = async ([, cursor]: [string, number]) => {
+        const res = await sessionService.getSessionsPage({ cursor, limit: 10 });
+        if (!res.success || !res.data) throw new Error(res.error || 'Failed to fetch sessions');
+        return res.data;
+    };
 
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const stored = localStorage.getItem(SESSIONS_CACHE_KEY);
-            if (stored) {
-                setCachedSessions(JSON.parse(stored));
-            }
-        }
-    }, []);
-
-    // Updated useSWR with client-side fallback
-    const { data: sessions = [], error, mutate, isLoading } = useSWR<Session[]>('sessions', fetcher, {
-        fallbackData: cachedSessions,
-        onSuccess: (data) => {
-            if (typeof window !== 'undefined') {
-                localStorage.setItem(SESSIONS_CACHE_KEY, JSON.stringify(data));
-            }
-        },
+    const { data, error, size, setSize, isValidating, mutate: swrMutate } = useSWRInfinite(getKey, fetchPage, {
         revalidateOnFocus: true,
-        revalidateOnReconnect: true,
-        refreshInterval: 0,
+        revalidateOnReconnect: true
     });
 
-    // Use Next.js router for client-side navigation
-    const handleSessionSelect = (id: string) => {
-        router.push(`/chat/${id}`);
+    const pages = data || [];
+    // Deduplicate sessions across pages using Map to preserve order and uniqueness
+    const sessionMap = new Map<string, Session>();
+    pages.forEach(page => {
+        page.sessions.forEach(session => {
+            sessionMap.set(session.sessionId, session);
+        });
+    });
+    const sessions: Session[] = Array.from(sessionMap.values());
+
+    const hasMore = pages.length === 0 ? false : (pages[pages.length - 1].pagination?.hasMore ?? false);
+    const isLoading = !data && !error;
+    const isLoadingMore = isValidating;
+
+    const mutate = async (newSessions: Session[], options = { revalidate: false }) => {
+        // When updating sessions, we need to update all pages that might contain the session
+        const updatedPages = pages.map(page => {
+            const updatedPageSessions = page.sessions.map(session => {
+                const updatedSession = newSessions.find(ns => ns.sessionId === session.sessionId);
+                return updatedSession || session;
+            });
+            return { ...page, sessions: updatedPageSessions };
+        });
+
+        await swrMutate(updatedPages, options);
     };
 
-    const handleNewSession = () => {
-        router.push('/chat');
-    };
+    const handleSessionSelect = (id: string) => router.push(`/chat/${id}`);
+    const handleNewSession = () => router.push('/chat');
+    const loadMore = () => setSize(size + 1);
 
-    // Handle loading/error in render
-    if (isLoading) return <div>Loading sessions...</div>; // Or skeleton UI
-    if (error) return <div>Error: {error.message} <button onClick={() => mutate()}>Retry</button></div>;
+    if (isLoading) return <div>Loading sessions...</div>;
+    if (error) return <div>Error: {error.message} <button onClick={() => setSize(1)}>Retry</button></div>;
 
     return (
         <div className="agentuity-background flex h-screen text-white overflow-hidden">
@@ -72,22 +75,19 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
                 sessions={sessions}
                 onSessionSelect={handleSessionSelect}
                 onNewSession={handleNewSession}
+                hasMore={hasMore}
+                onLoadMore={loadMore}
+                isLoadingMore={isLoadingMore}
             />
             {/* Main Content */}
             <SessionContext.Provider value={{
                 sessions,
                 setSessions: (updater, options = { revalidate: true }) => {
-                    let newData;
-                    if (typeof updater === 'function') {
-                        newData = updater(sessions);
-                    } else {
-                        newData = updater;
-                    }
-                    console.log('Mutating with new data:', newData);
+                    const newData = typeof updater === 'function' ? (updater as any)(sessions) : updater;
                     mutate(newData, options);
                 },
                 currentSessionId: sessionId,
-                revalidateSessions: mutate
+                revalidateSessions: undefined
             }}>
                 <div className="flex-1 flex flex-col min-w-0">
                     {children}

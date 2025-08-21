@@ -30,8 +30,6 @@ export function useStreaming({
 
   const sendMessage = useCallback(async (content: string, sessionId: string, tutorialData?: TutorialData) => {
     if (!content.trim() || !sessionId) return;
-
-    // Create user message
     const userMessage: Message = {
       id: generateId(),
       author: 'USER',
@@ -40,7 +38,6 @@ export function useStreaming({
       tutorialData
     };
 
-    // Add user message to UI immediately
     setMessages(prev => [...prev, userMessage]);
     setLoading(true);
 
@@ -48,11 +45,10 @@ export function useStreaming({
     const assistantMessage: Message = {
       id: generateId(),
       author: 'ASSISTANT',
-      content: '', // Will be populated during streaming
+      content: '',
       timestamp: getCurrentTimestamp(),
     };
 
-    // Add assistant placeholder to UI
     setMessages(prev => [...prev, assistantMessage]);
 
     try {

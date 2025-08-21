@@ -7,6 +7,7 @@ import { MarkdownRenderer } from './MarkdownRenderer';
 import { formatTime } from '../utils/dateUtils';
 import { TutorialFileChip } from './TutorialFileChip';
 import { TutorialData } from '../types';
+
 interface ChatMessageProps {
     message: {
         author: 'USER' | 'ASSISTANT';

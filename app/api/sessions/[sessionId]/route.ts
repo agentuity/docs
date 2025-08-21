@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getKVValue, setKVValue, deleteKVValue } from '@/lib/kv-store';
 import { Session, Message } from '@/app/chat/types';
 import { toISOString } from '@/app/chat/utils/dateUtils';
+import { config } from '@/lib/config';
 
 /**
  * GET /api/sessions/[sessionId] - Get a specific session
@@ -19,7 +20,7 @@ export async function GET(
     const paramsData = await params;
     const sessionId = paramsData.sessionId;
     const sessionKey = `${userId}_${sessionId}`;
-    const response = await getKVValue<Session>(sessionKey, { storeName: 'chat-sessions' });
+    const response = await getKVValue<Session>(sessionKey, { storeName: config.defaultStoreName });
 
     if (!response.success) {
       return NextResponse.json(
@@ -79,7 +80,7 @@ export async function PUT(
     const response = await setKVValue(
       sessionKey,
       session,
-      { storeName: 'chat-sessions' }
+      { storeName: config.defaultStoreName }
     );
 
     if (!response.success) {
@@ -90,7 +91,7 @@ export async function PUT(
     }
 
     // Update the master list if needed (ensure the session ID is in the list)
-    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: 'chat-sessions' });
+    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: config.defaultStoreName });
     const sessionIds = allSessionsResponse.success ? allSessionsResponse.data || [] : [];
 
     // If the session ID isn't in the list, add it to the beginning
@@ -100,7 +101,7 @@ export async function PUT(
       const sessionsListResponse = await setKVValue(
         userId,
         updatedSessionIds,
-        { storeName: 'chat-sessions' }
+        { storeName: config.defaultStoreName }
       );
 
       if (!sessionsListResponse.success) {
@@ -137,7 +138,7 @@ export async function DELETE(
     // Delete the session data
     const sessionResponse = await deleteKVValue(
       sessionKey,
-      { storeName: 'chat-sessions' }
+      { storeName: config.defaultStoreName }
     );
 
     if (!sessionResponse.success) {
@@ -148,7 +149,7 @@ export async function DELETE(
     }
 
     // Remove from sessions list
-    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: 'chat-sessions' });
+    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: config.defaultStoreName });
     const sessionIds = allSessionsResponse.success ? allSessionsResponse.data || [] : [];
 
     const updatedSessionIds = sessionIds.filter(id => id !== sessionKey);
@@ -156,7 +157,7 @@ export async function DELETE(
     const sessionsListResponse = await setKVValue(
       userId,
       updatedSessionIds,
-      { storeName: 'chat-sessions' }
+      { storeName: config.defaultStoreName }
     );
 
     if (!sessionsListResponse.success) {
@@ -201,7 +202,7 @@ export async function POST(
     }
 
     // Get current session
-    const sessionResponse = await getKVValue<Session>(sessionKey, { storeName: 'chat-sessions' });
+    const sessionResponse = await getKVValue<Session>(sessionKey, { storeName: config.defaultStoreName });
     if (!sessionResponse.success || !sessionResponse.data) {
       return NextResponse.json(
         { error: 'Session not found' },
@@ -219,7 +220,7 @@ export async function POST(
     const updateResponse = await setKVValue(
       sessionKey,
       updatedSession,
-      { storeName: 'chat-sessions' }
+      { storeName: config.defaultStoreName }
     );
 
     if (!updateResponse.success) {
@@ -230,7 +231,7 @@ export async function POST(
     }
 
     // Move this session ID to the top of the master list (most recently used)
-    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: 'chat-sessions' });
+    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: config.defaultStoreName });
     const sessionIds = allSessionsResponse.success ? allSessionsResponse.data || [] : [];
 
     // Remove the current session ID if it exists and add it to the beginning
@@ -240,7 +241,7 @@ export async function POST(
     const sessionsListResponse = await setKVValue(
       userId,
       updatedSessionIds,
-      { storeName: 'chat-sessions' }
+      { storeName: config.defaultStoreName }
     );
 
     if (!sessionsListResponse.success) {
