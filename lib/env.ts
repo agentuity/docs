@@ -38,10 +38,8 @@ export const getAgentPulseConfig = (): AgentConfig => {
  */
 export const validateEnv = (): boolean => {
   try {
-    const config = getAgentConfig();
+    getAgentConfig();
     console.log('✓ Environment variables validated');
-    console.log('✓ Agent URL:', config.url);
-    console.log('✓ Bearer token:', config.bearerToken ? 'configured' : 'Not Set');
     return true;
   } catch (error) {
     console.error('❌ Environment validation failed:', error);
