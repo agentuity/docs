@@ -451,7 +451,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
 
 ## Common Pitfalls & Solutions
 
-### No Search Results?
+### Empty Search Results
 **Problem**: Your search returns empty results even though relevant data exists.
 
 **Solutions**:
@@ -475,14 +475,15 @@ if (results.length === 0) {
 }
 ```
 
-### Duplicate Documents?
+### Duplicate Documents
 **Problem**: Same content appears multiple times in search results.
 
 **Solution**: Vector upsert is idempotent when using the same key:
-- JavaScript: Store a unique ID in metadata and check before inserting
-- Python: Always use consistent `key` values - upserting with existing key updates
+- Always use consistent `key` values for your documents
+- Upserting with an existing key updates the vector rather than creating a duplicate
+- The same internal vector ID is reused, keeping your storage clean
 
-### Slow Performance?
+### Performance Issues
 **Problem**: Vector operations take too long.
 
 **Solutions**:
@@ -490,7 +491,7 @@ if (results.length === 0) {
 - **Limit search results**: Use `limit: 10` instead of retrieving all matches
 - **Optimize metadata**: Keep metadata objects small and focused
 
-### Wrong Search Results?
+### Irrelevant Search Results
 **Problem**: Search returns irrelevant or unexpected documents.
 
 **Solutions**:
