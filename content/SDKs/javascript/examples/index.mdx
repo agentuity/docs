@@ -111,6 +111,7 @@ const handler: AgentHandler = async (request, response, context) => {
       
       // Prepare documents for vector storage
       const documents = products.map(product => ({
+        key: product.id,
         document: product.description,
         metadata: {
           id: product.id,
@@ -145,7 +146,7 @@ const handler: AgentHandler = async (request, response, context) => {
       // Format results
       const formattedResults = results.map(result => ({
         ...result.metadata,
-        similarity: 1 - result.distance // Convert distance to similarity score
+        similarity: result.similarity
       }));
       
       return response.json({ 
