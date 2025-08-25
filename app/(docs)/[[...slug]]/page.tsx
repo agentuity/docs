@@ -1,11 +1,3 @@
-import { CLICommand } from '@/components/CLICommand';
-import { CodeExample } from '@/components/CodeExample';
-import { Mermaid } from '@/components/Mermaid';
-import { Sparkle } from '@/components/Sparkle';
-import { ThemeImage } from '@/components/ThemeImage';
-import { TypingAnimation } from '@/components/TypingAnimation';
-import { XButton } from '@/components/XButton';
-import { source } from '@/lib/source';
 import { Popup, PopupContent, PopupTrigger } from 'fumadocs-twoslash/ui';
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 import defaultMdxComponents from 'fumadocs-ui/mdx';
@@ -16,9 +8,17 @@ import {
 	DocsTitle,
 } from 'fumadocs-ui/page';
 import { notFound } from 'next/navigation';
+import { CLICommand } from '@/components/CLICommand';
+import { CodeExample } from '@/components/CodeExample';
+import { Mermaid } from '@/components/Mermaid';
+import { Sparkle } from '@/components/Sparkle';
+import { ThemeImage } from '@/components/ThemeImage';
+import { TypingAnimation } from '@/components/TypingAnimation';
+import { XButton } from '@/components/XButton';
+import { source } from '@/lib/source';
 import { CommunityButton } from '../../../components/Community';
-import { NavButton } from '../../../components/NavButton';
 import CopyPageDropdown from '../../../components/CopyPageDropdown';
+import { NavButton } from '../../../components/NavButton';
 
 export default async function Page(props: {
 	params: Promise<{ slug?: string[] }>;

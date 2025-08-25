@@ -1,6 +1,6 @@
 import type { AgentContext } from '@agentuity/sdk';
-import { processDoc } from './docs-processor';
 import { VECTOR_STORE_NAME } from '../../../config';
+import { processDoc } from './docs-processor';
 import type { SyncPayload, SyncStats } from './types';
 
 /**

@@ -1,11 +1,10 @@
 import type { AgentContext } from '@agentuity/sdk';
-import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
-
-import { retrieveRelevantDocs } from './retriever';
+import { generateObject } from 'ai';
 import { rephraseVaguePrompt } from './prompt';
-import { AnswerSchema } from './types';
+import { retrieveRelevantDocs } from './retriever';
 import type { Answer } from './types';
+import { AnswerSchema } from './types';
 
 export default async function answerQuestion(
 	ctx: AgentContext,

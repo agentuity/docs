@@ -1,6 +1,6 @@
-import { source } from '@/lib/source';
 import type { NextRequest } from 'next/server';
 import { getAgentConfig } from '@/lib/env';
+import { source } from '@/lib/source';
 
 function documentPathToUrl(docPath: string): string {
 	// Remove the .md or .mdx extension before any # symbol

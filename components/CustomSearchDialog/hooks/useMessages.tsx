@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Message, SearchResult } from '../types';
 
 const STORAGE_KEY = 'agentuity-search-history';

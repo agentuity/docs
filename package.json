@@ -11,6 +11,7 @@
 		"start": "next start",
 		"format": "npx @biomejs/biome format",
 		"format:fix": "npx @biomejs/biome format --write",
+		"organize-imports": "npx @biomejs/biome check --formatter-enabled=false --linter-enabled=false --write",
 		"lint": "npx @biomejs/biome lint",
 		"lint:fix": "npx @biomejs/biome lint --fix",
 		"postinstall": "fumadocs-mdx",

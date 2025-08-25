@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { X, RotateCcw, Trash2 } from 'lucide-react';
+import { RotateCcw, Trash2, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { AgentuityLogo } from '../icons/AgentuityLogo';
+import { useMessages } from './hooks/useMessages';
 import { MessageList } from './MessageList';
 import { SearchInput } from './SearchInput';
-import { useMessages } from './hooks/useMessages';
 import type { CustomSearchDialogProps } from './types';
 
 export default function CustomSearchDialog(props: CustomSearchDialogProps) {

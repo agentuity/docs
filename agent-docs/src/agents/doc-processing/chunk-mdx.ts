@@ -1,8 +1,8 @@
-import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
-import { DirectoryLoader } from 'langchain/document_loaders/fs/directory';
-import type { Document } from 'langchain/document';
-import { TextLoader } from 'langchain/document_loaders/fs/text';
 import matter from 'gray-matter';
+import type { Document } from 'langchain/document';
+import { DirectoryLoader } from 'langchain/document_loaders/fs/directory';
+import { TextLoader } from 'langchain/document_loaders/fs/text';
+import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 
 /**
  * Type for a single enriched documentation chunk.

@@ -1,12 +1,12 @@
 'use client';
 
-import type React from 'react';
-import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
-import { Copy, FileText, ChevronDown } from 'lucide-react';
 import * as Popover from '@radix-ui/react-popover';
-import { OpenAIIcon } from './icons/OpenAIIcon';
+import { ChevronDown, Copy, FileText } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { ClaudeIcon } from './icons/ClaudeIcon';
+import { OpenAIIcon } from './icons/OpenAIIcon';
 
 interface PageContent {
 	content: string;

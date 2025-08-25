@@ -1,5 +1,5 @@
-import { embedMany } from 'ai';
 import { openai } from '@ai-sdk/openai';
+import { embedMany } from 'ai';
 /**
  * Generates embeddings for an array of texts using the OpenAI embedding API (via Vercel AI SDK).
  * @param texts Array of strings to embed.

@@ -1,6 +1,6 @@
 import type { AgentContext } from '@agentuity/sdk';
-import { generateObject, generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
+import { generateObject, generateText } from 'ai';
 
 import type { PromptType } from './types';
 import { PromptClassificationSchema } from './types';

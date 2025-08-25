@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef, useEffect, type KeyboardEvent } from 'react';
 import { Send } from 'lucide-react';
+import { type KeyboardEvent, useEffect, useRef } from 'react';
 import type { SearchInputProps } from './types';
 
 export function SearchInput({

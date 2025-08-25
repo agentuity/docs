@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock';
+import { HelpCircle, Loader2, User } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { User, HelpCircle, Loader2 } from 'lucide-react';
-import { AgentuityLogo } from '../icons/AgentuityLogo';
 import { CLICommand } from '../CLICommand';
-import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock';
-import type { MessageListProps, Message } from './types';
+import { AgentuityLogo } from '../icons/AgentuityLogo';
+import type { Message, MessageListProps } from './types';
 
 export function MessageList({
 	messages,

@@ -1,5 +1,5 @@
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
 interface CodeExampleProps {
 	py?: string;

@@ -1,9 +1,9 @@
+import { LargeSearchToggle } from 'fumadocs-ui/components/layout/search-toggle';
+import { DocsLayout } from 'fumadocs-ui/layouts/notebook';
+import type { ReactNode } from 'react';
 import { baseOptions } from '@/app/layout.config';
 import { source } from '@/lib/source';
-import { DocsLayout } from 'fumadocs-ui/layouts/notebook';
-import { LargeSearchToggle } from 'fumadocs-ui/components/layout/search-toggle';
 import AISearchToggle from '../../components/AISearchToggle';
-import type { ReactNode } from 'react';
 
 export default function Layout({ children }: { children: ReactNode }) {
 	return (

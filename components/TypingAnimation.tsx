@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from 'fumadocs-ui/utils/cn';
-import { motion, type MotionProps } from 'motion/react';
+import { type MotionProps, motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 
 interface TypingAnimationProps extends MotionProps {
