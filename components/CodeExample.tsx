@@ -1,5 +1,5 @@
-import { Tab, Tabs } from "fumadocs-ui/components/tabs";
-import { DynamicCodeBlock } from "fumadocs-ui/components/dynamic-codeblock";
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock';
 
 interface CodeExampleProps {
 	py?: string;
@@ -11,18 +11,14 @@ export function CodeExample({ py, js }: CodeExampleProps) {
 		return null;
 	}
 	if (!py && js) {
-		return (
-			<DynamicCodeBlock code={js} lang="js" />
-		);
+		return <DynamicCodeBlock code={js} lang="js" />;
 	}
 	if (!js && py) {
-		return (
-			<DynamicCodeBlock code={py} lang="py" />
-		);
+		return <DynamicCodeBlock code={py} lang="py" />;
 	}
 	return (
 		<Tabs
-			items={["TypeScript", "Python"]}
+			items={['TypeScript', 'Python']}
 			persist
 			groupId="code-examples"
 			className="code-example"

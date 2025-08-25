@@ -7,28 +7,30 @@ import { openai } from '@ai-sdk/openai';
  * @returns Promise<number[][]> Array of embedding vectors.
  */
 export async function embedChunks(
-  texts: string[],
-  model: string = 'text-embedding-3-small'
+	texts: string[],
+	model = 'text-embedding-3-small'
 ): Promise<number[][]> {
-  if (!Array.isArray(texts) || texts.length === 0) {
-    throw new Error('No texts provided for embedding.');
-  }
-  if (texts.some(t => typeof t !== 'string' || t.trim() === '')) {
-    throw new Error('All items passed to embedChunks must be non-empty strings.');
-  }
-  let response: Awaited<ReturnType<typeof embedMany>>;
-  try {
-    response = await embedMany({
-      model: openai.embedding(model),
-      values: texts,
-    });
-  } catch (err) {
-    throw new Error(`Failed to embed ${texts.length} chunk(s): ${String(err)}`);
-  }
+	if (!Array.isArray(texts) || texts.length === 0) {
+		throw new Error('No texts provided for embedding.');
+	}
+	if (texts.some((t) => typeof t !== 'string' || t.trim() === '')) {
+		throw new Error(
+			'All items passed to embedChunks must be non-empty strings.'
+		);
+	}
+	let response: Awaited<ReturnType<typeof embedMany>>;
+	try {
+		response = await embedMany({
+			model: openai.embedding(model),
+			values: texts,
+		});
+	} catch (err) {
+		throw new Error(`Failed to embed ${texts.length} chunk(s): ${String(err)}`);
+	}
 
-  if (!response.embeddings || response.embeddings.length !== texts.length) {
-    throw new Error('Embedding API returned unexpected result.');
-  }
-  
-  return response.embeddings;
-} 
+	if (!response.embeddings || response.embeddings.length !== texts.length) {
+		throw new Error('Embedding API returned unexpected result.');
+	}
+
+	return response.embeddings;
+}
