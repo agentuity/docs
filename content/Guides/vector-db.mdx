@@ -54,8 +54,6 @@ The `upsert` operation inserts new documents or updates existing ones. You can p
 
 **SDK Requirements:**
 - **Both SDKs**: Require `key` field for each document
-- **Both SDKs**: Search returns `similarity` field (1.0 = perfect match, 0.0 = no match)
-- **Note**: The JavaScript SDK also accepts the `distance` parameter for backwards compatibility, but `similarity` is recommended
 
 **Idempotent Behavior:**
 The upsert operation is idempotent - upserting with an existing key updates the existing vector rather than creating a duplicate. The same internal vector ID is reused, ensuring your vector storage remains clean and efficient.
@@ -166,20 +164,25 @@ for result in results:
 - `similarity` (optional): Minimum similarity threshold (0.0-1.0)
 - `metadata` (optional): Filter results by metadata key-value pairs
 
+**Search Results:**
+- **Both SDKs**: Return results with `similarity` field (1.0 = perfect match, 0.0 = no match)
+- **Note**: The JavaScript SDK also returns a `distance` field for backward compatibility; prefer `similarity`
+
 ### Deleting Vectors
 
-Remove specific vectors from storage using their IDs (JavaScript) or keys (Python).
+Remove specific vectors from storage using their keys.
 
 <CodeExample>
 ```javascript
 // JavaScript/TypeScript
 // Delete single vector
-const deletedCount = await context.vector.delete('knowledge-base', 'vector-id-1');
+const deletedCount = await context.vector.delete('knowledge-base', 'doc-1');
+
 
 // Delete multiple vectors
 const bulkDeleteCount = await context.vector.delete(
   'knowledge-base', 
-  'id-1', 'id-2', 'id-3'
+  'doc-1', 'doc-2', 'doc-3'
 );
 ```
 
@@ -225,9 +228,9 @@ const handler: AgentHandler = async (request, response, context) => {
       });
     }
     
-    // 3. Assemble context from search results
+    // 3. Assemble context from search results (defensive handling)
     const contextTexts = searchResults.map(result => 
-      result.metadata.content || result.metadata.text
+      result.metadata?.content ?? result.metadata?.text ?? ''
     );
     const assembledContext = contextTexts.join('\\n\\n');
     
@@ -248,7 +251,8 @@ Answer:\`;
       answer: llmResponse,
       sources: searchResults.map(r => ({
         id: r.id,
-        title: r.metadata.title,
+        key: r.key,
+        title: r.metadata?.title,
         similarity: r.similarity
       }))
     });
@@ -361,12 +365,9 @@ const handler: AgentHandler = async (request, response, context) => {
       .filter(result => !maxPrice || result.metadata.price <= maxPrice)
       .map(result => ({
         ...result.metadata,
-        relevanceScore: result.similarity,
-        // Boost score for exact category matches
-        finalScore: result.similarity * 
-          (result.metadata.category === category ? 1.2 : 1.0)
+        similarity: result.similarity
       }))
-      .sort((a, b) => b.finalScore - a.finalScore);
+      .sort((a, b) => b.similarity - a.similarity);
     
     return response.json({
       query,
@@ -419,15 +420,11 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
                 continue
                 
             product = dict(result.metadata)
-            product["relevanceScore"] = result.similarity
-            # Boost score for exact category matches
-            product["finalScore"] = result.similarity * (
-                1.2 if result.metadata.get("category") == category else 1.0
-            )
+            product["similarity"] = result.similarity
             filtered_results.append(product)
         
-        # Sort by final score
-        filtered_results.sort(key=lambda x: x["finalScore"], reverse=True)
+        # Sort by similarity score
+        filtered_results.sort(key=lambda x: x["similarity"], reverse=True)
         
         return response.json({
             "query": query,
@@ -446,7 +443,6 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
 **Key Techniques:**
 - **Metadata filters** are applied at the vector search level for efficiency
 - **Post-processing** handles filters that can't be done at search time (like price ranges)
-- **Score boosting** prioritizes exact category matches while maintaining semantic relevance
 - **Lower similarity threshold** (0.65) catches more potential matches when using strict filters
 
 ## Common Pitfalls & Solutions

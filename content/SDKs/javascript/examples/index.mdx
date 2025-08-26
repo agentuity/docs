@@ -109,9 +109,14 @@ const handler: AgentHandler = async (request, response, context) => {
         return response.json({ error: 'No products to index' });
       }
       
-      // Prepare documents for vector storage
+      // Validate that all products have IDs
+      if (products.some(p => !p.id)) {
+        return response.json({ error: 'All products must have a non-empty id' });
+      }
+      
+      // Prepare documents for vector storage with string normalization
       const documents = products.map(product => ({
-        key: product.id,
+        key: String(product.id),
         document: product.description,
         metadata: {
           id: product.id,
@@ -143,8 +148,10 @@ const handler: AgentHandler = async (request, response, context) => {
         similarity: 0.7
       });
       
-      // Format results
+      // Format results with id, key, and similarity
       const formattedResults = results.map(result => ({
+        id: result.id,
+        key: result.key,
         ...result.metadata,
         similarity: result.similarity
       }));
