@@ -1,7 +1,7 @@
-import { NavButton, type NavButtonProps } from "./NavButton";
+import { NavButton, type NavButtonProps } from './NavButton';
 
 export function CommunityButton(
-	props?: Omit<NavButtonProps, "href" | "children">,
+	props?: Omit<NavButtonProps, 'href' | 'children'>
 ) {
 	return (
 		<NavButton

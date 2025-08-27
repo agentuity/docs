@@ -1,13 +1,15 @@
 import type { AgentContext } from '@agentuity/sdk';
-import { generateObject, generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
+import { generateObject, generateText } from 'ai';
 
 import type { PromptType } from './types';
 import { PromptClassificationSchema } from './types';
 
-
-export async function rephraseVaguePrompt(ctx: AgentContext, input: string): Promise<string> {
-    const systemPrompt = `You are a technical documentation search assistant for developer tools and AI agents. Your job is to CAREFULLY improve unclear queries ONLY when absolutely necessary.
+export async function rephraseVaguePrompt(
+	ctx: AgentContext,
+	input: string
+): Promise<string> {
+	const systemPrompt = `You are a technical documentation search assistant for developer tools and AI agents. Your job is to CAREFULLY improve unclear queries ONLY when absolutely necessary.
 
 BE EXTREMELY CONSERVATIVE. Most queries should be returned UNCHANGED.
 
@@ -43,28 +45,31 @@ If in doubt, return the query UNCHANGED. Better to leave it as-is than to misint
 
 Return ONLY the query text, nothing else.`;
 
-    try {
-        const result = await generateText({
-            model: openai('gpt-4o-mini'),
-            system: systemPrompt,
-            prompt: `User query: "${input}"`,
-            maxTokens: 100,
-            temperature: 0.1, 
-        });
+	try {
+		const result = await generateText({
+			model: openai('gpt-4o-mini'),
+			system: systemPrompt,
+			prompt: `User query: "${input}"`,
+			maxTokens: 100,
+			temperature: 0.1,
+		});
 
-        const rephrasedQuery = result.text?.trim() || input;
-        console.log(rephrasedQuery);
-        // Log if we actually rephrased it
-        if (rephrasedQuery !== input) {
-            ctx.logger.info('Rephrased query from "%s" to "%s"', input, rephrasedQuery);
-        }
+		const rephrasedQuery = result.text?.trim() || input;
+		console.log(rephrasedQuery);
+		// Log if we actually rephrased it
+		if (rephrasedQuery !== input) {
+			ctx.logger.info(
+				'Rephrased query from "%s" to "%s"',
+				input,
+				rephrasedQuery
+			);
+		}
 
-        return rephrasedQuery;
-        
-    } catch (error) {
-        ctx.logger.error('Error rephrasing prompt, returning original: %o', error);
-        return input;
-    }
+		return rephrasedQuery;
+	} catch (error) {
+		ctx.logger.error('Error rephrasing prompt, returning original: %o', error);
+		return input;
+	}
 }
 
 /**
@@ -74,8 +79,11 @@ Return ONLY the query text, nothing else.`;
  * @param input - The input string to analyze
  * @returns {Promise<PromptType>} - The determined PromptType
  */
-export async function getPromptType(ctx: AgentContext, input: string): Promise<PromptType> {
-    const systemPrompt = `
+export async function getPromptType(
+	ctx: AgentContext,
+	input: string
+): Promise<PromptType> {
+	const systemPrompt = `
 You are a query classifier that determines whether a user question requires simple retrieval (Normal) or complex reasoning (Thinking).
 
 Use these SPECIFIC criteria for classification:
@@ -102,22 +110,28 @@ Respond with a JSON object containing:
 
 Be conservative - when in doubt, default to "Normal" for better performance.`;
 
-    try {
-        const result = await generateObject({
-            model: openai('gpt-4o-mini'), // Use faster model for classification
-            system: systemPrompt,
-            prompt: `Classify this user query: "${input}"`,
-            schema: PromptClassificationSchema,
-            maxTokens: 200,
-        });
+	try {
+		const result = await generateObject({
+			model: openai('gpt-4o-mini'), // Use faster model for classification
+			system: systemPrompt,
+			prompt: `Classify this user query: "${input}"`,
+			schema: PromptClassificationSchema,
+			maxTokens: 200,
+		});
 
-        ctx.logger.info('Prompt classified as %s (confidence: %f): %s', 
-            result.object.type, result.object.confidence, result.object.reasoning);
+		ctx.logger.info(
+			'Prompt classified as %s (confidence: %f): %s',
+			result.object.type,
+			result.object.confidence,
+			result.object.reasoning
+		);
 
-        return result.object.type as PromptType;
-        
-    } catch (error) {
-        ctx.logger.error('Error classifying prompt, defaulting to Normal: %o', error);
-        return 'Normal' as PromptType;
-    }
+		return result.object.type as PromptType;
+	} catch (error) {
+		ctx.logger.error(
+			'Error classifying prompt, defaulting to Normal: %o',
+			error
+		);
+		return 'Normal' as PromptType;
+	}
 }

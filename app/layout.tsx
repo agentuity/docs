@@ -1,15 +1,17 @@
-import { RootProvider } from "fumadocs-ui/provider";
-import { GeistSans } from "geist/font/sans";
-import type { ReactNode } from "react";
+import { RootProvider } from 'fumadocs-ui/provider';
+import { GeistSans } from 'geist/font/sans';
 import type { Metadata } from 'next';
-import { validateEnv } from "@/lib/env";
-import "./global.css";
+import type { ReactNode } from 'react';
+import { validateEnv } from '@/lib/env';
+import './global.css';
 
 // Validate environment variables at startup (server-side only)
 if (typeof window === 'undefined') {
 	const isValid = validateEnv();
 	if (!isValid) {
-		console.warn('Environment validation failed during build – this is expected at build time');
+		console.warn(
+			'Environment validation failed during build – this is expected at build time'
+		);
 	}
 }
 
@@ -82,7 +84,8 @@ export const metadata: Metadata = {
 		title: 'Agentuity Docs',
 		statusBarStyle: 'black-translucent',
 	},
-	abstract: 'Documentation for Agentuity, the cloud platform purpose-built for deploying, managing, and scaling AI agents.',
+	abstract:
+		'Documentation for Agentuity, the cloud platform purpose-built for deploying, managing, and scaling AI agents.',
 	category: 'technology',
 	classification: 'Business Software',
 };
@@ -91,9 +94,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 	return (
 		<html lang="en" className={GeistSans.className} suppressHydrationWarning>
 			<body className="flex flex-col min-h-screen antialiased">
-				<RootProvider
-					theme={{ enabled: true, enableSystem: true }}
-				>
+				<RootProvider theme={{ enabled: true, enableSystem: true }}>
 					{children}
 				</RootProvider>
 			</body>

@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-const matter = require("gray-matter");
-const fs = require("fs").promises;
-const path = require("path");
+const matter = require('gray-matter');
+const fs = require('fs').promises;
+const path = require('path');
 
-const contentDir = path.join(process.cwd(), "content");
-const outputFile = path.join(contentDir, "docs.json");
+const contentDir = path.join(process.cwd(), 'content');
+const outputFile = path.join(contentDir, 'docs.json');
 
 async function getFiles(dir) {
 	const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -12,12 +12,12 @@ async function getFiles(dir) {
 	const files = await Promise.all(
 		entries.map((entry) => {
 			const res = path.resolve(dir, entry.name);
-			
+
 			return entry.isDirectory() ? getFiles(res) : res;
 		})
 	);
 
-	return files.flat().filter((file) => file.endsWith(".mdx"));
+	return files.flat().filter((file) => file.endsWith('.mdx'));
 }
 
 async function main() {
@@ -41,7 +41,7 @@ async function main() {
 }
 
 main().catch((err) => {
-	console.error("Error generating docs.json:", err);
+	console.error('Error generating docs.json:', err);
 
 	process.exit(1);
 });

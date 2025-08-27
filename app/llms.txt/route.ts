@@ -1,4 +1,4 @@
-import docsJson from "@/content/docs.json";
+import docsJson from '@/content/docs.json';
 
 interface Doc {
 	file: string;
@@ -46,26 +46,26 @@ When interacting with this documentation:
 6. Troubleshooting - Common issues and solutions\n\n`;
 
 		const scanned = docs.map((doc) => {
-			if (!doc.file.startsWith("Changelog")) {
+			if (!doc.file.startsWith('Changelog')) {
 				return `file: ${doc.file}\nmeta: ${JSON.stringify(doc.meta, null, 2)}\n${doc.content}`;
 			}
 		});
 
-		return new Response(preamble + scanned.join("\n\n"), {
-			headers: { "Content-Type": "text/plain" },
+		return new Response(preamble + scanned.join('\n\n'), {
+			headers: { 'Content-Type': 'text/plain' },
 		});
 	} catch (error) {
-		console.error("Error in GET route:", error);
+		console.error('Error in GET route:', error);
 
 		return new Response(
 			JSON.stringify({
-				error: "Failed to process content",
+				error: 'Failed to process content',
 				details: error instanceof Error ? error.message : String(error),
 			}),
 			{
 				status: 500,
-				headers: { "Content-Type": "application/json" },
-			},
+				headers: { 'Content-Type': 'application/json' },
+			}
 		);
 	}
 }

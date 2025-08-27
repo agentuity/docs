@@ -1,20 +1,22 @@
 import type { AgentContext } from '@agentuity/sdk';
-import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
-
-import { retrieveRelevantDocs } from './retriever';
+import { generateObject } from 'ai';
 import { rephraseVaguePrompt } from './prompt';
-import { AnswerSchema } from './types';
+import { retrieveRelevantDocs } from './retriever';
 import type { Answer } from './types';
+import { AnswerSchema } from './types';
 
-export default async function answerQuestion(ctx: AgentContext, prompt: string) {
-    // First, rephrase the prompt for better vector search
-    const rephrasedPrompt = await rephraseVaguePrompt(ctx, prompt);
-    
-    // Use the rephrased prompt for document retrieval
-    const relevantDocs = await retrieveRelevantDocs(ctx, rephrasedPrompt);
+export default async function answerQuestion(
+	ctx: AgentContext,
+	prompt: string
+) {
+	// First, rephrase the prompt for better vector search
+	const rephrasedPrompt = await rephraseVaguePrompt(ctx, prompt);
 
-    const systemPrompt = `
+	// Use the rephrased prompt for document retrieval
+	const relevantDocs = await retrieveRelevantDocs(ctx, rephrasedPrompt);
+
+	const systemPrompt = `
 You are Agentuity's developer-documentation assistant.
 
 === CONTEXT ===
@@ -93,21 +95,21 @@ ${JSON.stringify(relevantDocs, null, 2)}
 </DOCS>
 `;
 
-    try {
-        const result = await generateObject({
-            model: openai('gpt-4o'),
-            system: systemPrompt,
-            prompt: `The user is mostly a software engineer. Your answer should be concise, straightforward and in most cases, supplying the answer with examples code snipped is ideal.`,
-            schema: AnswerSchema,
-            maxTokens: 2048,
-        });
-        return result.object;
-    } catch (error) {
-        ctx.logger.error('Error generating answer: %o', error);
+	try {
+		const result = await generateObject({
+			model: openai('gpt-4o'),
+			system: systemPrompt,
+			prompt: 'The user is mostly a software engineer. Your answer should be concise, straightforward and in most cases, supplying the answer with examples code snipped is ideal.',
+			schema: AnswerSchema,
+			maxTokens: 2048,
+		});
+		return result.object;
+	} catch (error) {
+		ctx.logger.error('Error generating answer: %o', error);
 
-        // Fallback response with MDX formatting
-        const fallbackAnswer: Answer = {
-            answer: `## Error
+		// Fallback response with MDX formatting
+		const fallbackAnswer: Answer = {
+			answer: `## Error
 
 I apologize, but I encountered an error while processing your question. 
 
@@ -117,9 +119,9 @@ I apologize, but I encountered an error while processing your question.
 - Checking if your question relates to Agentuity's documented features
 
 > If the problem persists, please contact support.`,
-            documents: []
-        };
+			documents: [],
+		};
 
-        return fallbackAnswer;
-    }
+		return fallbackAnswer;
+	}
 }

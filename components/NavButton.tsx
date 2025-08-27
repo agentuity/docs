@@ -1,4 +1,4 @@
-import { cn } from "fumadocs-ui/utils/cn";
+import { cn } from 'fumadocs-ui/utils/cn';
 
 export interface NavButtonProps {
 	href: string;
@@ -22,11 +22,11 @@ export function NavButton({
 			target={target}
 			rel={rel}
 			className={cn(
-				"inline-flex flex-row items-center gap-2 w-auto no-underline",
+				'inline-flex flex-row items-center gap-2 w-auto no-underline',
 				noBorder
-					? "border-none"
-					: "hover:border-cyan-700 hover:dark:border-cyan-900 border rounded-full border-gray-200 dark:border-gray-800 px-2.5 h-9",
-				className,
+					? 'border-none'
+					: 'hover:border-cyan-700 hover:dark:border-cyan-900 border rounded-full border-gray-200 dark:border-gray-800 px-2.5 h-9',
+				className
 			)}
 		>
 			{children}
