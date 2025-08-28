@@ -196,7 +196,7 @@ Inserts or updates vectors in the vector storage.
 **Parameters**
 
 - `name`: The name of the vector storage
-- `documents`: One or more documents to upsert, each with either embeddings or text
+- `documents`: One or more documents to upsert. Each document must include a unique `key` and either embeddings or text
 
 **Return Value**
 
@@ -208,15 +208,15 @@ Returns a Promise that resolves to an array of string IDs for the upserted vecto
 // Upsert documents with text
 const ids = await context.vector.upsert(
   'product-descriptions',
-  { document: 'Ergonomic office chair with lumbar support', metadata: { category: 'furniture' } },
-  { document: 'Wireless noise-cancelling headphones', metadata: { category: 'electronics' } }
+  { key: 'chair-001', document: 'Ergonomic office chair with lumbar support', metadata: { category: 'furniture' } },
+  { key: 'headphones-001', document: 'Wireless noise-cancelling headphones', metadata: { category: 'electronics' } }
 );
 
 // Upsert documents with embeddings
 const ids2 = await context.vector.upsert(
   'product-embeddings',
-  { embeddings: [0.1, 0.2, 0.3, 0.4], metadata: { productId: '123' } },
-  { embeddings: [0.5, 0.6, 0.7, 0.8], metadata: { productId: '456' } }
+  { key: 'embed-123', embeddings: [0.1, 0.2, 0.3, 0.4], metadata: { productId: '123' } },
+  { key: 'embed-456', embeddings: [0.5, 0.6, 0.7, 0.8], metadata: { productId: '456' } }
 );
 ```
 

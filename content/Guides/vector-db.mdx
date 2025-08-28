@@ -44,13 +44,16 @@ Vector storage is created automatically when your agent first calls `context.vec
 
 ## Vector Storage API
 
+For complete API documentation, see:
+- [JavaScript SDK Vector API Reference](/SDKs/javascript/api-reference#vector-storage)
+- [Python SDK Vector API Reference](/SDKs/python/api-reference#vector-storage)
+
 ### Upserting Documents
 
 The `upsert` operation inserts new documents or updates existing ones. You can provide either text (which gets automatically converted to embeddings) or pre-computed embeddings.
 
-**SDK Differences:**
-- **JavaScript SDK**: No key field required, search returns `distance` (0 = perfect match)
-- **Python SDK**: Requires `key` field for each document, search returns `similarity` (1.0 = perfect match)
+**SDK Requirements:**
+- **Both SDKs**: Require a `key` field for each document
 
 **Idempotent Behavior:**
 The upsert operation is idempotent - upserting with an existing key updates the existing vector rather than creating a duplicate. The same internal vector ID is reused, ensuring your vector storage remains clean and efficient.
@@ -62,10 +65,12 @@ The upsert operation is idempotent - upserting with an existing key updates the 
 const ids = await context.vector.upsert(
   'knowledge-base',
   { 
+    key: 'doc-1',
     document: 'Agentuity is an agent-native cloud platform', 
     metadata: { category: 'platform', source: 'docs' } 
   },
   { 
+    key: 'doc-2',
     document: 'Vector storage enables semantic search capabilities', 
     metadata: { category: 'features', source: 'docs' } 
   }
@@ -75,6 +80,7 @@ const ids = await context.vector.upsert(
 const embeddingIds = await context.vector.upsert(
   'custom-embeddings',
   { 
+    key: 'embedding-1',
     embeddings: [0.1, 0.2, 0.3, 0.4], 
     metadata: { id: 'doc-1', type: 'custom' } 
   }
@@ -130,7 +136,7 @@ const results = await context.vector.search('knowledge-base', {
 // Process results
 results.forEach(result => {
   console.log(`Found: ${result.metadata.source}`);
-  console.log(`Similarity: ${1 - result.distance}`);
+  console.log(`Similarity: ${result.similarity}`);
 });
 ```
 
@@ -158,20 +164,25 @@ for result in results:
 - `similarity` (optional): Minimum similarity threshold (0.0-1.0)
 - `metadata` (optional): Filter results by metadata key-value pairs
 
+**Search Results:**
+- **Both SDKs**: Return results with `similarity` field (1.0 = perfect match, 0.0 = no match)
+- **Note**: The JavaScript SDK also returns a `distance` field for backward compatibility; prefer `similarity`
+
 ### Deleting Vectors
 
-Remove specific vectors from storage using their IDs (JavaScript) or keys (Python).
+Remove specific vectors from storage using their keys.
 
 <CodeExample>
 ```javascript
 // JavaScript/TypeScript
 // Delete single vector
-const deletedCount = await context.vector.delete('knowledge-base', 'vector-id-1');
+const deletedCount = await context.vector.delete('knowledge-base', 'doc-1');
+
 
 // Delete multiple vectors
 const bulkDeleteCount = await context.vector.delete(
   'knowledge-base', 
-  'id-1', 'id-2', 'id-3'
+  'doc-1', 'doc-2', 'doc-3'
 );
 ```
 
@@ -185,6 +196,304 @@ count = await context.vector.delete("knowledge-base", "doc_1")
 ```
 </CodeExample>
 
+## Practical Examples
+
+For more code examples, see:
+- [JavaScript SDK Examples](/SDKs/javascript/examples#vector-storage-usage)
+- [Python SDK Examples](/SDKs/python/examples#vector-storage)
+
+### Building a Simple RAG System
+
+This example demonstrates a complete Retrieval-Augmented Generation (RAG) pattern - searching for relevant context and using it to generate informed responses.
+
+<CodeExample js={`// JavaScript/TypeScript - Simple RAG implementation
+import { AgentHandler } from '@agentuity/sdk';
+
+const handler: AgentHandler = async (request, response, context) => {
+  const { question } = await request.data.json();
+  
+  try {
+    // 1. Search for relevant context (top 5 results)
+    const searchResults = await context.vector.search('knowledge-base', {
+      query: question,
+      limit: 5,
+      similarity: 0.7
+    });
+    
+    // 2. Handle no results gracefully
+    if (searchResults.length === 0) {
+      return response.json({
+        answer: "I couldn't find relevant information to answer your question.",
+        sources: []
+      });
+    }
+    
+    // 3. Assemble context from search results (defensive handling)
+    const contextTexts = searchResults.map(result => 
+      result.metadata?.content ?? result.metadata?.text ?? ''
+    );
+    const assembledContext = contextTexts.join('\\n\\n');
+    
+    // 4. Generate response using context (example with AI Gateway)
+    const prompt = \`Answer the question based on the following context:
+    
+Context: \${assembledContext}
+
+Question: \${question}
+
+Answer:\`;
+    
+    // Use your preferred LLM here (OpenAI, Anthropic, etc.)
+    const llmResponse = await generateAnswer(prompt);
+    
+    // 5. Return answer with sources
+    return response.json({
+      answer: llmResponse,
+      sources: searchResults.map(r => ({
+        id: r.id,
+        key: r.key,
+        title: r.metadata?.title,
+        similarity: r.similarity
+      }))
+    });
+    
+  } catch (error) {
+    context.logger.error('RAG query failed:', error);
+    return response.json({ 
+      error: 'Failed to process your question',
+      details: error.message 
+    });
+  }
+};
+
+export default handler;`} py={`# Python - Simple RAG implementation
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    data = await request.data.json()
+    question = data.get("question")
+    
+    try:
+        # 1. Search for relevant context (top 5 results)
+        search_results = await context.vector.search(
+            "knowledge-base",
+            query=question,
+            limit=5,
+            similarity=0.7
+        )
+        
+        # 2. Handle no results gracefully
+        if not search_results:
+            return response.json({
+                "answer": "I couldn't find relevant information to answer your question.",
+                "sources": []
+            })
+        
+        # 3. Assemble context from search results
+        context_texts = [
+            result.metadata.get("content", result.metadata.get("text", ""))
+            for result in search_results
+        ]
+        assembled_context = "\\n\\n".join(context_texts)
+        
+        # 4. Generate response using context (example with AI Gateway)
+        prompt = f"""Answer the question based on the following context:
+        
+Context: {assembled_context}
+
+Question: {question}
+
+Answer:"""
+        
+        # Use your preferred LLM here (OpenAI, Anthropic, etc.)
+        llm_response = await generate_answer(prompt)
+        
+        # 5. Return answer with sources
+        return response.json({
+            "answer": llm_response,
+            "sources": [
+                {
+                    "id": result.id,
+                    "key": result.key,
+                    "title": result.metadata.get("title"),
+                    "similarity": result.similarity
+                }
+                for result in search_results
+            ]
+        })
+        
+    except Exception as e:
+        context.logger.error(f"RAG query failed: {e}")
+        return response.json({
+            "error": "Failed to process your question",
+            "details": str(e)
+        })`} />
+
+**Key Points:**
+- **Semantic search** finds relevant documents based on meaning, not keywords
+- **Similarity threshold** of 0.7 balances relevance with recall
+- **Context assembly** combines multiple sources for comprehensive answers
+- **Error handling** ensures graceful failures with helpful messages
+- **Source attribution** provides transparency about where information came from
+
+### Semantic Search with Metadata Filtering
+
+This example shows how to combine semantic similarity with metadata filters for precise results - like finding products that match both meaning and business criteria.
+
+<CodeExample js={`// JavaScript/TypeScript - Product search with filters
+import { AgentHandler } from '@agentuity/sdk';
+
+const handler: AgentHandler = async (request, response, context) => {
+  const { query, maxPrice, category, inStock } = await request.data.json();
+  
+  try {
+    // Build metadata filters based on criteria
+    const metadataFilters = {};
+    if (category) metadataFilters.category = category;
+    if (inStock !== undefined) metadataFilters.inStock = inStock;
+    
+    // Search with semantic similarity + metadata filters
+    const searchResults = await context.vector.search('products', {
+      query,
+      limit: 10,
+      similarity: 0.65, // Lower threshold for broader results
+      metadata: metadataFilters
+    });
+    
+    // Post-process: Apply price filter and sort by relevance
+    const filteredResults = searchResults
+      .filter(result => !maxPrice || result.metadata.price <= maxPrice)
+      .map(result => ({
+        ...result.metadata,
+        similarity: result.similarity
+      }))
+      .sort((a, b) => b.similarity - a.similarity);
+    
+    return response.json({
+      query,
+      filters: { maxPrice, category, inStock },
+      resultCount: filteredResults.length,
+      products: filteredResults.slice(0, 5) // Top 5 results
+    });
+    
+  } catch (error) {
+    context.logger.error('Product search failed:', error);
+    return response.json({ 
+      error: 'Search failed',
+      products: [] 
+    });
+  }
+};
+
+export default handler;`} py={`# Python - Product search with filters
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    data = await request.data.json()
+    query = data.get("query")
+    max_price = data.get("maxPrice")
+    category = data.get("category")
+    in_stock = data.get("inStock")
+    
+    try:
+        # Build metadata filters based on criteria
+        metadata_filters = {}
+        if category:
+            metadata_filters["category"] = category
+        if in_stock is not None:
+            metadata_filters["inStock"] = in_stock
+        
+        # Search with semantic similarity + metadata filters
+        search_results = await context.vector.search(
+            "products",
+            query=query,
+            limit=10,
+            similarity=0.65,  # Lower threshold for broader results
+            metadata=metadata_filters
+        )
+        
+        # Post-process: Apply price filter and sort by relevance
+        filtered_results = []
+        for result in search_results:
+            # Apply price filter
+            if max_price and result.metadata.get("price", 0) > max_price:
+                continue
+                
+            product = dict(result.metadata)
+            product["similarity"] = result.similarity
+            filtered_results.append(product)
+        
+        # Sort by similarity score
+        filtered_results.sort(key=lambda x: x["similarity"], reverse=True)
+        
+        return response.json({
+            "query": query,
+            "filters": {"maxPrice": max_price, "category": category, "inStock": in_stock},
+            "resultCount": len(filtered_results),
+            "products": filtered_results[:5]  # Top 5 results
+        })
+        
+    except Exception as e:
+        context.logger.error(f"Product search failed: {e}")
+        return response.json({
+            "error": "Search failed",
+            "products": []
+        })`} />
+
+**Key Techniques:**
+- **Metadata filters** are applied at the vector search level for efficiency
+- **Post-processing** handles filters that can't be done at search time (like price ranges)
+- **Lower similarity threshold** (0.65) catches more potential matches when using strict filters
+
+## Common Pitfalls & Solutions
+
+### Empty Search Results
+**Problem**: Your search returns empty results even though relevant data exists.
+
+**Solutions**:
+- **Lower the similarity threshold**: Start at 0.5 and increase gradually
+- **Check your metadata filters**: They use exact matching, not fuzzy matching
+- **Verify document format**: Ensure documents were upserted with text content
+
+```javascript
+// Adaptive threshold example
+let results = await context.vector.search('kb', { 
+  query, 
+  similarity: 0.8 
+});
+
+if (results.length === 0) {
+  // Try again with lower threshold
+  results = await context.vector.search('kb', { 
+    query, 
+    similarity: 0.5 
+  });
+}
+```
+
+### Duplicate Documents
+**Problem**: Same content appears multiple times in search results.
+
+**Solution**: Vector upsert is idempotent when using the same key:
+- Always use consistent `key` values for your documents
+- Upserting with an existing key updates the vector rather than creating a duplicate
+- The same internal vector ID is reused, keeping your storage clean
+
+### Performance Issues
+**Problem**: Vector operations take too long.
+
+**Solutions**:
+- **Batch operations**: Upsert 100-500 documents at once, not one by one
+- **Limit search results**: Use `limit: 10` instead of retrieving all matches
+- **Optimize metadata**: Keep metadata objects small and focused
+
+### Irrelevant Search Results
+**Problem**: Search returns irrelevant or unexpected documents.
+
+**Solutions**:
+- **Check similarity scores**: Results with similarity < 0.7 may be poor matches
+- **Review metadata filters**: Remember they're AND conditions, not OR
+- **Verify embeddings**: Ensure consistent text preprocessing before upserting
 
 ## Best Practices
 
