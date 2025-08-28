@@ -18,4 +18,5 @@ export interface ParsedAgentRequest {
   message: string;
   conversationHistory: ConversationMessage[];
   tutorialData?: TutorialState;
-} 
+  useDirectLLM?: boolean;
+}
