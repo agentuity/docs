@@ -53,7 +53,7 @@ For complete API documentation, see:
 The `upsert` operation inserts new documents or updates existing ones. You can provide either text (which gets automatically converted to embeddings) or pre-computed embeddings.
 
 **SDK Requirements:**
-- **Both SDKs**: Require `key` field for each document
+- **Both SDKs**: Require a `key` field for each document
 
 **Idempotent Behavior:**
 The upsert operation is idempotent - upserting with an existing key updates the existing vector rather than creating a duplicate. The same internal vector ID is reused, ensuring your vector storage remains clean and efficient.
