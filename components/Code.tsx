@@ -1,8 +1,8 @@
 import React from "react";
 import { CodeBlock, Pre } from "fumadocs-ui/components/codeblock";
 import { createStyleTransformer } from "fumadocs-core/server";
-import { transformerTwoslash } from "fumadocs-twoslash";
-import { Popup, PopupContent, PopupTrigger } from "fumadocs-twoslash/ui";
+// import { transformerTwoslash } from "fumadocs-twoslash";
+// import { Popup, PopupContent, PopupTrigger } from "fumadocs-twoslash/ui";
 import { getSingletonHighlighter, bundledLanguages } from "shiki";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
@@ -28,9 +28,6 @@ export async function Code({
 		defaultColor: false,
 		transformers: [
 			createStyleTransformer(),
-			transformerTwoslash({
-				explicitTrigger: false,
-			}),
 		],
 	});
 
@@ -45,9 +42,6 @@ export async function Code({
 					<Pre>{props.children}</Pre>
 				</CodeBlock>
 			),
-			Popup,
-			PopupContent,
-			PopupTrigger,
 		},
 	});
 
