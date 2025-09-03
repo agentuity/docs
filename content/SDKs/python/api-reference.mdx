@@ -752,12 +752,13 @@ agent = await context.get_agent({"id": "agent-123"})
 # Get an agent by name
 agent2 = await context.get_agent({
     "name": "data-processing-agent",
-    "project_id": "project-456"
+    "projectId": "project-456" # Note: projectId is camelCase
 })
 
 # Invoke the agent with error handling
 try:
-    result = await agent.run({"data": "process this"}, "application/json")
+    # Just pass the data (content type is inferred)
+    result = await agent.run({"data": "process this"})
     # Process the result
     print(f"Agent response: {result}")
 except Exception as e:

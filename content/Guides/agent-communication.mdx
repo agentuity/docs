@@ -39,7 +39,7 @@ Inter organization communication is the most advanced form of agent-to-agent com
 
 #### Communication Methods
 
-Agents has two primary methods of communication with other agents:
+Agents have two primary methods of communication with other agents:
 
 | Type      | Description |
 |-----------|-------------|
@@ -81,7 +81,10 @@ export default async function Agent(
    resp: AgentResponse,
    ctx: AgentContext
 ) {
-    return resp.handoff({name: 'My Other Agent'}, "would you please do this?");
+    return resp.handoff(
+        {name: 'My Other Agent'}, 
+        { data: "would you please do this?", contentType: "text/plain" }
+    );
 }`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
@@ -90,11 +93,11 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
 
 ##### Invocation
 
-When an agent needs to invoke another agent to complete a task and wants to wait for the result, it can do so by using the SDK `getAgents` method on `AgentContext`.  The `getAgents` will perform resolution to determine the target agent location and return a handle to the target agent that can be used to `run` the target agent.
+When an agent needs to invoke another agent to complete a task and wants to wait for the result, it can do so by using the SDK `getAgent` method on `AgentContext`.  The `getAgent` will perform resolution to determine the target agent location and return a handle to the target agent that can be used to `run` the target agent.
 
-If the target agent is local (intra project), the `getAgents` method will return a handle to an internal agent which can be used to `run` the target agent.
+If the target agent is local (intra project), the `getAgent` method will return a handle to an internal agent which can be used to `run` the target agent.
 
-If the target agent is remote (inter project or inter organization), the `getAgents` method will return a handle to an external agent which can be used to `run` the target agent.  In addition, the SDK internally will use the authorization token to authenticate the source agent to the target agent.
+If the target agent is remote (inter project or inter organization), the `getAgent` method will return a handle to an external agent which can be used to `run` the target agent.  In addition, the SDK internally will use the authorization token to authenticate the source agent to the target agent.
 
 <Mermaid chart="
 sequenceDiagram
@@ -115,14 +118,20 @@ export default async function Agent(
    ctx: AgentContext
 ) {
     const agent = await ctx.getAgent({name: 'My Other Agent'});
-    const agentResponse = await agent.run({name: 'My Other Agent'}, "would you please do this?");
+    const agentResponse = await agent.run({ 
+        data: "would you please do this?",
+        contentType: "text/plain"
+    });
     const text = await agentResponse.data.text();
     return resp.text(text);
 }`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     agent = await context.getAgent({"name":"My Other Agent"})
-    agent_response = await agent.run({"name":"My Other Agent"}, "would you please do this?")
+    # Send plain text (content type inferred as text/plain)
+    agent_response = await agent.run("would you please do this?")
+    # Or send JSON (content type inferred as application/json)
+    # agent_response = await agent.run({"message": "would you please do this?"})
     text = await agent_response.data.text()
     return response.text(text)
 `} />
@@ -145,8 +154,8 @@ export default async function Agent(
   const agent1 = await ctx.getAgent({name: 'My First Agent'});
   const agent2 = await ctx.getAgent({name: 'My Second Agent'});
   await Promise.all([
-    agent1.run({task: 'My First Task'}),
-    agent2.run({task: 'My Second Task'}),
+    agent1.run({ data: { task: 'My First Task' }, contentType: 'application/json' }),
+    agent2.run({ data: { task: 'My Second Task' }, contentType: 'application/json' }),
   ]);
   return resp.text('OK');
 }`}  py={`from agentuity import AgentRequest, AgentResponse, AgentContext
@@ -158,8 +167,8 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     agent2 = await context.getAgent({"name":"My Second Agent"})
 
     await asyncio.gather(
-      agent1.run({"task":"My First Task"}),
-      agent2.run({"task":"My Second Task"}),
+      agent1.run({"task": "My First Task"}),  # content type inferred as JSON
+      agent2.run({"task": "My Second Task"}), # content type inferred as JSON
     )
 
     return response.text('OK')
@@ -175,15 +184,15 @@ sequenceDiagram
   actor Agentuity
   actor Agent 2
   actor Agent 3
-  Agent 1-->>Agentuity: Get Agent 1
   Agent 1-->>Agentuity: Get Agent 2
+  Agent 1-->>Agentuity: Get Agent 3
   Agent 1->>Agent 2: Run
   Agent 1->>Agent 3: Run
 "/>
 
 #### Agent Resolution
 
-How do we resolve the target agent?  There are two main ways to do this:
+How do we resolve the target agent?  There are three main ways to do this:
 
 | Type      | Description |
 |-----------|-------------|
