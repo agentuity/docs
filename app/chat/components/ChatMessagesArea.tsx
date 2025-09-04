@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect,useState } from 'react';
 import { ChatMessageComponent } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { Message, Session } from '../types';
@@ -18,17 +18,9 @@ export function ChatMessagesArea({
     setEditorContent = () => { },
     setEditorOpen = () => { }
 }: ChatMessagesAreaProps) {
-    const [messages, setMessages] = useState<Message[]>([]);
-
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-
-    useEffect(() => {
-        if (session) {
-            setMessages(session.messages);
-        }
-    }, [session])
 
     // Check if user has scrolled up
     const handleScroll = () => {
@@ -43,7 +35,7 @@ export function ChatMessagesArea({
         if (shouldAutoScroll) {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }
-    }, [messages, shouldAutoScroll]);
+    }, [session.messages, shouldAutoScroll]);
 
     // Add scroll listener to the messages container
     useEffect(() => {
@@ -62,7 +54,7 @@ export function ChatMessagesArea({
                 className="flex-1 p-4 md:p-6 space-y-6 h-full  overflow-y-auto agentuity-scrollbar"
                 style={{ maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' }}
             >
-                {messages.map((message) => (
+                {session.messages.map((message) => (
                     <ChatMessageComponent
                         key={message.id}
                         message={message}
