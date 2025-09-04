@@ -125,7 +125,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true, session });
+    return NextResponse.json({
+      success: true,
+      session,
+      ...(session.title ? {} : { titleGeneration: 'pending' })
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error occurred' },

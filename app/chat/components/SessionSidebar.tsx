@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Plus,
+  BookAIcon,
   MessageCircle,
   ChevronLeft,
   ChevronRight,
@@ -52,19 +53,23 @@ export function SessionSidebar({
     onSessionSelect(sessionId);
   };
 
-  // Get session preview text (first message content)
+  // Get session display title
   const getSessionPreview = (session: Session) => {
+    if (session.title && session.title.trim().length > 0) {
+      return session.title.trim();
+    }
     if (session.messages && session.messages.length > 0) {
       const firstMessage = session.messages[0];
       return firstMessage.content || 'New conversation';
     }
     return 'New conversation';
   };
+  const relativeDate = formatRelativeDate(new Date());
 
   return (
     <div
       className={`
-          fixed lg:static inset-y-0 left-0 z-50 
+          fixed lg:static inset-y-0 left-0 z-50
           transform transition-all duration-300 ease-out
           -translate-x-full lg:translate-x-0
           ${isCollapsed ? 'w-12 lg:w-12' : 'w-70 lg:w-70'}
@@ -127,22 +132,12 @@ export function SessionSidebar({
 
       {/* Sessions List */}
       <div className="flex-1 overflow-y-auto">
-        {sessions.length === 0 ? (
-          <div className="p-4 text-center">
-            {!isCollapsed && (
-              <div className="text-gray-400">
-                <MessageCircle className="w-4 h-4 mx-auto mb-2 opacity-50" />
-                <p className="text-xs">No conversations yet</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="p-2 space-y-1">
+        <div className="p-2 space-y-1">
             {sessions.map((session: Session) => {
               const isActive = session.sessionId === currentSessionId;
               const preview = getSessionPreview(session);
+              const isTutorial = session.isTutorial;
               // Use current timestamp since we don't have updatedAt anymore
-              const relativeDate = formatRelativeDate(new Date());
 
               return (
                 <button
@@ -161,7 +156,11 @@ export function SessionSidebar({
                   title={isCollapsed ? preview : undefined}
                 >
                   <div className="flex-shrink-0">
-                    <MessageCircle className="w-4 h-4" />
+                    {isTutorial ? (
+                      <BookAIcon className="w-4 h-4" />
+                    ) : (
+                      <MessageCircle className="w-4 h-4" />
+                    )}
                   </div>
 
                   {!isCollapsed && (
@@ -175,7 +174,6 @@ export function SessionSidebar({
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <Clock className="w-3 h-3" />
                         <span>{session.messages?.length || 0} messages</span>
                       </div>
                     </div>
@@ -184,7 +182,6 @@ export function SessionSidebar({
               );
             })}
           </div>
-        )}
       </div>
 
       {/* Footer Section */}

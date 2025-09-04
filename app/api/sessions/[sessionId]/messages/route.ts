@@ -1,9 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getKVValue, setKVValue } from '@/lib/kv-store';
-import { Session, Message, StreamingChunk, TutorialData } from '@/app/chat/types';
-import { toISOString, getCurrentTimestamp } from '@/app/chat/utils/dateUtils';
-import { getAgentPulseConfig } from '@/lib/env';
-import { config } from '@/lib/config';
+import { NextRequest, NextResponse } from "next/server";
+import { getKVValue, setKVValue } from "@/lib/kv-store";
+import {
+  Session,
+  Message,
+  StreamingChunk,
+  TutorialData,
+} from "@/app/chat/types";
+import { toISOString, getCurrentTimestamp } from "@/app/chat/utils/dateUtils";
+import { getAgentPulseConfig } from "@/lib/env";
+import { config } from "@/lib/config";
 
 // Constants
 const DEFAULT_CONVERSATION_HISTORY_LIMIT = 10;
@@ -11,7 +16,7 @@ const AGENT_REQUEST_TIMEOUT = 30000; // 30 seconds
 
 /**
  * POST /api/sessions/[sessionId]/messages - Add a message to a session and process with streaming
- * 
+ *
  * This endpoint now handles:
  * 1. Adding a user message to a session
  * 2. Processing the message with the agent
@@ -23,22 +28,50 @@ export async function POST(
   { params }: { params: { sessionId: string } }
 ) {
   try {
-    const userId = request.cookies.get('chat_user_id')?.value;
+    const userId = request.cookies.get("chat_user_id")?.value;
     if (!userId) {
-      return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
+      return NextResponse.json({ error: "User ID not found" }, { status: 401 });
+    }
+    // Helper: sanitize title per requirements
+    function sanitizeTitle(input: string): string {
+      if (!input) return '';
+      let s = input.trim();
+      // Strip wrapping quotes/backticks
+      if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith('\'') && s.endsWith('\'')) || (s.startsWith('`') && s.endsWith('`'))) {
+        s = s.slice(1, -1).trim();
+      }
+      // Remove markdown emphasis
+      s = s.replace(/\*\*([^*]+)\*\*|\*([^*]+)\*|__([^_]+)__|_([^_]+)_/g, (_m, a, b, c, d) => a || b || c || d || '');
+      // Remove emojis (basic unicode emoji ranges)
+      s = s.replace(/[\u{1F300}-\u{1FAFF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
+      // Collapse whitespace
+      s = s.replace(/\s+/g, ' ').trim();
+      // Sentence case
+      s = sentenceCase(s);
+      // Trim trailing punctuation noise
+      s = s.replace(/[\s\-–—:;,\.]+$/g, '').trim();
+      // Enforce 60 chars
+      if (s.length > 60) s = s.slice(0, 60).trim();
+      return s;
+    }
+
+    function sentenceCase(str: string): string {
+      if (!str) return '';
+      const lower = str.toLowerCase();
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
     }
 
     const paramsData = await params;
     const sessionId = paramsData.sessionId;
     const body = await request.json();
     const { message, processWithAgent = true } = body as {
-      message: Message,
-      processWithAgent?: boolean
+      message: Message;
+      processWithAgent?: boolean;
     };
 
     if (!message) {
       return NextResponse.json(
-        { error: 'Message data is required' },
+        { error: "Message data is required" },
         { status: 400 }
       );
     }
@@ -48,28 +81,125 @@ export async function POST(
       message.timestamp = toISOString(message.timestamp);
     }
     const sessionKey = `${userId}_${sessionId}`;
-    const sessionResponse = await getKVValue<Session>(sessionKey, { storeName: config.defaultStoreName });
+    const sessionResponse = await getKVValue<Session>(sessionKey, {
+      storeName: config.defaultStoreName,
+    });
+
+    // Helper: background title generation and persistence
+    async function generateAndPersistTitle(sessionId: string, sessionKey: string, finalSession: Session) {
+      try {
+        if ((finalSession as any).title) {
+          return; // Title already set
+        }
+        // Build compact conversation history (last 10 messages, truncate content)
+        const HISTORY_LIMIT = 10;
+        const MAX_CONTENT_LEN = 400;
+        const history = finalSession.messages
+          .slice(-HISTORY_LIMIT)
+          .map(m => ({
+            author: m.author,
+            content: (m.content || '').slice(0, MAX_CONTENT_LEN),
+          }));
+
+        const prompt = `Generate a very short session title summarizing the conversation topic.\n\nRequirements:\n- sentence case\n- no emojis\n- <= 60 characters\n- no quotes or markdown\n- output the title only, no extra text`;
+
+        const agentConfig = getAgentPulseConfig();
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (agentConfig.bearerToken) headers['Authorization'] = `Bearer ${agentConfig.bearerToken}`;
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        let agentResponse: Response | null = null;
+        try {
+          agentResponse = await fetch(agentConfig.url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              message: prompt,
+              conversationHistory: history,
+              use_direct_llm: true,
+            }),
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timeoutId);
+        }
+
+        if (!agentResponse || !agentResponse.ok) {
+          console.error(`[title-gen] failed: bad response ${agentResponse ? agentResponse.status : 'no-response'}`);
+          return;
+        }
+
+        const reader = agentResponse.body?.getReader();
+        if (!reader) {
+          console.error('[title-gen] failed: no response body');
+          return;
+        }
+
+        let bytes = 0;
+        let chunks = 0;
+        let accumulated = '';
+        const textDecoder = new TextDecoder();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) {
+            bytes += value.byteLength;
+            chunks += 1;
+            const text = textDecoder.decode(value);
+            for (const line of text.split('\n')) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const ev = JSON.parse(line.slice(6));
+                  if (ev.type === 'text-delta' && ev.textDelta) accumulated += ev.textDelta;
+                  if (ev.type === 'finish') {
+                    try { await reader.cancel(); } catch {}
+                    break;
+                  }
+                } catch {}
+              }
+            }
+          }
+        }
+        console.debug(`[title-gen] agent-stream bytes=${bytes} chunks=${chunks}`);
+
+        const candidate = sanitizeTitle(accumulated);
+        console.debug(`[title-gen] candidate="${candidate}"`);
+        const title = candidate || 'New chat';
+
+        // Re-fetch and set title only if still empty
+        const latest = await getKVValue<Session>(sessionKey, { storeName: config.defaultStoreName });
+        if (!latest.success || !latest.data) return;
+        const current = latest.data as any;
+        if (current.title) return;
+        current.title = title;
+        await setKVValue(sessionKey, current, { storeName: config.defaultStoreName });
+        console.debug('[title-gen] stored title');
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes('The operation was aborted') || msg.includes('aborted')) {
+          console.error('[title-gen] timeout after 3000ms');
+        } else {
+          console.error(`[title-gen] failed: ${msg}`);
+        }
+      }
+    }
     if (!sessionResponse.success || !sessionResponse.data) {
-      return NextResponse.json(
-        { error: 'Session not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
     const session = sessionResponse.data;
 
     const updatedSession: Session = {
       ...session,
-      messages: [...session.messages, message]
+      messages: [...session.messages, message],
     };
 
-    await setKVValue(
-      sessionKey,
-      updatedSession,
-      { storeName: config.defaultStoreName }
-    );
+    await setKVValue(sessionKey, updatedSession, {
+      storeName: config.defaultStoreName,
+    });
 
-    if (!processWithAgent || message.author !== 'USER') {
+    if (!processWithAgent || message.author !== "USER") {
       return NextResponse.json(
         { success: true, session: updatedSession },
         { status: 200 }
@@ -87,19 +217,22 @@ export async function POST(
 
     const agentPayload = {
       message: message.content,
-      conversationHistory: updatedSession.messages.slice(-DEFAULT_CONVERSATION_HISTORY_LIMIT),
-      tutorialData: message.tutorialData
+      conversationHistory: updatedSession.messages.slice(
+        -DEFAULT_CONVERSATION_HISTORY_LIMIT
+      ),
+      tutorialData: message.tutorialData,
     };
 
     // Prepare headers with optional bearer token
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     };
 
     if (agentConfig.bearerToken) {
-      headers['Authorization'] = `Bearer ${agentConfig.bearerToken}`;
+      headers["Authorization"] = `Bearer ${agentConfig.bearerToken}`;
     }
 
+    // Real agent call (SSE response expected)
     const agentResponse = await fetch(agentUrl, {
       method: 'POST',
       headers,
@@ -111,8 +244,8 @@ export async function POST(
       throw new Error(`Agent responded with status: ${agentResponse.status}`);
     }
 
-    // Process streaming response 
-    let accumulatedContent = '';
+    // Process streaming response
+    let accumulatedContent = "";
     let finalTutorialData: TutorialData | undefined = undefined;
 
     const transformStream = new TransformStream({
@@ -122,99 +255,107 @@ export async function POST(
 
         // Process the chunk to accumulate the full response
         const text = new TextDecoder().decode(chunk);
-        const lines = text.split('\n');
+        const lines = text.split("\n");
 
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
+          if (line.startsWith("data: ")) {
             try {
               const data = JSON.parse(line.slice(6)) as StreamingChunk;
 
-              if (data.type === 'text-delta' && data.textDelta) {
+              if (data.type === "text-delta" && data.textDelta) {
                 accumulatedContent += data.textDelta;
-              } else if (data.type === 'tutorial-data' && data.tutorialData) {
+              } else if (data.type === "tutorial-data" && data.tutorialData) {
                 finalTutorialData = data.tutorialData;
-              } else if (data.type === 'finish') {
+              } else if (data.type === "finish") {
                 // When the stream is finished, save the assistant message
                 const assistantMessage: Message = {
                   id: assistantMessageId,
-                  author: 'ASSISTANT',
+                  author: "ASSISTANT",
                   content: accumulatedContent,
                   timestamp: getCurrentTimestamp(),
-                  tutorialData: finalTutorialData
+                  tutorialData: finalTutorialData,
                 };
 
                 const finalSession = {
                   ...updatedSession,
-                  messages: [...updatedSession.messages, assistantMessage]
+                  messages: [...updatedSession.messages, assistantMessage],
                 };
 
-                await setKVValue(
-                  sessionKey,
-                  finalSession,
-                  { storeName: config.defaultStoreName }
-                );
+                await setKVValue(sessionKey, finalSession, {
+                  storeName: config.defaultStoreName,
+                });
+
+                // Trigger background title generation if missing
+                // Do not await to avoid delaying the client stream completion
+                void generateAndPersistTitle(sessionId, sessionKey, finalSession);
 
                 // Send the final session in the finish event
-                controller.enqueue(new TextEncoder().encode(
-                  `data: ${JSON.stringify({ type: 'finish', session: finalSession })}\n\n`
-                ));
+                controller.enqueue(
+                  new TextEncoder().encode(
+                    `data: ${JSON.stringify({
+                      type: "finish",
+                      session: finalSession,
+                    })}\n\n`
+                  )
+                );
               }
             } catch (error) {
-              console.error('Error processing stream chunk:', error);
+              console.error("Error processing stream chunk:", error);
             }
           }
         }
-      }
+      },
     });
 
     // Pipe the agent response through our transform stream
-    console.log('[DEBUG] Getting reader from agent response');
+    console.log("[DEBUG] Getting reader from agent response");
     const reader = agentResponse.body?.getReader();
     if (!reader) {
-      console.log('[DEBUG] No reader available from agent response');
-      throw new Error('No response body from agent');
+      console.log("[DEBUG] No reader available from agent response");
+      throw new Error("No response body from agent");
     }
     const writer = transformStream.writable.getWriter();
     // Start the piping process
-    console.log('[DEBUG] Starting piping process');
+    console.log("[DEBUG] Starting piping process");
     (async () => {
       try {
-        console.log('[DEBUG] Entering read loop');
+        console.log("[DEBUG] Entering read loop");
         let chunkCount = 0;
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
-            console.log('[DEBUG] Reader done, exiting loop');
+            console.log("[DEBUG] Reader done, exiting loop");
             break;
           }
           chunkCount++;
           await writer.write(value);
         }
-        console.log('[DEBUG] Closing writer');
+        console.log("[DEBUG] Closing writer");
         await writer.close();
       } catch (error) {
         writer.abort(error);
       }
     })();
 
-
     return new NextResponse(transformStream.readable, {
       headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
-      }
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
     });
-
   } catch (error) {
-    console.error('[DEBUG] Error in messages API:', error);
+    console.error("[DEBUG] Error in messages API:", error);
     // Log the full error stack trace for debugging
     if (error instanceof Error) {
-      console.error('[DEBUG] Error stack:', error.stack);
+      console.error("[DEBUG] Error stack:", error.stack);
     }
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error instanceof Error ? error.message : String(error) }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : String(error),
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }

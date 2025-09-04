@@ -10,6 +10,7 @@ import { CodeEditor } from '../components/CodeEditor';
 import { Session, Message } from '../types';
 import { useSessions } from '../SessionContext';
 import { sessionService } from '../services/sessionService';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ChatSessionPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -125,20 +126,35 @@ export default function ChatSessionPage() {
       setSession(foundSession);
       return;
     }
-
     const initialMessage = sessionStorage.getItem('initialMessage');
     if (!initialMessage) {
       return;
     }
     sessionStorage.removeItem('initialMessage');
-    const newSession: Session = {
+
+    const userMessage: Message = {
+      id: uuidv4(),
+      author: 'USER',
+      content: initialMessage,
+      timestamp: new Date().toISOString(),
+    };
+    const assistantPlaceholder: Message = {
+      id: uuidv4(),
+      author: 'ASSISTANT',
+      content: '',
+      timestamp: new Date().toISOString(),
+    };
+    const temporarySession: Session = {
       sessionId: sessionId as string,
-      messages: []
+      messages: [userMessage, assistantPlaceholder],
     };
 
-    setSession(newSession);
+    setSession(temporarySession);
 
-    sessionService.createSession(newSession)
+    sessionService.createSession({
+      sessionId: sessionId as string,
+      messages: []
+    })
       .then(async response => {
         if (response.success && response.data) {
           setSession(response.data);
@@ -152,32 +168,52 @@ export default function ChatSessionPage() {
         setCreationError(error.message || 'Error creating session');
         revalidateSessions?.();
       });
-  }, [sessionId]);
+  }, [sessionId, sessions, session]);
 
-  if (creationError) {
-    return <div>Error creating session: {creationError} <button onClick={() => revalidateSessions?.()}>Retry</button></div>;
-  }
-  if (!session) {
-    return <div>Session not found</div>;
-  }
 
   const toggleEditor = () => { setEditorOpen(false) };
   const stopServer = () => { };
 
-
   return (
-    <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden overflow-y-auto agentuity-scrollbar">
+    <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden overflow-y-auto uity-scrollbar relative">
+      {/* Non-blocking error banner */}
+      {creationError && (
+        <div className="absolute top-2 right-2 z-50 bg-red-500/20 border border-red-500/40 text-red-200 text-sm px-3 py-2 rounded-md backdrop-blur">
+          <div className="flex items-center gap-3">
+            <span>Error creating session: {creationError}</span>
+            <button
+              onClick={() => revalidateSessions?.()}
+              className="px-2 py-0.5 text-xs rounded bg-red-500/30 hover:bg-red-500/40 border border-red-500/50"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
       <Allotment>
         <Allotment.Pane minSize={300}>
           <div className="flex-1 flex flex-col items-center h-full overflow-hidden">
             <div className="w-full max-w-3xl flex-1 flex flex-col h-full">
-              {session && (
+              {session ? (
                 <ChatMessagesArea
                   session={session}
                   handleSendMessage={handleSendMessage}
                   setEditorContent={setEditorContent}
                   setEditorOpen={() => { setEditorOpen(true) }}
                 />
+              ) : (
+                <div className="p-6 space-y-4">
+                  <Skeleton className="h-6 w-40" />
+                  <div className="space-y-3">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="space-y-2">
+                        <Skeleton className="h-4 w-2/3" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -201,4 +237,4 @@ export default function ChatSessionPage() {
       </Allotment>
     </div>
   );
-} 
+}

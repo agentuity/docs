@@ -32,6 +32,8 @@ export interface CodeFile {
 export interface Session {
   messages: Message[];
   sessionId: string;
+  isTutorial?: boolean;
+  title?: string;
 }
 
 export interface SessionSidebarProps {
