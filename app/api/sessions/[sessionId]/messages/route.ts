@@ -315,8 +315,6 @@ export async function POST(
       throw new Error("No response body from agent");
     }
     const writer = transformStream.writable.getWriter();
-    // Start the piping process
-    console.log("[DEBUG] Starting piping process");
     (async () => {
       try {
         console.log("[DEBUG] Entering read loop");

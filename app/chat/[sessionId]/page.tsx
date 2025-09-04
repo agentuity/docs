@@ -23,6 +23,7 @@ export default function ChatSessionPage() {
 
   const handleSendMessage = async (content: string, sessionId: string) => {
     if (!content || !sessionId) return;
+
     const newMessage: Message = {
       id: uuidv4(),
       author: 'USER',
@@ -42,16 +43,7 @@ export default function ChatSessionPage() {
         if (!prevSession) return prevSession;
         return {
           ...prevSession,
-          messages: [...prevSession.messages, newMessage]
-        };
-      });
-
-
-      setSession(prevSession => {
-        if (!prevSession) return prevSession;
-        return {
-          ...prevSession,
-          messages: [...prevSession.messages, assistantMessage]
+          messages: [...prevSession.messages, newMessage, assistantMessage]
         };
       });
 
@@ -73,7 +65,6 @@ export default function ChatSessionPage() {
               });
               return { ...prev, messages: updatedMessages };
             });
-
           },
 
           onTutorialData: (tutorialData) => {
@@ -126,6 +117,7 @@ export default function ChatSessionPage() {
       setSession(foundSession);
       return;
     }
+
     const initialMessage = sessionStorage.getItem('initialMessage');
     if (!initialMessage) {
       return;
