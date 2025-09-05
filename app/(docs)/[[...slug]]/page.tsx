@@ -1,24 +1,24 @@
-import { CLICommand } from "@/components/CLICommand";
-import { CodeExample } from "@/components/CodeExample";
-import { Mermaid } from "@/components/Mermaid";
-import { Sparkle } from "@/components/Sparkle";
-import { ThemeImage } from "@/components/ThemeImage";
-import { TypingAnimation } from "@/components/TypingAnimation";
-import { XButton } from "@/components/XButton";
-import { source } from "@/lib/source";
-import { Popup, PopupContent, PopupTrigger } from "fumadocs-twoslash/ui";
-import { Tab, Tabs } from "fumadocs-ui/components/tabs";
-import defaultMdxComponents from "fumadocs-ui/mdx";
+import { Popup, PopupContent, PopupTrigger } from 'fumadocs-twoslash/ui';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import defaultMdxComponents from 'fumadocs-ui/mdx';
 import {
 	DocsBody,
 	DocsDescription,
 	DocsPage,
 	DocsTitle,
-} from "fumadocs-ui/page";
-import { notFound } from "next/navigation";
-import { CommunityButton } from "../../../components/Community";
-import { NavButton } from "../../../components/NavButton";
-import CopyPageDropdown from "../../../components/CopyPageDropdown";
+} from 'fumadocs-ui/page';
+import { notFound } from 'next/navigation';
+import { CLICommand } from '@/components/CLICommand';
+import { CodeExample } from '@/components/CodeExample';
+import { Mermaid } from '@/components/Mermaid';
+import { Sparkle } from '@/components/Sparkle';
+import { ThemeImage } from '@/components/ThemeImage';
+import { TypingAnimation } from '@/components/TypingAnimation';
+import { XButton } from '@/components/XButton';
+import { source } from '@/lib/source';
+import { CommunityButton } from '../../../components/Community';
+import CopyPageDropdown from '../../../components/CopyPageDropdown';
+import { NavButton } from '../../../components/NavButton';
 
 export default async function Page(props: {
 	params: Promise<{ slug?: string[] }>;
@@ -35,9 +35,9 @@ export default async function Page(props: {
 			toc={page.data.toc}
 			full={page.data.full}
 			editOnGithub={{
-				owner: "agentuity",
-				repo: "docs",
-				sha: "main",
+				owner: 'agentuity',
+				repo: 'docs',
+				sha: 'main',
 				path: `content/${page.file.path}`,
 			}}
 		>
@@ -74,7 +74,7 @@ export default async function Page(props: {
 						with other humans building agents.
 					</p>
 					<p>
-						Send us an email at{" "}
+						Send us an email at{' '}
 						<a href="mailto:hi@agentuity.com">hi@agentuity.com</a> if you&apos;d
 						like to get in touch.
 					</p>
@@ -82,7 +82,7 @@ export default async function Page(props: {
 						Please <XButton follow noBorder />
 					</p>
 					<p>
-						If you haven&apos;t already, please{" "}
+						If you haven&apos;t already, please{' '}
 						<a href="https://app.agentuity.com/sign-up">Signup</a> for your free
 						account now and start building your first agent!
 					</p>
@@ -106,9 +106,9 @@ export async function generateMetadata(props: {
 
 	return {
 		title:
-			page.data.title && page.data.title !== "Agentuity"
+			page.data.title && page.data.title !== 'Agentuity'
 				? `${page.data.title} — Agentuity Docs`
-				: "Agentuity Docs",
+				: 'Agentuity Docs',
 		description: page.data.description,
 	};
 }

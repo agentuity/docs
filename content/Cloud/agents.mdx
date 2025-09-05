@@ -29,6 +29,7 @@ graph TD
         A5[Agent]
         A6[Slack]
         A7[Discord]
+        A8[Telegram]
     end
 
     subgraph Destinations
@@ -47,6 +48,7 @@ graph TD
     A5 --> Agent
     A6 --> Agent
     A7 --> Agent
+    A8 --> Agent
 
     Agent --> B1
     Agent --> B2
@@ -84,7 +86,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     return response.text("ok")
 `} />
 
-#### Agent Webhook Source
+#### Webhook Source
 
 To configure your agent to receive data from a webhook, you need to add a new webhook source.  When receiving data from a webhook, the agent will send the data to the agent's inputs asynchronously without waiting for the agent to finish processing the data.
 
@@ -114,7 +116,7 @@ To trigger a webhook using curl with a required Bearer token authentication, you
 
 The response from the webhook will contain an informational message if successful.  Additionally, the `Location` header will contain the URL that can be used to read the agent output.  This URL will block until the agent has started streaming the output response.
 
-#### Agent API Source
+#### API Source
 
 To configure your agent to receive data as an API endpoint, you need to add a new API source.  When receiving data from an API endpoint, the agent will send the data to the agent's inputs synchronously and wait for the agent to respond.
 
@@ -144,7 +146,7 @@ To invoke an API using curl with a required Bearer token authentication, you can
   Make sure to use the correct agent ID in the webhook URL.
 </Callout>
 
-#### Agent Email Source
+#### Email Source
 
 For Email sources, you can configure your agent at a unique agent email address.  When receiving an email, the agent will send the email content to the agent's inputs asynchronously without waiting for the agent to finish processing the email.
 
@@ -154,9 +156,9 @@ For Email sources, you can configure your agent at a unique agent email address.
   An email source can only be triggered by an email sent to the agent's email address and not via the API.
 </Callout>
 
-The response from the API will contain an informational message if successful.  Additionally, the `Location` header will contain the URL that can be used to read the agent output.  This URL will block until the agent has started streaming the output response.
+After an email is received, the platform will enqueue processing and your agent will handle the message asynchronously. Any replies will be delivered via the configured destination(s).
 
-#### Agent Discord Source
+#### Discord Source
 
 For Discord sources, you can configure your agent to receive messages from a Discord server. When a user tags the bot in a Discord message, the agent will receive the message content asynchronously without waiting for the agent to finish processing the message.
 
@@ -248,7 +250,40 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
   Discord sources can only be triggered by messages where the bot is tagged in a Discord server. The bot cannot receive all messages in a channel for privacy reasons.
 </Callout>
 
-#### Agent SMS Source
+{/* #### Slack Source
+
+For Slack sources, you can configure your agent to receive messages from a Slack workspace. Users @mention your agent in Slack to trigger responses. By default, replies are sent as threads (configurable).
+
+<ThemeImage baseName="agent-io-slack-source" alt="Agent New Slack Source" />
+
+To set up Slack Integration, you'll need to create a Slack App and configure OAuth:
+
+1. **Create a Slack App** in your Slack workspace
+2. **Configure OAuth** with the following credentials:
+   - App Name
+   - Client ID 
+   - Client Secret
+   - Signing Secret
+3. **Set OAuth Redirect URL** to: `https://api.agentuity.com/io/slack/source/oauth/callback`
+4. **Configure Event Subscriptions** with the Request URL provided by Agentuity
+5. **Subscribe to Bot Events**: `message.channels`, `message.im`, `app_mention`
+
+<Callout type="info">
+  You must configure OAuth and Event Subscriptions in your Slack App settings for the integration to work properly.
+</Callout> */}
+
+#### Telegram Source
+
+For Telegram sources, you can configure your agent to receive messages from Telegram users. Users can message your agent directly on Telegram.
+
+<ThemeImage baseName="agent-io-telegram-source" alt="Agent New Telegram Source" />
+
+To configure a Telegram source:
+
+1. **Get a Bot Token** from @BotFather on Telegram
+2. **Enter the Bot Token** in the configuration
+
+#### SMS Source
 
 For SMS sources, you can connect your Twilio account to allow your agent to be triggered by incoming text messages. This requires providing your Twilio API credentials.
 
@@ -261,7 +296,7 @@ To configure an SMS source, you will need the following credentials from your Tw
 
 Once validated, you can select one or more of your Twilio numbers to forward incoming messages to your agent.
 
-#### Agent Schedule Source
+#### Schedule Source
 
 For running an agent on a schedule, you can configure your agent to use a cron source.  When the agent is scheduled to run, the agent will send the data to the agent's inputs asynchronously without waiting for the agent to finish processing the data.
 
@@ -276,6 +311,50 @@ You can optionally specify a content type and payload to send to the agent when 
 A cron source can only be triggered internally by the Agentuity Platform and not via the API. However, you can trigger a scheduled agent to run by selecting the schedule and selecting "Manual Run" in the context menu.
 
 <ThemeImage baseName="agent-io-cron-trigger" alt="Trigger Cron Manually"  />
+
+#### Discord Destination
+
+For Discord destinations, you can configure your agent to send messages to a Discord channel when triggered by external sources (webhooks, APIs, other agents, etc.). This is different from Discord sources which handle @mentions within Discord.
+
+<ThemeImage baseName="agent-io-discord-destination" alt="Discord Destination Configuration" />
+
+To configure a Discord destination:
+
+1. **Select a Discord Server** from your connected servers
+2. **Choose a Channel** where messages will be sent
+3. **Invite the Bot** if not already in the server using the provided invite link
+
+<Callout type="info">
+  The bot must be invited to your Discord server before you can configure it as a destination. Use the invite link provided if you see "Bot not found in server" error.
+</Callout>
+
+#### Email Destination
+
+For Email destinations, you can configure your agent to send emails when triggered.
+
+By default, emails are sent from `no-reply@agentuity.run`:
+
+<ThemeImage baseName="agent-io-email-destination" alt="Email Destination - Default Configuration" />
+
+When you also configure Email as a source (inbound), your agent gets a dedicated email address that can be used as well:
+
+<ThemeImage baseName="agent-io-email-dest-inbound" alt="Email Destination with Inbound Email Configured" />
+
+All in all, there are three sender address options:
+
+- **Default**: Sends from `no-reply@agentuity.run`
+- **With Inbound Email**: Sends from your agent's address `[agent-id]@agentuity.run`
+- **Custom Domain** (Enterprise): Use your organization's domain for outbound emails
+
+Configuration requires:
+- **Recipient Addresses**: List of email addresses to send to
+- **Subject Line**: Email subject for outbound messages
+
+> Note: Email subject and recipients can only be configured through the UI at this time.
+
+<Callout type="info">
+  **Enterprise Feature:** Organizations can configure custom email domains for outbound emails. This requires DNS configuration and is currently only available through Agentuity support. Contact us to set up custom email domains for your organization.
+</Callout>
 
 ### Agent Deployments
 

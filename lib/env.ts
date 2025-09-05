@@ -2,8 +2,8 @@
  * Environment variable validation and configuration utility
  */
 export interface AgentConfig {
-  url: string;
-  bearerToken?: string;
+	url: string;
+	bearerToken?: string;
 }
 /**
  * Creates agent configuration from environment variables

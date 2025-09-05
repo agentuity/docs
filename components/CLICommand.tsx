@@ -1,4 +1,4 @@
-import { CodeBlock } from "fumadocs-ui/components/codeblock";
+import { CodeBlock } from 'fumadocs-ui/components/codeblock';
 
 export interface CLICommandProps {
 	command: string;
@@ -10,7 +10,9 @@ export function CLICommand({ command, children }: CLICommandProps) {
 		<CodeBlock lang="bash">
 			<div className="mx-3">
 				<span className="flex items-start justify-start gap-2">
-					<span className="text-cyan-700 dark:text-cyan-700 select-none">$</span>{" "}
+					<span className="text-cyan-700 dark:text-cyan-700 select-none">
+						$
+					</span>{' '}
 					<pre>{command}</pre>
 				</span>
 				{children && (

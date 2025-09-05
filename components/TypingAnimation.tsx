@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { cn } from "fumadocs-ui/utils/cn";
-import { motion, type MotionProps } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { cn } from 'fumadocs-ui/utils/cn';
+import { type MotionProps, motion } from 'motion/react';
+import { useEffect, useRef, useState } from 'react';
 
 interface TypingAnimationProps extends MotionProps {
 	children: string;
@@ -18,7 +18,7 @@ export function TypingAnimation({
 	className,
 	duration = 100,
 	delay = 0,
-	as: Component = "div",
+	as: Component = 'div',
 	startOnView = false,
 	...props
 }: TypingAnimationProps) {
@@ -26,7 +26,7 @@ export function TypingAnimation({
 		forwardMotionProps: true,
 	});
 
-	const [displayedText, setDisplayedText] = useState<string>("");
+	const [displayedText, setDisplayedText] = useState<string>('');
 	const [started, setStarted] = useState(false);
 	const elementRef = useRef<HTMLElement | null>(null);
 
@@ -47,7 +47,7 @@ export function TypingAnimation({
 					observer.disconnect();
 				}
 			},
-			{ threshold: 0.1 },
+			{ threshold: 0.1 }
 		);
 
 		if (elementRef.current) {
@@ -80,7 +80,7 @@ export function TypingAnimation({
 			ref={elementRef}
 			className={cn(
 				// "text-4xl font-bold leading-[5rem] tracking-[-0.02em]",
-				className,
+				className
 			)}
 			{...props}
 		>

@@ -1,0 +1,92 @@
+---
+title: Agent Input and Output
+description: How to handle agent input and output
+---
+
+## Overview
+
+Agent IO enables your agents to communicate with external platforms through two types of connections: Sources (inbound) and Destinations (outbound). Understanding the distinction between these connection types is essential for properly configuring your AI agents on the Agentuity platform.
+
+## Sources vs Destinations
+
+### Sources (Inbound Connections)
+
+Sources enable bidirectional communication between a platform and your agent. When configured, the platform can trigger your agent and receive responses within the same conversation context.
+
+**How Sources Work:**
+1. Platform triggers agent (e.g., @mention in Slack)
+2. Agent processes the request
+3. Agent responds directly within the same platform conversation
+
+**Example:** When someone @mentions your agent in Discord, the agent can respond back in the same Discord channel.
+
+### Destinations (Outbound Connections)
+
+Destinations allow your agent to send messages to a platform when triggered by *external sources*. These are one-way connections for delivering agent output to specified channels.
+
+**How Destinations Work:**
+1. External source triggers agent (webhook, API, schedule, etc.)
+2. Agent processes the request
+3. Agent sends output to configured destination platforms
+
+**Example:** Your GitHub repository triggers your agent on each commit, and the agent sends a formatted summary to your team's Discord channel.
+
+## Choosing Your Configuration
+
+| Use Case | Configuration Needed |
+|---------------------|---------------------|
+| Chat bot that responds to @mentions | **Source only** |
+| Send notifications when something happens | **Destination only** |
+| Forward messages between platforms | **Source** for receiving, **Destination** for sending |
+| Full assistant with chat and notifications | **Both** Source and Destination |
+
+### Sources Only
+Perfect for conversational bots that respond to user questions, @mentions, or direct messages.
+
+**Example:** Your team wants a Slack bot that answers questions about your documentation. You only need a Slack Source - users @mention the bot, and it replies in the thread.
+
+### Destinations Only
+Ideal for automated notifications, scheduled updates, or forwarding alerts from monitoring systems.
+
+**Example:** You want GitHub commit notifications in Discord. Configure a webhook to trigger your agent, then add Discord as a Destination. No Discord Source needed since the bot doesn't respond to Discord messages.
+
+### Both Sources and Destinations
+Required when your agent needs conversations AND notifications, connecting multiple platforms, or building a full-featured assistant.
+
+**Example:** You're building a team assistant that answers questions in Slack (Source) but also posts daily standup reminders (Destination) and forwards important emails to the channel (Email Source → Slack Destination).
+
+## Key Considerations
+
+- **Sources** provide complete conversational capability - you don't need a destination to reply
+- **Destinations** work independently - perfect for one-way notifications
+- A single agent can have multiple sources and destinations configured
+
+## Video Tutorials
+
+{/* ### Configuring Slack Inbound
+<iframe 
+  width="100%" 
+  height="400" 
+  src="SLACK_INBOUND_VIDEO_URL_PLACEHOLDER"
+  title="Setting up Slack Source Integration" 
+  frameBorder="0" 
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+  allowFullScreen
+></iframe> */}
+
+### Email Destination Configuration
+<iframe 
+  width="100%" 
+  height="400" 
+  src="https://www.youtube.com/embed/X-HEUFH5C0Y" 
+  title="Introducing email destinations" 
+  frameBorder="0" 
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+  allowFullScreen
+></iframe>
+
+## Next Steps
+
+- Review the [Agents](/Cloud/agents) documentation for platform-specific configuration
+- Configure *sources* for platforms where users will interact with your agent
+- Set up *destinations* for platforms where your agent will send notifications

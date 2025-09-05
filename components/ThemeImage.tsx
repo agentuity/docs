@@ -1,19 +1,24 @@
 /* eslint-disable @next/next/no-img-element */
-"use client";
-import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
-import ImageZoom from "react-medium-image-zoom";
-import "react-medium-image-zoom/dist/styles.css";
+'use client';
+import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
+import ImageZoom from 'react-medium-image-zoom';
+import 'react-medium-image-zoom/dist/styles.css';
 
 const placeholder =
-	"data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+	'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
 export function ThemeImage({
 	baseName,
 	alt,
 	width = 3680,
 	height = 2382,
-}: { baseName: string; alt: string; width: number; height: number }) {
+}: {
+	baseName: string;
+	alt: string;
+	width: number;
+	height: number;
+}) {
 	const { theme, resolvedTheme } = useTheme();
 	const [loaded, setLoaded] = useState(false);
 	const [src, setSrc] = useState<string | null>(null);
@@ -23,7 +28,7 @@ export function ThemeImage({
 	}, []);
 
 	useEffect(() => {
-		if (theme === "dark" || (theme === "system" && resolvedTheme === "dark")) {
+		if (theme === 'dark' || (theme === 'system' && resolvedTheme === 'dark')) {
 			setSrc(`/images/${baseName}-dark.png`);
 		} else {
 			setSrc(`/images/${baseName}-light.png`);

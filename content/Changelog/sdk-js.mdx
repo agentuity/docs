@@ -7,6 +7,68 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 This page documents the release history of the [Agentuity JavaScript SDK](https://github.com/agentuity/sdk-js).
 
+## v0.0.144
+
+<Callout type="info">
+  Released: August 28, 2025
+</Callout>
+
+**Changes**
+
+- **Fixed**: Issues between streaming for node and bun and keep alive differences
+
+## v0.0.143
+
+<Callout type="info">
+  Released: August 28, 2025
+</Callout>
+
+**Changes**
+
+- **Changed**: Use traceloop for otel for consistency across Python and TS SDK's ([PR #170](https://github.com/agentuity/sdk-js/pull/170))
+
+## v0.0.142
+
+<Callout type="info">
+  Released: August 26, 2025
+</Callout>
+
+**Changes**
+
+- **Changed**: Increase api timeout from 20 seconds to NEVER ([PR #168](https://github.com/agentuity/sdk-js/pull/168))
+
+## v0.0.141
+
+<Callout type="info">
+  Released: August 25, 2025
+</Callout>
+
+**Changes**
+
+- **Changed**: Restructured slack IO and payloads ([PR #164](https://github.com/agentuity/sdk-js/pull/164))
+- **Fixed**: Fix email attachment parsing for Slack-formatted filenames ([PR #160](https://github.com/agentuity/sdk-js/pull/160))
+- **Changed**: Use sessionId instead of runId for AgentContext to better align with how we reference it ([PR #165](https://github.com/agentuity/sdk-js/pull/165))
+
+## v0.0.140
+
+<Callout type="info">
+  Released: August 19, 2025
+</Callout>
+
+### Changes
+
+- **Fixed**: Fix cloud runs for teams agents with improved credential validation and metadata-driven configuration ([PR #162](https://github.com/agentuity/sdk-js/pull/162))
+
+## v0.0.139
+
+<Callout type="info">
+  Released: August 18, 2025
+</Callout>
+
+### Changes
+
+- **Added**: Teams support ([PR #161](https://github.com/agentuity/sdk-js/pull/161))
+
 ## v0.0.138
 
 <Callout type="info">

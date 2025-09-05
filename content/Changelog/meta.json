@@ -1,4 +1,4 @@
 {
-  "title": "Changelog",
-  "pages": ["cli", "sdk-js", "sdk-py"]
+	"title": "Changelog",
+	"pages": ["cli", "sdk-js", "sdk-py"]
 }

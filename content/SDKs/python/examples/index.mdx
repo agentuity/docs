@@ -199,7 +199,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
             {
                 "id": result.id,
                 "key": result.key,
-                "similarity": 1.0 - result.distance,
+                "similarity": result.similarity,
                 "metadata": result.metadata
             }
             for result in results

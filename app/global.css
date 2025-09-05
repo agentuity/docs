@@ -51,7 +51,7 @@
 	--color-fd-accent-foreground: var(--color-cyan-900);
 	--color-fd-ring: var(--color-cyan-500);
 }
-  
+
 .dark {
 	--color-fd-background: var(--color-cyan-900);
 	--color-fd-foreground: var(--color-white);
@@ -78,11 +78,11 @@
 
 aside [data-radix-scroll-area-viewport] button,
 aside [data-radix-scroll-area-viewport] a {
-	color: #0A0A0A;
+	color: #0a0a0a;
 }
 
 .aside {
-	background: #FAFAFA;
+	background: #fafafa;
 }
 
 .dark aside,
@@ -92,7 +92,7 @@ aside [data-radix-scroll-area-viewport] a {
 
 .dark aside [data-radix-scroll-area-viewport] button,
 .dark aside [data-radix-scroll-area-viewport] a {
-	color: #FFF;
+	color: #fff;
 }
 
 /* make sure empty lines are rendered */
@@ -105,7 +105,7 @@ code span.line > span {
 }
 
 .code-example > div[role="tablist"] {
-	background-color: #EEE;
+	background-color: #eee;
 }
 
 .dark .code-example > div[role="tablist"] {
@@ -133,7 +133,7 @@ figure > div:nth-child(2) {
 }
 
 .mermaid .cluster rect {
-	fill: #FFF !important;
+	fill: #fff !important;
 	stroke: #099 !important;
 }
 
@@ -158,7 +158,7 @@ figure > div:nth-child(2) {
 }
 
 .dark .mermaid .nodeLabel {
-	color: #FFF !important;
+	color: #fff !important;
 }
 
 .mermaid text.actor > tspan {
