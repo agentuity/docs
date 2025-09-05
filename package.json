@@ -18,10 +18,7 @@
 		"preview": "opennextjs-cloudflare && wrangler dev",
 		"deploy": "opennextjs-cloudflare && wrangler deploy --keep-vars",
 		"cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
-		"validate-env": "node -e \"require('./lib/env').validateEnv()\"",
-		"terminal-server": "node scripts/start-terminal-server.js",
-		"coding-server": "echo 'Tutorial APIs are now integrated into Next.js at /api/tutorials'",
-		"dev:full": "concurrently \"npm run terminal-server\" \"npm run dev\""
+		"validate-env": "node -e \"require('./lib/env').validateEnv()\""
 	},
 	"dependencies": {
 		"@radix-ui/react-dialog": "^1.1.14",
