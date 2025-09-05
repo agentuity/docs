@@ -94,9 +94,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 	return (
 		<html lang="en" className={GeistSans.className} suppressHydrationWarning>
 			<body className="flex flex-col min-h-screen antialiased">
-				<RootProvider
-					theme={{ enabled: true, enableSystem: true }}
-				>
+				<RootProvider theme={{ enabled: true, enableSystem: true }}>
 					{children}
 				</RootProvider>
 			</body>
