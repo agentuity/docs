@@ -7,15 +7,13 @@ import Image from "next/image";
 
 <Image src="/images/agent-to-agent.png" alt="Agent-to-AgentCommunication" width={640} height={640} />
 
-### How do agents communicate with each other?
+## Overview
 
-In most advanced agentic scenarios, agents need to communicate with other agents to achieve their goals.
-
-In fact, our recommendation is that you build agents with highly specialized roles and skills and use agent-to-agent communication to achieve the overall goal.
+In most advanced agentic scenarios, agents need to communicate with other agents to achieve their goals. In fact, our recommendation is that you build agents with highly specialized roles and skills and use agent-to-agent communication to achieve the overall goal.
 
 There are a number of ways to achieve agent-to-agent communication natively in Agentuity.
 
-#### Communication Types
+## Communication Types
 
 Agents can communicate with each other in a number of ways in the Agentuity platform.  The following are the different types of communication that are supported:
 
@@ -25,19 +23,19 @@ Agents can communicate with each other in a number of ways in the Agentuity plat
 | **Inter Project** | Agents can communicate with each other across projects within the same organization across the internal network |
 | **Inter Organization** | Agents can communicate with each other across organizations across the internal network |
 
-##### Intra Project
+### Intra Project
 
 Intra project communication is the simplest form of agent-to-agent communication.  Agents within the same project can communicate with each other locally without leaving the local network.
 
-##### Inter Project
+### Inter Project
 
 Inter project communication is a more advanced form of agent-to-agent communication.  Agents can communicate with each other across projects within the same organization but will communicate over the internal network.
 
-##### Inter Organization
+### Inter Organization
 
 Inter organization communication is the most advanced form of agent-to-agent communication.  Agents can communicate with each other across organizations. Currently, Agentuity only supports inter organization agent communication if the target agent is public and the source agent has been given the agent ID by the other organization. For inter organization communication, the source agent will communicate over the internal network.
 
-#### Communication Methods
+## Communication Methods
 
 Agents have two primary methods of communication with other agents:
 
@@ -46,7 +44,7 @@ Agents have two primary methods of communication with other agents:
 | Handoff | Agents can handoff a request to another agent to complete |
 | Invocation | Agents can invoke another agent to complete a task and wait for the result |
 
-##### Handoff
+### Handoff
 
 When an agent needs to handoff a request to another agent, it can do so by using the SDK `handoff` method.  The `handoff` method will send the request to another agent and the other agent will be responsible for completing the request.
 
@@ -91,7 +89,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     return response.handoff({"name":"My Other Agent"}, "would you please do this?")
 `} />
 
-##### Invocation
+### Invocation
 
 When an agent needs to invoke another agent to complete a task and wants to wait for the result, it can do so by using the SDK `getAgent` method on `AgentContext`.  The `getAgent` will perform resolution to determine the target agent location and return a handle to the target agent that can be used to `run` the target agent.
 
@@ -118,16 +116,16 @@ export default async function Agent(
    ctx: AgentContext
 ) {
     const agent = await ctx.getAgent({name: 'My Other Agent'});
-    const agentResponse = await agent.run({ 
-        data: "would you please do this?",
-        contentType: "text/plain"
-    });
+    // Basic usage - perfect for simple string data
+    const agentResponse = await agent.run({ data: "would you please do this?" });
+    // Explicit control when needed:
+    // const agentResponse = await agent.run({ data: "would you please do this?", contentType: "text/plain" });
     const text = await agentResponse.data.text();
     return resp.text(text);
 }`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    agent = await context.getAgent({"name":"My Other Agent"})
+    agent = await context.get_agent({"name":"My Other Agent"})
     # Send plain text (content type inferred as text/plain)
     agent_response = await agent.run("would you please do this?")
     # Or send JSON (content type inferred as application/json)
@@ -140,7 +138,7 @@ In this trivial example above, the functionality is similar to the handoff examp
 
 In a real life scenario, you'll likely want to pass the appropriate data types to the target agent and wait for the result and then use the result in your own agent to perform additional tasks.
 
-###### Parallel Execution
+#### Parallel Execution
 
 Sometimes you want to send a request to multiple agents at the same time. This is an example of parallel execution.
 
@@ -153,18 +151,24 @@ export default async function Agent(
 ) {
   const agent1 = await ctx.getAgent({name: 'My First Agent'});
   const agent2 = await ctx.getAgent({name: 'My Second Agent'});
+  // Basic usage - perfect for simple object data
   await Promise.all([
-    agent1.run({ data: { task: 'My First Task' }, contentType: 'application/json' }),
-    agent2.run({ data: { task: 'My Second Task' }, contentType: 'application/json' }),
+    agent1.run({ data: { task: 'My First Task' } }),
+    agent2.run({ data: { task: 'My Second Task' } }),
   ]);
+  // Explicit control when needed:
+  // await Promise.all([
+  //   agent1.run({ data: { task: 'My First Task' }, contentType: 'application/json' }),
+  //   agent2.run({ data: { task: 'My Second Task' }, contentType: 'application/json' }),
+  // ]);
   return resp.text('OK');
 }`}  py={`from agentuity import AgentRequest, AgentResponse, AgentContext
 import asyncio
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
 
-    agent1 = await context.getAgent({"name":"My First Agent"})
-    agent2 = await context.getAgent({"name":"My Second Agent"})
+    agent1 = await context.get_agent({"name":"My First Agent"})
+    agent2 = await context.get_agent({"name":"My Second Agent"})
 
     await asyncio.gather(
       agent1.run({"task": "My First Task"}),  # content type inferred as JSON
@@ -190,7 +194,7 @@ sequenceDiagram
   Agent 1->>Agent 3: Run
 "/>
 
-#### Agent Resolution
+## Agent Resolution
 
 How do we resolve the target agent?  There are three main ways to do this:
 
@@ -200,11 +204,11 @@ How do we resolve the target agent?  There are three main ways to do this:
 | Agent Name | The agent name is a human readable name for an agent.  It is a string that was used for the agent's name. |
 | Project ID | The agent project ID is specified to disambiguate agents with the same name in different projects. |
 
-##### Intra Project Resolution
+### Intra Project Resolution
 
 When calling an agent within the same project, the agent name is usually the easiest way to resolve the target agent.  The agent name is a human readable name for an agent.  It is a string that was used for the agent's name.
 
-##### Inter Project Resolution
+### Inter Project Resolution
 
 When calling an agent across projects within the same organization, the agent ID is typically the most reliable way to resolve the target agent.  The agent ID is a unique identifier for an agent.
 
@@ -233,10 +237,10 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     })
 `} />
 
-##### Inter Organization Resolution
+### Inter Organization Resolution
 
 Currently, Agentuity only supports inter organization agent communication if the target agent is public and the source agent has been given the agent ID by the other organization. When using inter organization communication, only the agent ID is required to resolve the target agent.
 
-#### Communication Authorization
+## Communication Authorization
 
 When communicating with other agents outside the local project, Agentuity will automatically generate a one-time use authorization token with a short expiration.  This token is used to authenticate the source agent to the target agent automatically without the need for the source agent to pass the token to the target agent.
