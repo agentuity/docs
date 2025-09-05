@@ -1,0 +1,981 @@
+---
+title: The Anatomy of an Agent
+description: Understanding how agents work - planning, reasoning, tools, and memory
+---
+
+# Module 2: The Anatomy of an Agent
+
+Now that you've built your first agent, let's dive deeper to understand what makes agents tick. We'll explore the core components that transform a simple script into an autonomous, intelligent system.
+
+## The Agent Lifecycle
+
+Every agent interaction follows a predictable lifecycle, from receiving a trigger to returning a response. Understanding this flow is crucial for building effective agents.
+
+```mermaid
+graph TD
+    A[Trigger Event] --> B[Request Handler]
+    B --> C[Context Initialization]
+    C --> D[Planning Phase]
+    D --> E[Reasoning Loop]
+    E --> F[Tool Invocation]
+    F --> G[Memory Update]
+    G --> H[Response Generation]
+    H --> I[Return Response]
+    E --> E[Continue Loop]
+```
+
+Let's explore each phase:
+
+### 1. Trigger Events
+
+Agents spring into action when triggered. Agentuity supports multiple trigger types:
+
+| Trigger Type | Description | Use Case |
+|-------------|-------------|----------|
+| **webhook** | HTTP endpoint call | REST APIs, external integrations |
+| **cron** | Scheduled execution | Batch processing, periodic tasks |
+| **manual** | Console/CLI invocation | Testing, one-off tasks |
+| **agent** | Called by another agent | Multi-agent workflows |
+| **sms** | SMS message received | Text-based interactions |
+| **email** | Email received | Email automation |
+| **queue** | Message queue event | Async processing |
+
+Each trigger provides different metadata and context:
+
+<CodeExample py={`async def run(request, response, context):
+    # Identify the trigger type
+    trigger = request.trigger
+    
+    if trigger == "webhook":
+        # Handle HTTP request
+        data = await request.data.json()
+        context.logger.info(f"Webhook triggered with data: {data}")
+    
+    elif trigger == "cron":
+        # Handle scheduled execution
+        context.logger.info(f"Cron job running at {datetime.now()}")
+        # No input data for cron triggers
+    
+    elif trigger == "agent":
+        # Handle agent-to-agent call
+        calling_agent = request.metadata.get("source_agent")
+        context.logger.info(f"Called by agent: {calling_agent}")
+    
+    return response.json({
+        "trigger_type": trigger,
+        "processed_at": datetime.now().isoformat()
+    })`} js={`const handler: AgentHandler = async (request, response, context) => {
+  // Identify the trigger type
+  const trigger = request.trigger;
+  
+  if (trigger === 'webhook') {
+    // Handle HTTP request
+    const data = await request.data.json();
+    context.logger.info(\`Webhook triggered with data: \${JSON.stringify(data)}\`);
+  
+  } else if (trigger === 'cron') {
+    // Handle scheduled execution
+    context.logger.info(\`Cron job running at \${new Date().toISOString()}\`);
+    // No input data for cron triggers
+  
+  } else if (trigger === 'agent') {
+    // Handle agent-to-agent call
+    const callingAgent = request.metadata.get('source_agent');
+    context.logger.info(\`Called by agent: \${callingAgent}\`);
+  }
+  
+  return response.json({
+    trigger_type: trigger,
+    processed_at: new Date().toISOString()
+  });
+};`} />
+
+### 2. Request and Response Handling
+
+Every agent receives a request and must return a response. The request contains the trigger data and metadata, while the response can be in various formats:
+
+<CodeExample py={`async def run(request, response, context):
+    # Access request data in different formats
+    
+    # JSON data (most common)
+    json_data = await request.data.json()
+    
+    # Plain text
+    text_data = await request.data.text()
+    
+    # Binary data
+    binary_data = await request.data.binary()
+    
+    # Base64 encoded
+    base64_data = await request.data.base64()
+    
+    # Response options
+    
+    # JSON response (most common)
+    return response.json({"result": "success"})
+    
+    # Text response
+    # return response.text("Hello, World!")
+    
+    # HTML response
+    # return response.html("<h1>Hello</h1>")
+    
+    # Binary response (for files)
+    # return response.binary(file_bytes)
+    
+    # Redirect to another agent
+    # return response.handoff({"name": "other-agent"}, data, metadata={})`} js={`const handler: AgentHandler = async (request, response, context) => {
+  // Access request data in different formats
+  
+  // JSON data (most common)
+  const jsonData = await request.data.json();
+  
+  // Plain text
+  const textData = await request.data.text();
+  
+  // Binary data
+  const binaryData = await request.data.binary();
+  
+  // Base64 encoded
+  const base64Data = await request.data.base64();
+  
+  // Response options
+  
+  // JSON response (most common)
+  return response.json({ result: 'success' });
+  
+  // Text response
+  // return response.text('Hello, World!');
+  
+  // HTML response
+  // return response.html('<h1>Hello</h1>');
+  
+  // Binary response (for files)
+  // return response.binary(fileBytes);
+  
+  // Redirect to another agent
+  // return response.handoff({ name: 'other-agent' }, { data: jsonData, contentType: 'application/json' });
+};`} />
+
+### 3. The Agent Context
+
+The context object is your agent's gateway to Agentuity's services. It provides access to storage, logging, tracing, and more:
+
+<CodeExample py={`async def run(request, response, context):
+    # Logging at different levels
+    context.logger.debug("Debug information")
+    context.logger.info("General information")
+    context.logger.warn("Warning message")
+    context.logger.error("Error occurred")
+    
+    # Access metadata
+    agent_id = context.agent.id
+    agent_name = context.agent.name
+    project_id = context.projectId
+    run_id = context.runId
+    
+    # Key-Value storage
+    await context.kv.set("cache", "key", {"data": "value"})
+    result = await context.kv.get("cache", "key")
+    
+    # Vector storage for semantic search
+    await context.vector.upsert("docs", {
+        "key": "doc1",
+        "document": "AI agents are autonomous systems",
+        "metadata": {"category": "intro"}
+    })
+    
+    # Object storage for files
+    await context.objectstore.put("files", "report.pdf", pdf_bytes)
+    
+    return response.json({
+        "agent": agent_name,
+        "run": run_id
+    })`} js={`const handler: AgentHandler = async (request, response, context) => {
+  // Logging at different levels
+  context.logger.debug('Debug information');
+  context.logger.info('General information');
+  context.logger.warn('Warning message');
+  context.logger.error('Error occurred');
+  
+  // Access metadata
+  const agentId = context.agent.id;
+  const agentName = context.agent.name;
+  const projectId = context.projectId;
+  const runId = context.runId;
+  
+  // Key-Value storage
+  await context.kv.set('cache', 'key', JSON.stringify({ data: 'value' }));
+  const result = await context.kv.get('cache', 'key');
+  
+  // Vector storage for semantic search
+  await context.vector.upsert('docs', {
+    key: 'doc1',
+    document: 'AI agents are autonomous systems',
+    metadata: { category: 'intro' }
+  });
+  
+  // Object storage for files
+  await context.objectstore.put('files', 'report.pdf', pdfBytes);
+  
+  return response.json({
+    agent: agentName,
+    run: runId
+  });
+};`} />
+
+## Planning and Reasoning: The Agent's Brain
+
+What separates agents from simple scripts is their ability to plan and reason. While Agentuity provides the infrastructure, you implement the intelligence.
+
+### The Planning Phase
+
+Planning involves breaking down a complex request into manageable steps:
+
+<CodeExample py={`async def create_plan(request_data, context):
+    """Create an execution plan based on the request."""
+    
+    # Analyze what the user wants
+    intent = analyze_intent(request_data)
+    
+    # Break down into steps
+    steps = []
+    
+    if intent == "research":
+        steps.append({"action": "search", "params": request_data["query"]})
+        steps.append({"action": "summarize", "params": "search_results"})
+        steps.append({"action": "format", "params": "summary"})
+    
+    elif intent == "process_data":
+        steps.append({"action": "validate", "params": request_data["data"]})
+        steps.append({"action": "transform", "params": "validated_data"})
+        steps.append({"action": "store", "params": "transformed_data"})
+    
+    context.logger.info(f"Created plan with {len(steps)} steps")
+    return steps
+
+async def run(request, response, context):
+    data = await request.data.json()
+    
+    # Create a plan
+    plan = await create_plan(data, context)
+    
+    # Execute the plan
+    results = []
+    for step in plan:
+        context.logger.info(f"Executing: {step['action']}")
+        result = await execute_step(step, context)
+        results.append(result)
+    
+    return response.json({"plan": plan, "results": results})`} js={`async function createPlan(requestData: any, context: any) {
+  // Analyze what the user wants
+  const intent = analyzeIntent(requestData);
+  
+  // Break down into steps
+  const steps = [];
+  
+  if (intent === 'research') {
+    steps.push({ action: 'search', params: requestData.query });
+    steps.push({ action: 'summarize', params: 'search_results' });
+    steps.push({ action: 'format', params: 'summary' });
+  
+  } else if (intent === 'process_data') {
+    steps.push({ action: 'validate', params: requestData.data });
+    steps.push({ action: 'transform', params: 'validated_data' });
+    steps.push({ action: 'store', params: 'transformed_data' });
+  }
+  
+  context.logger.info(\`Created plan with \${steps.length} steps\`);
+  return steps;
+}
+
+const handler: AgentHandler = async (request, response, context) => {
+  const data = await request.data.json();
+  
+  // Create a plan
+  const plan = await createPlan(data, context);
+  
+  // Execute the plan
+  const results = [];
+  for (const step of plan) {
+    context.logger.info(\`Executing: \${step.action}\`);
+    const result = await executeStep(step, context);
+    results.push(result);
+  }
+  
+  return response.json({ plan, results });
+};`} />
+
+### The Reasoning Loop
+
+The reasoning loop is where agents adapt based on results:
+
+<CodeExample py={`async def reasoning_loop(goal, context, max_iterations=5):
+    """Execute a reasoning loop until the goal is achieved."""
+    
+    iteration = 0
+    achieved = False
+    history = []
+    
+    while iteration < max_iterations and not achieved:
+        context.logger.info(f"Reasoning iteration {iteration + 1}")
+        
+        # Plan the next action
+        action = await plan_next_action(goal, history, context)
+        
+        # Execute the action
+        result = await execute_action(action, context)
+        
+        # Observe the result
+        observation = await observe_result(result, goal, context)
+        
+        # Store in history
+        history.append({
+            "action": action,
+            "result": result,
+            "observation": observation
+        })
+        
+        # Check if goal is achieved
+        achieved = observation.get("goal_achieved", False)
+        
+        # Adapt if needed
+        if not achieved and observation.get("needs_adjustment"):
+            goal = await adjust_goal(goal, observation, context)
+        
+        iteration += 1
+    
+    return {
+        "achieved": achieved,
+        "iterations": iteration,
+        "history": history
+    }`} js={`async function reasoningLoop(goal: any, context: any, maxIterations = 5) {
+  let iteration = 0;
+  let achieved = false;
+  const history = [];
+  
+  while (iteration < maxIterations && !achieved) {
+    context.logger.info(\`Reasoning iteration \${iteration + 1}\`);
+    
+    // Plan the next action
+    const action = await planNextAction(goal, history, context);
+    
+    // Execute the action
+    const result = await executeAction(action, context);
+    
+    // Observe the result
+    const observation = await observeResult(result, goal, context);
+    
+    // Store in history
+    history.push({
+      action,
+      result,
+      observation
+    });
+    
+    // Check if goal is achieved
+    achieved = observation.goal_achieved || false;
+    
+    // Adapt if needed
+    if (!achieved && observation.needs_adjustment) {
+      goal = await adjustGoal(goal, observation, context);
+    }
+    
+    iteration++;
+  }
+  
+  return {
+    achieved,
+    iterations: iteration,
+    history
+  };
+}`} />
+
+## Tool Invocation: Extending Agent Capabilities
+
+Agents become powerful when they can use tools. Tools can be APIs, databases, or even other agents:
+
+<CodeExample py={`import httpx
+from typing import Dict, Any
+
+class AgentTools:
+    """Collection of tools available to the agent."""
+    
+    @staticmethod
+    async def web_search(query: str) -> Dict[str, Any]:
+        """Search the web for information."""
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://api.search.com/v1/search",
+                params={"q": query}
+            )
+            return response.json()
+    
+    @staticmethod
+    async def calculate(expression: str) -> float:
+        """Perform mathematical calculations."""
+        # Safe evaluation of math expressions
+        import ast
+        import operator as op
+        
+        ops = {
+            ast.Add: op.add,
+            ast.Sub: op.sub,
+            ast.Mult: op.mul,
+            ast.Div: op.truediv,
+        }
+        
+        def eval_expr(expr):
+            return eval(compile(ast.parse(expr, mode='eval'), '', 'eval'))
+        
+        return eval_expr(expression)
+    
+    @staticmethod
+    async def send_email(to: str, subject: str, body: str) -> bool:
+        """Send an email."""
+        # Email sending logic
+        return True
+
+async def run(request, response, context):
+    data = await request.data.json()
+    action = data.get("action")
+    
+    tools = AgentTools()
+    
+    if action == "research":
+        # Use web search tool
+        results = await tools.web_search(data["query"])
+        return response.json({"search_results": results})
+    
+    elif action == "calculate":
+        # Use calculator tool
+        result = await tools.calculate(data["expression"])
+        return response.json({"result": result})
+    
+    elif action == "notify":
+        # Use email tool
+        sent = await tools.send_email(
+            data["email"],
+            data["subject"],
+            data["message"]
+        )
+        return response.json({"sent": sent})`} js={`import axios from 'axios';
+
+class AgentTools {
+  static async webSearch(query: string) {
+    const response = await axios.get('https://api.search.com/v1/search', {
+      params: { q: query }
+    });
+    return response.data;
+  }
+  
+  static async calculate(expression: string): Promise<number> {
+    // Use a safe math evaluation library
+    // This is a simplified example
+    return eval(expression); // In production, use a safe math parser
+  }
+  
+  static async sendEmail(to: string, subject: string, body: string): Promise<boolean> {
+    // Email sending logic
+    return true;
+  }
+}
+
+const handler: AgentHandler = async (request, response, context) => {
+  const data = await request.data.json();
+  const action = data.action;
+  
+  if (action === 'research') {
+    // Use web search tool
+    const results = await AgentTools.webSearch(data.query);
+    return response.json({ search_results: results });
+  
+  } else if (action === 'calculate') {
+    // Use calculator tool
+    const result = await AgentTools.calculate(data.expression);
+    return response.json({ result });
+  
+  } else if (action === 'notify') {
+    // Use email tool
+    const sent = await AgentTools.sendEmail(
+      data.email,
+      data.subject,
+      data.message
+    );
+    return response.json({ sent });
+  }
+};`} />
+
+## Memory Updates: Learning and Persistence
+
+Memory is what allows agents to learn and improve over time. Agentuity provides three types of memory storage:
+
+### Short-term Memory (Key-Value)
+For session data, cache, and temporary state:
+
+<CodeExample py={`async def run(request, response, context):
+    session_id = request.metadata.get("session_id")
+    
+    # Store conversation context
+    await context.kv.set(
+        "sessions",
+        session_id,
+        {
+            "messages": [],
+            "context": {},
+            "timestamp": datetime.now().isoformat()
+        },
+        {"ttl": 3600}  # Expires in 1 hour
+    )`} js={`const handler: AgentHandler = async (request, response, context) => {
+  const sessionId = request.metadata.get('session_id');
+  
+  // Store conversation context
+  await context.kv.set(
+    'sessions',
+    sessionId,
+    JSON.stringify({
+      messages: [],
+      context: {},
+      timestamp: new Date().toISOString()
+    }),
+    { ttl: 3600 } // Expires in 1 hour
+  );
+};`} />
+
+### Long-term Memory (Vector Storage)
+For knowledge base and semantic search:
+
+<CodeExample py={`async def run(request, response, context):
+    # Store learned information
+    await context.vector.upsert("knowledge", {
+        "key": "fact_001",
+        "document": "Users prefer concise responses",
+        "metadata": {
+            "learned_from": "user_feedback",
+            "confidence": 0.85
+        }
+    })
+    
+    # Retrieve relevant knowledge
+    results = await context.vector.search(
+        "knowledge",
+        "How should I format responses?",
+        limit=5,
+        similarity=0.7
+    )`} js={`const handler: AgentHandler = async (request, response, context) => {
+  // Store learned information
+  await context.vector.upsert('knowledge', {
+    key: 'fact_001',
+    document: 'Users prefer concise responses',
+    metadata: {
+      learned_from: 'user_feedback',
+      confidence: 0.85
+    }
+  });
+  
+  // Retrieve relevant knowledge
+  const results = await context.vector.search('knowledge', {
+    query: 'How should I format responses?',
+    limit: 5
+  });
+};`} />
+
+## Framework Awareness: Choosing the Right Tool
+
+<Callout type="info">
+Agentuity is framework-agnostic. You can use any AI framework or build custom agents from scratch.
+</Callout>
+
+### Popular Agent Frameworks
+
+Different frameworks excel at different tasks. Here's when to use each:
+
+| Framework | Best For | Agentuity Integration |
+|-----------|----------|----------------------|
+| **LangChain** | Complex chains, RAG applications | Native SDK support |
+| **CrewAI** | Multi-agent teams, role-based systems | Deploy via container |
+| **AutoGen** | Research, experimentation | Direct deployment |
+| **Custom** | Specific requirements, full control | Full platform features |
+
+### Framework Comparison Example
+
+Here's the same agent built with different approaches:
+
+<CodeExample py={`# Vanilla Python Agent
+async def run(request, response, context):
+    data = await request.data.json()
+    # Direct implementation
+    result = process_data(data)
+    return response.json(result)
+
+# LangChain Agent
+from langchain.agents import initialize_agent
+from langchain.llms import OpenAI
+
+async def run(request, response, context):
+    llm = OpenAI()
+    agent = initialize_agent(tools, llm, agent="zero-shot")
+    result = agent.run(await request.data.text())
+    return response.text(result)
+
+# CrewAI Agent
+from crewai import Agent, Task, Crew
+
+async def run(request, response, context):
+    researcher = Agent(role="Researcher", goal="Find information")
+    writer = Agent(role="Writer", goal="Create content")
+    
+    crew = Crew(agents=[researcher, writer])
+    result = crew.kickoff(await request.data.json())
+    return response.json(result)`} js={`// Vanilla TypeScript Agent
+const handler: AgentHandler = async (request, response, context) => {
+  const data = await request.data.json();
+  // Direct implementation
+  const result = processData(data);
+  return response.json(result);
+};
+
+// LangChain Agent
+import { initializeAgentExecutor } from 'langchain/agents';
+import { OpenAI } from 'langchain/llms/openai';
+
+const handler: AgentHandler = async (request, response, context) => {
+  const llm = new OpenAI();
+  const agent = await initializeAgentExecutor(tools, llm, 'zero-shot');
+  const result = await agent.call({ input: await request.data.text() });
+  return response.text(result.output);
+};
+
+// Custom Multi-Agent System
+const handler: AgentHandler = async (request, response, context) => {
+  const researcher = new Agent('Researcher', 'Find information');
+  const writer = new Agent('Writer', 'Create content');
+  
+  const researchResult = await researcher.execute(data);
+  const writeResult = await writer.execute(researchResult);
+  return response.json(writeResult);
+};`} />
+
+### When to Use Which Framework
+
+- **Use LangChain** when you need:
+  - Complex reasoning chains
+  - RAG (Retrieval Augmented Generation)
+  - Extensive tool integration
+  - Well-documented patterns
+
+- **Use CrewAI** when you need:
+  - Multiple specialized agents
+  - Role-based collaboration
+  - Hierarchical task delegation
+
+- **Use Custom** when you need:
+  - Maximum performance
+  - Specific business logic
+  - Full control over behavior
+  - Minimal dependencies
+
+## Lab: Building a Multi-Trigger Agent
+
+Let's put it all together by building an agent that responds to multiple triggers. We'll test it using DevMode's web interface:
+
+<CodeExample py={`from datetime import datetime
+import json
+
+async def run(request, response, context):
+    """An agent that handles multiple trigger types."""
+    
+    trigger = request.trigger
+    context.logger.info(f"Agent triggered via: {trigger}")
+    
+    if trigger == "webhook":
+        # Handle API requests
+        data = await request.data.json()
+        
+        # Process based on action
+        action = data.get("action")
+        if action == "store":
+            # Store data in KV
+            await context.kv.set("data", data["key"], data["value"])
+            return response.json({"status": "stored", "key": data["key"]})
+        
+        elif action == "retrieve":
+            # Get from KV
+            result = await context.kv.get("data", data["key"])
+            if result.exists:
+                value = await result.data.json()
+                return response.json({"found": True, "value": value})
+    elif trigger == "cron":
+        # Scheduled cleanup task
+        context.logger.info("Running scheduled cleanup")
+        
+        # Clean old sessions (in production, iterate through keys)
+        await context.kv.delete("sessions", "old_session")
+        
+        # Generate report
+        report = {
+            "task": "cleanup",
+            "timestamp": datetime.now().isoformat(),
+            "status": "completed"
+        }
+        
+        # Store report
+        await context.kv.set("reports", "latest_cleanup", report)
+        return response.json(report)
+    
+    elif trigger == "agent":
+        # Handle agent-to-agent communication
+        data = await request.data.json()
+        
+        # Process request from another agent
+        result = f"Processed request from agent: {data}"
+        
+        return response.json({"result": result})
+    
+    else:
+        return response.json({
+            "error": f"Unknown trigger type: {trigger}"
+        })`} js={`const handler: AgentHandler = async (request, response, context) => {
+  const trigger = request.trigger;
+  context.logger.info(\`Agent triggered via: \${trigger}\`);
+  
+  if (trigger === 'webhook') {
+    // Handle API requests
+    const data = await request.data.json();
+    
+    // Process based on action
+    const action = data.action;
+    if (action === 'store') {
+      // Store data in KV
+      await context.kv.set('data', data.key, JSON.stringify(data.value));
+      return response.json({ status: 'stored', key: data.key });
+    
+    } else if (action === 'retrieve') {
+      // Get from KV
+      const result = await context.kv.get('data', data.key);
+      if (result.exists) {
+        const value = await result.data.json();
+        return response.json({ found: true, value });
+      }
+      return response.json({ found: false });
+    }
+    
+    // Handle DevMode simulation of cron for testing
+    if (data._simulate_cron) {
+      context.logger.info('Simulating cron trigger in DevMode');
+      // Run the same cleanup logic
+      const report = {
+        task: 'cleanup (simulated)',
+        timestamp: new Date().toISOString(),
+        status: 'completed'
+      };
+      return response.json(report);
+    }
+  
+  } else if (trigger === 'cron') {
+    // Scheduled cleanup task
+    context.logger.info('Running scheduled cleanup');
+    
+    // Clean old sessions
+    await context.kv.delete('sessions', 'old_session');
+    
+    // Generate report
+    const report = {
+      task: 'cleanup',
+      timestamp: new Date().toISOString(),
+      status: 'completed'
+    };
+    
+    // Store report
+    await context.kv.set('reports', 'latest_cleanup', JSON.stringify(report));
+    return response.json(report);
+  
+  } else if (trigger === 'agent') {
+    // Handle agent-to-agent communication
+    const data = await request.data.json();
+    
+    // Process request from another agent
+    const result = \`Processed request from agent: \${JSON.stringify(data)}\`;
+    
+    return response.json({ result });
+  
+  } else {
+    return response.json({
+      error: \`Unknown trigger type: \${trigger}\`
+    });
+  }
+};
+
+export default handler;`} />
+
+### Testing Your Multi-Trigger Agent
+
+<Callout type="info">
+DevMode makes it easy to test webhook triggers locally. For cron triggers, you can simulate them in DevMode or configure real schedules through the Agentuity Console.
+</Callout>
+
+#### Setting Up Test Scenarios
+
+First, enhance your agent with a `welcome()` function to create test scenarios:
+
+<CodeExample py={`def welcome():
+    """Configure test scenarios for different trigger types."""
+    return {
+        "welcome": "Multi-Trigger Agent Test Suite",
+        "prompts": [
+            # Webhook trigger tests
+            {
+                "data": {"action": "store", "key": "test", "value": "data"},
+                "contentType": "application/json"
+            },
+            {
+                "data": {"action": "retrieve", "key": "test"},
+                "contentType": "application/json"
+            },
+            # Simulate what a cron trigger would do
+            {
+                "data": {"_simulate_cron": True},
+                "contentType": "application/json"
+            },
+            # Simulate agent-to-agent communication
+            {
+                "data": {"message": "Hello from another agent", "source_agent": "agent_123"},
+                "contentType": "application/json"
+            }
+        ]
+    }`} js={`export const welcome = () => {
+    return {
+        welcome: "Multi-Trigger Agent Test Suite",
+        prompts: [
+            // Webhook trigger tests
+            {
+                data: JSON.stringify({ action: "store", key: "test", value: "data" }),
+                contentType: "application/json"
+            },
+            {
+                data: JSON.stringify({ action: "retrieve", key: "test" }),
+                contentType: "application/json"
+            },
+            // Simulate what a cron trigger would do
+            {
+                data: JSON.stringify({ _simulate_cron: true }),
+                contentType: "application/json"
+            },
+            // Simulate agent-to-agent communication
+            {
+                data: JSON.stringify({ message: "Hello from another agent", source_agent: "agent_123" }),
+                contentType: "application/json"
+            }
+        ]
+    };
+};`} />
+
+#### Testing in DevMode
+
+1. **Start DevMode:**
+```bash
+agentuity dev
+```
+
+2. **Open the DevMode interface** and click the pre-configured prompts to test different scenarios
+
+3. **Monitor the execution** in the Logs and Sessions tabs
+
+#### Configuring Cron Triggers for Production
+
+For actual scheduled execution, configure cron triggers through the [Agentuity Console](https://app.agentuity.com):
+
+1. Navigate to your agent in the Console
+2. Click on **"Add Trigger"** and select **"Cron Job"**
+3. Configure the schedule using cron syntax (e.g., `0 * * * *` for hourly)
+4. Set the Content Type and optional Payload
+5. Enable the trigger and save
+
+<Callout type="info">
+Learn more about configuring triggers in the [Agent Configuration Guide](/Cloud/agents).
+</Callout>
+
+## Performance Considerations
+
+Building efficient agents requires thinking about performance from the start:
+
+### Cost Optimization
+
+Effective cost optimization strategies include:
+
+- **Cache frequently used data** in KV storage to reduce repeated processing
+- **Batch operations** when possible to minimize API calls
+- **Use appropriate LLM models** - not everything needs GPT-4
+- **Implement early exits** in reasoning loops to avoid unnecessary iterations
+
+### Latency vs. Capability Trade-offs
+
+| Approach | Latency | Capability | Use Case |
+|----------|---------|------------|----------|
+| Simple rules | &lt;100ms | Low | Basic routing |
+| Small LLM | 200-500ms | Medium | Classification |
+| Large LLM | 1-3s | High | Complex reasoning |
+| Multi-agent | 3-10s | Very High | Research tasks |
+
+<CodeExample py={`async def run(request, response, context):
+    data = await request.data.json()
+    complexity = assess_complexity(data)
+    
+    if complexity == "simple":
+        # Use rules-based approach
+        result = apply_rules(data)
+        return response.json(result)
+    
+    elif complexity == "medium":
+        # Use small, fast model
+        result = await small_model_process(data)
+        return response.json(result)
+    
+    else:
+        # Use full agent capabilities
+        result = await full_agent_process(data, context)
+        return response.json(result)`} js={`const handler: AgentHandler = async (request, response, context) => {
+  const data = await request.data.json();
+  const complexity = assessComplexity(data);
+  
+  if (complexity === 'simple') {
+    // Use rules-based approach
+    const result = applyRules(data);
+    return response.json(result);
+  
+  } else if (complexity === 'medium') {
+    // Use small, fast model
+    const result = await smallModelProcess(data);
+    return response.json(result);
+  
+  } else {
+    // Use full agent capabilities
+    const result = await fullAgentProcess(data, context);
+    return response.json(result);
+  }
+};`} />
+
+## Key Takeaways
+
+- **Agents follow a lifecycle**: Trigger → Plan → Reason → Execute → Remember → Respond
+- **Multiple trigger types**: Choose the right trigger for your use case
+- **Context is powerful**: It provides access to all Agentuity services
+- **Frameworks are tools**: Pick the right one for your needs, or go custom
+- **Memory enables learning**: Use KV for short-term, Vector for long-term
+- **Performance matters**: Balance capability with cost and latency
+
+## What's Next?
+
+You now understand the core components that make agents work. In the next module, we'll dive deep into memory systems - how agents remember, learn, and improve over time.
+
+But first, experiment with the multi-trigger agent:
+- Add a new trigger type (email or SMS)
+- Implement a simple reasoning loop
+- Try different response formats
+- Connect two agents together
+
+Remember: The anatomy you've learned here is the foundation. The intelligence you add on top is what makes your agents unique.
+
+---
+
+**Ready for Module 3?** [Agent Memory](./03-agent-memory)
