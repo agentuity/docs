@@ -64,7 +64,7 @@ export function SearchInput({
 					rows={1}
 				/>
 				{currentInput.trim() && !loading && (
-					<div className="absolute right-2 bottom-2 text-xs text-gray-400 pointer-events-none">
+					<div className="absolute right-12 bottom-2 text-xs text-gray-400 pointer-events-none">
 						Press Enter to send
 					</div>
 				)}
