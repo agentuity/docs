@@ -9,7 +9,7 @@ import { config } from '@/lib/config';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
     const userId = request.cookies.get('chat_user_id')?.value;
@@ -43,7 +43,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
     const userId = request.cookies.get('chat_user_id')?.value;
@@ -124,7 +124,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
     const userId = request.cookies.get('chat_user_id')?.value;
@@ -181,7 +181,7 @@ export async function DELETE(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
     const userId = request.cookies.get('chat_user_id')?.value;

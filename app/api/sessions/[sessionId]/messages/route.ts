@@ -25,7 +25,7 @@ const AGENT_REQUEST_TIMEOUT = 30000; // 30 seconds
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
     const userId = request.cookies.get("chat_user_id")?.value;
