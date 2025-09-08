@@ -86,6 +86,7 @@ export default async function Agent(
 }`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    # Python infers: string → text/plain, dict → application/json
     return response.handoff({"name":"My Other Agent"}, "would you please do this?")
 `} />
 
@@ -226,16 +227,16 @@ export default async function Agent(
    ctx: AgentContext
 ) {
     return resp.handoff({
-       id: 'agent_123456789abcedef',
-       projectId: 'project_123456789abcedef',
+       id: 'agent-123456789abcedef',
+       projectId: 'project-123456789abcedef',
     });
 }`} py={`
 from agentuity import AgentRequest, AgentResponse, AgentContext
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     return response.handoff({
-      "id": "agent_123456789abcedef",
-      "projectId": "project_123456789abcedef"
+      "id": "agent-123456789abcedef",
+      "projectId": "project-123456789abcedef"
     })
 `} />
 

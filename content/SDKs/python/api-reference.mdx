@@ -827,11 +827,11 @@ Returns an `AgentRedirectResponse` object.
 ```python
 # Handoff to another agent
 return response.handoff(
-    {"name": "data-processing-agent"},
-    {"data": "process this"},
-    "application/json",
-    {"source": "web-agent"}
+    {"name": "data-processing-agent"},  # params
+    "process this",                     # args (inferred as text/plain)
+    {"source": "web-agent"}             # metadata
 )
+# Note: Python infers content-type from data (string→text/plain, dict→application/json)
 ```
 
 ## Response Types
@@ -1021,7 +1021,7 @@ print(f"User ID: {user_id}")
 
 #### json
 
-`json() -> dict`
+`async json() -> dict`
 
 Gets the payload of the request as a JSON object.
 
@@ -1038,7 +1038,7 @@ print(f"Request data: {data}")
 
 #### text
 
-`text() -> str`
+`async text() -> str`
 
 Gets the payload of the request as a string.
 
@@ -1055,7 +1055,7 @@ print(f"Request text: {text}")
 
 #### binary
 
-`binary() -> bytes`
+`async binary() -> bytes`
 
 Gets the payload of the request as bytes.
 
@@ -1074,15 +1074,15 @@ print(f"Binary data size: {len(binary_data)} bytes")
 
 The SDK provides specialized methods for various media types:
 
-- `pdf() -> bytes`
-- `png() -> bytes`
-- `jpeg() -> bytes`
-- `gif() -> bytes`
-- `webp() -> bytes`
-- `mp3() -> bytes`
-- `wav() -> bytes`
-- `ogg() -> bytes`
-- `email() -> Email`
+- `async pdf() -> bytes`
+- `async png() -> bytes`
+- `async jpeg() -> bytes`
+- `async gif() -> bytes`
+- `async webp() -> bytes`
+- `async mp3() -> bytes`
+- `async wav() -> bytes`
+- `async ogg() -> bytes`
+- `async email() -> Email`
 
 Each method returns the request payload as bytes with the appropriate content type validation, except for `email()` which returns an `Email` object.
 
@@ -1100,7 +1100,7 @@ audio = await request.data.mp3()
 
 #### email
 
-`email() -> Email`
+`async email() -> Email`
 
 Gets the payload of the request as an Email object. This method validates that the content type is `message/rfc822` before parsing.
 
