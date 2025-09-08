@@ -16,13 +16,22 @@ interface ApiResponse<T> {
   status?: number;
 }
 
-interface TutorialStep {
+export interface TutorialSnippet {
+  path: string;
+  lang?: string;
+  from?: number;
+  to?: number;
+  title?: string;
+  content: string;
+}
+
+interface TutorialStepResponseData {
+  tutorialId: string;
   stepNumber: number;
-  title: string;
-  description: string;
-  directory: string;
-  readmeContent: string;
-  codeContent: string;
+  slug: string;
+  meta: Record<string, unknown>;
+  mdx: string;
+  snippets: TutorialSnippet[];
 }
 
 export async function getTutorialList(ctx: AgentContext): Promise<ApiResponse<Tutorial[]>> {
@@ -50,51 +59,26 @@ export async function getTutorialList(ctx: AgentContext): Promise<ApiResponse<Tu
 
 export async function getTutorialMeta(tutorialId: string, ctx: AgentContext): Promise<ApiResponse<Tutorial>> {
   try {
-    const response = await fetch(`${TUTORIAL_API_BASE_URL}/api/tutorials/${tutorialId}`);
-
+    // New behavior: fetch all, then find by id
+    const response = await fetch(`${TUTORIAL_API_BASE_URL}/api/tutorials`);
     if (!response.ok) {
-      const error = `Failed to fetch tutorial metadata: ${response.statusText}`;
+      const error = `Failed to fetch tutorial list: ${response.statusText}`;
       ctx.logger.error(error);
       return { success: false, status: response.status, error: response.statusText };
     }
-
-    const tutorialData = await response.json() as ApiResponse<Tutorial>;
-    ctx.logger.info("tutorialData: " + JSON.stringify(tutorialData))
-
-    // Check if the API response indicates success
-    if (!tutorialData.success) {
-      ctx.logger.error('Tutorial API returned error: %s', tutorialData.error);
-      return {
-        success: false,
-        status: tutorialData.status,
-        error: tutorialData.error || 'Unknown error from tutorial API'
-      };
+    const tutorials = (await response.json()) as Tutorial[];
+    const found = tutorials.find(t => t.id === tutorialId);
+    if (!found) {
+      return { success: false, status: 404, error: 'Tutorial not found' };
     }
-
-    // Only proceed if we have valid data
-    if (!tutorialData.data) {
-      ctx.logger.error('Tutorial API returned success but no data');
-      return {
-        success: false,
-        error: 'No tutorial data received from API'
-      };
-    }
-
-    const tutorial: Tutorial = {
-      id: tutorialData.data.id,
-      title: tutorialData.data.title,
-      description: tutorialData.data.description,
-      totalSteps: tutorialData.data.totalSteps
-    };
-
-    return { success: true, data: tutorial };
+    return { success: true, data: found };
   } catch (error) {
     ctx.logger.error('Error fetching tutorial metadata for %s: %s', tutorialId, error);
     throw error;
   }
 }
 
-export async function getTutorialStep(tutorialId: string, stepNumber: number, ctx: AgentContext): Promise<ApiResponse<TutorialStep>> {
+export async function getTutorialStep(tutorialId: string, stepNumber: number, ctx: AgentContext): Promise<ApiResponse<TutorialStepResponseData>> {
   try {
     const response = await fetch(`${TUTORIAL_API_BASE_URL}/api/tutorials/${tutorialId}/steps/${stepNumber}`);
 
@@ -106,7 +90,7 @@ export async function getTutorialStep(tutorialId: string, stepNumber: number, ct
     const responseData = await response.json();
     ctx.logger.info('Fetched step %d for tutorial %s', stepNumber, tutorialId);
 
-    return responseData as ApiResponse<TutorialStep>;
+    return responseData as ApiResponse<TutorialStepResponseData>;
   } catch (error) {
     ctx.logger.error('Error fetching tutorial step %d for tutorial %s: %s', stepNumber, tutorialId, error);
     throw error;

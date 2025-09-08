@@ -1,12 +1,67 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { User } from 'lucide-react';
 import { AgentuityLogo } from '@/components/icons/AgentuityLogo';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import type { TutorialSnippet } from '../types';
 import { formatTime } from '../utils/dateUtils';
-import { TutorialFileChip } from './TutorialFileChip';
 import { TutorialData } from '../types';
+
+function transformMdxWithSnippets(mdx: string, snippets: TutorialSnippet[] = []) {
+    // Replace each <CodeFromFiles .../> by consuming the appropriate number of snippets
+    // based on the number of objects in its snippets={[ ... ]} prop.
+    const tagRegex = /<CodeFromFiles\s+([^>]*?)\/>/g;
+    let cursor = 0;
+    return mdx.replace(tagRegex, (_full, propsSrc: string) => {
+        const key = 'snippets={';
+        const start = (propsSrc || '').indexOf(key);
+        let count = 1;
+        if (start >= 0) {
+            // Balance braces to find the end of the snippets array
+            let i = start + key.length;
+            let depth = 1;
+            while (i < propsSrc.length && depth > 0) {
+                const ch = propsSrc[i];
+                if (ch === '{') depth++;
+                else if (ch === '}') depth--;
+                i++;
+            }
+            const inner = propsSrc.slice(start + key.length, i - 1);
+            // Count object literals in the array
+            let j = 0;
+            count = 0;
+            while (j < inner.length) {
+                if (inner[j] === '{') {
+                    let d = 1;
+                    let k = j + 1;
+                    while (k < inner.length && d > 0) {
+                        const ch = inner[k];
+                        if (ch === '{') d++;
+                        else if (ch === '}') d--;
+                        k++;
+                    }
+                    count++;
+                    j = k;
+                } else {
+                    j++;
+                }
+            }
+            if (count === 0) count = 1;
+        }
+
+        const group = snippets.slice(cursor, cursor + count);
+        cursor += count;
+        if (group.length === 0) return '';
+
+        // Render as sequential fenced blocks for chat (no tabs in chat)
+        return '\n\n' + group.map((s) => {
+            const lang = s.lang || 'text';
+            const label = s.title || s.path.split('/').pop() || s.path;
+            return `\`\`\`${lang}\n// ${label}\n${s.content}\n\`\`\``;
+        }).join('\n\n') + '\n\n';
+    });
+}
 
 interface ChatMessageProps {
     message: {
@@ -25,8 +80,9 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
     setEditorOpen = () => { }
 }: ChatMessageProps) {
 
-    const tutorialCodeContent = message.tutorialData?.tutorialStep.codeContent;
-    const tutorialReadme = message.tutorialData?.tutorialStep.readmeContent;
+    const tutorialMdx = message.tutorialData?.tutorialStep.mdx;
+    const tutorialSnippets = message.tutorialData?.tutorialStep.snippets as TutorialSnippet[] | undefined;
+    console.log(tutorialSnippets);
     const currentStep = message.tutorialData?.currentStep;
     const totalSteps = message.tutorialData?.totalStep;
     const handleOpenInEditor = (code: string) => {
@@ -64,17 +120,11 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                                     content={message.content}
                                 />
                             )}
-                            {/* Render tutorial README content if present */}
-                            {tutorialReadme && (
+                            {/* Render tutorial content if present */}
+                            {tutorialMdx && (
                                 <div className="mt-4 p-3 bg-gray-700/30 rounded-lg">
                                     <h4 className="text-sm font-semibold mb-2 text-gray-100">Step {currentStep} of {totalSteps}</h4>
-                                    <MarkdownRenderer content={tutorialReadme} />
-                                </div>
-                            )}
-
-                            {tutorialCodeContent && (
-                                <div className="mt-4">
-                                    <p className="text-sm text-gray-400">Click the file icon below to view the tutorial code.</p>
+                                    <MarkdownRenderer content={useMemo(() => transformMdxWithSnippets(tutorialMdx, tutorialSnippets || []), [tutorialMdx, tutorialSnippets])} />
                                 </div>
                             )}
                         </div>
@@ -82,20 +132,6 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                         <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
                     )}
                 </div>
-
-                {/* Render tutorial file chip if message has tutorial data */}
-                {tutorialCodeContent && (
-                    <div className="mt-3">
-                        <TutorialFileChip
-                            codeBlock={{
-                                filename: 'index.ts',
-                                content: tutorialCodeContent,
-                                language: 'typescript'
-                            }}
-                            onOpenInEditor={handleOpenInEditor}
-                        />
-                    </div>
-                )}
 
                 {/* Timestamp */}
                 <div className="text-xs text-gray-300 mt-2 px-2">

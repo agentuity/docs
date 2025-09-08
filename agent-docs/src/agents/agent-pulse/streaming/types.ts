@@ -9,15 +9,23 @@ export interface StatusChunk {
   category?: 'tool' | 'search' | 'processing';
 }
 
+export interface TutorialSnippet {
+  path: string;
+  lang?: string;
+  from?: number;
+  to?: number;
+  title?: string;
+  content: string;
+}
+
 export interface TutorialData {
   tutorialId: string;
   totalStep: number;
   currentStep: number;
   tutorialStep: {
     title: string;
-    readmeContent: string;
-    instructions: string;
-    codeContent?: string;
+    mdx: string;
+    snippets: TutorialSnippet[];
     totalSteps: number;
   };
 }

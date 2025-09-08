@@ -30,10 +30,9 @@ export async function handleTutorialState(
               totalStep: action.totalSteps,
               currentStep: action.currentStep,
               tutorialStep: {
-                title: tutorialStep.data.title,
-                readmeContent: tutorialStep.data.readmeContent,
-                instructions: tutorialStep.data.description,
-                codeContent: tutorialStep.data.codeContent,
+                title: (tutorialStep.data.meta?.title as string) || tutorialStep.data.slug,
+                mdx: tutorialStep.data.mdx,
+                snippets: tutorialStep.data.snippets,
                 totalSteps: action.totalSteps
               }
             };

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Copy, Check } from 'lucide-react';
 
 interface SimpleCodeBlockProps {
@@ -14,9 +14,18 @@ export default function CodeBlock({
 }: SimpleCodeBlockProps) {
   const [code, setCode] = useState(content);
   const [copied, setCopied] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     setCode(content);
+    // Auto-size the textarea to its content within max height
+    if (textareaRef.current) {
+      const el = textareaRef.current;
+      el.style.height = 'auto';
+      const maxPx = 500;
+      const newHeight = Math.min(el.scrollHeight, maxPx);
+      el.style.height = `${newHeight}px`;
+    }
   }, [content]);
 
   const copyToClipboard = () => {
@@ -24,11 +33,11 @@ export default function CodeBlock({
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-  
+
   return (
     <div className="agentuity-card-elevated rounded-xl overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-2 bg-black/20 border-b border-white/8">
+      <div className="flex items-center justify-between p-2 bg-black/5 dark:bg-black/20 border-b border-black/2 dark:border-white/8">
         <span className="text-sm text-gray-200">{language}</span>
         <div className="flex gap-2">
           <button
@@ -41,15 +50,12 @@ export default function CodeBlock({
       </div>
 
       <textarea
+        ref={textareaRef}
         value={code}
         readOnly={true}
-        className="w-full p-4 text-sm font-mono bg-transparent text-gray-800 dark:text-gray-200 border-0 focus:outline-none focus:ring-0 overflow-x-auto leading-relaxed"
+        className="w-full p-4 text-sm font-mono bg-white text-gray-900 dark:bg-transparent dark:text-gray-200 border-0 focus:outline-none focus:ring-0 overflow-x-auto overflow-y-auto leading-relaxed resize-none"
         style={{ minHeight: '200px', maxHeight: '500px' }}
         spellCheck={false}
-        onChange={(e) => {
-          e.target.style.height = 'auto';
-          e.target.style.height = `${Math.min(e.target.scrollHeight, 500)}px`;
-        }}
       />
     </div>
   );

@@ -14,11 +14,20 @@ export interface TutorialData {
   currentStep: number;
   tutorialStep: {
     title: string;
-    readmeContent: string;
-    instructions: string;
+    mdx: string;
+    snippets: TutorialSnippet[];
     codeContent?: string;
     totalSteps: number;
   };
+}
+
+export interface TutorialSnippet {
+  path: string;
+  lang?: string;
+  from?: number;
+  to?: number;
+  title?: string;
+  content: string;
 }
 
 // Code file type
