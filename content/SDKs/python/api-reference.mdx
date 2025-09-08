@@ -625,7 +625,7 @@ user_data = {"name": "John", "age": 30}
 await context.objectstore.put("users", "user-123.json", user_data)
 
 # Store binary data
-image_data = bytes([/* image bytes */])
+image_data = b"\x00\x01..."  # example bytes
 await context.objectstore.put(
     "images",
     "photo.jpg",
@@ -786,8 +786,8 @@ agent2 = await context.get_agent({
 
 # Invoke the agent with error handling
 try:
-    # Just pass the data (content type is inferred)
-    result = await agent.run({"data": "process this"})
+    # Pass raw payload (content type inferred)
+    result = await agent.run("process this")
     # Process the result
     print(f"Agent response: {result}")
 except Exception as e:
@@ -1049,7 +1049,7 @@ Returns the request payload as a string.
 **Example**
 
 ```python
-text = request.data.text
+text = await request.data.text()
 print(f"Request text: {text}")
 ```
 
@@ -1066,7 +1066,7 @@ Returns the request payload as bytes.
 **Example**
 
 ```python
-binary_data = request.binary()
+binary_data = await request.data.binary()
 print(f"Binary data size: {len(binary_data)} bytes")
 ```
 
@@ -1090,11 +1090,11 @@ Each method returns the request payload as bytes with the appropriate content ty
 
 ```python
 # Get an image from the request
-image = request.png()
+image = await request.data.png()
 # Process the image...
 
 # Get audio from the request
-audio = request.mp3()
+audio = await request.data.mp3()
 # Process the audio...
 ```
 

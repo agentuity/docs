@@ -98,7 +98,7 @@ import { SpanStatusCode } from '@opentelemetry/api';
 const handler: AgentHandler = async (request, response, context) => {
   return context.tracer.startActiveSpan('agent-request', async (parentSpan) => {
     try {
-      parentSpan.setAttribute('trigger', request.trigger());
+      parentSpan.setAttribute('trigger', request.trigger);
       const data = await request.data.json();
       
       // Create child span for data processing

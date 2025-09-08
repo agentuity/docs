@@ -70,26 +70,30 @@ The upsert operation is idempotent - upserting with an existing key updates the 
 // Upsert documents with text (automatic embedding)
 const ids = await context.vector.upsert(
   'knowledge-base',
-  { 
-    key: 'doc-1',
-    document: 'Agentuity is an agent-native cloud platform', 
-    metadata: { category: 'platform', source: 'docs' } 
-  },
-  { 
-    key: 'doc-2',
-    document: 'Vector storage enables semantic search capabilities', 
-    metadata: { category: 'features', source: 'docs' } 
-  }
+  [
+    { 
+      key: 'doc-1',
+      document: 'Agentuity is an agent-native cloud platform', 
+      metadata: { category: 'platform', source: 'docs' } 
+    },
+    { 
+      key: 'doc-2',
+      document: 'Vector storage enables semantic search capabilities', 
+      metadata: { category: 'features', source: 'docs' } 
+    }
+  ]
 );
 
 // Upsert with pre-computed embeddings
 const embeddingIds = await context.vector.upsert(
   'custom-embeddings',
-  { 
-    key: 'embedding-1',
-    embeddings: [0.1, 0.2, 0.3, 0.4], 
-    metadata: { id: 'doc-1', type: 'custom' } 
-  }
+  [
+    { 
+      key: 'embedding-1',
+      embeddings: [0.1, 0.2, 0.3, 0.4], 
+      metadata: { id: 'doc-1', type: 'custom' } 
+    }
+  ]
 );`} py={`# Python
 # Upsert documents with text
 documents = [
@@ -200,6 +204,8 @@ if (searchResults[0]) {
   const fullDetails = await context.vector.get('products', searchResults[0].key);
   console.log('Full metadata:', fullDetails?.metadata);
 }`} py={`# Python
+import time
+
 # Direct lookup by key
 vector = await context.vector.get("knowledge-base", "doc-1")
 

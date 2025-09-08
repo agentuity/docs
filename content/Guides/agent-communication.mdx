@@ -5,7 +5,7 @@ description: Agent-to-Agent communication patterns, usage and best practices
 
 import Image from "next/image";
 
-<Image src="/images/agent-to-agent.png" alt="Agent-to-AgentCommunication" width={640} height={640} />
+<Image src="/images/agent-to-agent.png" alt="Agent-to-Agent Communication" width={640} height={640} />
 
 ## Overview
 
@@ -133,6 +133,8 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     text = await agent_response.data.text()
     return response.text(text)
 `} />
+
+> **Note:** JavaScript uses `{ data, contentType }` format while Python infers content type from the raw payload passed directly.
 
 In this trivial example above, the functionality is similar to the handoff example above.  The source agent is sending a request to the `My Other Agent` agent and passing a message to the other agent.  The `My Other Agent` agent will receive the request, perform an operation and return the result to the source agent. The source agent will simply return the result as a text result.
 
