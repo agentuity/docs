@@ -43,7 +43,7 @@ const handler: AgentHandler = async (request, response, context) => {
   // Bucket is created automatically on first use
   const imageData = Buffer.from(await request.data.binary());
   
-  # Auto-detect content type (simplest approach)
+  // Auto-detect content type (simplest approach)
   await context.objectstore.put('user-uploads', 'profile-123.jpg', imageData)
   
   return response.json({ message: 'Image uploaded successfully' });

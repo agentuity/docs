@@ -185,7 +185,7 @@ if (existing) {
   await context.vector.upsert('products', {
     key: 'product-123',
     document: 'Updated product description',
-    metadata: { ...existing.metadata, lastUpdated: Date.now() }
+    metadata: { ...(existing.metadata ?? {}), lastUpdated: Date.now() }
   });
 }
 
