@@ -81,9 +81,12 @@ await context.objectstore.put('images', 'photo.jpg', imageBuffer, {
   contentType: 'image/jpeg'
 });
 
-// Store with metadata
+// Store with full metadata
+// These optional parameters control how the object is served
 await context.objectstore.put('uploads', 'document.pdf', pdfData, {
   contentType: 'application/pdf',
+  contentDisposition: 'attachment; filename="report.pdf"',  // Download as 'report.pdf'
+  cacheControl: 'max-age=3600',  // Browser caches for 1 hour
   metadata: {
     'uploaded-by': userId,
     'processed': 'false'
@@ -108,9 +111,12 @@ from agentuity.server.objectstore import ObjectStorePutParams
 params = ObjectStorePutParams(content_type="image/jpeg")
 await context.objectstore.put("images", "photo.jpg", image_buffer, params)
 
-# With metadata
+# With full metadata
+# These optional parameters control how the object is served via public URLs
 params = ObjectStorePutParams(
     content_type="application/pdf",
+    content_disposition='attachment; filename="report.pdf"',  # Download as 'report.pdf'
+    cache_control="max-age=3600",  # Browser caches for 1 hour  
     metadata={
         "uploaded-by": user_id,
         "processed": "false"
