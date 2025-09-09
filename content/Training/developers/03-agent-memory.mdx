@@ -1,9 +1,7 @@
 ---
-title: Agent Memory
+title: "Module 3: Agent Memory"
 description: How agents remember, learn, and build context over time
 ---
-
-# Module 3: Agent Memory
 
 Without memory, an agent is just a stateless function. With memory, it becomes a system that learns, adapts, and builds relationships over time.
 
@@ -31,7 +29,7 @@ For implementation details on Agentuity's storage systems, see our guides on [Ke
 
 Just like human memory, agent memory operates at different levels:
 
-```mermaid
+<Mermaid chart="
 graph TD
     A[Working Memory] --> B[Short-term Memory]
     B --> C[Long-term Memory]
@@ -41,7 +39,7 @@ graph TD
     B1[Session State / Cache] --> B
     C1[User History / Knowledge Base] --> C
     D1[Shared Agent Knowledge] --> D
-```
+" />
 
 Let's explore each level:
 
@@ -93,7 +91,7 @@ async def run(request, response, context):
     user_id = request.metadata.get("user_id")
     
     # Store learned preferences
-    await context.vector.upsert("user_knowledge", {
+    await context.vector.upsert("user_knowledge", [{
         "key": f"pref_{user_id}_{datetime.now()}",
         "document": "User prefers technical explanations with code examples",
         "metadata": {
@@ -101,7 +99,7 @@ async def run(request, response, context):
             "confidence": 0.9,
             "learned_from": "conversation_analysis"
         }
-    })
+    }])
     
     # Retrieve relevant memories
     memories = await context.vector.search(
@@ -174,7 +172,7 @@ Best for semantic information:
 
 <CodeExample py={`async def run(request, response, context):
     # Store conversation for semantic retrieval
-    await context.vector.upsert("conversations", {
+    await context.vector.upsert("conversations", [{
         "key": f"conv_{datetime.now().isoformat()}",
         "document": "User asked about deploying agents in production. " +
                    "They're concerned about costs and scaling. " +
@@ -185,7 +183,7 @@ Best for semantic information:
             "sentiment": "cautious",
             "timestamp": datetime.now().isoformat()
         }
-    })
+    }])
     
     # Later, retrieve relevant context
     similar_convos = await context.vector.search(
@@ -226,12 +224,13 @@ Best for files and large data:
     report_data = generate_pdf_report(analysis_results)
     report_key = f"reports/{user_id}/{datetime.now().strftime('%Y%m%d')}_analysis.pdf"
     
+    # Auto-detects content type from file extension and data
     await context.objectstore.put(
         "documents",
         report_key,
-        report_data,
-        {"contentType": "application/pdf"}
+        report_data
     )
+    # Note: For explicit content type, use ObjectStorePutParams class (see API reference)
     
     # Create public URL for sharing (expires in 1 hour)
     share_url = await context.objectstore.createPublicURL(
@@ -288,11 +287,11 @@ Keep recent conversation context while managing memory size:
     if len(messages) > max_messages:
         # Before removing, summarize older messages
         summary = await summarize_messages(messages[:10])
-        await context.vector.upsert("summaries", {
+        await context.vector.upsert("summaries", [{
             "key": f"{session_id}_summary_{datetime.now()}",
             "document": summary,
             "metadata": {"session_id": session_id}
-        })
+        }])
         messages = messages[-max_messages:]
     
     # Process with context
@@ -400,7 +399,7 @@ Build user profiles over time:
     # Store notable preferences as vectors for semantic search
     if analysis["preferences"]:
         for pref in analysis["preferences"]:
-            await context.vector.upsert("user_preferences", {
+            await context.vector.upsert("user_preferences", [{
                 "key": f"{user_id}_{hash(pref)}",
                 "document": pref,
                 "metadata": {
@@ -408,7 +407,7 @@ Build user profiles over time:
                     "confidence": analysis["confidence"],
                     "learned_at": datetime.now().isoformat()
                 }
-            })
+            }])
     
     # Get relevant memories for this conversation
     memories = await context.vector.search(
@@ -512,7 +511,7 @@ Build a searchable knowledge base from interactions:
         # Extract and store knowledge
         knowledge = await request.data.json()
         
-        await context.vector.upsert("knowledge_base", {
+        await context.vector.upsert("knowledge_base", [{
             "key": f"fact_{datetime.now().timestamp()}",
             "document": knowledge["fact"],
             "metadata": {
@@ -522,7 +521,7 @@ Build a searchable knowledge base from interactions:
                 "tags": knowledge.get("tags", []),
                 "created": datetime.now().isoformat()
             }
-        })
+        }])
         
         return response.json({"status": "learned", "fact": knowledge["fact"]})
     
@@ -739,13 +738,12 @@ Implement automated cleanup to manage costs:
             if result.exists:
                 convo = await result.data.json()
                 
-                # Archive to object storage
+                # Archive to object storage (auto-detects JSON content type)
                 archive_key = f"archives/{session_id}/{cutoff_date.isoformat()}.json"
                 await context.objectstore.put(
                     "archives",
                     archive_key,
-                    json.dumps(convo),
-                    {"contentType": "application/json"}
+                    json.dumps(convo)
                 )
                 
                 # Delete from KV
@@ -878,7 +876,7 @@ async def run(request, response, context):
         
         # Store this interaction
         interaction_key = f"{user_id}_{datetime.now().timestamp()}"
-        await context.vector.upsert("support_history", {
+        await context.vector.upsert("support_history", [{
             "key": interaction_key,
             "document": message,
             "metadata": {
@@ -887,7 +885,7 @@ async def run(request, response, context):
                 "order_id": data.get("order_id"),
                 "resolved": False
             }
-        })
+        }])
         
         # Add to profile issues
         profile["issues"].append({

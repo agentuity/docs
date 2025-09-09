@@ -1,9 +1,7 @@
 ---
-title: The Anatomy of an Agent
+title: "Module 2: The Anatomy of an Agent"
 description: Understanding how agents work - planning, reasoning, tools, and memory
 ---
-
-# Module 2: The Anatomy of an Agent
 
 Now that you've built your first agent, let's dive deeper to understand what makes agents tick. We'll explore the core components that transform a simple script into an autonomous, intelligent system.
 
@@ -11,18 +9,15 @@ Now that you've built your first agent, let's dive deeper to understand what mak
 
 Every agent interaction follows a predictable lifecycle, from receiving a trigger to returning a response. Understanding this flow is crucial for building effective agents.
 
-```mermaid
+<Mermaid chart="
 graph TD
-    A[Trigger Event] --> B[Request Handler]
-    B --> C[Context Initialization]
-    C --> D[Planning Phase]
-    D --> E[Reasoning Loop]
-    E --> F[Tool Invocation]
-    F --> G[Memory Update]
-    G --> H[Response Generation]
-    H --> I[Return Response]
-    E --> E[Continue Loop]
-```
+    Trigger[Trigger Event] --> Request[Request Object]
+    Request --> Handler[Agent Handler]
+    Handler --> Context[Context & Storage]
+    Handler --> Process[Process Logic]
+    Process --> Response[Response Object]
+    Response --> Output[Return to Caller]
+" />
 
 Let's explore each phase:
 
@@ -172,25 +167,25 @@ The context object is your agent's gateway to Agentuity's services. It provides 
     agent_id = context.agent.id
     agent_name = context.agent.name
     project_id = context.projectId
-    run_id = context.runId
+    session_id = context.sessionId
     
     # Key-Value storage
     await context.kv.set("cache", "key", {"data": "value"})
     result = await context.kv.get("cache", "key")
     
     # Vector storage for semantic search
-    await context.vector.upsert("docs", {
+    await context.vector.upsert("docs", [{
         "key": "doc1",
         "document": "AI agents are autonomous systems",
         "metadata": {"category": "intro"}
-    })
+    }])
     
     # Object storage for files
     await context.objectstore.put("files", "report.pdf", pdf_bytes)
     
     return response.json({
         "agent": agent_name,
-        "run": run_id
+        "session": session_id
     })`} js={`const handler: AgentHandler = async (request, response, context) => {
   // Logging at different levels
   context.logger.debug('Debug information');
@@ -202,7 +197,7 @@ The context object is your agent's gateway to Agentuity's services. It provides 
   const agentId = context.agent.id;
   const agentName = context.agent.name;
   const projectId = context.projectId;
-  const runId = context.runId;
+  const sessionId = context.sessionId;
   
   // Key-Value storage
   await context.kv.set('cache', 'key', JSON.stringify({ data: 'value' }));
@@ -220,7 +215,7 @@ The context object is your agent's gateway to Agentuity's services. It provides 
   
   return response.json({
     agent: agentName,
-    run: runId
+    session: sessionId
   });
 };`} />
 

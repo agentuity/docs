@@ -1,0 +1,1006 @@
+---
+title: "Module 5: Guardrails, Evals & Observability"
+description: Making agents reliable, safe, and production-ready
+---
+
+You've built agents that can think, remember, and collaborate. Now it's time to make them production-ready.
+
+## The Reality of Production Agents
+
+Research from NeurIPS 2024 reveals that most AI agents succeed only [30-40% of the time on complex tasks](https://neurips.cc/virtual/2024/panel/agent-systems). When [Salesforce automated 50% of their support cases](https://www.sfchronicle.com/tech/article/salesforce-ai-job-cuts-benioff-21025920.php), the implementation challenges led to significant organizational restructuring. The gap between demo and production? Proper guardrails, systematic evaluation, and comprehensive observability.
+
+According to [NIST's Generative AI Risk Management framework](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.1270e2025.pdf), the primary operational risks in AI systems include:
+- **Hallucination**: Agents generating plausible but incorrect information
+- **Prompt Injection**: Adversarial inputs manipulating agent behavior
+- **Resource Consumption**: Uncontrolled usage leading to excessive costs
+- **Compliance Drift**: Agents violating domain-specific regulations
+
+## The Three Pillars of Production Agents
+
+<Callout type="info">
+Agentuity provides built-in OpenTelemetry integration with automatic instrumentation through Traceloop SDK, giving you comprehensive observability out of the box.
+</Callout>
+
+### 1. Guardrails: Setting Boundaries
+
+Guardrails prevent agents from harmful actions while preserving autonomy:
+
+- **Input Validation**: Schema enforcement, content filtering, size limits
+- **Rate Limiting**: Prevent abuse and control costs per user/session  
+- **Security**: Prompt injection defense ([WASP](https://arxiv.org/abs/2407.01593)), tool permissions
+- **Domain Rules**: Compliance checks, output validation, custom constraints
+
+### 2. Evaluation: Measuring Success
+
+Systematic evaluation is critical for non-deterministic agents:
+
+- **Industry Benchmarks**: [SWE-Bench](https://www.swebench.com/) (~20% success), [BrowserGym](https://browsergym.ai), [AgentHarm](https://arxiv.org/abs/2407.01564)
+- **Automated Testing**: Unit tests, integration tests, golden datasets
+- **Production Metrics**: Success rates, latency, cost per request
+- **A/B Testing**: Shadow deployments, gradual rollouts
+
+### 3. Observability: Seeing Everything
+
+Agentuity provides automatic OpenTelemetry integration with Traceloop SDK:
+
+- **What's Tracked**: LLM calls, tool invocations, storage operations, API calls
+- **Three Pillars**: Logs (events), Metrics (measurements), Traces (request flow)
+- **Console View**: Timeline visualization with color-coded spans
+
+## Implementing Guardrails
+
+Let's implement essential guardrails for a financial advisor agent:
+
+### 1. Schema Validation with Zod & Pydantic
+
+Runtime validation is critical for agents. TypeScript and Python types only exist at development time - at runtime, your data needs validation.
+
+For detailed API references, see the [Zod](https://zod.dev) and [Pydantic](https://docs.pydantic.dev/latest/) documentation.
+
+<CodeExample py={`from pydantic import BaseModel, Field, ValidationError, field_validator
+from typing import Optional
+
+class UserQuery(BaseModel):
+    query: str = Field(min_length=1, max_length=1000)
+    user_id: str  
+    portfolio_value: Optional[float] = Field(None, gt=0)
+
+async def run(request, response, context):
+    # 1. Validate structure
+    try:
+        raw_data = await request.data.json()
+        validated = UserQuery(**raw_data)
+    except ValidationError as e:
+        return response.json({
+            'error': 'Invalid request',
+            'details': e.errors()
+        })
+    
+    # 2. Apply domain rules separately
+    prohibited = ['insider', 'guaranteed']
+    if any(term in validated.query.lower() for term in prohibited):
+        return response.json({'error': 'Prohibited terms detected'})
+    
+    # 3. Process validated data
+    return await process_query(validated.query, validated.user_id)`} js={`import { z } from 'zod';
+
+// Define clean schema for structure
+const UserQuerySchema = z.object({
+  query: z.string().min(1).max(1000),
+  userId: z.string(),
+  portfolioValue: z.number().positive().optional()
+});
+
+// TypeScript type from schema
+type UserQuery = z.infer<typeof UserQuerySchema>;
+
+const handler = async (request, response, context) => {
+  // 1. Validate structure
+  const result = UserQuerySchema.safeParse(await request.data.json());
+  
+  if (!result.success) {
+    return response.json({
+      error: 'Invalid request',
+      details: result.error.issues
+    });
+  }
+  
+  // 2. Apply domain rules separately  
+  const prohibited = ['insider', 'guaranteed'];
+  if (prohibited.some(term => result.data.query.toLowerCase().includes(term))) {
+    return response.json({ error: 'Prohibited terms detected' });
+  }
+  
+  // 3. Process validated data
+  const { query, userId } = result.data;
+  return await processQuery(query, userId);
+};`} />
+
+<Callout type="info">
+**Key Pattern**: Separate validation from domain rules. Schemas validate structure, your specific rules come after.
+</Callout>
+
+#### Real-World Example: Validating External API Responses
+
+Here's how the AI News Digest agent validates Hacker News API responses:
+
+<CodeExample py={`from pydantic import BaseModel, ValidationError
+from typing import Optional, List
+
+# Schema for Hacker News story
+class HNStory(BaseModel):
+    id: int                      # Required by HN API
+    title: str                   # What we display
+    url: Optional[str] = None    # Available if needed
+
+# Schema for our digest data
+class DigestData(BaseModel):
+    summary: str
+    sources: List[str]
+    article_count: int
+    timestamp: str
+    source: str
+
+async def fetch_top_stories(ctx, count=5):
+    stories = []
+    story_ids = await fetch_story_ids()  # Get from HN API
+    
+    for story_id in story_ids[:count]:
+        raw_data = await fetch_story_data(story_id)
+        
+        # Validate with Pydantic
+        try:
+            story = HNStory(**raw_data)
+            stories.append(story.title)
+        except ValidationError as e:
+            ctx.logger.warn(f"Invalid story data for ID {story_id}: {e}")
+            continue  # Skip invalid stories
+    
+    return stories
+
+async def run(request, response, context):
+    # Fetch and validate stories
+    articles = await fetch_top_stories(context, 5)
+    
+    # Generate AI summary
+    summary = await generate_summary(articles)
+    
+    # Create and validate digest
+    try:
+        digest = DigestData(
+            summary=summary,
+            sources=articles,
+            article_count=len(articles),
+            timestamp=datetime.now().isoformat(),
+            source="Hacker News API"
+        )
+    except ValidationError as e:
+        context.logger.error(f"Digest validation failed: {e}")
+        return response.json({"error": "Failed to create digest"})
+    
+    # Store validated digest
+    await context.kv.set("digest", "latest", digest.model_dump())
+    
+    return response.json(digest.model_dump())`} js={`import { z } from 'zod';
+
+// Zod schemas for type-safe API responses
+const HNStorySchema = z.object({
+  id: z.number(),             // Required by HN API
+  title: z.string(),          // What we display
+  url: z.string().optional(), // Available if needed
+});
+
+const DigestDataSchema = z.object({
+  summary: z.string(),
+  sources: z.array(z.string()),
+  articleCount: z.number(),
+  timestamp: z.string(),
+  source: z.string(),
+});
+
+async function fetchTopStories(ctx, count = 5) {
+  const stories = [];
+  const storyIds = await fetchStoryIds(); // Get from HN API
+  
+  for (const id of storyIds.slice(0, count)) {
+    const rawData = await fetchStoryData(id);
+    
+    // Validate with Zod
+    const parseResult = HNStorySchema.safeParse(rawData);
+    if (parseResult.success) {
+      stories.push(parseResult.data.title);
+    } else {
+      ctx.logger.warn('Invalid story data for ID ' + id);
+      continue; // Skip invalid stories
+    }
+  }
+  
+  return stories;
+}
+
+const handler = async (request, response, context) => {
+  // Fetch and validate stories
+  const articles = await fetchTopStories(context, 5);
+  
+  // Generate AI summary
+  const summary = await generateSummary(articles);
+  
+  // Create and validate digest with Zod
+  const digestResult = DigestDataSchema.safeParse({
+    summary,
+    sources: articles,
+    articleCount: articles.length,
+    timestamp: new Date().toISOString(),
+    source: 'Hacker News API'
+  });
+  
+  if (!digestResult.success) {
+    context.logger.error('Digest validation failed', digestResult.error);
+    return response.json({ error: 'Failed to create digest' });
+  }
+  
+  // Store validated digest
+  await context.kv.set('digest', 'latest', digestResult.data);
+  
+  return response.json(digestResult.data);
+};`} />
+
+#### Using Schemas with AI-Generated Output
+
+Schemas ensure structured output from AI models:
+
+<CodeExample py={`from pydantic import BaseModel
+from typing import Literal
+from ai import generate_object
+from anthropic import anthropic
+
+class AgentIntent(BaseModel):
+    agent_type: Literal['support', 'sales', 'technical']
+    confidence: float  # 0.0 to 1.0
+
+async def run(request, response, context):
+    user_message = await request.data.text()
+    
+    # AI generates structured, validated output
+    intent = await generate_object(
+        model=anthropic("claude-3-7-sonnet"),
+        schema=AgentIntent,  # Pydantic ensures structure
+        prompt=user_message
+    )
+    
+    # intent.object is validated and typed
+    if intent.object.confidence > 0.8:
+        agent = await context.get_agent(name=intent.object.agent_type)
+        return await agent.run(request)`} js={`import { z } from 'zod';
+import { generateObject } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
+
+const IntentSchema = z.object({
+  agentType: z.enum(['support', 'sales', 'technical']),
+  confidence: z.number().min(0).max(1)
+});
+
+const handler = async (request, response, context) => {
+  const userMessage = await request.data.text();
+  
+  // AI generates structured, validated output
+  const intent = await generateObject({
+    model: anthropic('claude-3-7-sonnet'),
+    schema: IntentSchema,  // Zod ensures structure
+    prompt: userMessage
+  });
+  
+  // intent.object is validated and typed
+  if (intent.object.confidence > 0.8) {
+    const agent = await context.getAgent({ name: intent.object.agentType });
+    return await agent.run(request);
+  }
+};`} />
+
+<Callout type="info">
+See the complete [Conference Concierge implementation](https://github.com/agentuity/agent-AIEWF2025-concierge-template) for a production example of multi-agent routing with schema validation.
+</Callout>
+
+### 2. Rate Limiting
+
+Prevent abuse and control costs:
+
+<CodeExample py={`async def run(request, response, context):
+    user_id = request.metadata.get("user_id")
+    hour_key = f"rate_{user_id}_{datetime.now().hour}"
+    
+    # Check current usage
+    usage = await context.kv.get("rate_limits", hour_key)
+    count = await usage.data.json() if usage.exists else 0
+    
+    if count >= 100:  # 100 requests per hour
+        return response.json({
+            "error": "Rate limit exceeded",
+            "retry_after": 3600
+        })
+    
+    # Increment counter with TTL
+    await context.kv.set("rate_limits", hour_key, count + 1, {"ttl": 3600})
+    
+    # Process request
+    return await handle_request(request)`} js={`const handler: AgentHandler = async (request, response, context) => {
+  const userId = request.metadata.get('user_id');
+  const hourKey = 'rate_' + userId + '_' + new Date().getHours();
+  
+  // Check current usage
+  const usage = await context.kv.get('rate_limits', hourKey);
+  const count = usage.exists ? await usage.data.json() : 0;
+  
+  if (count >= 100) {  // 100 requests per hour
+    return response.json({
+      error: 'Rate limit exceeded',
+      retry_after: 3600
+    });
+  }
+  
+  // Increment counter with TTL
+  await context.kv.set('rate_limits', hourKey, count + 1, { ttl: 3600 });
+  
+  // Process request
+  return await handleRequest(request);
+};`} />
+
+### 3. Domain-Specific Rules
+
+Enforce rules specific to your use case:
+
+<CodeExample py={`async def run(request, response, context):
+    query = (await request.data.json()).get("query", "")
+    
+    # Prohibited terms check
+    prohibited = ["guaranteed returns", "risk-free", "insider"]
+    for term in prohibited:
+        if term in query.lower():
+            return response.json({
+                "error": "Cannot provide advice on prohibited topics",
+                "reason": f"Term '{term}' is not allowed"
+            })
+    
+    # Generate advice with mandatory disclaimer
+    advice = await generate_advice(query)
+    
+    return response.json({
+        "advice": advice,
+        "disclaimer": "This is not personalized financial advice."
+    })`} js={`const handler: AgentHandler = async (request, response, context) => {
+  const { query } = await request.data.json();
+  
+  // Prohibited terms check
+  const prohibited = ['guaranteed returns', 'risk-free', 'insider'];
+  for (const term of prohibited) {
+    if (query.toLowerCase().includes(term)) {
+      return response.json({
+        error: 'Cannot provide advice on prohibited topics',
+        reason: 'Term \'' + term + '\' is not allowed'
+      });
+    }
+  }
+  
+  // Generate advice with mandatory disclaimer
+  const advice = await generateAdvice(query);
+  
+  return response.json({
+    advice,
+    disclaimer: 'This is not personalized financial advice.'
+  });
+};`} />
+
+## Evaluation Strategies
+
+### Define Success Metrics
+
+Choose metrics that matter for your domain:
+
+| Metric | Example | How to Measure |
+|--------|---------|----------------|
+| **Accuracy** | Correct advice | Compare against test cases |
+| **Compliance** | No prohibited terms | Check output validation |
+| **Performance** | < 5s response | Track in telemetry |
+| **Cost** | < $0.10/request | Monitor token usage |
+
+### Build a Golden Dataset
+
+Create test cases that cover your critical scenarios:
+
+<CodeExample py={`# Golden dataset for testing
+test_cases = [
+    {
+        "id": "basic_401k",
+        "input": {"query": "What is a 401k?"},
+        "expected": {
+            "contains": ["retirement", "employer", "tax"],
+            "excludes": ["guaranteed returns"],
+            "has_disclaimer": True
+        }
+    },
+    {
+        "id": "prohibited_terms",
+        "input": {"query": "Give me guaranteed returns"},
+        "expected": {
+            "error": "Cannot advise on 'guaranteed returns'"
+        }
+    },
+    {
+        "id": "complex_question",
+        "input": {"query": "Should I max out my 401k or pay off debt?"},
+        "expected": {
+            "contains": ["consider", "interest rate", "match"],
+            "has_disclaimer": True
+        }
+    }
+]
+
+async def evaluate_agent(agent_handler, test_cases):
+    """Run evaluation suite and track success rate."""
+    results = []
+    
+    for test in test_cases:
+        # Run the agent
+        response = await agent_handler(test["input"])
+        
+        # Check expectations
+        passed = True
+        if "error" in test["expected"]:
+            passed = response.get("error") == test["expected"]["error"]
+        else:
+            content = response.get("advice", "").lower()
+            
+            # Check required terms
+            for term in test["expected"].get("contains", []):
+                if term not in content:
+                    passed = False
+                    break
+            
+            # Check prohibited terms
+            for term in test["expected"].get("excludes", []):
+                if term in content:
+                    passed = False
+                    break
+        
+        results.append({
+            "test_id": test["id"],
+            "passed": passed,
+            "response": response
+        })
+    
+    # Calculate success rate
+    success_rate = sum(1 for r in results if r["passed"]) / len(results)
+    return {"success_rate": success_rate, "results": results}`} js={`// Golden dataset for testing
+const testCases = [
+  {
+    id: 'basic_401k',
+    input: { query: 'What is a 401k?' },
+    expected: {
+      contains: ['retirement', 'employer', 'tax'],
+      excludes: ['guaranteed returns'],
+      hasDisclaimer: true
+    }
+  },
+  {
+    id: 'prohibited_terms',
+    input: { query: 'Give me guaranteed returns' },
+    expected: {
+      error: 'Cannot advise on guaranteed returns'
+    }
+  },
+  {
+    id: 'complex_question',
+    input: { query: 'Should I max out my 401k or pay off debt?' },
+    expected: {
+      contains: ['consider', 'interest rate', 'match'],
+      hasDisclaimer: true
+    }
+  }
+];
+
+async function evaluateAgent(agentHandler, testCases) {
+  const results = [];
+  
+  for (const test of testCases) {
+    // Run the agent
+    const response = await agentHandler(test.input);
+    
+    // Check expectations
+    let passed = true;
+    if (test.expected.error) {
+      passed = response.error === test.expected.error;
+    } else {
+      const content = (response.advice || '').toLowerCase();
+      
+      // Check required terms
+      for (const term of test.expected.contains || []) {
+        if (!content.includes(term)) {
+          passed = false;
+          break;
+        }
+      }
+      
+      // Check prohibited terms
+      for (const term of test.expected.excludes || []) {
+        if (content.includes(term)) {
+          passed = false;
+          break;
+        }
+      }
+    }
+    
+    results.push({
+      testId: test.id,
+      passed,
+      response
+    });
+  }
+  
+  // Calculate success rate
+  const successRate = results.filter(r => r.passed).length / results.length;
+  return { successRate, results };
+}`} />
+
+## Observability with OpenTelemetry
+
+Agentuity automatically tracks everything through OpenTelemetry:
+
+### What's Tracked (No Code Required)
+- **Agent executions**: Full request/response lifecycle
+- **LLM calls**: Prompts, completions, token usage, latency
+- **Storage operations**: KV gets/sets, vector searches
+- **API calls**: External HTTP requests
+
+View in the Agentuity console Sessions tab with color-coded timeline visualization.
+
+### Using the Logger
+
+<CodeExample py={`async def run(request, response, context):
+    # Logs appear in Sessions view with trace context
+    context.logger.info("Processing", {"user_id": user_id})
+    
+    try:
+        result = await process(data)
+        context.logger.info("Success", {"count": len(result)})
+    except Exception as e:
+        context.logger.error("Failed", {"error": str(e)})
+        raise`} js={`const handler = async (request, response, context) => {
+  // Logs appear in Sessions view with trace context
+  context.logger.info('Processing', { userId });
+  
+  try {
+    const result = await process(data);
+    context.logger.info('Success', { count: result.length });
+  } catch (error) {
+    context.logger.error('Failed', { error: error.message });
+    throw error;
+  }
+};`} />
+
+### Custom Spans for Your Own Operations
+
+Track important operations with custom spans to understand performance and debug issues:
+
+<CodeExample py={`from opentelemetry.trace import Status, StatusCode
+
+async def run(request, response, context):
+    # Create a span for the entire validation flow
+    async with context.tracer.start_as_current_span("validate-financial-query") as span:
+        # Add context about this operation
+        span.set_attribute("user.tier", "premium")
+        span.set_attribute("query.type", "retirement")
+        span.set_attribute("query.length", len(query))
+        
+        try:
+            # Track validation steps
+            span.add_event("validation-started")
+            
+            if has_prohibited_terms(query):
+                span.add_event("validation-failed", {"reason": "prohibited-terms"})
+                span.set_status(Status(StatusCode.ERROR, "Prohibited terms detected"))
+                return response.json({"error": "Invalid query"})
+            
+            span.add_event("validation-passed")
+            
+            # Track LLM call separately
+            async with context.tracer.start_as_current_span("generate-advice") as llm_span:
+                llm_span.set_attribute("model", "gpt-4")
+                advice = await generate_advice(query)
+                llm_span.set_attribute("response.tokens", count_tokens(advice))
+            
+            span.set_status(Status(StatusCode.OK))
+            return response.json({"advice": advice})
+            
+        except Exception as e:
+            span.record_exception(e)
+            span.set_status(Status(StatusCode.ERROR, str(e)))
+            raise`} js={`import { SpanStatusCode } from '@opentelemetry/api';
+
+const handler = async (request, response, context) => {
+  // Create a span for the entire validation flow
+  return context.tracer.startActiveSpan('validate-financial-query', async (span) => {
+    // Add context about this operation
+    span.setAttribute('user.tier', 'premium');
+    span.setAttribute('query.type', 'retirement');
+    span.setAttribute('query.length', query.length);
+    
+    try {
+      // Track validation steps
+      span.addEvent('validation-started');
+      
+      if (hasProhibitedTerms(query)) {
+        span.addEvent('validation-failed', { reason: 'prohibited-terms' });
+        span.setStatus({ code: SpanStatusCode.ERROR, message: 'Prohibited terms detected' });
+        return response.json({ error: 'Invalid query' });
+      }
+      
+      span.addEvent('validation-passed');
+      
+      // Track LLM call separately
+      const advice = await context.tracer.startActiveSpan('generate-advice', async (llmSpan) => {
+        llmSpan.setAttribute('model', 'gpt-4');
+        const result = await generateAdvice(query);
+        llmSpan.setAttribute('response.tokens', countTokens(result));
+        llmSpan.end();
+        return result;
+      });
+      
+      span.setStatus({ code: SpanStatusCode.OK });
+      return response.json({ advice });
+      
+    } catch (error) {
+      span.recordException(error);
+      span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+      throw error;
+    } finally {
+      span.end();
+    }
+  });
+};`} />
+
+### Performance Best Practices
+
+Follow these optimization patterns to ensure your agents run efficiently in production:
+
+| Strategy | Implementation |
+|----------|---------------|
+| **Cache expensive operations** | Store LLM responses in KV with TTL to avoid repeated calls |
+| **Use parallel operations** | `Promise.all()` (JS) or `asyncio.gather()` (Python) for concurrent tasks |
+| **Fail fast** | Validate inputs early to avoid unnecessary processing |
+| **Track token usage** | Add token counts as span attributes to monitor costs |
+| **Set meaningful attributes** | Include user tier, request type, and other context for filtering |
+
+### What You Get Out of the Box
+
+<Callout type="info">
+**Built-in Observability**: Agentuity provides automatic OpenTelemetry instrumentation with zero configuration required.
+</Callout>
+
+Everything is tracked automatically:
+- **LLM calls**: Model, tokens, latency, and responses
+- **Storage operations**: Every KV get/set, vector search, object store operation
+- **API calls**: External service interactions and latencies
+- **Custom spans**: Your business logic with meaningful attributes
+- **Visual debugging**: Color-coded timeline in the console shows execution flow
+
+<Callout type="info">
+See the [Agent Telemetry Guide](/Guides/agent-telemetry) for advanced tracing and custom spans.
+</Callout>
+
+## Lab: Production-Ready Financial Advisor
+
+Let's build a financial advisor progressively, adding production features step by step:
+
+### Step 1: Basic Validation
+
+<CodeExample py={`from pydantic import BaseModel, Field, ValidationError
+from typing import Optional
+
+# Simple schema for financial queries
+class FinancialQuery(BaseModel):
+    query: str = Field(min_length=1, max_length=500)
+    portfolio_value: Optional[float] = Field(None, gt=0)
+
+def welcome():
+    return {
+        "welcome": "Financial Advisor Agent",
+        "prompts": [
+            {"data": {"query": "What is a Roth IRA?"}, "contentType": "application/json"},
+            {"data": {"query": "How do I invest $50000?"}, "contentType": "application/json"}
+        ]
+    }
+
+async def run(request, response, context):
+    # Step 1: Validate input structure
+    try:
+        data = await request.data.json()
+        validated = FinancialQuery(**data)
+    except ValidationError as e:
+        context.logger.error("Invalid input", {"errors": e.errors()})
+        return response.json({"error": "Invalid request", "details": e.errors()})
+    
+    # Step 2: Apply domain rules
+    prohibited = ['guaranteed returns', 'risk-free', 'insider']
+    for term in prohibited:
+        if term in validated.query.lower():
+            context.logger.warning("Prohibited term", {"term": term})
+            return response.json({"error": f"Cannot advise on '{term}'"})
+    
+    # Step 3: Generate response
+    advice = await generate_financial_advice(validated.query, context)
+    
+    return response.json({
+        "advice": advice,
+        "disclaimer": "Not personalized financial advice."
+    })
+
+async def generate_financial_advice(query: str, context) -> str:
+    """Generate financial advice - mock implementation for demo."""
+    context.logger.info("Generating advice", {"query_preview": query[:50]})
+    
+    # Simple mock responses
+    advice_map = {
+        "roth ira": "A Roth IRA is a retirement account with tax-free withdrawals.",
+        "401k": "A 401(k) offers pre-tax contributions and employer matching.",
+        "invest": "Start with your risk tolerance and time horizon."
+    }
+    
+    query_lower = query.lower()
+    for key, advice in advice_map.items():
+        if key in query_lower:
+            return advice
+    
+    return "I can help with retirement accounts and investment strategies."`} js={`import { z } from 'zod';
+
+// Simple schema for financial queries
+const FinancialQuerySchema = z.object({
+  query: z.string().min(1).max(500),
+  portfolioValue: z.number().positive().optional()
+});
+
+const welcome = () => ({
+  welcome: 'Financial Advisor Agent',
+  prompts: [
+    { data: JSON.stringify({ query: 'What is a Roth IRA?' }), contentType: 'application/json' },
+    { data: JSON.stringify({ query: 'How do I invest $50000?' }), contentType: 'application/json' }
+  ]
+});
+
+const handler = async (request, response, context) => {
+  // Step 1: Validate input structure
+  const result = FinancialQuerySchema.safeParse(await request.data.json());
+  if (!result.success) {
+    context.logger.error('Invalid input', { errors: result.error.issues });
+    return response.json({ error: 'Invalid request', details: result.error.issues });
+  }
+  
+  const validated = result.data;
+  
+  // Step 2: Apply domain rules
+  const prohibited = ['guaranteed returns', 'risk-free', 'insider'];
+  for (const term of prohibited) {
+    if (validated.query.toLowerCase().includes(term)) {
+      context.logger.warning('Prohibited term', { term });
+      return response.json({ error: 'Cannot advise on ' + term });
+    }
+  }
+  
+  // Step 3: Generate response
+  const advice = await generateFinancialAdvice(validated.query, context);
+  
+  return response.json({
+    advice,
+    disclaimer: 'Not personalized financial advice.'
+  });
+};
+
+async function generateFinancialAdvice(query, context) {
+  // Generate financial advice - mock implementation for demo
+  context.logger.info('Generating advice', { queryPreview: query.substring(0, 50) });
+  
+  // Simple mock responses
+  const adviceMap = {
+    'roth ira': 'A Roth IRA is a retirement account with tax-free withdrawals.',
+    '401k': 'A 401(k) offers pre-tax contributions and employer matching.',
+    'invest': 'Start with your risk tolerance and time horizon.'
+  };
+  
+  const queryLower = query.toLowerCase();
+  for (const [key, advice] of Object.entries(adviceMap)) {
+    if (queryLower.includes(key)) {
+      return advice;
+    }
+  }
+  
+  return 'I can help with retirement accounts and investment strategies.';
+}
+
+export default handler;
+export { welcome };`} />
+
+### Step 2: Add Rate Limiting
+
+Now enhance with rate limiting to prevent abuse:
+
+<CodeExample py={`# Add to the run function after validation:
+
+# Check rate limit
+user_id = request.metadata.get("user_id", "anonymous")
+hour_key = f"rate_{user_id}_{datetime.now().hour}"
+usage = await context.kv.get("rate_limits", hour_key)
+count = await usage.data.json() if usage.exists else 0
+
+if count >= 100:  # 100 requests per hour
+    return response.json({
+        "error": "Rate limit exceeded",
+        "retry_after": 3600
+    })
+
+await context.kv.set("rate_limits", hour_key, count + 1, {"ttl": 3600})`} js={`// Add to the handler after validation:
+
+// Check rate limit
+const userId = request.metadata.get('user_id') || 'anonymous';
+const hourKey = 'rate_' + userId + '_' + new Date().getHours();
+const usage = await context.kv.get('rate_limits', hourKey);
+const count = usage.exists ? await usage.data.json() : 0;
+
+if (count >= 100) {  // 100 requests per hour
+  return response.json({
+    error: 'Rate limit exceeded',
+    retry_after: 3600
+  });
+}
+
+await context.kv.set('rate_limits', hourKey, count + 1, { ttl: 3600 });`} />
+
+### Step 3: Add Observability
+
+Finally, add custom spans to track and debug your agent's performance:
+
+<CodeExample py={`from opentelemetry.trace import Status, StatusCode
+
+async def run(request, response, context):
+    # Create a span for the entire request
+    async with context.tracer.start_as_current_span("financial-advisor-request") as span:
+        user_id = request.metadata.get("user_id", "anonymous")
+        span.set_attribute("user.id", user_id)
+        span.set_attribute("request.type", "financial-advice")
+        
+        # Validation with span tracking
+        span.add_event("validation-started")
+        try:
+            data = await request.data.json()
+            validated = FinancialQuery(**data)
+            span.set_attribute("query.length", len(validated.query))
+        except ValidationError as e:
+            span.add_event("validation-failed", {"errors": str(e.errors())})
+            span.set_status(Status(StatusCode.ERROR, "Invalid input"))
+            context.logger.error("Invalid input", {"errors": e.errors()})
+            return response.json({"error": "Invalid request", "details": e.errors()})
+        
+        span.add_event("validation-passed")
+        
+        # Domain rules check with tracking
+        prohibited = ['guaranteed returns', 'risk-free', 'insider']
+        for term in prohibited:
+            if term in validated.query.lower():
+                span.add_event("compliance-violation", {"term": term})
+                span.set_status(Status(StatusCode.ERROR, f"Prohibited term: {term}"))
+                return response.json({"error": f"Cannot advise on '{term}'"})
+        
+        # Generate advice with nested span
+        async with context.tracer.start_as_current_span("generate-advice") as advice_span:
+            advice_span.set_attribute("query.type", detect_query_type(validated.query))
+            advice = await generate_financial_advice(validated.query, context)
+            advice_span.set_attribute("response.length", len(advice))
+        
+        span.add_event("response-generated")
+        span.set_status(Status(StatusCode.OK))
+        
+        return response.json({
+            "advice": advice,
+            "disclaimer": "Not personalized financial advice."
+        })`} js={`import { SpanStatusCode } from '@opentelemetry/api';
+
+const handler = async (request, response, context) => {
+  // Create a span for the entire request
+  return context.tracer.startActiveSpan('financial-advisor-request', async (span) => {
+    const userId = request.metadata.get('user_id') || 'anonymous';
+    span.setAttribute('user.id', userId);
+    span.setAttribute('request.type', 'financial-advice');
+    
+    // Validation with span tracking
+    span.addEvent('validation-started');
+    const result = FinancialQuerySchema.safeParse(await request.data.json());
+    if (!result.success) {
+      span.addEvent('validation-failed', { errors: JSON.stringify(result.error.issues) });
+      span.setStatus({ code: SpanStatusCode.ERROR, message: 'Invalid input' });
+      context.logger.error('Invalid input', { errors: result.error.issues });
+      span.end();
+      return response.json({ error: 'Invalid request', details: result.error.issues });
+    }
+    
+    span.addEvent('validation-passed');
+    span.setAttribute('query.length', result.data.query.length);
+    
+    const validated = result.data;
+    
+    // Domain rules check with tracking
+    const prohibited = ['guaranteed returns', 'risk-free', 'insider'];
+    for (const term of prohibited) {
+      if (validated.query.toLowerCase().includes(term)) {
+        span.addEvent('compliance-violation', { term });
+        span.setStatus({ code: SpanStatusCode.ERROR, message: 'Prohibited term: ' + term });
+        span.end();
+        return response.json({ error: 'Cannot advise on ' + term });
+      }
+    }
+    
+    // Generate advice with nested span
+    const advice = await context.tracer.startActiveSpan('generate-advice', async (adviceSpan) => {
+      adviceSpan.setAttribute('query.type', detectQueryType(validated.query));
+      const result = await generateFinancialAdvice(validated.query, context);
+      adviceSpan.setAttribute('response.length', result.length);
+      adviceSpan.end();
+      return result;
+    });
+    
+    span.addEvent('response-generated');
+    span.setStatus({ code: SpanStatusCode.OK });
+    span.end();
+    
+    return response.json({
+      advice,
+      disclaimer: 'Not personalized financial advice.'
+    });
+  });
+};`} />
+
+### Common Validation Pitfalls
+
+Avoid these common mistakes when implementing validation:
+
+| Pitfall | Best Practice |
+|---------|--------------|
+| **Using deprecated validators** | Pydantic v2: Use `@field_validator`, not `@validator` |
+| **Throwing on invalid input** | Zod: Use `safeParse` by default, `parse` only when you want to throw |
+| **Mixing concerns** | Keep schemas for structure, domain rules separate |
+| **I/O in validators** | Never make API calls or database queries inside validators |
+| **Poor error messages** | Format validation errors in user-friendly ways before returning |
+
+### Testing Your Production Agent
+
+1. **Start DevMode:**
+```bash
+agentuity dev
+```
+
+2. **Test guardrails:**
+   - Try prompt injection attacks
+   - Exceed rate limits
+   - Request prohibited advice
+
+3. **Monitor observability:**
+   - Watch traces in real-time
+   - Track custom metrics
+   - Review logs for issues
+
+- **Guardrails prevent failures** - Input validation, rate limiting, and domain rules protect your agents
+- **Evaluation proves reliability** - Systematic testing with metrics that matter for your domain  
+- **Observability is automatic** - Agentuity provides OpenTelemetry integration with Traceloop for comprehensive monitoring
+- **The console shows everything** - Sessions view with color-coded timeline visualization
+- **Production readiness** requires all three pillars working together
+
+## What's Next?
+
+Now that your agents are production-ready, it's time to deploy them. In the next module, we'll explore Agentuity's deployment environments - from local development through staging to production.
+
+But first, experiment with the lab agent:
+- Test different guardrail scenarios
+- View the telemetry in the console
+- Try modifying the evaluation criteria
+- Add your own custom spans
+
+---
+
+**Ready for Module 6?** [Deployment Environments](./06-deployment-environments)

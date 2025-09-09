@@ -1,0 +1,389 @@
+---
+title: "Module 7: Sandbox & Capstone Project"
+description: Bringing it all together in a complete production system
+---
+
+Time to combine everything you've learned into a complete, production-ready agent system.
+
+## Coming Soon: Agentic Sandbox
+
+<Callout type="info">
+**Coming Q2 2025**: The Agentic Sandbox - an interactive environment where you can experiment with agents risk-free, test complex scenarios, and learn through hands-on exploration.
+</Callout>
+
+### What is the Agentic Sandbox?
+
+A safe, isolated environment for agent experimentation:
+- **Pre-configured scenarios**: Common agent patterns ready to explore
+- **Interactive debugging**: Step through agent decisions
+- **Instant reset**: Break things and start fresh
+- **Guided challenges**: Progressive exercises with hints
+
+### Sandbox Features (Coming Soon)
+
+- Mock data sources and APIs
+- Simulated user interactions
+- Time travel debugging
+- Performance profiling
+- Collaborative sessions
+
+## Coming Soon: Training Agent
+
+<Callout type="info">
+**Coming Q2 2025**: Your AI-powered learning companion that adapts to your progress, answers questions, and provides personalized guidance through the Agentuity platform.
+</Callout>
+
+### Your Personal Agent Instructor
+
+An intelligent assistant that helps you learn:
+- **Contextual help**: Understands what you're building
+- **Debugging assistance**: Helps identify and fix issues
+- **Learning paths**: Customized based on your experience
+- **Best practices**: Recommends patterns for your use case
+
+## Capstone Project: Customer Support System
+
+Let's build a complete customer support system that demonstrates mastery of all previous modules.
+
+### Project Overview
+
+**Goal**: Build a multi-agent customer support system that can:
+- Handle customer inquiries autonomously
+- Escalate complex issues appropriately
+- Learn from interactions
+- Maintain conversation context
+- Ensure compliance and safety
+
+### System Architecture
+
+<Mermaid chart="
+graph TD
+    User[Customer] --> Triage[Triage Agent]
+    Triage -->|FAQ/Tech/Billing| Specialist[Specialist Agent]
+    Triage -->|Urgent/Low Confidence| Human[Human Escalation]
+    Specialist --> User
+    Human --> User
+    Memory[(Memory)] -.-> Triage
+    Memory -.-> Specialist
+" />
+
+### Skills in Practice
+
+Building this multi-agent system demonstrates the key concepts covered in this training:
+
+| Module | Key Skills Applied |
+|--------|-------------------|
+| **Agent Basics** | Request/response handling, error management, welcome messages, trigger configuration |
+| **Agent Anatomy** | Lifecycle management, comprehensive logging, context usage, tool integration |
+| **Memory Management** | Conversation history, user preferences, session management, cleanup strategies |
+| **Multi-Agent Collaboration** | Routing logic, context sharing, smooth handoffs, information preservation |
+| **Production Readiness** | Input validation (Zod/Pydantic), rate limiting, observability spans, compliance rules |
+| **Deployment** | Environment configuration, production deployment, monitoring setup |
+
+### Phase 1: Triage Agent
+
+The entry point for all customer interactions:
+
+<CodeExample py={`from pydantic import BaseModel
+from typing import Literal
+from ai import generate_object
+from anthropic import anthropic
+
+class CustomerIntent(BaseModel):
+    category: Literal['faq', 'technical', 'billing', 'urgent']
+    confidence: float
+    summary: str
+    
+async def run(request, response, context):
+    # Track the conversation
+    async with context.tracer.start_as_current_span("triage-request") as span:
+        session_id = request.metadata.get("session_id")
+        span.set_attribute("session.id", session_id)
+        
+        # Get conversation history
+        history = await context.kv.get("conversations", session_id)
+        messages = history.data.json() if history.exists else []
+        
+        # Analyze customer intent
+        customer_message = await request.data.text()
+        messages.append({"role": "user", "content": customer_message})
+        
+        intent = await generate_object(
+            model=anthropic("claude-3-7-sonnet"),
+            schema=CustomerIntent,
+            prompt=f"""
+            Analyze this customer support request:
+            Message: {customer_message}
+            History: {messages[-5:]}  # Last 5 messages for context
+            
+            Categorize as: faq, technical, billing, or urgent
+            """
+        )
+        
+        span.set_attribute("intent.category", intent.object.category)
+        span.set_attribute("intent.confidence", intent.object.confidence)
+        
+        # Route to appropriate agent
+        if intent.object.confidence < 0.7 or intent.object.category == "urgent":
+            # Low confidence or urgent = human escalation
+            span.add_event("escalating-to-human")
+            return response.json({
+                "action": "escalate",
+                "message": "Connecting you with a human agent...",
+                "reason": intent.object.summary
+            })
+        
+        # Hand off to specialist agent
+        return response.handoff(
+            {"name": f"{intent.object.category}-agent"},
+            customer_message,  # Pass message as data
+            {
+                "session_id": session_id,
+                "intent": intent.object.model_dump(),
+                "conversation_history": messages[-5:]  # Include recent context
+            }
+        )`} js={`import { z } from 'zod';
+import { generateObject } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
+
+const CustomerIntentSchema = z.object({
+  category: z.enum(['faq', 'technical', 'billing', 'urgent']),
+  confidence: z.number().min(0).max(1),
+  summary: z.string()
+});
+
+const handler = async (request, response, context) => {
+  // Track the conversation
+  return context.tracer.startActiveSpan('triage-request', async (span) => {
+    const sessionId = request.metadata.get('session_id');
+    span.setAttribute('session.id', sessionId);
+    
+    // Get conversation history
+    const history = await context.kv.get('conversations', sessionId);
+    const messages = history.exists ? await history.data.json() : [];
+    
+    // Analyze customer intent
+    const customerMessage = await request.data.text();
+    messages.push({ role: 'user', content: customerMessage });
+    
+    const intent = await generateObject({
+      model: anthropic('claude-3-7-sonnet'),
+      schema: CustomerIntentSchema,
+      prompt: \`
+        Analyze this customer support request:
+        Message: \${customerMessage}
+        History: \${JSON.stringify(messages.slice(-5))}
+        
+        Categorize as: faq, technical, billing, or urgent
+      \`
+    });
+    
+    span.setAttribute('intent.category', intent.object.category);
+    span.setAttribute('intent.confidence', intent.object.confidence);
+    
+    // Route to appropriate agent
+    if (intent.object.confidence < 0.7 || intent.object.category === 'urgent') {
+      // Low confidence or urgent = human escalation
+      span.addEvent('escalating-to-human');
+      span.end();
+      return response.json({
+        action: 'escalate',
+        message: 'Connecting you with a human agent...',
+        reason: intent.object.summary
+      });
+    }
+    
+    // Hand off to specialist agent
+    span.end();
+    return response.handoff(
+      { name: intent.object.category + '-agent' },
+      {
+        data: customerMessage,
+        contentType: 'text/plain',
+        metadata: {
+          session_id: sessionId,
+          intent: intent.object,
+          conversation_history: messages.slice(-5)  // Include recent context
+        }
+      }
+    );
+  });
+};`} />
+
+### Phase 2: Specialist Agents
+
+Create specialized agents for each category:
+
+#### FAQ Agent
+- Answers common questions
+- Uses vector search for knowledge base
+- Tracks which questions are most frequent
+
+#### Technical Support Agent
+- Troubleshoots technical issues
+- Guides through diagnostic steps
+- Creates tickets for engineering
+
+#### Billing Agent
+- Handles payment questions
+- Looks up account information (mock)
+- Processes refund requests
+
+### Phase 3: Memory & Learning
+
+Implement sophisticated memory:
+
+```python
+# Store interaction outcomes
+await context.kv.set(
+    "outcomes",
+    f"{session_id}_{timestamp}",
+    {
+        "category": intent.category,
+        "resolved": was_resolved,
+        "escalated": was_escalated,
+        "satisfaction": customer_rating,
+        "agent_actions": actions_taken
+    },
+    {"ttl": 30 * 24 * 3600}  # Keep for 30 days
+)
+
+# Learn from patterns
+outcomes = await context.kv.list("outcomes", prefix=f"{user_id}_")
+if frequent_escalations(outcomes):
+    # Adjust confidence thresholds
+    # Flag for human review
+    pass
+```
+
+### Phase 4: Production Hardening
+
+Add all production features:
+
+#### Guardrails
+- PII detection and redaction
+- Compliance with support policies
+- Rate limiting per customer
+- Response length limits
+
+#### Observability
+- Custom spans for each decision point
+- Track resolution rates
+- Monitor escalation patterns
+- Cost per interaction
+
+#### Testing Suite
+```python
+# test_support_system.py
+test_cases = [
+    {
+        "input": "How do I reset my password?",
+        "expected_category": "faq",
+        "should_escalate": False
+    },
+    {
+        "input": "The app crashes when I click submit",
+        "expected_category": "technical",
+        "should_escalate": False
+    },
+    {
+        "input": "I was charged twice!!!",
+        "expected_category": "billing",
+        "confidence_threshold": 0.9  # Higher for financial
+    },
+    {
+        "input": "This is unacceptable! I demand a manager!",
+        "expected_category": "urgent",
+        "should_escalate": True
+    }
+]
+```
+
+### Phase 5: Deployment
+
+Deploy your complete system:
+
+```bash
+# Test locally
+agentuity dev
+
+# Run test suite
+npm test
+
+# Deploy to production
+agentuity deploy
+
+# Monitor performance
+agentuity logs --follow
+```
+
+## Alternative Capstone Projects
+
+Not interested in customer support? Choose an alternative:
+
+### Option 2: Research Assistant Team
+
+Build a multi-agent research system:
+- **Research Agent**: Finds relevant papers and articles
+- **Summarizer Agent**: Creates concise summaries
+- **Fact Checker**: Validates claims against sources
+- **Report Generator**: Produces final documents
+
+Key challenges:
+- Citation tracking
+- Source credibility scoring
+- Handling conflicting information
+- Long-form content generation
+
+### Option 3: DevOps Assistant
+
+Build an operations helper:
+- **Monitor Agent**: Watches system metrics
+- **Diagnostics Agent**: Analyzes problems
+- **Remediation Agent**: Suggests or implements fixes
+- **Reporting Agent**: Creates incident reports
+
+Key challenges:
+- Real-time data processing
+- Safe remediation actions
+- Alert fatigue prevention
+- Root cause analysis
+
+## Getting Help
+
+As you build your capstone:
+
+1. **Review previous modules** - Each contains pieces you'll need
+2. **Start simple** - Get basic flow working first
+3. **Iterate** - Add features incrementally
+4. **Test thoroughly** - Each agent independently, then together
+5. **Monitor everything** - You can't fix what you can't see
+
+<Callout type="info">
+Pro Tip: Build your capstone iteratively. Start with two agents (triage + one specialist), get that working perfectly, then add more complexity.
+</Callout>
+
+## Congratulations!
+
+By completing this capstone, you've demonstrated mastery of:
+- Agent architecture and design
+- Memory and state management
+- Multi-agent orchestration
+- Production deployment
+- Real-world problem solving
+
+You're now ready to build production agent systems with Agentuity!
+
+## What's Next?
+
+- Deploy your capstone to production
+- Share your implementation with the community
+- Explore advanced patterns
+- Build agents for your own use cases
+- Contribute to the Agentuity ecosystem
+
+Welcome to the future of agent development! 🚀
+
+---
+
+**Need help?** Join our [Discord community](https://discord.gg/agentuity) or check the [documentation](https://docs.agentuity.com)

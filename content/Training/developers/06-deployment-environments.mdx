@@ -1,0 +1,247 @@
+---
+title: "Module 6: Deployment Environments"
+description: From local development to global production
+---
+
+You've built agents with memory, collaboration, and production-grade guardrails. Now let's deploy them properly.
+
+## The Reality of Enterprise Agent Deployment
+
+Research shows that [most organizations aren't "agent-ready"](https://www.ibm.com/think/insights/ai-agents-2025-expectations-vs-reality) - they lack the infrastructure, processes, and understanding needed for production agents. When [Salesforce automated 50% of their support cases](https://www.sfchronicle.com/tech/article/salesforce-ai-job-cuts-benioff-21025920.php), it required massive organizational change alongside the technology.
+
+The challenge isn't just technical - it's operational:
+- How do you test non-deterministic agents?
+- How do you safely roll out changes that affect customer interactions?
+- How do you monitor agents that make autonomous decisions?
+- How do you handle failures gracefully when agents are unpredictable?
+
+## The Agentuity Environment Model
+
+Agentuity provides three distinct environments, each with specific purposes:
+
+### Development Environment
+**Where ideas become agents**
+
+Your local machine running DevMode:
+- Instant feedback with hot reload
+- Full debugging capabilities
+- Mock external services
+- Unlimited iterations
+- Direct file system access
+
+```bash
+# Start local development
+agentuity dev
+
+# Test with real-time changes
+# Edit → Save → Test immediately
+```
+
+### Staging Environment
+**Where agents prove themselves**
+
+<Callout type="info">
+**Coming Soon**: Dedicated staging environments with production-like infrastructure but isolated from real users.
+</Callout>
+
+Cloud deployment with test data:
+- Production infrastructure
+- Synthetic test data
+- Full observability
+- Performance testing
+- Integration testing
+
+```bash
+# Deploy to staging (coming soon)
+```
+
+### Production Environment
+**Where agents serve users**
+
+Full-scale deployment:
+- Auto-scaling infrastructure
+- Real user traffic
+- Complete monitoring
+- High availability
+- Disaster recovery
+
+```bash
+# Deploy to production
+agentuity deploy
+```
+
+## Environment Progression
+
+### Moving Through Environments
+
+Each environment serves as a gate to the next:
+
+| Stage | Purpose | Key Validation | Duration |
+|-------|---------|----------------|----------|
+| **Local Dev** | Build & iterate | Basic functionality | Hours to days |
+| **Staging** | Validate at scale | Performance, integration | Days to weeks |
+| **Production** | Serve users | Monitoring, optimization | Ongoing |
+
+### Environment Testing Matrix
+
+Each environment requires different testing focus:
+
+| Testing Aspect | Development | Staging | Production |
+|----------------|------------|---------|------------|
+| **Core Functionality** | Basic input/output validation | Load testing with concurrent users | Success rate metrics |
+| **Memory & State** | Memory operations work correctly | Memory cleanup under load | Response time percentiles |
+| **Error Handling** | Validation catches bad inputs | Rate limiting works correctly | Error rate trends |
+| **Observability** | Logs provide debugging info | Meaningful telemetry spans | Cost per request tracking |
+| **Integration** | Error messages are helpful | External service integration | User satisfaction signals |
+| **Resilience** | Basic error recovery | Failover and recovery testing | Incident response time |
+
+## Enterprise Deployment Options
+
+<Callout type="info">
+**Coming Soon**: Advanced deployment options for enterprise customers with specific compliance and security requirements.
+</Callout>
+
+### Private Cloud Deployments
+Deploy Agentuity infrastructure in your own cloud account. More information coming soon.
+
+### On-Premise Installations
+Run Agentuity entirely within your data center. More information coming soon.
+
+## Configuration Management
+
+### Environment-Specific Settings
+
+Different environments need different configurations:
+
+<CodeExample py={`# config.py
+import os
+
+class Config:
+    """Environment-specific configuration"""
+    
+    def __init__(self):
+        self.env = os.getenv("AGENTUITY_ENVIRONMENT", "development")
+        
+        # Environment-specific settings
+        if self.env == "development":
+            self.log_level = "DEBUG"
+            self.rate_limit = 1000  # Generous for testing
+            self.cache_ttl = 60  # Short for quick iterations
+        elif self.env == "staging":
+            self.log_level = "INFO"
+            self.rate_limit = 100
+            self.cache_ttl = 300
+        else:  # production
+            self.log_level = "WARNING"
+            self.rate_limit = 50
+            self.cache_ttl = 3600
+            
+        # Feature flags
+        self.enable_experimental = self.env != "production"
+        self.verbose_errors = self.env == "development"`} js={`// config.js
+class Config {
+  constructor() {
+    this.env = process.env.AGENTUITY_ENVIRONMENT || 'development';
+    
+    // Environment-specific settings
+    switch(this.env) {
+      case 'development':
+        this.logLevel = 'DEBUG';
+        this.rateLimit = 1000;  // Generous for testing
+        this.cacheTTL = 60;  // Short for quick iterations
+        break;
+      case 'staging':
+        this.logLevel = 'INFO';
+        this.rateLimit = 100;
+        this.cacheTTL = 300;
+        break;
+      default:  // production
+        this.logLevel = 'WARNING';
+        this.rateLimit = 50;
+        this.cacheTTL = 3600;
+    }
+    
+    // Feature flags
+    this.enableExperimental = this.env !== 'production';
+    this.verboseErrors = this.env === 'development';
+  }
+}
+
+export default new Config();`} />
+
+## Real-World Deployment Lessons
+
+### Enterprise Scale: Salesforce's Journey
+
+When Salesforce deployed agents to handle 50% of support cases, they learned:
+- **Gradual rollout is essential**: Started with 1% of tickets
+- **Human oversight needed initially**: Agents flagged uncertain responses
+- **Continuous improvement**: Daily model updates based on outcomes
+- **Organizational change**: Required retraining support staff
+
+### Financial Services: 100+ GenAI Applications
+
+[CB Insights reports over 100 GenAI applications in financial services](https://www.cbinsights.com/research/report/generative-ai-financial-services-applications-2025/). Banks deploying agents discovered:
+- **Compliance first**: Every response needs audit trails
+- **Failover critical**: Instant human handoff when needed
+- **Cost management**: Token limits per customer interaction
+- **Security paramount**: No customer data in prompts
+
+## Lab: Deploy Your Financial Advisor
+
+Let's deploy the financial advisor from Module 5:
+
+### Step 1: Prepare for Deployment
+
+```bash
+# Ensure all tests pass
+npm test  # or python -m pytest
+
+# Check environment variables
+agentuity config verify
+
+# Build for production
+agentuity build
+```
+
+### Step 2: Deploy to Production
+
+```bash
+# Deploy with confirmation
+agentuity deploy --confirm
+
+# Monitor deployment
+agentuity logs --follow
+
+# Check health
+agentuity status
+```
+
+### Step 3: Monitor in Production
+
+View your deployment in the Agentuity console:
+- Real-time metrics
+- Session traces
+- Error tracking
+- Cost analysis
+
+## What's Next?
+
+You now understand the deployment journey from local development to production. But how do you build complete, production-ready systems that combine everything you've learned?
+
+In the next module, we'll tackle the capstone project - building a full agent system that uses:
+- Memory and state management
+- Multi-agent collaboration
+- Production guardrails
+- Comprehensive observability
+- Proper deployment practices
+
+But first, experiment with deployment:
+- Deploy your agents to production
+- Monitor their performance
+- Try different configurations
+- Practice rollback procedures
+
+---
+
+**Ready for the Capstone?** [Module 7: Sandbox & Capstone Project](./07-sandbox-capstone)
