@@ -153,10 +153,10 @@ export async function POST(
                   const ev = JSON.parse(line.slice(6));
                   if (ev.type === 'text-delta' && ev.textDelta) accumulated += ev.textDelta;
                   if (ev.type === 'finish') {
-                    try { await reader.cancel(); } catch {}
+                    try { await reader.cancel(); } catch { }
                     break;
                   }
-                } catch {}
+                } catch { }
               }
             }
           }
@@ -322,10 +322,16 @@ export async function POST(
             break;
           }
           chunkCount++;
-          await writer.write(value);
+          try {
+            await writer.write(value);
+          } catch (writeError) {
+            console.error('Error writing to transform stream:', writeError);
+            throw writeError;
+          }
         }
         await writer.close();
       } catch (error) {
+        console.error('Error in stream processing:', error);
         writer.abort(error);
       }
     })();

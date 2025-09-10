@@ -177,7 +177,7 @@ interface ChatState {
 1. User: "Start the TypeScript tutorial"
 2. Backend: status "Starting tutorial..."
 3. Backend: text-delta "I'll help you get started with the TypeScript tutorial..."
-4. Backend: tutorial-data { tutorialId: "ts-basics", step: 1, ... }
+4. Backend: tutorial-data { tutorialId: "ts-basics", currentStep: 1, ... }
 5. Backend: finish
 ```
 
