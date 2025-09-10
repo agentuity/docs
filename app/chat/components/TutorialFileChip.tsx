@@ -1,6 +1,6 @@
 import React from 'react';
 import { FileText } from 'lucide-react';
-import { TutorialData, CodeFile } from '../types';
+import { CodeFile } from '../types';
 
 interface TutorialFileChipProps {
     codeBlock: CodeFile;
