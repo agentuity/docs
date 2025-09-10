@@ -83,15 +83,12 @@ export function useStreaming({
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        console.log('Received chunk:', chunk);
         const lines = chunk.split('\n');
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             try {
-              console.log('Processing line:', line);
               const data: StreamingChunk = JSON.parse(line.slice(6));
-              console.log('Parsed data:', data);
 
               switch (data.type) {
                 case 'text-delta':
@@ -104,7 +101,6 @@ export function useStreaming({
                           ? { ...msg, content: accumulatedContent }
                           : msg
                       );
-                      console.log('Updated messages state:', updated);
                       return updated;
                     });
                   }
@@ -204,10 +200,6 @@ export function useStreaming({
       setLoading(false);
     }
   }, [messages, setMessages, setTutorialData, setEditorOpen, setEditorContent, setLoading]);
-
-  useEffect(() => {
-    console.log('Messages in component:', messages);
-  }, [messages]);
 
   return {
     sendMessage,

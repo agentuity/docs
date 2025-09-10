@@ -308,27 +308,22 @@ export async function POST(
     });
 
     // Pipe the agent response through our transform stream
-    console.log("[DEBUG] Getting reader from agent response");
     const reader = agentResponse.body?.getReader();
     if (!reader) {
-      console.log("[DEBUG] No reader available from agent response");
       throw new Error("No response body from agent");
     }
     const writer = transformStream.writable.getWriter();
     (async () => {
       try {
-        console.log("[DEBUG] Entering read loop");
         let chunkCount = 0;
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
-            console.log("[DEBUG] Reader done, exiting loop");
             break;
           }
           chunkCount++;
           await writer.write(value);
         }
-        console.log("[DEBUG] Closing writer");
         await writer.close();
       } catch (error) {
         writer.abort(error);
@@ -343,10 +338,10 @@ export async function POST(
       },
     });
   } catch (error) {
-    console.error("[DEBUG] Error in messages API:", error);
+    console.error("Error in messages API:", error);
     // Log the full error stack trace for debugging
     if (error instanceof Error) {
-      console.error("[DEBUG] Error stack:", error.stack);
+      console.error("Error stack:", error.stack);
     }
     return new Response(
       JSON.stringify({

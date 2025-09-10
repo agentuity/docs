@@ -71,7 +71,6 @@ export async function createTools(context: ToolContext) {
                 data: agentPayload,
                 contentType: 'application/json'
             })
-            console.log(await response.data.json());
             const responseData = await response.data.json();
             return responseData;
         },
