@@ -82,7 +82,6 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
 
     const tutorialMdx = message.tutorialData?.tutorialStep.mdx;
     const tutorialSnippets = message.tutorialData?.tutorialStep.snippets as TutorialSnippet[] | undefined;
-    console.log(tutorialSnippets);
     const currentStep = message.tutorialData?.currentStep;
     const totalSteps = message.tutorialData?.totalSteps;
     
