@@ -8,15 +8,11 @@
  * @returns ISO string representation
  */
 export function toISOString(date: Date | string | number): string {
-  if (date instanceof Date) {
-    return date.toISOString();
-  } else if (typeof date === 'string') {
-    // If it's already a string, ensure it's a valid ISO string
-    return new Date(date).toISOString();
-  } else if (typeof date === 'number') {
-    return new Date(date).toISOString();
+  const dateObj = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(dateObj.getTime())) {
+    return new Date().toISOString();
   }
-  return new Date().toISOString(); // Fallback to current time
+  return dateObj.toISOString();
 }
 
 /**
