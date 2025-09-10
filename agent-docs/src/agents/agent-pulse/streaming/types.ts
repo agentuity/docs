@@ -20,7 +20,7 @@ export interface TutorialSnippet {
 
 export interface TutorialData {
   tutorialId: string;
-  totalStep: number;
+  totalSteps: number;
   currentStep: number;
   tutorialStep: {
     title: string;

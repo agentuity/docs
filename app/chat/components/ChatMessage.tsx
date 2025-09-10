@@ -84,7 +84,14 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
     const tutorialSnippets = message.tutorialData?.tutorialStep.snippets as TutorialSnippet[] | undefined;
     console.log(tutorialSnippets);
     const currentStep = message.tutorialData?.currentStep;
-    const totalSteps = message.tutorialData?.totalStep;
+    const totalSteps = message.tutorialData?.totalSteps;
+    
+    // Memoize tutorial content transformation to avoid Rules of Hooks violation
+    const memoizedTutorialContent = useMemo(() => 
+        tutorialMdx ? transformMdxWithSnippets(tutorialMdx, tutorialSnippets || []) : null, 
+        [tutorialMdx, tutorialSnippets]
+    );
+    
     const handleOpenInEditor = (code: string) => {
         setEditorContent(code);
         setEditorOpen(true);
@@ -121,10 +128,10 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                                 />
                             )}
                             {/* Render tutorial content if present */}
-                            {tutorialMdx && (
+                            {tutorialMdx && memoizedTutorialContent && (
                                 <div className="mt-4 p-3 bg-gray-700/30 rounded-lg">
                                     <h4 className="text-sm font-semibold mb-2 text-gray-100">Step {currentStep} of {totalSteps}</h4>
-                                    <MarkdownRenderer content={useMemo(() => transformMdxWithSnippets(tutorialMdx, tutorialSnippets || []), [tutorialMdx, tutorialSnippets])} />
+                                    <MarkdownRenderer content={memoizedTutorialContent} />
                                 </div>
                             )}
                         </div>

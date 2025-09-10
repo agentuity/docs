@@ -27,7 +27,7 @@ export async function handleTutorialState(
           if (tutorialStep.success && tutorialStep.data) {
             const tutorialData: TutorialData = {
               tutorialId: action.tutorialId,
-              totalStep: action.totalSteps,
+              totalSteps: action.totalSteps,
               currentStep: action.currentStep,
               tutorialStep: {
                 title: (tutorialStep.data.meta?.title as string) || tutorialStep.data.slug,

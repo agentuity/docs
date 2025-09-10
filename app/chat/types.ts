@@ -10,7 +10,7 @@ export interface Message {
 // Tutorial data type
 export interface TutorialData {
   tutorialId: string;
-  totalStep: number;
+  totalSteps: number;
   currentStep: number;
   tutorialStep: {
     title: string;

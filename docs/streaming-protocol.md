@@ -60,7 +60,7 @@ Tutorial-specific information and code blocks.
   tutorialData: {
     tutorialId: string,
     currentStep: number,
-    totalStep: number,
+    totalSteps: number,
     tutorialStep: {
       title: string,
       readmeContent: string,
