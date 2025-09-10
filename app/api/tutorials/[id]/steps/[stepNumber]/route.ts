@@ -130,7 +130,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         slug,
         meta: parsed.data ?? {},
         mdx: parsed.content,
-        snippets
+        snippets,
+        totalSteps: pages.length
       }
     });
   } catch (error) {
