@@ -270,6 +270,36 @@ for (const result of results) {
 }
 ```
 
+#### get
+
+`get(name: string, key: string): Promise<VectorSearchResult | null>`
+
+Retrieves a specific vector from the vector storage using its key.
+
+**Parameters**
+
+- `name`: The name of the vector storage
+- `key`: The unique key of the vector to retrieve
+
+**Return Value**
+
+Returns a Promise that resolves to a `VectorSearchResult` object if found, or `null` if the key doesn't exist.
+
+**Example**
+
+```typescript
+// Retrieve a specific vector by key
+const vector = await context.vector.get('product-descriptions', 'chair-001');
+
+if (vector) {
+  console.log(`Found vector: ${vector.id}`);
+  console.log(`Key: ${vector.key}`);
+  console.log(`Metadata:`, vector.metadata);
+} else {
+  console.log('Vector not found');
+}
+```
+
 #### delete
 
 `delete(name: string, ...keys: string[]): Promise<number>`
@@ -288,20 +318,20 @@ Returns a Promise that resolves to the number of vectors that were deleted.
 **Examples**
 
 ```typescript
-// Delete a single vector
-const deletedCount = await context.vector.delete('product-descriptions', 'id1');
+// Delete a single vector by key
+const deletedCount = await context.vector.delete('product-descriptions', 'chair-001');
 console.log(`Deleted ${deletedCount} vector(s)`); // Output: Deleted 1 vector(s)
 
 // Delete multiple vectors in bulk (more efficient than individual calls)
-const deletedCount = await context.vector.delete('product-descriptions', 'id1', 'id2', 'id3');
+const deletedCount = await context.vector.delete('product-descriptions', 'chair-001', 'headphones-001', 'desk-002');
 console.log(`Deleted ${deletedCount} vector(s)`); // Output: Deleted 3 vector(s)
 
 // Delete with array spread
-const keysToDelete = ['id1', 'id2', 'id3'];
+const keysToDelete = ['chair-001', 'headphones-001', 'desk-002'];
 const deletedCount = await context.vector.delete('product-descriptions', ...keysToDelete);
 
 // Handle cases where some vectors might not exist
-const deletedCount = await context.vector.delete('product-descriptions', 'existing-id', 'non-existent-id');
+const deletedCount = await context.vector.delete('product-descriptions', 'existing-key', 'non-existent-key');
 console.log(`Deleted ${deletedCount} vector(s)`); // Output: Deleted 1 vector(s)
 ```
 
@@ -1451,7 +1481,7 @@ Returns a new `Logger` instance with the additional context.
 
 ```typescript
 const requestLogger = context.logger.child({ requestId: '123', userId: '456' });
-requestLogger.info('Processing request'); // Includes requestId and userId
+requestLogger.info('Processing request');
 ```
 
 ## Welcome Function
