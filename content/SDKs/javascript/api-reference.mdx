@@ -318,20 +318,20 @@ Returns a Promise that resolves to the number of vectors that were deleted.
 **Examples**
 
 ```typescript
-// Delete a single vector
-const deletedCount = await context.vector.delete('product-descriptions', 'id1');
+// Delete a single vector by key
+const deletedCount = await context.vector.delete('product-descriptions', 'chair-001');
 console.log(`Deleted ${deletedCount} vector(s)`); // Output: Deleted 1 vector(s)
 
 // Delete multiple vectors in bulk (more efficient than individual calls)
-const deletedCount = await context.vector.delete('product-descriptions', 'id1', 'id2', 'id3');
+const deletedCount = await context.vector.delete('product-descriptions', 'chair-001', 'headphones-001', 'desk-002');
 console.log(`Deleted ${deletedCount} vector(s)`); // Output: Deleted 3 vector(s)
 
 // Delete with array spread
-const keysToDelete = ['id1', 'id2', 'id3'];
+const keysToDelete = ['chair-001', 'headphones-001', 'desk-002'];
 const deletedCount = await context.vector.delete('product-descriptions', ...keysToDelete);
 
 // Handle cases where some vectors might not exist
-const deletedCount = await context.vector.delete('product-descriptions', 'existing-id', 'non-existent-id');
+const deletedCount = await context.vector.delete('product-descriptions', 'existing-key', 'non-existent-key');
 console.log(`Deleted ${deletedCount} vector(s)`); // Output: Deleted 1 vector(s)
 ```
 

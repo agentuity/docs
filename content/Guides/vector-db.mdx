@@ -218,10 +218,11 @@ else:
 existing = await context.vector.get("products", "product-123")
 if existing:
     # Update with merged metadata
+    metadata = existing.metadata or {}
     await context.vector.upsert("products", [{
-        "key": "product-123",
+        "key": "product-123", 
         "document": "Updated product description",
-        "metadata": {**existing.metadata, "lastUpdated": int(time.time())}
+        "metadata": {**metadata, "lastUpdated": int(time.time() * 1000)}
     }])
 
 # 2. Retrieve full metadata after search

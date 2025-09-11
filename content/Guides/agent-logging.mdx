@@ -46,7 +46,7 @@ Each log entry provides comprehensive context and can be expanded for full detai
 ## Logging Best Practices
 
 <Callout type="info">
-**Language Differences:** JavaScript supports structured data objects in logging, while Python uses the standard `logging.Logger` interface.
+**Language Differences:** JavaScript supports structured data objects directly, while Python uses the standard `logging.Logger` interface (with structured data via `extra` parameters).
 </Callout>
 
 ### 1. Use Appropriate Log Levels
@@ -68,8 +68,12 @@ remaining_requests = 5
 context.logger.warning(f"Rate limit approaching remaining={remaining_requests}")
 
 # ERROR: Failures requiring attention
-error_msg = str(err)
-context.logger.error(f"Failed to fetch data error={error_msg}")`} />
+try:
+    # Operation that might fail
+    data = fetch_some_data()
+except Exception as err:
+    error_msg = str(err)
+    context.logger.error(f"Failed to fetch data error={error_msg}")`} />
 
 ### 2. Use Structured Data
 
@@ -106,7 +110,10 @@ order_id = order.id
 item_count = len(order.items)
 total_amount = order.total
 
-context.logger.info(f"Order processed order_id={order_id} item_count={item_count} total={total_amount}")`} />
+context.logger.info(f"Order processed order_id={order_id} item_count={item_count} total={total_amount}")
+
+# For structured logging, extra parameters are also supported
+context.logger.info("Order processed", extra={"order_id": order_id, "item_count": item_count})`} />
 
 ### 3. Include Relevant Context
 

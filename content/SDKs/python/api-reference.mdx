@@ -828,8 +828,8 @@ Returns an `AgentRedirectResponse` object.
 # Handoff to another agent
 return response.handoff(
     {"name": "data-processing-agent"},  # params
-    "process this",                     # args (inferred as text/plain)
-    {"source": "web-agent"}             # metadata
+    "process this",                     # payload (inferred as text/plain)
+    metadata={"source": "web-agent"}    # metadata (keyword arg)
 )
 # Note: Python infers content-type from data (string→text/plain, dict→application/json)
 ```
