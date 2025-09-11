@@ -1255,97 +1255,98 @@ The Agentuity SDK provides logging functionality through the `context.logger` ob
 
 ### Logger Interface
 
-The `Logger` class defines the following methods:
+The Python SDK provides a standard `logging.Logger` instance through `context.logger`:
 
 ```python
-class Logger:
+class Logger(logging.Logger):
     """
     Logger for agent execution.
     """
-    def debug(self, message: str, *args, **kwargs) -> None:
+    def debug(self, message: str, *args) -> None:
         """Log a debug message."""
         pass
 
-    def info(self, message: str, *args, **kwargs) -> None:
+    def info(self, message: str, *args) -> None:
         """Log an informational message."""
         pass
 
-    def warn(self, message: str, *args, **kwargs) -> None:
+    def warning(self, message: str, *args) -> None:
         """Log a warning message."""
         pass
 
-    def error(self, message: str, *args, **kwargs) -> None:
+    def error(self, message: str, *args) -> None:
         """Log an error message."""
         pass
 
-    def child(self, **kwargs) -> 'Logger':
-        """Create a child logger with additional context."""
-        pass
+    # Note: child() method coming soon for API consistency with JavaScript SDK
 ```
 
 ### Logging Methods
 
 #### debug
 
-`debug(message: str, *args, **kwargs) -> None`
+`debug(message: str, *args) -> None`
 
 Logs a debug message.
 
 **Parameters**
 
 - `message`: The message to log
-- `args`, `kwargs`: Additional arguments to include in the log
+- `args`: Additional arguments to include in the log
 
 **Example**
 
 ```python
-context.logger.debug("Processing request", request_id="123")
+request_id = "123"
+context.logger.debug(f"Processing request request_id={request_id}")
 ```
 
 #### info
 
-`info(message: str, *args, **kwargs) -> None`
+`info(message: str, *args) -> None`
 
 Logs an informational message.
 
 **Parameters**
 
 - `message`: The message to log
-- `args`, `kwargs`: Additional arguments to include in the log
+- `args`: Additional arguments to include in the log
 
 **Example**
 
 ```python
-context.logger.info("Request processed successfully", request_id="123")
+request_id = "123"
+context.logger.info(f"Request processed successfully request_id={request_id}")
 ```
 
-#### warn
+#### warning
 
-`warn(message: str, *args, **kwargs) -> None`
+`warning(message: str, *args) -> None`
 
 Logs a warning message.
 
 **Parameters**
 
 - `message`: The message to log
-- `args`, `kwargs`: Additional arguments to include in the log
+- `args`: Additional arguments to include in the log
 
 **Example**
 
 ```python
-context.logger.warn("Resource not found", resource_id="456")
+resource_id = "456"
+context.logger.warning(f"Resource not found resource_id={resource_id}")
 ```
 
 #### error
 
-`error(message: str, *args, **kwargs) -> None`
+`error(message: str, *args) -> None`
 
 Logs an error message.
 
 **Parameters**
 
 - `message`: The message to log
-- `args`, `kwargs`: Additional arguments to include in the log
+- `args`: Additional arguments to include in the log
 
 **Example**
 
@@ -1354,30 +1355,24 @@ try:
     # Some code that might raise an exception
     result = process_data()
 except Exception as e:
-    context.logger.error("Failed to process request", error=str(e))
+    context.logger.error(f"Failed to process request: {str(e)}")
 ```
 
 ### Creating Child Loggers
 
-#### child
+Child logger functionality is coming soon for API consistency with the JavaScript SDK.
 
-`child(**kwargs) -> Logger`
-
-Creates a child logger with additional context.
-
-**Parameters**
-
-- `kwargs`: Additional context to include in all logs from the child logger
-
-**Return Value**
-
-Returns a new `Logger` instance with the additional context.
-
-**Example**
+**Current approach (manual context):**
 
 ```python
-request_logger = context.logger.child(request_id="123", user_id="456")
-request_logger.info("Processing request")  # Includes request_id and user_id
+# Python: Include context in each log message  
+request_id = "123"
+user_id = "456"
+endpoint = "/api/users"
+
+context.logger.info(f"Starting request processing request_id={request_id} endpoint={endpoint}")
+context.logger.info(f"User authenticated request_id={request_id} user_id={user_id}")
+context.logger.error(f"Failed to fetch user data request_id={request_id} error={str(error)}")
 ```
 
 ## Telemetry
