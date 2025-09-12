@@ -50,7 +50,8 @@ function transformMdxWithSnippets(mdx: string, snippets: TutorialSnippet[] = [])
         }
 
         const group = snippets.slice(cursor, cursor + count);
-        cursor += count;
+        const consumed = group.length;
+        cursor += consumed;
         if (group.length === 0) return '';
 
         // Render as sequential fenced blocks for chat (no tabs in chat)

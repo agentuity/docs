@@ -221,8 +221,6 @@ export async function POST(
       );
     }
 
-    // For user messages, process with agent and stream response
-
     // Create assistant message placeholder for tracking
     const assistantMessageId = crypto.randomUUID();
 
@@ -230,19 +228,22 @@ export async function POST(
     const agentConfig = getAgentPulseConfig();
     const agentUrl = agentConfig.url;
 
+    // Get current tutorial state for the user
+    const { TutorialStateManager } = await import('@/lib/tutorial/state-manager');
+    const currentTutorialState = await TutorialStateManager.getCurrentTutorialState(userId);
+    
     const agentPayload = {
       message: message.content,
       conversationHistory: updatedSession.messages.slice(
         -DEFAULT_CONVERSATION_HISTORY_LIMIT
       ),
-      tutorialData: message.tutorialData,
+      tutorialData: currentTutorialState,
     };
 
     // Prepare headers with optional bearer token
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-
     if (agentConfig.bearerToken) {
       headers["Authorization"] = `Bearer ${agentConfig.bearerToken}`;
     }
@@ -281,6 +282,14 @@ export async function POST(
                 accumulatedContent += data.textDelta;
               } else if (data.type === "tutorial-data" && data.tutorialData) {
                 finalTutorialData = data.tutorialData;
+                
+                // Update user's tutorial progress
+                await TutorialStateManager.updateTutorialProgress(
+                  userId,
+                  finalTutorialData.tutorialId,
+                  finalTutorialData.currentStep,
+                  finalTutorialData.totalSteps
+                );
               } else if (data.type === "finish") {
                 // When the stream is finished, save the assistant message
                 const assistantMessage: Message = {

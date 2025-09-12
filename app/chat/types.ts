@@ -7,7 +7,6 @@ export interface Message {
   tutorialData?: TutorialData;
 }
 
-// Tutorial data type
 export interface TutorialData {
   tutorialId: string;
   totalSteps: number;
