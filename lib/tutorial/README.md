@@ -1,130 +1,74 @@
-# Tutorial Reader API
+# Tutorial State Management
 
-This module provides functionality for reading tutorial content from the filesystem and exposing it via Next.js API routes.
+This module provides a centralized tutorial state management system for the application.
 
-## Files
+## Architecture
 
-- `tutorial-reader.ts` - Core functions for reading individual tutorials
-- `all-tutorials-reader.ts` - Functions for reading multiple tutorials
-- API routes in `/app/api/tutorials/` - Next.js API endpoints
+- **Backend Source of Truth**: Tutorial progress is stored in KV store keyed by user ID
+- **Agent Stateless**: Agent receives simple `TutorialState` (tutorialId + currentStep)
+- **Frontend Hooks**: React hooks for accessing and managing tutorial state
 
-## API Endpoints
+## Key Components
 
-### GET `/api/tutorials`
-Returns a summary of all available tutorials (from meta.json files).
+### Types (`types.ts`)
+- `TutorialProgress`: Individual tutorial progress with timestamps
+- `UserTutorialState`: Complete user tutorial state
+- `TutorialState`: Simple state for agent communication
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "javascript-sdk-tutorial",
-      "title": "Javascript SDK",
-      "description": "In this tutorial, we will learn how to use Javascript SDK API to build a customer service agent.",
-      "totalSteps": 1
-    }
-  ]
-}
-```
+### State Manager (`state-manager.ts`)
+- `TutorialStateManager`: Core class for managing tutorial state
+- KV storage operations
+- Progress tracking and completion detection
 
-### GET `/api/tutorials/:id`
-Returns full details of a specific tutorial by its meta.json ID.
+### API Endpoints (`/api/users/tutorial-state`)
+- `GET`: Get user's complete tutorial state
+- `POST`: Update tutorial progress
+- `DELETE`: Reset tutorial progress
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "javascript-sdk-tutorial",
-    "title": "Javascript SDK",
-    "description": "...",
-    "totalSteps": 1,
-    "steps": [
-      {
-        "stepNumber": 1,
-        "title": "Step 1: Handling User's Request",
-        "description": "...",
-        "directory": "step_1",
-        "readmeContent": "...",
-        "codeContent": "..."
-      }
-    ],
-    "path": "/path/to/tutorial",
-    "directoryName": "Tutorial"
-  }
-}
-```
+### Frontend Hook (`/app/hooks/useTutorialState.ts`)
+- `useTutorialState()`: React hook for tutorial state management
+- Progress updates, completion tracking, etc.
 
-### GET `/api/tutorials/:id/steps/:stepNumber`
-Returns details of a specific step within a tutorial.
+## Usage
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "stepNumber": 1,
-    "title": "Step 1: Handling User's Request",
-    "description": "The first thing to do is how to handle a user's request",
-    "directory": "step_1",
-    "readmeContent": "...",
-    "codeContent": "..."
-  }
-}
-```
-
-## Tutorial Structure
-
-Tutorials should be organized as follows:
-
-```
-Tutorial/
-├── content/
-│   ├── meta.json          # Tutorial metadata with id, title, description
-│   ├── step_1/
-│   │   ├── README.md      # Step documentation with front-matter
-│   │   └── index.ts       # Step code
-│   ├── step_2/
-│   │   ├── README.md
-│   │   └── index.ts
-│   └── ...
-```
-
-### meta.json Format
-```json
-{
-  "id": "unique-tutorial-id",
-  "title": "Tutorial Title",
-  "description": "Tutorial description"
-}
-```
-
-### Step README.md Front-matter
-```yaml
----
-title: "Step 1: Step Title"
-description: "Step description"
----
-
-# Step content...
-```
-
-## Usage in Code
-
+### Backend (Agent Communication)
 ```typescript
-import { readAllTutorials, readTutorialById } from '@/lib/tutorial/all-tutorials-reader';
-import { readTutorial, getStepByNumber } from '@/lib/tutorial/tutorial-reader';
+// Get current tutorial state for agent
+const tutorialState = await TutorialStateManager.getCurrentTutorialState(userId);
 
-// Read all tutorials
-const allTutorials = await readAllTutorials(basePath);
+// Send to agent
+const agentPayload = {
+  message: content,
+  conversationHistory: history,
+  tutorialData: tutorialState  // Simple: { tutorialId, currentStep }
+};
+```
 
-// Read specific tutorial
-const tutorial = await readTutorialById(basePath, 'tutorial-id');
+### Frontend (React Components)
+```typescript
+const {
+  tutorialState,
+  loading,
+  updateTutorialProgress,
+  getTutorialProgress,
+  getCompletedTutorials
+} = useTutorialState();
 
-// Read tutorial from content path
-const tutorial = await readTutorial('./Tutorial/content');
+// Check if user has completed a tutorial
+const progress = getTutorialProgress('tutorial-id');
+const isCompleted = progress?.completedAt != null;
+```
 
-// Get specific step
-const step = getStepByNumber(tutorial, 1);
-``` 
+## Data Flow
+
+1. **User starts tutorial**: Agent creates tutorial data, backend saves progress
+2. **Subsequent messages**: Backend sends current tutorial state to agent
+3. **Tutorial progress**: Agent updates progress, backend persists state
+4. **Frontend display**: Full tutorial data displayed, progress tracked
+
+## Benefits
+
+- ✅ **Persistent Progress**: Tutorial state persists across sessions
+- ✅ **Clean Architecture**: Agent remains stateless and user-agnostic
+- ✅ **Scalable**: Easy to add features like completion tracking, analytics
+- ✅ **Type Safe**: Full TypeScript support throughout
