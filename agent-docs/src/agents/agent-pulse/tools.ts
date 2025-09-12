@@ -27,7 +27,7 @@ export async function createTools(context: ToolContext) {
         description: "Start a specific tutorial for the user. This will validate the tutorial exists, modify user data state, and finally return information about the tutorial including its title, total steps, and description. The tutorial will be displayed to the user automatically. The step number should be between 1 and the total number of steps in the tutorial.",
         parameters: z.object({
             tutorialId: z.string().describe("The exact ID of the tutorial to start"),
-            stepNumber: z.number().describe("The step number of the tutorial to start (must be between 1 and total steps)")
+            stepNumber: z.number().describe("The step number of the tutorial to start (1 to total available steps in the tutorial)")
         }),
         execute: async ({ tutorialId, stepNumber }) => {
             // Validate tutorial exists before starting
@@ -35,7 +35,7 @@ export async function createTools(context: ToolContext) {
             if (!tutorialResponse.success || !tutorialResponse.data) {
                 return `Error fetching tutorial information`;
             }
-            
+
             const data = tutorialResponse.data
             const totalSteps = tutorialResponse.data.totalSteps;
             if (stepNumber > totalSteps) {
