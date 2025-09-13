@@ -39,12 +39,3 @@ export interface SessionsResponse extends ApiResponse {
   sessions: Session[];
   pagination: PaginationInfo;
 }
-
-export interface SessionMessageValidationResult {
-  message: Message;
-  processWithAgent: boolean;
-}
-
-export interface SessionMessageOnlyValidationResult {
-  message: Message;
-}

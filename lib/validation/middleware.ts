@@ -79,42 +79,65 @@ export const SessionMessageOnlyRequestSchema = z.object({
   message: MessageSchema
 });
 
-export function validateStepNumber(stepNumber: string): ValidationResult<number> {
-  const stepIndex = Number.parseInt(stepNumber, 10);
+export const StepNumberSchema = z.string().transform((val, ctx) => {
+  const stepIndex = Number.parseInt(val, 10);
   
   if (Number.isNaN(stepIndex)) {
-    return { 
-      success: false, 
-      errors: [{ field: 'stepNumber', message: 'must be a valid integer', received: stepNumber }] 
-    };
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'must be a valid integer',
+    });
+    return z.NEVER;
   }
   
   if (stepIndex < 1) {
-    return { 
-      success: false, 
-      errors: [{ field: 'stepNumber', message: 'must be greater than 0', received: stepIndex }] 
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'must be greater than 0',
+    });
+    return z.NEVER;
+  }
+  
+  return stepIndex;
+});
+
+export const TutorialIdSchema = z.string().min(1, 'must be a non-empty string').refine(
+  (id) => !id.includes('..') && !id.includes('/') && !id.includes('\\'),
+  'contains invalid characters (path traversal attempt)'
+);
+
+export function validateStepNumber(stepNumber: string): ValidationResult<number> {
+  const result = StepNumberSchema.safeParse(stepNumber);
+  
+  if (!result.success) {
+    return {
+      success: false,
+      errors: result.error.issues.map(issue => ({
+        field: 'stepNumber',
+        message: issue.message,
+        received: stepNumber
+      }))
     };
   }
   
-  return { success: true, data: stepIndex };
+  return { success: true, data: result.data };
 }
 
 export function validateTutorialId(id: string): ValidationResult<string> {
-  if (!id || typeof id !== 'string') {
-    return { 
-      success: false, 
-      errors: [{ field: 'tutorialId', message: 'must be a non-empty string', received: typeof id }] 
+  const result = TutorialIdSchema.safeParse(id);
+  
+  if (!result.success) {
+    return {
+      success: false,
+      errors: result.error.issues.map(issue => ({
+        field: 'tutorialId',
+        message: issue.message,
+        received: id
+      }))
     };
   }
   
-  if (id.includes('..') || id.includes('/') || id.includes('\\')) {
-    return { 
-      success: false, 
-      errors: [{ field: 'tutorialId', message: 'contains invalid characters (path traversal attempt)', received: id }] 
-    };
-  }
-  
-  return { success: true, data: id };
+  return { success: true, data: result.data };
 }
 
 export type TutorialProgressRequest = z.infer<typeof TutorialProgressRequestSchema>;
