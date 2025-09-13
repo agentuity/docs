@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getKVValue, setKVValue, deleteKVValue } from '@/lib/kv-store';
-import { Session, Message, SessionSchema, MessageSchema } from '@/app/chat/types';
+import { Session, Message, SessionSchema } from '@/app/chat/types';
 import { toISOString } from '@/app/chat/utils/dateUtils';
 import { config } from '@/lib/config';
 import { parseAndValidateJSON, SessionMessageOnlyRequestSchema } from '@/lib/validation/middleware';
@@ -199,9 +199,9 @@ export async function POST(
     const paramsData = await params;
     const sessionId = paramsData.sessionId;
     const sessionKey = `${userId}_${sessionId}`;
-    
+
     const validation = await parseAndValidateJSON(request, SessionMessageOnlyRequestSchema);
-    
+
     if (!validation.success) {
       return validation.response;
     }

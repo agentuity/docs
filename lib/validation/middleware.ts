@@ -37,7 +37,7 @@ export async function parseAndValidateJSON<T>(
   schema: z.ZodSchema<T>
 ): Promise<{ success: true; data: T } | { success: false; response: NextResponse }> {
   let body: any;
-  
+
   try {
     body = await request.json();
   } catch {
@@ -81,7 +81,7 @@ export const SessionMessageOnlyRequestSchema = z.object({
 
 export const StepNumberSchema = z.string().transform((val, ctx) => {
   const stepIndex = Number.parseInt(val, 10);
-  
+
   if (Number.isNaN(stepIndex)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -89,7 +89,7 @@ export const StepNumberSchema = z.string().transform((val, ctx) => {
     });
     return z.NEVER;
   }
-  
+
   if (stepIndex < 1) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -97,7 +97,7 @@ export const StepNumberSchema = z.string().transform((val, ctx) => {
     });
     return z.NEVER;
   }
-  
+
   return stepIndex;
 });
 
@@ -108,7 +108,7 @@ export const TutorialIdSchema = z.string().min(1, 'must be a non-empty string').
 
 export function validateStepNumber(stepNumber: string): ValidationResult<number> {
   const result = StepNumberSchema.safeParse(stepNumber);
-  
+
   if (!result.success) {
     return {
       success: false,
@@ -119,13 +119,13 @@ export function validateStepNumber(stepNumber: string): ValidationResult<number>
       }))
     };
   }
-  
+
   return { success: true, data: result.data };
 }
 
 export function validateTutorialId(id: string): ValidationResult<string> {
   const result = TutorialIdSchema.safeParse(id);
-  
+
   if (!result.success) {
     return {
       success: false,
@@ -136,11 +136,6 @@ export function validateTutorialId(id: string): ValidationResult<string> {
       }))
     };
   }
-  
+
   return { success: true, data: result.data };
 }
-
-export type TutorialProgressRequest = z.infer<typeof TutorialProgressRequestSchema>;
-export type TutorialResetRequest = z.infer<typeof TutorialResetRequestSchema>;
-export type SessionMessageRequest = z.infer<typeof SessionMessageRequestSchema>;
-export type SessionMessageOnlyRequest = z.infer<typeof SessionMessageOnlyRequestSchema>;
