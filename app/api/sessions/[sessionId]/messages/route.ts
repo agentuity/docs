@@ -9,8 +9,7 @@ import {
 import { toISOString, getCurrentTimestamp } from "@/app/chat/utils/dateUtils";
 import { getAgentPulseConfig } from "@/lib/env";
 import { config } from "@/lib/config";
-import { parseAndValidateJSON, validateMessage, ValidationResult } from "@/lib/validation/middleware";
-import { SessionMessageValidationResult } from "@/lib/validation/types";
+import { parseAndValidateJSON, SessionMessageRequestSchema } from "@/lib/validation/middleware";
 
 // Constants
 const DEFAULT_CONVERSATION_HISTORY_LIMIT = 10;
@@ -66,26 +65,7 @@ export async function POST(
     const paramsData = await params;
     const sessionId = paramsData.sessionId;
     
-    const validation = await parseAndValidateJSON(request, (body: any): ValidationResult<SessionMessageValidationResult> => {
-      if (!body || typeof body !== 'object') {
-        return { success: false, errors: [{ field: 'body', message: 'must be an object', received: typeof body }] };
-      }
-      
-      const messageValidation = validateMessage(body.message);
-      if (!messageValidation.success) {
-        return { success: false, errors: messageValidation.errors || [] };
-      }
-      
-      const processWithAgent = body.processWithAgent !== undefined ? Boolean(body.processWithAgent) : true;
-      
-      return { 
-        success: true, 
-        data: { 
-          message: messageValidation.data!, 
-          processWithAgent 
-        } 
-      };
-    });
+    const validation = await parseAndValidateJSON(request, SessionMessageRequestSchema);
     
     if (!validation.success) {
       return validation.response;
