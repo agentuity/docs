@@ -73,7 +73,7 @@ export async function PUT(
 
     // Process any messages to ensure timestamps are in ISO string format
     if (session.messages && session.messages.length > 0) {
-      session.messages = session.messages.map(message => {
+      session.messages = session.messages.map((message: Message) => {
         if (message.timestamp) {
           return {
             ...message,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getKVValue, setKVValue } from '@/lib/kv-store';
-import { Session } from '@/app/chat/types';
+import { Session, Message } from '@/app/chat/types';
 import { toISOString } from '@/app/chat/utils/dateUtils';
 import { config } from '@/lib/config';
 import { parseAndValidateJSON, validateSession } from '@/lib/validation/middleware';
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     // Process any messages to ensure timestamps are in ISO string format
     if (session.messages && session.messages.length > 0) {
-      session.messages = session.messages.map(message => {
+      session.messages = session.messages.map((message: Message) => {
         if (message.timestamp) {
           return {
             ...message,
