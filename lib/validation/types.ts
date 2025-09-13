@@ -15,6 +15,15 @@ export interface SessionMessageRequest {
   processWithAgent?: boolean;
 }
 
+export interface SessionMessageValidationResult {
+  message: Message;
+  processWithAgent: boolean;
+}
+
+export interface SessionMessageOnlyValidationResult {
+  message: Message;
+}
+
 export interface SessionCreateRequest extends Session {}
 
 export interface SessionUpdateRequest extends Session {}

@@ -3,7 +3,8 @@ import { getKVValue, setKVValue, deleteKVValue } from '@/lib/kv-store';
 import { Session, Message } from '@/app/chat/types';
 import { toISOString } from '@/app/chat/utils/dateUtils';
 import { config } from '@/lib/config';
-import { parseAndValidateJSON, validateSession, validateMessage } from '@/lib/validation/middleware';
+import { parseAndValidateJSON, validateSession, validateMessage, ValidationResult } from '@/lib/validation/middleware';
+import { SessionMessageOnlyValidationResult } from '@/lib/validation/types';
 
 /**
  * GET /api/sessions/[sessionId] - Get a specific session
@@ -200,15 +201,15 @@ export async function POST(
     const sessionId = paramsData.sessionId;
     const sessionKey = `${userId}_${sessionId}`;
     
-    const validation = await parseAndValidateJSON(request, (body: any) => {
+    const validation = await parseAndValidateJSON(request, (body: any): ValidationResult<SessionMessageOnlyValidationResult> => {
       if (!body || typeof body !== 'object') {
         return { success: false, errors: [{ field: 'body', message: 'must be an object', received: typeof body }] };
       }
       const messageValidation = validateMessage(body.message);
       if (!messageValidation.success) {
-        return messageValidation;
+        return { success: false, errors: messageValidation.errors || [] };
       }
-      return { success: true, data: { message: messageValidation.data } };
+      return { success: true, data: { message: messageValidation.data! } };
     });
     
     if (!validation.success) {

@@ -23,6 +23,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
     
     const stepIndex = stepValidation.data;
+    if (!stepIndex) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid step number' },
+        { status: 400 }
+      );
+    }
 
     const repoRoot = process.cwd();
     const tutorialDir = join(repoRoot, 'content', 'Tutorial', id);
@@ -34,6 +40,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Filter out index; map to actual MDX files
     const stepSlugs = pages.filter(p => p !== 'index');
+    
+    if (stepIndex < 1 || stepIndex > stepSlugs.length) {
+      return NextResponse.json(
+        { success: false, error: 'Step not found' },
+        { status: 404 }
+      );
+    }
+    
     const slug = stepSlugs[stepIndex - 1];
     if (!slug) {
       return NextResponse.json(
@@ -159,4 +173,4 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   }
-}      
+}          
