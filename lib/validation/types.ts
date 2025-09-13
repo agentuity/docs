@@ -1,32 +1,24 @@
-import { Session, Message, TutorialData } from '../../app/chat/types';
+import type { Session, Message, TutorialData, ExecuteRequest } from '../../app/chat/types';
+import type { 
+  TutorialProgressRequest,
+  TutorialResetRequest,
+  SessionMessageRequest,
+  SessionMessageOnlyRequest
+} from './middleware';
 
-export interface TutorialProgressRequest {
-  tutorialId: string;
-  currentStep: number;
-  totalSteps: number;
-}
+export type {
+  Session,
+  Message,
+  TutorialData,
+  ExecuteRequest
+};
 
-export interface TutorialResetRequest {
-  tutorialId: string;
-}
-
-export interface SessionMessageRequest {
-  message: Message;
-  processWithAgent?: boolean;
-}
-
-export interface SessionMessageValidationResult {
-  message: Message;
-  processWithAgent: boolean;
-}
-
-export interface SessionMessageOnlyValidationResult {
-  message: Message;
-}
-
-export interface SessionCreateRequest extends Session {}
-
-export interface SessionUpdateRequest extends Session {}
+export type {
+  TutorialProgressRequest,
+  TutorialResetRequest,
+  SessionMessageRequest,
+  SessionMessageOnlyRequest
+};
 
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -46,4 +38,13 @@ export interface PaginationInfo {
 export interface SessionsResponse extends ApiResponse {
   sessions: Session[];
   pagination: PaginationInfo;
+}
+
+export interface SessionMessageValidationResult {
+  message: Message;
+  processWithAgent: boolean;
+}
+
+export interface SessionMessageOnlyValidationResult {
+  message: Message;
 }

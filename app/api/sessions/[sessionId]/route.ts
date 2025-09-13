@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getKVValue, setKVValue, deleteKVValue } from '@/lib/kv-store';
-import { Session, Message } from '@/app/chat/types';
+import { Session, Message, SessionSchema, MessageSchema } from '@/app/chat/types';
 import { toISOString } from '@/app/chat/utils/dateUtils';
 import { config } from '@/lib/config';
-import { parseAndValidateJSON, validateSession, validateMessage, ValidationResult } from '@/lib/validation/middleware';
-import { SessionMessageOnlyValidationResult } from '@/lib/validation/types';
+import { parseAndValidateJSON, SessionMessageOnlyRequestSchema } from '@/lib/validation/middleware';
 
 /**
  * GET /api/sessions/[sessionId] - Get a specific session
@@ -57,7 +56,7 @@ export async function PUT(
     const sessionId = paramsData.sessionId;
     const sessionKey = `${userId}_${sessionId}`;
 
-    const validation = await parseAndValidateJSON(request, validateSession);
+    const validation = await parseAndValidateJSON(request, SessionSchema);
     if (!validation.success) {
       return validation.response;
     }
@@ -201,16 +200,7 @@ export async function POST(
     const sessionId = paramsData.sessionId;
     const sessionKey = `${userId}_${sessionId}`;
     
-    const validation = await parseAndValidateJSON(request, (body: any): ValidationResult<SessionMessageOnlyValidationResult> => {
-      if (!body || typeof body !== 'object') {
-        return { success: false, errors: [{ field: 'body', message: 'must be an object', received: typeof body }] };
-      }
-      const messageValidation = validateMessage(body.message);
-      if (!messageValidation.success) {
-        return { success: false, errors: messageValidation.errors || [] };
-      }
-      return { success: true, data: { message: messageValidation.data! } };
-    });
+    const validation = await parseAndValidateJSON(request, SessionMessageOnlyRequestSchema);
     
     if (!validation.success) {
       return validation.response;

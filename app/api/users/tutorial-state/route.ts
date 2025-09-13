@@ -4,8 +4,8 @@ import { setKVValue } from '@/lib/kv-store';
 import { config } from '@/lib/config';
 import { 
   parseAndValidateJSON, 
-  validateTutorialProgressRequest, 
-  validateTutorialResetRequest 
+  TutorialProgressRequestSchema, 
+  TutorialResetRequestSchema 
 } from '@/lib/validation/middleware';
 
 /**
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
     }
 
-    const validation = await parseAndValidateJSON(request, validateTutorialProgressRequest);
+    const validation = await parseAndValidateJSON(request, TutorialProgressRequestSchema);
     if (!validation.success) {
       return validation.response;
     }
@@ -80,7 +80,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
     }
 
-    const validation = await parseAndValidateJSON(request, validateTutorialResetRequest);
+    const validation = await parseAndValidateJSON(request, TutorialResetRequestSchema);
     if (!validation.success) {
       return validation.response;
     }

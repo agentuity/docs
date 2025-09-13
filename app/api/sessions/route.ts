@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getKVValue, setKVValue } from '@/lib/kv-store';
-import { Session, Message } from '@/app/chat/types';
+import { Session, Message, SessionSchema } from '@/app/chat/types';
 import { toISOString } from '@/app/chat/utils/dateUtils';
 import { config } from '@/lib/config';
-import { parseAndValidateJSON, validateSession } from '@/lib/validation/middleware';
+import { parseAndValidateJSON } from '@/lib/validation/middleware';
 
 // Constants
 const DEFAULT_SESSIONS_LIMIT = 10;
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
     }
 
-    const validation = await parseAndValidateJSON(request, validateSession);
+    const validation = await parseAndValidateJSON(request, SessionSchema);
     if (!validation.success) {
       return validation.response;
     }
