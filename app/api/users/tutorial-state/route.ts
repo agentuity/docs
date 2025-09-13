@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     }
 
     const tutorialState = await TutorialStateManager.getUserTutorialState(userId);
-    
+
     return NextResponse.json({
       success: true,
       data: tutorialState
@@ -36,8 +36,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
     }
 
-    const { tutorialId, currentStep, totalSteps } = await request.json();
-    
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
+    const { tutorialId, currentStep, totalSteps } = body;
+
+
     if (!tutorialId || typeof currentStep !== 'number' || typeof totalSteps !== 'number') {
       return NextResponse.json(
         { error: 'Invalid tutorial data. Required: tutorialId, currentStep, totalSteps' },
@@ -75,8 +83,14 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
     }
 
-    const { tutorialId } = await request.json();
-    
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+    const { tutorialId } = body;
+
     if (!tutorialId) {
       return NextResponse.json(
         { error: 'tutorialId is required' },
@@ -86,13 +100,13 @@ export async function DELETE(request: NextRequest) {
 
     const state = await TutorialStateManager.getUserTutorialState(userId);
     delete state.tutorials[tutorialId];
-    
+
     // Save the updated state
     const { setKVValue } = await import('@/lib/kv-store');
     const { config } = await import('@/lib/config');
-    
-    await setKVValue(`tutorial_state_${userId}`, state, { 
-      storeName: config.defaultStoreName 
+
+    await setKVValue(`tutorial_state_${userId}`, state, {
+      storeName: config.defaultStoreName
     });
 
     return NextResponse.json({
