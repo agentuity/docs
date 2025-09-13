@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { join } from 'path';
 import { readFile } from 'fs/promises';
 import matter from 'gray-matter';
+import { validateTutorialId, validateStepNumber, createValidationError } from '@/lib/validation/middleware';
 
 interface RouteParams {
   params: Promise<{ id: string; stepNumber: string }>;
@@ -10,13 +11,18 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id, stepNumber } = await params;
-    const stepIndex = parseInt(stepNumber, 10);
-    if (Number.isNaN(stepIndex) || stepIndex < 1) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid step number' },
-        { status: 400 }
-      );
+    
+    const idValidation = validateTutorialId(id);
+    if (!idValidation.success) {
+      return createValidationError('Invalid tutorial ID', idValidation.errors || []);
     }
+    
+    const stepValidation = validateStepNumber(stepNumber);
+    if (!stepValidation.success) {
+      return createValidationError('Invalid step number', stepValidation.errors || []);
+    }
+    
+    const stepIndex = stepValidation.data;
 
     const repoRoot = process.cwd();
     const tutorialDir = join(repoRoot, 'content', 'Tutorial', id);
@@ -47,13 +53,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     async function loadSnippet(desc: { path: string; lang?: string; from?: number; to?: number; title?: string }) {
       const filePath = desc.path;
       if (!filePath || !filePath.startsWith('/examples/')) return;
+      
+      if (filePath.includes('..') || filePath.includes('\\')) return;
+      
       const absolutePath = join(repoRoot, `.${filePath}`);
-      const fileRaw = await readFile(absolutePath, 'utf-8');
-      const lines = fileRaw.split(/\r?\n/);
-      const startIdx = Math.max(0, (desc.from ? desc.from - 1 : 0));
-      const endIdx = Math.min(lines.length, desc.to ? desc.to : lines.length);
-      const content = lines.slice(startIdx, endIdx).join('\n');
-      snippets.push({ ...desc, content });
+      
+      try {
+        const fileRaw = await readFile(absolutePath, 'utf-8');
+        const lines = fileRaw.split(/\r?\n/);
+        const startIdx = Math.max(0, (desc.from ? desc.from - 1 : 0));
+        const endIdx = Math.min(lines.length, desc.to ? desc.to : lines.length);
+        const content = lines.slice(startIdx, endIdx).join('\n');
+        snippets.push({ ...desc, content });
+      } catch (error) {
+        console.warn(`Failed to load snippet from ${filePath}:`, error);
+      }
     }
 
     // 1) Parse <CodeFromFiles snippets={[{...}, {...}]}/> blocks
@@ -145,4 +159,4 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   }
-} 
+}      

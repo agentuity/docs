@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TutorialStateManager } from '@/lib/tutorial/state-manager';
+import { setKVValue } from '@/lib/kv-store';
+import { config } from '@/lib/config';
+import { 
+  parseAndValidateJSON, 
+  validateTutorialProgressRequest, 
+  validateTutorialResetRequest 
+} from '@/lib/validation/middleware';
 
 /**
  * GET /api/users/tutorial-state - Get current user's tutorial state
@@ -36,22 +43,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
     }
 
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const validation = await parseAndValidateJSON(request, validateTutorialProgressRequest);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    const { tutorialId, currentStep, totalSteps } = body;
-
-
-    if (!tutorialId || typeof currentStep !== 'number' || typeof totalSteps !== 'number') {
-      return NextResponse.json(
-        { error: 'Invalid tutorial data. Required: tutorialId, currentStep, totalSteps' },
-        { status: 400 }
-      );
-    }
+    const { tutorialId, currentStep, totalSteps } = validation.data;
 
     await TutorialStateManager.updateTutorialProgress(
       userId,
@@ -83,31 +80,27 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
     }
 
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const validation = await parseAndValidateJSON(request, validateTutorialResetRequest);
+    if (!validation.success) {
+      return validation.response;
     }
-    const { tutorialId } = body;
 
-    if (!tutorialId) {
-      return NextResponse.json(
-        { error: 'tutorialId is required' },
-        { status: 400 }
-      );
-    }
+    const { tutorialId } = validation.data;
 
     const state = await TutorialStateManager.getUserTutorialState(userId);
     delete state.tutorials[tutorialId];
 
     // Save the updated state
-    const { setKVValue } = await import('@/lib/kv-store');
-    const { config } = await import('@/lib/config');
-
-    await setKVValue(`tutorial_state_${userId}`, state, {
+    const kvResponse = await setKVValue(`tutorial_state_${userId}`, state, {
       storeName: config.defaultStoreName
     });
+
+    if (!kvResponse.success) {
+      return NextResponse.json(
+        { error: kvResponse.error || 'Failed to reset tutorial state' },
+        { status: kvResponse.statusCode || 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,

@@ -9,6 +9,7 @@ import {
 import { toISOString, getCurrentTimestamp } from "@/app/chat/utils/dateUtils";
 import { getAgentPulseConfig } from "@/lib/env";
 import { config } from "@/lib/config";
+import { parseAndValidateJSON, validateMessage } from "@/lib/validation/middleware";
 
 // Constants
 const DEFAULT_CONVERSATION_HISTORY_LIMIT = 10;
@@ -63,18 +64,33 @@ export async function POST(
 
     const paramsData = await params;
     const sessionId = paramsData.sessionId;
-    const body = await request.json();
-    const { message, processWithAgent = true } = body as {
-      message: Message;
-      processWithAgent?: boolean;
-    };
-
-    if (!message) {
-      return NextResponse.json(
-        { error: "Message data is required" },
-        { status: 400 }
-      );
+    
+    const validation = await parseAndValidateJSON(request, (body: any) => {
+      if (!body || typeof body !== 'object') {
+        return { success: false, errors: [{ field: 'body', message: 'must be an object', received: typeof body }] };
+      }
+      
+      const messageValidation = validateMessage(body.message);
+      if (!messageValidation.success) {
+        return messageValidation;
+      }
+      
+      const processWithAgent = body.processWithAgent !== undefined ? Boolean(body.processWithAgent) : true;
+      
+      return { 
+        success: true, 
+        data: { 
+          message: messageValidation.data, 
+          processWithAgent 
+        } 
+      };
+    });
+    
+    if (!validation.success) {
+      return validation.response;
     }
+
+    const { message, processWithAgent } = validation.data;
 
     // Ensure timestamp is in ISO string format
     if (message.timestamp) {

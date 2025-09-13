@@ -3,6 +3,7 @@ import { getKVValue, setKVValue } from '@/lib/kv-store';
 import { Session } from '@/app/chat/types';
 import { toISOString } from '@/app/chat/utils/dateUtils';
 import { config } from '@/lib/config';
+import { parseAndValidateJSON, validateSession } from '@/lib/validation/middleware';
 
 // Constants
 const DEFAULT_SESSIONS_LIMIT = 10;
@@ -26,7 +27,17 @@ export async function GET(request: NextRequest) {
     const cursor = Number.isFinite(parsedCursor) ? Math.max(parsedCursor, 0) : 0;
 
     const response = await getKVValue<string[]>(userId, { storeName: config.defaultStoreName });
-    if (!response.success || !response.data?.length) {
+    if (!response.success) {
+      if (response.statusCode === 404) {
+        return NextResponse.json({ sessions: [], pagination: { cursor, nextCursor: null, hasMore: false, total: 0, limit } });
+      }
+      return NextResponse.json(
+        { error: response.error || 'Failed to retrieve sessions' },
+        { status: response.statusCode || 500 }
+      );
+    }
+    
+    if (!response.data?.length) {
       return NextResponse.json({ sessions: [], pagination: { cursor, nextCursor: null, hasMore: false, total: 0, limit } });
     }
 
@@ -67,14 +78,13 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
     }
-    const session = await request.json() as Session;
 
-    if (!session || !session.sessionId) {
-      return NextResponse.json(
-        { error: 'Invalid session data' },
-        { status: 400 }
-      );
+    const validation = await parseAndValidateJSON(request, validateSession);
+    if (!validation.success) {
+      return validation.response;
     }
+
+    const session = validation.data;
 
     // Process any messages to ensure timestamps are in ISO string format
     if (session.messages && session.messages.length > 0) {
