@@ -55,10 +55,11 @@ function transformMdxWithSnippets(mdx: string, snippets: TutorialSnippet[] = [])
         if (group.length === 0) return '';
 
         // Render as sequential fenced blocks for chat (no tabs in chat)
+        // Move the label above the code fence to avoid injecting language-specific comment syntax
         return '\n\n' + group.map((s) => {
             const lang = s.lang || 'text';
             const label = s.title || s.path.split('/').pop() || s.path;
-            return `\`\`\`${lang}\n// ${label}\n${s.content}\n\`\`\``;
+            return `**${label}**\n\`\`\`${lang}\n${s.content}\n\`\`\``;
         }).join('\n\n') + '\n\n';
     });
 }
