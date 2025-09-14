@@ -88,6 +88,9 @@ export async function DELETE(request: NextRequest) {
     const { tutorialId } = validation.data;
 
     const state = await TutorialStateManager.getUserTutorialState(userId);
+    if (!state.tutorials) {
+      state.tutorials = {};
+    }
     delete state.tutorials[tutorialId];
 
     // Save the updated state
