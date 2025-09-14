@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { join } from 'path';
+import { join, resolve, sep } from 'path';
 import { readFile } from 'fs/promises';
 import matter from 'gray-matter';
 import { validateTutorialId, validateStepNumber, createValidationError } from '@/lib/validation/middleware';
@@ -67,13 +67,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     async function loadSnippet(desc: { path: string; lang?: string; from?: number; to?: number; title?: string }) {
       const filePath = desc.path;
       if (!filePath || !filePath.startsWith('/examples/')) return;
-      
-      if (filePath.includes('..') || filePath.includes('\\')) return;
-      
-      const absolutePath = join(repoRoot, `.${filePath}`);
-      
+
+      // Resolve against repo root and ensure containment within /examples
+      const resolvedPath = resolve(repoRoot, `.${filePath}`);
+      const examplesBase = resolve(repoRoot, 'examples');
+      const isContained = resolvedPath === examplesBase || resolvedPath.startsWith(examplesBase + sep);
+      if (!isContained) return;
+
       try {
-        const fileRaw = await readFile(absolutePath, 'utf-8');
+        const fileRaw = await readFile(resolvedPath, 'utf-8');
         const lines = fileRaw.split(/\r?\n/);
         const startIdx = Math.max(0, (desc.from ? desc.from - 1 : 0));
         const endIdx = Math.min(lines.length, desc.to ? desc.to : lines.length);
