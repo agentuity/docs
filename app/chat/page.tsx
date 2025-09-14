@@ -18,14 +18,15 @@ export default function ChatPage() {
             <div className="w-full max-w-3xl px-4">
                 <div className="grid grid-cols-2 gap-4 mb-8">
                     <RecommendationCard
-                        title="List all of tutorials"
-                        subtitle="available in agentuity."
-                        onClick={() => handleMessageSend("List all of tutorials available in agentuity")}
+                    <RecommendationCard
+                        title="List all tutorials"
+                        subtitle="available in Agentuity."
+                        onClick={() => handleMessageSend("List all tutorials available in Agentuity")}
                     />
                     <RecommendationCard
-                        title="How do we do agent hand-off"
-                        subtitle="in python sdk?"
-                        onClick={() => handleMessageSend("How do we do agent hand-off in python sdk?")}
+                        title="How do I do agent handoff"
+                        subtitle="in the Python SDK?"
+                        onClick={() => handleMessageSend("How do I do agent handoff in the Python SDK?")}
                     />
                 </div>
                 <ChatInput onSendMessage={handleMessageSend} />
