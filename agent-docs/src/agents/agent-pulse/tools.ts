@@ -65,12 +65,12 @@ export async function createTools(context: ToolContext) {
             agentContext.logger.info("Querying agent %s with: %s", DOC_QA_AGENT_NAME, query);
             const agentPayload = {
                 message: query,
-
             }
             const response = await docQaAgent.run({
                 data: agentPayload,
                 contentType: 'application/json'
             })
+            // TODO: handle the docs referencing and inject it to the frontend response
             const responseData = await response.data.json();
             return responseData;
         },

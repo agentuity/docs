@@ -8,12 +8,6 @@ export interface TutorialState {
   currentStep: number;
 }
 
-export interface AgentRequestData {
-  message: string;
-  conversationHistory: ConversationMessage[];
-  tutorialData?: TutorialState;
-}
-
 export interface ParsedAgentRequest {
   message: string;
   conversationHistory: ConversationMessage[];
