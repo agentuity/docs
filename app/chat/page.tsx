@@ -18,7 +18,6 @@ export default function ChatPage() {
             <div className="w-full max-w-3xl px-4">
                 <div className="grid grid-cols-2 gap-4 mb-8">
                     <RecommendationCard
-                    <RecommendationCard
                         title="List all tutorials"
                         subtitle="available in Agentuity."
                         onClick={() => handleMessageSend("List all tutorials available in Agentuity")}
