@@ -71,6 +71,7 @@ export async function createTools(context: ToolContext) {
                 data: agentPayload,
                 contentType: 'application/json'
             })
+             // TODO: handle the docs referencing and inject it to the frontend response
             const responseData = await response.data.json();
             return responseData;
         },

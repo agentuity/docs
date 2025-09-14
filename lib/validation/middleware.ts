@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { MessageSchema, SessionSchema } from '@/app/chat/types';
+import { MessageSchema } from '@/app/chat/types';
 
 export interface ValidationError {
   field: string;
