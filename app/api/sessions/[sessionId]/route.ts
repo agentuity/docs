@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getKVValue, setKVValue, deleteKVValue } from '@/lib/kv-store';
-import { Session, Message } from '@/app/chat/types';
+import { Session, Message, SessionSchema } from '@/app/chat/types';
 import { toISOString } from '@/app/chat/utils/dateUtils';
 import { config } from '@/lib/config';
+import { parseAndValidateJSON, SessionMessageOnlyRequestSchema } from '@/lib/validation/middleware';
 
 /**
  * GET /api/sessions/[sessionId] - Get a specific session
@@ -53,19 +54,25 @@ export async function PUT(
 
     const paramsData = await params;
     const sessionId = paramsData.sessionId;
-    const session = await request.json() as Session;
     const sessionKey = `${userId}_${sessionId}`;
 
-    if (!session || session.sessionId !== sessionId) {
+    const validation = await parseAndValidateJSON(request, SessionSchema);
+    if (!validation.success) {
+      return validation.response;
+    }
+
+    const session = validation.data;
+
+    if (session.sessionId !== sessionId) {
       return NextResponse.json(
-        { error: 'Invalid session data or session ID mismatch' },
+        { error: 'Session ID mismatch' },
         { status: 400 }
       );
     }
 
     // Process any messages to ensure timestamps are in ISO string format
     if (session.messages && session.messages.length > 0) {
-      session.messages = session.messages.map(message => {
+      session.messages = session.messages.map((message: Message) => {
         if (message.timestamp) {
           return {
             ...message,
@@ -192,14 +199,14 @@ export async function POST(
     const paramsData = await params;
     const sessionId = paramsData.sessionId;
     const sessionKey = `${userId}_${sessionId}`;
-    const { message } = await request.json() as { message: Message };
 
-    if (!message) {
-      return NextResponse.json(
-        { error: 'Message data is required' },
-        { status: 400 }
-      );
+    const validation = await parseAndValidateJSON(request, SessionMessageOnlyRequestSchema);
+
+    if (!validation.success) {
+      return validation.response;
     }
+
+    const { message } = validation.data;
 
     // Get current session
     const sessionResponse = await getKVValue<Session>(sessionKey, { storeName: config.defaultStoreName });

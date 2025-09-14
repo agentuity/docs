@@ -24,7 +24,7 @@ export async function createTools(context: ToolContext) {
      * Tool for starting a tutorial - adds action to state queue
      */
     const startTutorialAtStep = tool({
-        description: "Start a specific tutorial for the user. This will validate the tutorial exists, modify user data state, and finally return information about the tutorial including its title, total steps, and description. The tutorial will be displayed to the user automatically. The step number should be between 1 and the total number of steps in the tutorial.",
+        description: "Start a specific tutorial for the user. You must call this function in order for the user to see the tutorial step content. The step number should be between 1 and the total number of steps in the tutorial.",
         parameters: z.object({
             tutorialId: z.string().describe("The exact ID of the tutorial to start"),
             stepNumber: z.number().describe("The step number of the tutorial to start (1 to total available steps in the tutorial)")

@@ -17,6 +17,10 @@ export async function GET(request: NextRequest) {
     const results: Array<{ id: string; title: string; description?: string; totalSteps: number }> = [];
 
     for (const entry of pages) {
+      if (entry.includes('..') || entry.includes('/') || entry.includes('\\')) {
+        continue;
+      }
+      
       const dirPath = join(tutorialRoot, entry);
       const filePath = join(tutorialRoot, `${entry}.mdx`);
       try {
@@ -70,4 +74,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}  

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { join } from 'path';
+import { join, resolve, sep } from 'path';
 import { readFile } from 'fs/promises';
 import matter from 'gray-matter';
+import { validateTutorialId, validateStepNumber, createValidationError } from '@/lib/validation/middleware';
 
 interface RouteParams {
   params: Promise<{ id: string; stepNumber: string }>;
@@ -10,8 +11,19 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id, stepNumber } = await params;
-    const stepIndex = parseInt(stepNumber, 10);
-    if (Number.isNaN(stepIndex) || stepIndex < 1) {
+    
+    const idValidation = validateTutorialId(id);
+    if (!idValidation.success) {
+      return createValidationError('Invalid tutorial ID', idValidation.errors || []);
+    }
+    
+    const stepValidation = validateStepNumber(stepNumber);
+    if (!stepValidation.success) {
+      return createValidationError('Invalid step number', stepValidation.errors || []);
+    }
+    
+    const stepIndex = stepValidation.data;
+    if (!stepIndex) {
       return NextResponse.json(
         { success: false, error: 'Invalid step number' },
         { status: 400 }
@@ -28,6 +40,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Filter out index; map to actual MDX files
     const stepSlugs = pages.filter(p => p !== 'index');
+    
+    if (stepIndex < 1 || stepIndex > stepSlugs.length) {
+      return NextResponse.json(
+        { success: false, error: 'Step not found' },
+        { status: 404 }
+      );
+    }
+    
     const slug = stepSlugs[stepIndex - 1];
     if (!slug) {
       return NextResponse.json(
@@ -47,13 +67,23 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     async function loadSnippet(desc: { path: string; lang?: string; from?: number; to?: number; title?: string }) {
       const filePath = desc.path;
       if (!filePath || !filePath.startsWith('/examples/')) return;
-      const absolutePath = join(repoRoot, `.${filePath}`);
-      const fileRaw = await readFile(absolutePath, 'utf-8');
-      const lines = fileRaw.split(/\r?\n/);
-      const startIdx = Math.max(0, (desc.from ? desc.from - 1 : 0));
-      const endIdx = Math.min(lines.length, desc.to ? desc.to : lines.length);
-      const content = lines.slice(startIdx, endIdx).join('\n');
-      snippets.push({ ...desc, content });
+
+      // Resolve against repo root and ensure containment within /examples
+      const resolvedPath = resolve(repoRoot, `.${filePath}`);
+      const examplesBase = resolve(repoRoot, 'examples');
+      const isContained = resolvedPath === examplesBase || resolvedPath.startsWith(examplesBase + sep);
+      if (!isContained) return;
+
+      try {
+        const fileRaw = await readFile(resolvedPath, 'utf-8');
+        const lines = fileRaw.split(/\r?\n/);
+        const startIdx = Math.max(0, (desc.from ? desc.from - 1 : 0));
+        const endIdx = Math.min(lines.length, desc.to ? desc.to : lines.length);
+        const content = lines.slice(startIdx, endIdx).join('\n');
+        snippets.push({ ...desc, content });
+      } catch (error) {
+        console.warn(`Failed to load snippet from ${filePath}:`, error);
+      }
     }
 
     // 1) Parse <CodeFromFiles snippets={[{...}, {...}]}/> blocks
@@ -145,4 +175,4 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   }
-} 
+}          
