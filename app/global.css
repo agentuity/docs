@@ -73,7 +73,7 @@
 
 .dark body,
 .dark main {
-	background-color: #0a0a0a;
+	background-color: #011;
 }
 
 aside [data-radix-scroll-area-viewport] button,
@@ -87,7 +87,7 @@ aside [data-radix-scroll-area-viewport] a {
 
 .dark aside,
 .dark header {
-	background: #0a0a0a;
+	background: #011;
 }
 
 .dark aside [data-radix-scroll-area-viewport] button,
