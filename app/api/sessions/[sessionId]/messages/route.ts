@@ -133,16 +133,12 @@ export async function POST(
           return;
         }
 
-        let bytes = 0;
-        let chunks = 0;
         let accumulated = '';
         const textDecoder = new TextDecoder();
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
           if (value) {
-            bytes += value.byteLength;
-            chunks += 1;
             const text = textDecoder.decode(value);
             for (const line of text.split('\n')) {
               if (line.startsWith('data: ')) {
@@ -158,10 +154,8 @@ export async function POST(
             }
           }
         }
-        console.debug(`[title-gen] agent-stream bytes=${bytes} chunks=${chunks}`);
 
         const candidate = sanitizeTitle(accumulated);
-        console.debug(`[title-gen] candidate="${candidate}"`);
         const title = candidate || 'New chat';
 
         // Re-fetch and set title only if still empty
@@ -171,7 +165,7 @@ export async function POST(
         if (current.title) return;
         current.title = title;
         await setKVValue(sessionKey, current, { storeName: config.defaultStoreName });
-        console.debug('[title-gen] stored title');
+        
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes('The operation was aborted') || msg.includes('aborted')) {
@@ -336,13 +330,11 @@ export async function POST(
     const writer = transformStream.writable.getWriter();
     (async () => {
       try {
-        let chunkCount = 0;
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
             break;
           }
-          chunkCount++;
           try {
             await writer.write(value);
           } catch (writeError) {
