@@ -1,0 +1,11 @@
+{
+	"title": "POC Multi-Step Tutorial",
+	"pages": [
+		"index",
+		"step1",
+		"step2",
+		"step3",
+		"step4"
+	]
+}
+
