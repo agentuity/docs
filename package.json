@@ -24,14 +24,7 @@
 		"@radix-ui/react-dialog": "^1.1.14",
 		"@radix-ui/react-visually-hidden": "^1.2.3",
 		"@types/uuid": "^10.0.0",
-		"@types/ws": "^8.18.1",
-		"@xterm/addon-fit": "^0.10.0",
-		"@xterm/xterm": "^5.5.0",
 		"allotment": "^1.20.4",
-		"axios": "^1.7.0",
-		"cmdk": "^1.1.1",
-		"cors": "^2.8.5",
-		"express": "^4.18.0",
 		"fumadocs-core": "15.2.6",
 		"fumadocs-mdx": "11.5.8",
 		"fumadocs-twoslash": "^3.1.0",
@@ -50,7 +43,6 @@
 		"swr": "^2.3.6",
 		"twoslash": "^0.3.1",
 		"uuid": "^11.1.0",
-		"ws": "^8.18.3",
 		"zod": "^4.1.8"
 	},
 	"devDependencies": {
