@@ -118,11 +118,12 @@ export default function ChatSessionPage() {
       return;
     }
 
-    const initialMessage = sessionStorage.getItem('initialMessage');
+    const storageKey = `initialMessage:${sessionId}`;
+    const initialMessage = sessionStorage.getItem(storageKey);
     if (!initialMessage) {
       return;
     }
-    sessionStorage.removeItem('initialMessage');
+    sessionStorage.removeItem(storageKey);
 
     const userMessage: Message = {
       id: uuidv4(),

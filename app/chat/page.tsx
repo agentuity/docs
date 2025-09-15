@@ -8,8 +8,11 @@ export default function ChatPage() {
     const router = useRouter();
 
     const handleMessageSend = (message: string) => {
-        sessionStorage.setItem('initialMessage', message);
         const newSessionId = uuidv4();
+        const trimmed = message.trim();
+        if (trimmed) {
+            sessionStorage.setItem(`initialMessage:${newSessionId}`, trimmed);
+        }
         router.push(`/chat/${newSessionId}`);
     };
 
