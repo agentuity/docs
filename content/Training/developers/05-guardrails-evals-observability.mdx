@@ -7,9 +7,9 @@ You've built agents that can think, remember, and collaborate. Now it's time to 
 
 ## The Reality of Production Agents
 
-Research from NeurIPS 2024 reveals that most AI agents succeed only [30-40% of the time on complex tasks](https://neurips.cc/virtual/2024/panel/agent-systems). When [Salesforce automated 50% of their support cases](https://www.sfchronicle.com/tech/article/salesforce-ai-job-cuts-benioff-21025920.php), the implementation challenges led to significant organizational restructuring. The gap between demo and production? Proper guardrails, systematic evaluation, and comprehensive observability.
+When [Salesforce deployed their Agentforce AI agents](https://www.hr-brew.com/stories/2025/03/04/salesforce-ai-agents-reskilling), they discovered that success required more than just technology - it demanded a comprehensive reskilling strategy for their 72,000+ employees. As their EVP of talent growth noted: "This rise of digital labor powered by AI agents is truly reshaping the way our businesses operate." The gap between demo and production? Proper guardrails, systematic evaluation, and comprehensive observability.
 
-According to [NIST's Generative AI Risk Management framework](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.1270e2025.pdf), the primary operational risks in AI systems include:
+According to [NIST's AI Risk Management framework](https://www.nist.gov/itl/ai-risk-management-framework), the primary operational risks in AI systems include:
 - **Hallucination**: Agents generating plausible but incorrect information
 - **Prompt Injection**: Adversarial inputs manipulating agent behavior
 - **Resource Consumption**: Uncontrolled usage leading to excessive costs
@@ -34,7 +34,7 @@ Guardrails prevent agents from harmful actions while preserving autonomy:
 
 Systematic evaluation is critical for non-deterministic agents:
 
-- **Industry Benchmarks**: [SWE-Bench](https://www.swebench.com/) (~20% success), [BrowserGym](https://browsergym.ai), [AgentHarm](https://arxiv.org/abs/2407.01564)
+- **Industry Benchmarks**: [SWE-Bench](https://www.swebench.com/) (success rate on software engineering tasks)
 - **Automated Testing**: Unit tests, integration tests, golden datasets
 - **Production Metrics**: Success rates, latency, cost per request
 - **A/B Testing**: Shadow deployments, gradual rollouts
@@ -296,6 +296,114 @@ const handler = async (request, response, context) => {
     return await agent.run(request);
   }
 };`} />
+
+### Orchestrators as Natural Guardrails
+
+Remember the orchestrator pattern from Module 4? Orchestrators are your first line of defense:
+
+<CodeExample py={`from pydantic import BaseModel
+from typing import Literal
+
+class ValidatedIntent(BaseModel):
+    category: Literal['technical', 'sales', 'support']
+    confidence: float
+    sensitive: bool = False
+    
+async def orchestrator_with_guardrails(request, response, context):
+    user_prompt = await request.data.text()
+    
+    # 1. Input validation
+    if len(user_prompt) > 1000:
+        return response.json({"error": "Request too long"})
+    
+    # 2. Analyze intent with validation
+    intent = await analyze_intent(user_prompt, schema=ValidatedIntent)
+    
+    # 3. Apply routing rules
+    if intent.sensitive:
+        # Route sensitive requests to specialized agent
+        return response.handoff(
+            {"name": "compliance-agent"},
+            {"query": user_prompt, "flagged": True}
+        )
+    
+    if intent.confidence < 0.7:
+        # Low confidence = fallback to human
+        return response.json({
+            "message": "I'll connect you with a specialist",
+            "transfer": "human"
+        })
+    
+    # 4. Route to appropriate agent
+    agent_map = {
+        "technical": "tech-expert",
+        "sales": "sales-agent",
+        "support": "support-agent"
+    }
+    
+    return response.handoff(
+        {"name": agent_map[intent.category]},
+        {"query": user_prompt}
+    )`} js={`import { z } from 'zod';
+
+const ValidatedIntentSchema = z.object({
+  category: z.enum(['technical', 'sales', 'support']),
+  confidence: z.number(),
+  sensitive: z.boolean().default(false)
+});
+
+const orchestratorWithGuardrails = async (request, response, context) => {
+  const userPrompt = await request.data.text();
+  
+  // 1. Input validation
+  if (userPrompt.length > 1000) {
+    return response.json({ error: 'Request too long' });
+  }
+  
+  // 2. Analyze intent with validation
+  const { object: intent } = await analyzeIntent(userPrompt, {
+    schema: ValidatedIntentSchema
+  });
+  
+  // 3. Apply routing rules
+  if (intent.sensitive) {
+    // Route sensitive requests to specialized agent
+    return response.handoff(
+      { name: 'compliance-agent' },
+      { 
+        data: JSON.stringify({ query: userPrompt, flagged: true }),
+        contentType: 'application/json'
+      }
+    );
+  }
+  
+  if (intent.confidence < 0.7) {
+    // Low confidence = fallback to human
+    return response.json({
+      message: "I'll connect you with a specialist",
+      transfer: 'human'
+    });
+  }
+  
+  // 4. Route to appropriate agent
+  const agentMap = {
+    technical: 'tech-expert',
+    sales: 'sales-agent',
+    support: 'support-agent'
+  };
+  
+  return response.handoff(
+    { name: agentMap[intent.category] },
+    { data: userPrompt, contentType: 'text/plain' }
+  );
+};`} />
+
+**Why Orchestrators Make Great Guardrails:**
+1. **Single validation point** - Check all inputs before routing
+2. **Access control** - Decide who can access which agents
+3. **Fallback handling** - Gracefully handle edge cases
+4. **Audit trail** - Log all routing decisions
+5. **Rate limiting** - Apply per-user limits before delegation
 
 <Callout type="info">
 See the complete [Conference Concierge implementation](https://github.com/agentuity/agent-AIEWF2025-concierge-template) for a production example of multi-agent routing with schema validation.

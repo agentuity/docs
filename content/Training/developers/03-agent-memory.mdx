@@ -9,7 +9,7 @@ Without memory, an agent is just a stateless function. With memory, it becomes a
 
 According to [IBM's research on AI agent memory](https://www.ibm.com/think/topics/ai-agent-memory), the biggest limitation of current LLMs is their inability to retain information between sessions. Every conversation starts from scratch, every user must re-explain their context, and every task begins without learning from the past.
 
-As highlighted in recent [memory management research](https://medium.com/@nomannayeem/building-ai-agents-that-actually-remember-a-developers-guide-to-memory-management-in-2025-062fd0be80a1):
+As highlighted in a recent [memory management blog post](https://medium.com/@nomannayeem/building-ai-agents-that-actually-remember-a-developers-guide-to-memory-management-in-2025-062fd0be80a1):
 
 > "The difference between a chatbot and an agent is memory. A chatbot responds to the current message. An agent remembers your entire relationship."
 
@@ -25,21 +25,16 @@ This creates fundamental challenges:
 For implementation details on Agentuity's storage systems, see our guides on [Key-Value Storage](/Guides/key-value), [Vector Database](/Guides/vector-db), and [Object Storage](/Guides/object-storage).
 </Callout>
 
-### The Memory Hierarchy
+### Memory Types Overview
 
-Just like human memory, agent memory operates at different levels:
+Agent memory serves different purposes based on how long data needs to persist:
 
-<Mermaid chart="
-graph TD
-    A[Working Memory] --> B[Short-term Memory]
-    B --> C[Long-term Memory]
-    C --> D[Collective Memory]
-    
-    A1[Current Request Context] --> A
-    B1[Session State / Cache] --> B
-    C1[User History / Knowledge Base] --> C
-    D1[Shared Agent Knowledge] --> D
-" />
+| Memory Type | Duration | Storage | Purpose |
+|-------------|----------|---------|----------|
+| **Working Memory** | Single request | In-memory variables | Process current task |
+| **Session Memory** | Minutes to hours | KV with TTL | Maintain conversation context |
+| **Persistent Memory** | Until deleted | KV without TTL | Store user preferences, profiles |
+| **Searchable Memory** | Until deleted | Vector storage | Semantic search and retrieval |
 
 Let's explore each level:
 
@@ -163,12 +158,12 @@ Best for discrete, queryable data:
   await context.kv.set('users', userId, JSON.stringify(profile));
 };`} />
 
-### Unstructured Memory (Vector Storage)
-Best for semantic information:
-- Conversation history
-- Domain knowledge
-- User feedback
-- Document content
+### Searchable Memory (Vector Storage)
+Best for semantic search and knowledge retrieval:
+- Conversation history you want to search through
+- Domain knowledge and learned information
+- User feedback and insights
+- Document content that needs to be findable
 
 <CodeExample py={`async def run(request, response, context):
     # Store conversation for semantic retrieval
@@ -684,34 +679,20 @@ Different memory types require different retention policies:
 | Temporary results | 5-15 minutes | Computation cache |
 | Audit logs | 30-90 days | Compliance requirements |
 
-### Memory Sizing Guidelines
+### Memory Strategy Guidelines
 
-Plan your memory usage based on agent patterns:
+Start with simple patterns and scale based on actual usage:
 
-```python
-# Calculate memory requirements
-def estimate_memory_needs(users, interactions_per_day):
-    # Key-Value Storage
-    profile_size = 2  # KB per user profile
-    session_size = 10  # KB per active session
-    kv_total = (users * profile_size) + (users * 0.1 * session_size)
-    
-    # Vector Storage
-    vectors_per_user = interactions_per_day * 30  # 30 days retention
-    vector_size = 0.5  # KB per vector
-    vector_total = users * vectors_per_user * vector_size
-    
-    # Object Storage
-    reports_per_user = 10  # Average files per user
-    avg_file_size = 500  # KB per file
-    object_total = users * reports_per_user * avg_file_size
-    
-    return {
-        "kv_storage_gb": kv_total / 1024 / 1024,
-        "vector_storage_gb": vector_total / 1024 / 1024,
-        "object_storage_gb": object_total / 1024 / 1024
-    }
-```
+- **Start small**: Begin with essential data only
+- **Monitor usage**: Track storage costs and access patterns
+- **Use appropriate TTL**: Match expiration to business needs
+- **Scale gradually**: Add memory features as you understand usage patterns
+
+Common TTL patterns:
+- Chat sessions: 1-4 hours
+- Daily summaries: 24-48 hours
+- User preferences: No TTL (permanent)
+- Temporary calculations: 5-15 minutes
 
 ### Memory Cleanup Patterns
 
@@ -1144,28 +1125,24 @@ agentuity dev
 
 As your agents grow, consider these scaling strategies:
 
-### Hybrid Memory Architecture
-- **Hot data** in KV storage (recent interactions)
-- **Warm data** in vector storage (searchable history)
-- **Cold data** in object storage (archives)
+### Memory Access Patterns
+- **Frequently accessed data**: KV storage (recent interactions, user profiles)
+- **Searchable data**: Vector storage (conversation history, knowledge base)
+- **Archived data**: Object storage (old files, backups)
 
-### Memory Sharding
-- Partition by user ID or tenant
-- Distribute across namespaces
-- Implement consistent hashing for even distribution
+### Organizing Memory at Scale
 
-### Caching Strategies
-- Cache frequent queries in KV with short TTL
-- Pre-compute common aggregations
-- Use edge caching for read-heavy workloads
+**Data Partitioning**: Use user IDs or tenant IDs to organize data in separate namespaces, keeping user data isolated.
+
+**Smart Caching**: Use KV storage with short TTL (5-15 minutes) for expensive computations that might be repeated.
 
 ## Key Takeaways
 
 - **Memory transforms agents** from stateless functions to learning systems
-- **Choose the right storage**: KV for structure, Vector for semantic, Object for files
-- **Implement retention policies**: Not all memory should be permanent
-- **Design for scale**: Plan your memory architecture for growth
-- **Privacy matters**: Always consider data retention regulations
+- **Choose the right storage**: KV for data, Vector for search, Object for files
+- **TTL is key**: Use appropriate expiration times for different data types
+- **Start simple**: Begin with basic patterns, add complexity as needed
+- **Organize by user**: Keep data properly partitioned and isolated
 
 ## What's Next?
 

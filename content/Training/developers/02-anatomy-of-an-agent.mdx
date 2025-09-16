@@ -11,12 +11,12 @@ Every agent interaction follows a predictable lifecycle, from receiving a trigge
 
 <Mermaid chart="
 graph TD
-    Trigger[Trigger Event] --> Request[Request Object]
-    Request --> Handler[Agent Handler]
-    Handler --> Context[Context & Storage]
-    Handler --> Process[Process Logic]
-    Process --> Response[Response Object]
-    Response --> Output[Return to Caller]
+    A[Trigger Event<br/>HTTP, Cron, Email, etc.] --> B[Parse Request<br/>Extract data and metadata]
+    B --> C[Agent Handler<br/>Your agent/run function executes]
+    C --> D[Process Logic<br/>Business logic and decisions]
+    D --> E[Access Storage<br/>KV, Vector, Object store]
+    E --> F[Generate Response<br/>JSON, text, binary, etc. or handoff to another agent]
+    F --> G[Return to Caller<br/>Client receives result]
 " />
 
 Let's explore each phase:
@@ -225,306 +225,159 @@ What separates agents from simple scripts is their ability to plan and reason. W
 
 ### The Planning Phase
 
-Planning involves breaking down a complex request into manageable steps:
+Planning is how agents break down complex requests into actionable steps. According to [OpenAI's practical guide to building agents](https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf), providing smaller, clearer steps from dense resources helps minimize ambiguity and helps the model better follow instructions. Effective agent planning involves:
 
-<CodeExample py={`async def create_plan(request_data, context):
-    """Create an execution plan based on the request."""
-    
-    # Analyze what the user wants
-    intent = analyze_intent(request_data)
-    
-    # Break down into steps
-    steps = []
-    
-    if intent == "research":
-        steps.append({"action": "search", "params": request_data["query"]})
-        steps.append({"action": "summarize", "params": "search_results"})
-        steps.append({"action": "format", "params": "summary"})
-    
-    elif intent == "process_data":
-        steps.append({"action": "validate", "params": request_data["data"]})
-        steps.append({"action": "transform", "params": "validated_data"})
-        steps.append({"action": "store", "params": "transformed_data"})
-    
-    context.logger.info(f"Created plan with {len(steps)} steps")
-    return steps
+1. **Intent Recognition**: Understanding what the user actually wants
+2. **Task Decomposition**: Breaking complex requests into smaller steps
+3. **Resource Assessment**: Determining what tools and data are needed
+4. **Execution Strategy**: Deciding the order and approach for each step
 
-async def run(request, response, context):
-    data = await request.data.json()
-    
-    # Create a plan
-    plan = await create_plan(data, context)
-    
-    # Execute the plan
-    results = []
-    for step in plan:
-        context.logger.info(f"Executing: {step['action']}")
-        result = await execute_step(step, context)
-        results.append(result)
-    
-    return response.json({"plan": plan, "results": results})`} js={`async function createPlan(requestData: any, context: any) {
-  // Analyze what the user wants
-  const intent = analyzeIntent(requestData);
-  
-  // Break down into steps
-  const steps = [];
-  
-  if (intent === 'research') {
-    steps.push({ action: 'search', params: requestData.query });
-    steps.push({ action: 'summarize', params: 'search_results' });
-    steps.push({ action: 'format', params: 'summary' });
-  
-  } else if (intent === 'process_data') {
-    steps.push({ action: 'validate', params: requestData.data });
-    steps.push({ action: 'transform', params: 'validated_data' });
-    steps.push({ action: 'store', params: 'transformed_data' });
-  }
-  
-  context.logger.info(\`Created plan with \${steps.length} steps\`);
-  return steps;
-}
-
-const handler: AgentHandler = async (request, response, context) => {
-  const data = await request.data.json();
-  
-  // Create a plan
-  const plan = await createPlan(data, context);
-  
-  // Execute the plan
-  const results = [];
-  for (const step of plan) {
-    context.logger.info(\`Executing: \${step.action}\`);
-    const result = await executeStep(step, context);
-    results.push(result);
-  }
-  
-  return response.json({ plan, results });
-};`} />
+Modern agents use LLMs for dynamic planning rather than hard-coded decision trees, allowing them to adapt their approach based on context and available resources.
 
 ### The Reasoning Loop
 
-The reasoning loop is where agents adapt based on results:
+The reasoning loop is where agents continuously evaluate and adapt their approach. [Stanford's research on ReAct agents](https://arxiv.org/abs/2210.03629) shows that combining reasoning and acting in iterative loops significantly improves agent performance.
 
-<CodeExample py={`async def reasoning_loop(goal, context, max_iterations=5):
-    """Execute a reasoning loop until the goal is achieved."""
-    
-    iteration = 0
-    achieved = False
-    history = []
-    
-    while iteration < max_iterations and not achieved:
-        context.logger.info(f"Reasoning iteration {iteration + 1}")
-        
-        # Plan the next action
-        action = await plan_next_action(goal, history, context)
-        
-        # Execute the action
-        result = await execute_action(action, context)
-        
-        # Observe the result
-        observation = await observe_result(result, goal, context)
-        
-        # Store in history
-        history.append({
-            "action": action,
-            "result": result,
-            "observation": observation
-        })
-        
-        # Check if goal is achieved
-        achieved = observation.get("goal_achieved", False)
-        
-        # Adapt if needed
-        if not achieved and observation.get("needs_adjustment"):
-            goal = await adjust_goal(goal, observation, context)
-        
-        iteration += 1
-    
-    return {
-        "achieved": achieved,
-        "iterations": iteration,
-        "history": history
-    }`} js={`async function reasoningLoop(goal: any, context: any, maxIterations = 5) {
-  let iteration = 0;
-  let achieved = false;
-  const history = [];
-  
-  while (iteration < maxIterations && !achieved) {
-    context.logger.info(\`Reasoning iteration \${iteration + 1}\`);
-    
-    // Plan the next action
-    const action = await planNextAction(goal, history, context);
-    
-    // Execute the action
-    const result = await executeAction(action, context);
-    
-    // Observe the result
-    const observation = await observeResult(result, goal, context);
-    
-    // Store in history
-    history.push({
-      action,
-      result,
-      observation
-    });
-    
-    // Check if goal is achieved
-    achieved = observation.goal_achieved || false;
-    
-    // Adapt if needed
-    if (!achieved && observation.needs_adjustment) {
-      goal = await adjustGoal(goal, observation, context);
-    }
-    
-    iteration++;
-  }
-  
-  return {
-    achieved,
-    iterations: iteration,
-    history
-  };
-}`} />
+The basic pattern follows:
+1. **Observe**: Analyze current state and available information
+2. **Think**: Reason about the best next action
+3. **Act**: Execute the chosen action
+4. **Reflect**: Evaluate the results and learn
+5. **Repeat**: Continue until goal is achieved or constraints are met
+
+This iterative approach allows agents to handle uncertainty and recover from errors - key capabilities that distinguish agents from simple scripts.
 
 ## Tool Invocation: Extending Agent Capabilities
 
-Agents become powerful when they can use tools. Tools can be APIs, databases, or even other agents:
+Agents become powerful when they can use external tools and services:
 
 <CodeExample py={`import httpx
+import os
 from typing import Dict, Any
 
-class AgentTools:
-    """Collection of tools available to the agent."""
-    
-    @staticmethod
-    async def web_search(query: str) -> Dict[str, Any]:
-        """Search the web for information."""
+async def use_web_search(query: str, context) -> Dict[str, Any]:
+    """Search the web using a real API."""
+    try:
+        # Example using a hypothetical search API
+        api_key = os.getenv("SEARCH_API_KEY")
+        if not api_key:
+            context.logger.warn("No search API key found")
+            return {"error": "Search not available"}
+
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                "https://api.search.com/v1/search",
-                params={"q": query}
+                "https://api.searxng.org/search",
+                params={"q": query, "format": "json"}
             )
             return response.json()
-    
-    @staticmethod
-    async def calculate(expression: str) -> float:
-        """Perform mathematical calculations."""
-        # Safe evaluation of math expressions
-        import ast
-        import operator as op
-        
-        ops = {
-            ast.Add: op.add,
-            ast.Sub: op.sub,
-            ast.Mult: op.mul,
-            ast.Div: op.truediv,
-        }
-        
-        def eval_expr(expr):
-            return eval(compile(ast.parse(expr, mode='eval'), '', 'eval'))
-        
-        return eval_expr(expression)
-    
-    @staticmethod
-    async def send_email(to: str, subject: str, body: str) -> bool:
-        """Send an email."""
-        # Email sending logic
-        return True
+    except Exception as e:
+        context.logger.error(f"Search failed: {str(e)}")
+        return {"error": "Search failed"}
+
+async def call_another_agent(agent_name: str, data: dict, context) -> Dict[str, Any]:
+    """Call another agent within the same project."""
+    try:
+        agent = await context.getAgent({"name": agent_name})
+        result = await agent.run({
+            "data": data,
+            "contentType": "application/json"
+        })
+        return await result.data.json()
+    except Exception as e:
+        context.logger.error(f"Agent call failed: {str(e)}")
+        return {"error": "Agent call failed"}
 
 async def run(request, response, context):
     data = await request.data.json()
-    action = data.get("action")
-    
-    tools = AgentTools()
-    
-    if action == "research":
-        # Use web search tool
-        results = await tools.web_search(data["query"])
-        return response.json({"search_results": results})
-    
-    elif action == "calculate":
-        # Use calculator tool
-        result = await tools.calculate(data["expression"])
-        return response.json({"result": result})
-    
-    elif action == "notify":
-        # Use email tool
-        sent = await tools.send_email(
-            data["email"],
-            data["subject"],
-            data["message"]
-        )
-        return response.json({"sent": sent})`} js={`import axios from 'axios';
+    tool = data.get("tool")
 
-class AgentTools {
-  static async webSearch(query: string) {
-    const response = await axios.get('https://api.search.com/v1/search', {
-      params: { q: query }
+    if tool == "search":
+        result = await use_web_search(data["query"], context)
+    elif tool == "delegate":
+        result = await call_another_agent(data["agent"], data["task"], context)
+    else:
+        result = {"error": "Unknown tool"}
+
+    return response.json(result)`} js={`async function useWebSearch(query: string, context: any): Promise<any> {
+  try {
+    // Example using a hypothetical search API
+    const apiKey = process.env.SEARCH_API_KEY;
+    if (!apiKey) {
+      context.logger.warn('No search API key found');
+      return { error: 'Search not available' };
+    }
+
+    const response = await fetch('https://api.searxng.org/search?' +
+      new URLSearchParams({ q: query, format: 'json' }));
+    return await response.json();
+  } catch (error) {
+    context.logger.error(\`Search failed: \${error}\`);
+    return { error: 'Search failed' };
+  }
+}
+
+async function callAnotherAgent(agentName: string, data: any, context: any): Promise<any> {
+  try {
+    const agent = await context.getAgent({ name: agentName });
+    const result = await agent.run({
+      data,
+      contentType: 'application/json'
     });
-    return response.data;
-  }
-  
-  static async calculate(expression: string): Promise<number> {
-    // Use a safe math evaluation library
-    // This is a simplified example
-    return eval(expression); // In production, use a safe math parser
-  }
-  
-  static async sendEmail(to: string, subject: string, body: string): Promise<boolean> {
-    // Email sending logic
-    return true;
+    return await result.data.json();
+  } catch (error) {
+    context.logger.error(\`Agent call failed: \${error}\`);
+    return { error: 'Agent call failed' };
   }
 }
 
 const handler: AgentHandler = async (request, response, context) => {
   const data = await request.data.json();
-  const action = data.action;
-  
-  if (action === 'research') {
-    // Use web search tool
-    const results = await AgentTools.webSearch(data.query);
-    return response.json({ search_results: results });
-  
-  } else if (action === 'calculate') {
-    // Use calculator tool
-    const result = await AgentTools.calculate(data.expression);
-    return response.json({ result });
-  
-  } else if (action === 'notify') {
-    // Use email tool
-    const sent = await AgentTools.sendEmail(
-      data.email,
-      data.subject,
-      data.message
-    );
-    return response.json({ sent });
+  const tool = data.tool;
+
+  let result;
+  if (tool === 'search') {
+    result = await useWebSearch(data.query, context);
+  } else if (tool === 'delegate') {
+    result = await callAnotherAgent(data.agent, data.task, context);
+  } else {
+    result = { error: 'Unknown tool' };
   }
+
+  return response.json(result);
 };`} />
 
-## Memory Updates: Learning and Persistence
+## Memory Patterns: How Agents Remember
 
-Memory is what allows agents to learn and improve over time. Agentuity provides three types of memory storage:
+Memory enables agents to learn and maintain state across interactions. The duration and type of memory depends on your use case and TTL settings.
 
-### Short-term Memory (Key-Value)
-For session data, cache, and temporary state:
+### Session Memory
+For temporary data that should expire:
 
-<CodeExample py={`async def run(request, response, context):
+<CodeExample py={`from datetime import datetime
+
+async def run(request, response, context):
     session_id = request.metadata.get("session_id")
-    
-    # Store conversation context
+
+    # Store temporary session data with TTL
     await context.kv.set(
         "sessions",
         session_id,
         {
             "messages": [],
-            "context": {},
-            "timestamp": datetime.now().isoformat()
+            "user_preferences": {},
+            "started_at": datetime.now().isoformat()
         },
         {"ttl": 3600}  # Expires in 1 hour
-    )`} js={`const handler: AgentHandler = async (request, response, context) => {
+    )
+
+    # Retrieve session data
+    session_data = await context.kv.get("sessions", session_id)
+    if session_data.exists:
+        data = await session_data.data.json()
+        context.logger.info(f"Session active for {len(data['messages'])} messages")`} js={`const handler: AgentHandler = async (request, response, context) => {
   const sessionId = request.metadata.get('session_id');
-  
-  // Store conversation context
+
+  // Store temporary session data with TTL
   await context.kv.set(
     'sessions',
     sessionId,
@@ -537,42 +390,104 @@ For session data, cache, and temporary state:
   );
 };`} />
 
-### Long-term Memory (Vector Storage)
-For knowledge base and semantic search:
+### Persistent Memory
+For data that should survive restarts:
 
 <CodeExample py={`async def run(request, response, context):
-    # Store learned information
-    await context.vector.upsert("knowledge", {
-        "key": "fact_001",
-        "document": "Users prefer concise responses",
+    user_id = request.metadata.get("user_id")
+
+    # Store user preferences permanently (no TTL)
+    await context.kv.set(
+        "user_profiles",
+        user_id,
+        {
+            "name": "Alice",
+            "preferences": {"format": "concise"},
+            "created_at": datetime.now().isoformat()
+        }
+        # No TTL = permanent storage
+    )
+
+    # Store large files in object storage
+    await context.objectstore.put(
+        "user_documents",
+        f"{user_id}/resume.pdf",
+        pdf_bytes
+    )`} js={`const handler: AgentHandler = async (request, response, context) => {
+  const userId = request.metadata.get('user_id');
+
+  // Store user preferences permanently (no TTL)
+  await context.kv.set(
+    'user_profiles',
+    userId,
+    {
+      name: 'Alice',
+      preferences: { format: 'concise' },
+      created_at: new Date().toISOString()
+    }
+    // No TTL = permanent storage
+  );
+
+  // Store large files in object storage
+  await context.objectstore.put(
+    'user_documents',
+    \`\${userId}/resume.pdf\`,
+    pdfBytes
+  );
+};`} />
+
+### Searchable Memory
+For semantic search and knowledge retrieval:
+
+<CodeExample py={`async def run(request, response, context):
+    # Store searchable knowledge
+    await context.vector.upsert("knowledge", [{
+        "key": "user_feedback_001",
+        "document": "Users prefer concise responses with examples",
         "metadata": {
             "learned_from": "user_feedback",
-            "confidence": 0.85
+            "confidence": 0.85,
+            "category": "response_style"
         }
-    })
-    
-    # Retrieve relevant knowledge
+    }])
+
+    # Search for relevant knowledge
     results = await context.vector.search(
         "knowledge",
-        "How should I format responses?",
-        limit=5,
-        similarity=0.7
-    )`} js={`const handler: AgentHandler = async (request, response, context) => {
-  // Store learned information
-  await context.vector.upsert('knowledge', {
-    key: 'fact_001',
-    document: 'Users prefer concise responses',
+        "How should I format my responses?",
+        limit=5
+    )
+
+    # Use the knowledge to improve responses
+    if results:
+        context.logger.info(f"Found {len(results)} relevant insights")
+        for result in results:
+            context.logger.info(f"Insight: {result.document}")`} js={`const handler: AgentHandler = async (request, response, context) => {
+  // Store searchable knowledge
+  await context.vector.upsert('knowledge', [{
+    key: 'user_feedback_001',
+    document: 'Users prefer concise responses with examples',
     metadata: {
       learned_from: 'user_feedback',
-      confidence: 0.85
+      confidence: 0.85,
+      category: 'response_style'
     }
-  });
-  
-  // Retrieve relevant knowledge
-  const results = await context.vector.search('knowledge', {
-    query: 'How should I format responses?',
-    limit: 5
-  });
+  }]);
+
+  // Search for relevant knowledge
+  const results = await context.vector.search(
+    'knowledge',
+    'How should I format my responses?',
+    { limit: 5 }
+  );
+
+  // Use the knowledge to improve responses
+  if (results.length > 0) {
+    context.logger.info(\`Found \${results.length} relevant insights\`);
+    results.forEach(result => {
+      context.logger.info(\`Insight: \${result.document}\`);
+    });
+  }
 };`} />
 
 ## Framework Awareness: Choosing the Right Tool
@@ -585,12 +500,12 @@ Agentuity is framework-agnostic. You can use any AI framework or build custom ag
 
 Different frameworks excel at different tasks. Here's when to use each:
 
-| Framework | Best For | Agentuity Integration |
-|-----------|----------|----------------------|
-| **LangChain** | Complex chains, RAG applications | Native SDK support |
-| **CrewAI** | Multi-agent teams, role-based systems | Deploy via container |
-| **AutoGen** | Research, experimentation | Direct deployment |
-| **Custom** | Specific requirements, full control | Full platform features |
+| Framework | Best For | Language Support | Agentuity Integration |
+|-----------|----------|------------------|----------------------|
+| **LangChain** | Complex chains, RAG applications | Python, TypeScript | Native SDK support |
+| **CrewAI** | Multi-agent teams, role-based systems | Python | Container deployment |
+| **AutoGen** | Research, conversational AI | Python | Direct deployment |
+| **Custom** | Specific requirements, full control | Python, TypeScript, Bun | Full platform features |
 
 ### Framework Comparison Example
 
@@ -653,165 +568,202 @@ const handler: AgentHandler = async (request, response, context) => {
 
 ### When to Use Which Framework
 
-- **Use LangChain** when you need:
-  - Complex reasoning chains
-  - RAG (Retrieval Augmented Generation)
-  - Extensive tool integration
-  - Well-documented patterns
+| Framework | Use When You Need | Avoid When You Need |
+|-----------|-------------------|-------------------|
+| **LangChain** | Complex reasoning chains, RAG applications, extensive data integrations | Simple agents, minimal dependencies, lightweight solutions |
+| **CrewAI** | Multi-agent teams, role-based collaboration, specialized workflows | Single-agent tasks, simple request-response patterns |
+| **AutoGen** | Conversational AI, research applications, experimental workflows | Production deployments, strict performance requirements |
+| **Custom** | Full control, specific requirements, optimized performance | Rapid prototyping, standard use cases, extensive tooling needs |
 
-- **Use CrewAI** when you need:
-  - Multiple specialized agents
-  - Role-based collaboration
-  - Hierarchical task delegation
+## Lab: Building a Weather Agent with Multiple Triggers
 
-- **Use Custom** when you need:
-  - Maximum performance
-  - Specific business logic
-  - Full control over behavior
-  - Minimal dependencies
-
-## Lab: Building a Multi-Trigger Agent
-
-Let's put it all together by building an agent that responds to multiple triggers. We'll test it using DevMode's web interface:
+Let's build an agent that demonstrates different behaviors based on how it's triggered. This weather agent will show you how the same code can serve different purposes:
 
 <CodeExample py={`from datetime import datetime
-import json
 
 async def run(request, response, context):
-    """An agent that handles multiple trigger types."""
-    
+    """Weather agent with different trigger behaviors."""
+
     trigger = request.trigger
-    context.logger.info(f"Agent triggered via: {trigger}")
-    
+    context.logger.info(f"Weather agent triggered via: {trigger}")
+
     if trigger == "webhook":
-        # Handle API requests
-        data = await request.data.json()
-        
-        # Process based on action
-        action = data.get("action")
-        if action == "store":
-            # Store data in KV
-            await context.kv.set("data", data["key"], data["value"])
-            return response.json({"status": "stored", "key": data["key"]})
-        
-        elif action == "retrieve":
-            # Get from KV
-            result = await context.kv.get("data", data["key"])
-            if result.exists:
-                value = await result.data.json()
-                return response.json({"found": True, "value": value})
-    elif trigger == "cron":
-        # Scheduled cleanup task
-        context.logger.info("Running scheduled cleanup")
-        
-        # Clean old sessions (in production, iterate through keys)
-        await context.kv.delete("sessions", "old_session")
-        
-        # Generate report
-        report = {
-            "task": "cleanup",
-            "timestamp": datetime.now().isoformat(),
-            "status": "completed"
+        # Manual requests for specific cities
+        try:
+            data = await request.data.json()
+            city = data.get("city", "London")
+        except:
+            city = await request.data.text() or "London"
+
+        context.logger.info(f"Manual weather request for: {city}")
+
+        # Check cache first (10 minutes TTL)
+        cache_key = f"weather_{city.lower()}"
+        cached = await context.kv.get("weather_cache", cache_key)
+
+        if cached.exists:
+            weather = await cached.data.json()
+            context.logger.info(f"Returning cached weather for {city}")
+            return response.json({
+                **weather,
+                "cached": True,
+                "cache_age_minutes": 5  # Mock age
+            })
+
+        # Mock weather data (in production, call real API)
+        weather = {
+            "city": city,
+            "temperature": 22,
+            "description": "partly cloudy",
+            "humidity": 65,
+            "timestamp": datetime.now().isoformat()
         }
-        
-        # Store report
-        await context.kv.set("reports", "latest_cleanup", report)
-        return response.json(report)
-    
-    elif trigger == "agent":
-        # Handle agent-to-agent communication
-        data = await request.data.json()
-        
-        # Process request from another agent
-        result = f"Processed request from agent: {data}"
-        
-        return response.json({"result": result})
-    
+
+        # Cache for 10 minutes
+        await context.kv.set("weather_cache", cache_key, weather, {"ttl": 600})
+
+        return response.json({**weather, "cached": False})
+
+    elif trigger == "cron":
+        # Batch update for major cities
+        cities = ["London", "New York", "Tokyo", "Sydney"]
+        context.logger.info(f"Cron job: Updating weather for {len(cities)} cities")
+
+        weather_data = {}
+        for city in cities:
+            # Mock weather data
+            weather_data[city] = {
+                "temperature": 20 + hash(city) % 15,  # Mock variation
+                "description": "sunny",
+                "updated": datetime.now().isoformat()
+            }
+
+        # Store daily weather report
+        await context.kv.set("weather_reports", "daily", weather_data, {"ttl": 86400})
+
+        return response.json({
+            "task": "weather_update",
+            "cities_updated": len(cities),
+            "timestamp": datetime.now().isoformat()
+        })
+
+    elif trigger == "manual":
+        # DevMode testing - show available commands
+        return response.json({
+            "message": "Weather Agent DevMode",
+            "commands": [
+                "Test webhook: POST {\"city\": \"Paris\"}",
+                "Test cron: Use simulate button in DevMode"
+            ],
+            "current_time": datetime.now().isoformat()
+        })
+
     else:
         return response.json({
-            "error": f"Unknown trigger type: {trigger}"
+            "error": f"Unsupported trigger: {trigger}",
+            "supported": ["webhook", "cron", "manual"]
         })`} js={`const handler: AgentHandler = async (request, response, context) => {
   const trigger = request.trigger;
-  context.logger.info(\`Agent triggered via: \${trigger}\`);
-  
+  context.logger.info(\`Weather agent triggered via: \${trigger}\`);
+
   if (trigger === 'webhook') {
-    // Handle API requests
-    const data = await request.data.json();
-    
-    // Process based on action
-    const action = data.action;
-    if (action === 'store') {
-      // Store data in KV
-      await context.kv.set('data', data.key, JSON.stringify(data.value));
-      return response.json({ status: 'stored', key: data.key });
-    
-    } else if (action === 'retrieve') {
-      // Get from KV
-      const result = await context.kv.get('data', data.key);
-      if (result.exists) {
-        const value = await result.data.json();
-        return response.json({ found: true, value });
-      }
-      return response.json({ found: false });
+    // Manual requests for specific cities
+    let city = 'London';
+    try {
+      const data = await request.data.json();
+      city = data.city || 'London';
+    } catch {
+      city = await request.data.text() || 'London';
     }
-    
-    // Handle DevMode simulation of cron for testing
-    if (data._simulate_cron) {
-      context.logger.info('Simulating cron trigger in DevMode');
-      // Run the same cleanup logic
-      const report = {
-        task: 'cleanup (simulated)',
-        timestamp: new Date().toISOString(),
-        status: 'completed'
-      };
-      return response.json(report);
+
+    context.logger.info(\`Manual weather request for: \${city}\`);
+
+    // Check cache first (10 minutes TTL)
+    const cacheKey = \`weather_\${city.toLowerCase()}\`;
+    const cached = await context.kv.get('weather_cache', cacheKey);
+
+    if (cached.exists) {
+      const weather = await cached.data.json();
+      context.logger.info(\`Returning cached weather for \${city}\`);
+      return response.json({
+        ...weather,
+        cached: true,
+        cache_age_minutes: 5  // Mock age
+      });
     }
-  
-  } else if (trigger === 'cron') {
-    // Scheduled cleanup task
-    context.logger.info('Running scheduled cleanup');
-    
-    // Clean old sessions
-    await context.kv.delete('sessions', 'old_session');
-    
-    // Generate report
-    const report = {
-      task: 'cleanup',
-      timestamp: new Date().toISOString(),
-      status: 'completed'
+
+    // Mock weather data (in production, call real API)
+    const weather = {
+      city,
+      temperature: 22,
+      description: 'partly cloudy',
+      humidity: 65,
+      timestamp: new Date().toISOString()
     };
-    
-    // Store report
-    await context.kv.set('reports', 'latest_cleanup', JSON.stringify(report));
-    return response.json(report);
-  
-  } else if (trigger === 'agent') {
-    // Handle agent-to-agent communication
-    const data = await request.data.json();
-    
-    // Process request from another agent
-    const result = \`Processed request from agent: \${JSON.stringify(data)}\`;
-    
-    return response.json({ result });
-  
+
+    // Cache for 10 minutes
+    await context.kv.set('weather_cache', cacheKey, weather, { ttl: 600 });
+
+    return response.json({ ...weather, cached: false });
+
+  } else if (trigger === 'cron') {
+    // Batch update for major cities
+    const cities = ['London', 'New York', 'Tokyo', 'Sydney'];
+    context.logger.info(\`Cron job: Updating weather for \${cities.length} cities\`);
+
+    const weatherData: Record<string, any> = {};
+    cities.forEach(city => {
+      // Mock weather data with variation
+      weatherData[city] = {
+        temperature: 20 + (city.length % 15),  // Mock variation
+        description: 'sunny',
+        updated: new Date().toISOString()
+      };
+    });
+
+    // Store daily weather report
+    await context.kv.set('weather_reports', 'daily', weatherData, { ttl: 86400 });
+
+    return response.json({
+      task: 'weather_update',
+      cities_updated: cities.length,
+      timestamp: new Date().toISOString()
+    });
+
+  } else if (trigger === 'manual') {
+    // DevMode testing - show available commands
+    return response.json({
+      message: 'Weather Agent DevMode',
+      commands: [
+        'Test webhook: POST {"city": "Paris"}',
+        'Test cron: Use simulate button in DevMode'
+      ],
+      current_time: new Date().toISOString()
+    });
+
   } else {
     return response.json({
-      error: \`Unknown trigger type: \${trigger}\`
+      error: \`Unsupported trigger: \${trigger}\`,
+      supported: ['webhook', 'cron', 'manual']
     });
   }
-};
+};`} />
 
-export default handler;`} />
-
-### Testing Your Multi-Trigger Agent
+### Testing Your Weather Agent
 
 <Callout type="info">
-DevMode makes it easy to test webhook triggers locally. For cron triggers, you can simulate them in DevMode or configure real schedules through the Agentuity Console.
+DevMode makes it easy to test all trigger types. You can simulate webhooks, test manual triggers, and even simulate cron jobs through the interface.
 </Callout>
 
-#### Setting Up Test Scenarios
+#### What This Agent Demonstrates
 
-First, enhance your agent with a `welcome()` function to create test scenarios:
+- **Webhook trigger**: Handles real-time weather requests with caching
+- **Cron trigger**: Batch updates for multiple cities
+- **Manual trigger**: DevMode testing and debugging interface
+- **Caching strategy**: Uses TTL to balance freshness and performance
+- **Error handling**: Graceful fallbacks for different input types
+
+Try calling this agent with different cities and watch how it caches responses for efficiency!
 
 <CodeExample py={`def welcome():
     """Configure test scenarios for different trigger types."""
@@ -900,7 +852,8 @@ Effective cost optimization strategies include:
 
 - **Cache frequently used data** in KV storage to reduce repeated processing
 - **Batch operations** when possible to minimize API calls
-- **Use appropriate LLM models** - not everything needs GPT-4
+- **Use appropriate LLM models** - use reasoning models (like GPT-4) only when you need complex reasoning
+- **Consider fast inference providers** - Groq offers high-speed inference for many models
 - **Implement early exits** in reasoning loops to avoid unnecessary iterations
 
 ### Latency vs. Capability Trade-offs
@@ -956,18 +909,18 @@ Effective cost optimization strategies include:
 - **Multiple trigger types**: Choose the right trigger for your use case
 - **Context is powerful**: It provides access to all Agentuity services
 - **Frameworks are tools**: Pick the right one for your needs, or go custom
-- **Memory enables learning**: Use KV for short-term, Vector for long-term
+- **Memory patterns matter**: Session data (TTL), persistent data (no TTL), searchable knowledge (Vector)
 - **Performance matters**: Balance capability with cost and latency
 
 ## What's Next?
 
 You now understand the core components that make agents work. In the next module, we'll dive deep into memory systems - how agents remember, learn, and improve over time.
 
-But first, experiment with the multi-trigger agent:
-- Add a new trigger type (email or SMS)
-- Implement a simple reasoning loop
-- Try different response formats
-- Connect two agents together
+But first, experiment with the weather agent:
+- Test it with different cities
+- Try the caching behavior with repeated requests
+- Add new cities to the cron batch update
+- Modify the cache TTL and observe the difference
 
 Remember: The anatomy you've learned here is the foundation. The intelligence you add on top is what makes your agents unique.
 
