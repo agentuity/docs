@@ -1,9 +1,0 @@
-[project]
-name = "tutorial-hello-world-py"
-version = "0.1.0"
-description = "A python version of a hello world agent"
-requires-python = ">=3.10, <3.13"
-dependencies = [
-    "agentuity>=0.0.106",
-    "openai>=1.107.0",
-]
