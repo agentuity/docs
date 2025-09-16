@@ -3,7 +3,9 @@ title: Agent Data Handling
 description: How to handle data formats in your agents
 ---
 
-We provide a few different ways to handle data formats in your agents to make it easier to work with different data types.  Of course, your agent can always perform its own data handling by use the raw data and the content type property.  However, most common data types are supported out of the box.
+## Overview
+
+We provide a few different ways to handle data formats in your agents to make it easier to work with different data types. Of course, your agent can always perform its own data handling by using the raw data and the content type property. However, most common data types are supported out of the box.
 
 ## How it works
 
@@ -37,16 +39,16 @@ export default async function Agent(
 }`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-   contentType = request.data.contentType
-        if contentType == 'text/plain':
-            text = await request.data.text()
-            # do something with the text
-        elif contentType == 'application/json':
-            json = await request.data.json()
-            # do something with the json
-        else:
-            # do something with the data
-            pass
+    contentType = request.data.contentType
+    if contentType == 'text/plain':
+        text = await request.data.text()
+        # do something with the text
+    elif contentType == 'application/json':
+        json = await request.data.json()
+        # do something with the json
+    else:
+        # do something with the data
+        pass
 `} />
 
 ## Request Data Formats
@@ -55,7 +57,7 @@ The following request data formats are supported out of the box:
 
 ### Text
 
-You use use the `text` method on the `Data` object to get the raw text data.
+You can use the `text` method on the `Data` object to get the raw text data.
 
 <CodeExample js={`import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
 
@@ -442,7 +444,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     chat_completion = client.chat.completions.create(
         messages=[
             {"role": "system", "content": "You are a friendly assistant!"},
-            {"role": "user", "content": request.data.text or "Why is the sky blue?"},
+            {"role": "user", "content": (await request.data.text()) or "Why is the sky blue?"},
         ],
         model="gpt-4o",
         stream=True,

@@ -3,6 +3,8 @@ title: Agent Tracing
 description: Understanding how to use tracing in your agents
 ---
 
+## Overview
+
 Agent tracing provides deep visibility into your agent's execution flow, performance, and behavior using OpenTelemetry. This enables debugging, performance monitoring, and understanding complex agent workflows.
 
 **Key benefits:**
@@ -96,7 +98,7 @@ import { SpanStatusCode } from '@opentelemetry/api';
 const handler: AgentHandler = async (request, response, context) => {
   return context.tracer.startActiveSpan('agent-request', async (parentSpan) => {
     try {
-      parentSpan.setAttribute('trigger', request.trigger());
+      parentSpan.setAttribute('trigger', request.trigger);
       const data = await request.data.json();
       
       // Create child span for data processing

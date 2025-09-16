@@ -26,7 +26,7 @@ description: How to use streaming in your agents
 └────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Real-World Use Cases
+### Real-World Use Cases
 
 - **Live chat / customer support.** Stream the assistant's words as they are generated for a more natural feel.
 - **Speech-to-text.** Pipe microphone audio into a transcription agent and forward captions to the UI in real time.
@@ -70,7 +70,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     chat_completion = client.chat.completions.create(
         messages=[
             {"role": "system", "content": "You are a friendly assistant!"},
-            {"role": "user", "content": request.data.text or "Why is the sky blue?"},
+            {"role": "user", "content": (await request.data.text()) or "Why is the sky blue?"},
         ],
         model="gpt-4o",
         stream=True,

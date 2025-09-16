@@ -38,14 +38,14 @@ Both JavaScript and Python SDKs automatically create key-value storage when you 
 <CodeExample js={`// JavaScript/TypeScript
 import { AgentHandler } from '@agentuity/sdk';
 
-const handler: AgentHandler = async (request, response, context) => {
-  // Storage is created automatically on first use
-  await context.kv.set('user-sessions', 'user-123', {
+const handler: AgentHandler = async (req, resp, ctx) => {
+  // Buckets are auto-created if they don't exist
+  await ctx.kv.set('user-sessions', 'user-123', {
     lastSeen: new Date().toISOString(),
     preferences: { theme: 'dark' }
   });
   
-  return response.json({ message: 'Session stored' });
+  return resp.json({ message: 'Session stored' });
 };
 
 export default handler;`} py={`# Python
@@ -66,46 +66,59 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
 
 The key-value API provides three core operations: `get`, `set`, and `delete`. All operations are asynchronous and support various data types.
 
+The first parameter in all operations is the storage bucket name (also called "name" or "namespace"). Buckets are automatically created when you first use them.
+
 ### Storing Data
 
-Store strings, objects, or binary data with optional TTL (time-to-live):
+Store strings, objects, or binary data. Keys persist indefinitely by default, or you can set a TTL (time-to-live) for automatic expiration:
 
-<CodeExample js={`// Store a string
-await context.kv.set('cache', 'api-response', responseData);
+<CodeExample js={`// Simple store
+await ctx.kv.set('cache', 'api-response', responseData);
 
-// Store an object (automatically serialized)
-await context.kv.set('user-prefs', userId, {
+// Store an object
+await ctx.kv.set('user-prefs', userId, {
   language: 'en',
   timezone: 'UTC'
 });
 
 // Store with TTL (expires after 1 hour)
-await context.kv.set('sessions', sessionId, userData, 3600);
+await ctx.kv.set('sessions', sessionId, userData, { 
+  ttl: 3600,  // seconds
+  contentType: 'application/json'
+});
 
-// Store binary data
-const buffer = Buffer.from('binary data');
-await context.kv.set('files', 'document.pdf', buffer);`} py={`# Store a string
+// Store feature flags (no TTL - persistent config)
+await ctx.kv.set('feature-flags', 'beta-features', {
+  darkMode: true,
+  aiAssistant: false,
+  newDashboard: true
+});`} py={`# Simple store
 await context.kv.set("cache", "api-response", response_data)
 
-# Store an object (automatically serialized)
+# Store an object
 await context.kv.set("user-prefs", user_id, {
     "language": "en",
     "timezone": "UTC"
 })
 
 # Store with TTL (expires after 1 hour)
-await context.kv.set("sessions", session_id, user_data, {"ttl": 3600})
+await context.kv.set("sessions", session_id, user_data, {
+    "ttl": 3600  # seconds
+})
 
-# Store binary data
-binary_data = b"binary data"
-await context.kv.set("files", "document.pdf", binary_data)`} />
+# Store feature flags (no TTL - persistent config)
+await context.kv.set("feature-flags", "beta-features", {
+    "darkMode": True,
+    "aiAssistant": False,
+    "newDashboard": True
+})`} />
 
 ### Retrieving Data
 
 Retrieve stored values with automatic deserialization:
 
 <CodeExample js={`// Get a value
-const result = await context.kv.get('user-prefs', userId);
+const result = await ctx.kv.get('user-prefs', userId);
 
 if (result.exists) {
   // Access data using the Data interface
@@ -116,8 +129,8 @@ if (result.exists) {
 }
 
 // Handle missing keys gracefully
-const result = await context.kv.get('config', 'app-settings');
-const config = result.exists ? await result.data.json() : defaultConfig;`} py={`# Get a value
+const configResult = await ctx.kv.get('config', 'app-settings');
+const config = configResult.exists ? await configResult.data.json() : defaultConfig;`} py={`# Get a value
 result = await context.kv.get("user-prefs", user_id)
 
 if result.exists:
@@ -136,7 +149,7 @@ config = await result.data.json() if result.exists else default_config`} />
 Remove keys when they're no longer needed:
 
 <CodeExample js={`// Delete a single key
-await context.kv.delete('sessions', sessionId);
+await ctx.kv.delete('sessions', sessionId);
 console.log('Session deleted successfully');`} py={`# Delete a single key
 await context.kv.delete("sessions", session_id)
 print("Session deleted successfully")`} />
@@ -155,13 +168,13 @@ Use hierarchical, descriptive keys to organize your data:
 Always handle potential storage errors gracefully:
 
 <CodeExample js={`try {
-  const result = await context.kv.get('config', 'settings');
+  const result = await ctx.kv.get('config', 'settings');
   if (!result.exists) {
     // Initialize with defaults
-    await context.kv.set('config', 'settings', defaultSettings);
+    await ctx.kv.set('config', 'settings', defaultSettings);
   }
 } catch (error) {
-  context.logger.error('Storage error:', error);
+  ctx.logger.error('Storage error:', error);
   // Fall back to in-memory defaults
 }`} py={`try:
     result = await context.kv.get("config", "settings")
@@ -174,10 +187,13 @@ except Exception as e:
 
 ### TTL Strategy
 
+Keys persist indefinitely by default unless you specify a TTL (time-to-live) value. When you do specify a TTL, the minimum allowed value is 60 seconds.
+
 Use TTL for temporary data to prevent storage bloat:
 - **Session data**: 24-48 hours
 - **API cache**: 5-60 minutes
-- **Rate limiting counters**: Until period reset
+- **Rate-limiting counters**: Until period reset
+- **Permanent config**: No TTL (keys persist forever)
 
 ### Data Size Considerations
 
