@@ -1,4 +1,6 @@
-import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
+type AgentContext = any;
+type AgentRequest = any;
+type AgentResponse = any;
 import answerQuestion from './rag';
 
 export default async function Agent(

@@ -1,4 +1,4 @@
-import type { VectorUpsertParams } from '@agentuity/sdk';
+type VectorUpsertParams = any;
 import type { Chunk } from './chunk-mdx';
 import { chunkAndEnrichDoc } from './chunk-mdx';
 import { embedChunks } from './embed-chunks';

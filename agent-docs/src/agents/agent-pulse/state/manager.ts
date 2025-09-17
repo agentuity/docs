@@ -1,4 +1,4 @@
-import type { AgentContext } from "@agentuity/sdk";
+type AgentContext = any;
 import { ActionType, type AgentState } from "../state";
 import { getTutorialStep } from "../tutorial";
 import type { TutorialData } from "../streaming/types";
@@ -51,4 +51,4 @@ export async function handleTutorialState(
     ctx.logger.error("Failed to handle tutorial state: %s", error instanceof Error ? error.message : String(error));
     throw error; // Re-throw for centralized handling
   }
-} 
+}  

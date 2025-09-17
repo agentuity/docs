@@ -1,4 +1,4 @@
-import type { AgentContext } from '@agentuity/sdk';
+type AgentContext = any;
 
 const TUTORIAL_API_BASE_URL = process.env.TUTORIAL_API_URL;
 

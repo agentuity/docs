@@ -1,4 +1,6 @@
-import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
+type AgentContext = any;
+type AgentRequest = any;
+type AgentResponse = any;
 import { syncDocsFromPayload } from './docs-orchestrator';
 import type { SyncPayload } from './types';
 

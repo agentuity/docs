@@ -1,4 +1,6 @@
-import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+type AgentRequest = any;
+type AgentResponse = any;
+type AgentContext = any;
 import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { createTools } from "./tools";
@@ -119,7 +121,6 @@ export default async function Agent(
 				content: msg.content,
 			})),
 			tools,
-			maxSteps: 3,
 			system: systemPrompt,
 		});
 

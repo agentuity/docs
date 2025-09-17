@@ -1,4 +1,4 @@
-import type { AgentContext } from '@agentuity/sdk';
+type AgentContext = any;
 import { VECTOR_STORE_NAME } from '../../../config';
 import { processDoc } from './docs-processor';
 import type { SyncPayload, SyncStats } from './types';

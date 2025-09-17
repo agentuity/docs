@@ -2,7 +2,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import { ActionType } from "./state";
 import type { AgentState } from "./state";
-import type { AgentContext } from "@agentuity/sdk";
+type AgentContext = any;
 import { getTutorialMeta } from "./tutorial";
 
 /**
@@ -25,11 +25,12 @@ export async function createTools(context: ToolContext) {
      */
     const startTutorialAtStep = tool({
         description: "Start a specific tutorial for the user. You must call this function in order for the user to see the tutorial step content. The step number should be between 1 and the total number of steps in the tutorial.",
-        parameters: z.object({
+        inputSchema: z.object({
             tutorialId: z.string().describe("The exact ID of the tutorial to start"),
             stepNumber: z.number().describe("The step number of the tutorial to start (1 to total available steps in the tutorial)")
         }),
-        execute: async ({ tutorialId, stepNumber }) => {
+        execute: async (input: any, options: any) => {
+            const { tutorialId, stepNumber } = input;
             // Validate tutorial exists before starting
             const tutorialResponse = await getTutorialMeta(tutorialId, agentContext);
             if (!tutorialResponse.success || !tutorialResponse.data) {
@@ -58,10 +59,11 @@ export async function createTools(context: ToolContext) {
      */
     const askDocsAgentTool = tool({
         description: "Query the Agentuity Development Documentation agent using RAG (Retrieval Augmented Generation) to get relevant documentation and answers about the Agentuity platform, APIs, and development concepts",
-        parameters: z.object({
+        inputSchema: z.object({
             query: z.string().describe("The question or query to send to the query function"),
         }),
-        execute: async ({ query }) => {
+        execute: async (input: any, options: any) => {
+            const { query } = input;
             agentContext.logger.info("Querying agent %s with: %s", DOC_QA_AGENT_NAME, query);
             const agentPayload = {
                 message: query,
@@ -82,10 +84,11 @@ export async function createTools(context: ToolContext) {
      */
     const fetchCodeExecutionResultTool = tool({
         description: "Fetch code execution results from the frontend",
-        parameters: z.object({
+        inputSchema: z.object({
             executionId: z.string().describe("The ID of the code execution"),
         }),
-        execute: async ({ executionId }) => {
+        execute: async (input: any, options: any) => {
+            const { executionId } = input;
             agentContext.logger.info("Fetching execution result for: %s", executionId);
             // This would actually fetch execution results
             // For now, just return a mock response
@@ -100,4 +103,4 @@ export async function createTools(context: ToolContext) {
     };
 }
 
-export type { ToolContext }; 
+export type { ToolContext };              

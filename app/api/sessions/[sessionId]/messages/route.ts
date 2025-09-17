@@ -220,9 +220,14 @@ export async function POST(
     const agentConfig = getAgentPulseConfig();
     const agentUrl = agentConfig.url;
 
-    // Get current tutorial state for the user
-    const { TutorialStateManager } = await import('@/lib/tutorial/state-manager');
-    const currentTutorialState = await TutorialStateManager.getCurrentTutorialState(userId);
+    // Get current tutorial state for the user (conditional loading)
+    const { canLoadAgentCode } = await import('@/lib/env-detection');
+    let currentTutorialState = null;
+    
+    if (canLoadAgentCode()) {
+      const { TutorialStateManager } = await import('@/lib/tutorial/state-manager');
+      currentTutorialState = await TutorialStateManager.getCurrentTutorialState(userId);
+    }
 
     const agentPayload = {
       message: message.content,
@@ -275,13 +280,17 @@ export async function POST(
               } else if (data.type === "tutorial-data" && data.tutorialData) {
                 finalTutorialData = data.tutorialData;
 
-                // Update user's tutorial progress
-                await TutorialStateManager.updateTutorialProgress(
-                  userId,
-                  finalTutorialData.tutorialId,
-                  finalTutorialData.currentStep,
-                  finalTutorialData.totalSteps
-                );
+                // Update user's tutorial progress (conditional loading)
+                const { canLoadAgentCode } = await import('@/lib/env-detection');
+                if (canLoadAgentCode()) {
+                  const { TutorialStateManager } = await import('@/lib/tutorial/state-manager');
+                  await TutorialStateManager.updateTutorialProgress(
+                    userId,
+                    finalTutorialData.tutorialId,
+                    finalTutorialData.currentStep,
+                    finalTutorialData.totalSteps
+                  );
+                }
               } else if (data.type === "finish") {
                 // When the stream is finished, save the assistant message
                 const assistantMessage: Message = {

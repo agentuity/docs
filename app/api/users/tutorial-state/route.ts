@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TutorialStateManager } from '@/lib/tutorial/state-manager';
 import { setKVValue } from '@/lib/kv-store';
 import { config } from '@/lib/config';
 import { 
@@ -18,6 +17,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
     }
 
+    const { canLoadAgentCode } = await import('@/lib/env-detection');
+    if (!canLoadAgentCode()) {
+      return NextResponse.json({ error: 'Tutorial state not available in this environment' }, { status: 503 });
+    }
+    
+    const { TutorialStateManager } = await import('@/lib/tutorial/state-manager');
     const tutorialState = await TutorialStateManager.getUserTutorialState(userId);
 
     return NextResponse.json({
@@ -50,6 +55,12 @@ export async function POST(request: NextRequest) {
 
     const { tutorialId, currentStep, totalSteps } = validation.data;
 
+    const { canLoadAgentCode } = await import('@/lib/env-detection');
+    if (!canLoadAgentCode()) {
+      return NextResponse.json({ error: 'Tutorial state not available in this environment' }, { status: 503 });
+    }
+    
+    const { TutorialStateManager } = await import('@/lib/tutorial/state-manager');
     await TutorialStateManager.updateTutorialProgress(
       userId,
       tutorialId,
@@ -87,6 +98,12 @@ export async function DELETE(request: NextRequest) {
 
     const { tutorialId } = validation.data;
 
+    const { canLoadAgentCode } = await import('@/lib/env-detection');
+    if (!canLoadAgentCode()) {
+      return NextResponse.json({ error: 'Tutorial state not available in this environment' }, { status: 503 });
+    }
+    
+    const { TutorialStateManager } = await import('@/lib/tutorial/state-manager');
     const state = await TutorialStateManager.getUserTutorialState(userId);
     if (!state.tutorials) {
       state.tutorials = {};

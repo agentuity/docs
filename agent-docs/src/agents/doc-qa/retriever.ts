@@ -1,4 +1,4 @@
-import type { AgentContext } from '@agentuity/sdk';
+type AgentContext = any;
 
 import { VECTOR_STORE_NAME, vectorSearchNumber } from '../../../config';
 import type { RelevantDoc } from './types';

@@ -1,4 +1,4 @@
-import type { AgentContext } from '@agentuity/sdk';
+type AgentContext = any;
 import { openai } from '@ai-sdk/openai';
 import { generateObject } from 'ai';
 import { rephraseVaguePrompt } from './prompt';

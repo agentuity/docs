@@ -1,4 +1,4 @@
-import type { AgentContext } from "@agentuity/sdk";
+type AgentContext = any;
 import type { AgentState } from "../state";
 import type { StreamingChunk, TutorialData } from "./types";
 import { handleTutorialState } from "../state/manager";

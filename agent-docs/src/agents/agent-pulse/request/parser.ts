@@ -1,4 +1,4 @@
-import type { AgentContext } from "@agentuity/sdk";
+type AgentContext = any;
 import type { ParsedAgentRequest } from "./types";
 
 export function parseAgentRequest(

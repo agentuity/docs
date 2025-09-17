@@ -1,4 +1,4 @@
-import type { AgentContext } from "@agentuity/sdk";
+type AgentContext = any;
 
 export async function buildSystemPrompt(tutorialContext: string, ctx: AgentContext): Promise<string> {
   try {
@@ -51,4 +51,4 @@ Stream your reasoning steps clearly.`;
     ctx.logger.error("Failed to build system prompt: %s", error instanceof Error ? error.message : String(error));
     throw error; // Re-throw for centralized handling
   }
-} 
+}  
