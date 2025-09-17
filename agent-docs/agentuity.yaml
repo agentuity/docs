@@ -78,6 +78,3 @@ agents:
   - id: agent_9ccc5545e93644bd9d7954e632a55a61
     name: doc-qa
     description: Agent that can answer questions based on dev docs as the knowledge base
-  - id: agent_ddcb59aa4473f1323be5d9f5fb62b74e
-    name: agent-pulse
-    description: Agentuity web app agent that converses with users for generate conversation and structured docs tutorials.
