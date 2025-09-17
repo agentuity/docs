@@ -15,6 +15,35 @@ import { parseAndValidateJSON, SessionMessageRequestSchema } from "@/lib/validat
 const DEFAULT_CONVERSATION_HISTORY_LIMIT = 10;
 const AGENT_REQUEST_TIMEOUT = 30000; // 30 seconds
 
+
+function sanitizeTitle(input: string): string {
+  if (!input) return '';
+  let s = input.trim();
+  // Strip wrapping quotes/backticks
+  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith('\'') && s.endsWith('\'')) || (s.startsWith('`') && s.endsWith('`'))) {
+    s = s.slice(1, -1).trim();
+  }
+  // Remove markdown emphasis
+  s = s.replace(/\*\*([^*]+)\*\*|\*([^*]+)\*|__([^_]+)__|_([^_]+)_/g, (_m, a, b, c, d) => a || b || c || d || '');
+  // Remove emojis (basic unicode emoji ranges)
+  s = s.replace(/[\u{1F300}-\u{1FAFF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
+  // Collapse whitespace
+  s = s.replace(/\s+/g, ' ').trim();
+  // Sentence case
+  s = sentenceCase(s);
+  // Trim trailing punctuation noise
+  s = s.replace(/[\s\-–—:;,\.]+$/g, '').trim();
+  // Enforce 60 chars
+  if (s.length > 60) s = s.slice(0, 60).trim();
+  return s;
+}
+
+function sentenceCase(str: string): string {
+  if (!str) return '';
+  const lower = str.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
 /**
  * POST /api/sessions/[sessionId]/messages - Add a message to a session and process with streaming
  *
@@ -33,40 +62,12 @@ export async function POST(
     if (!userId) {
       return NextResponse.json({ error: "User ID not found" }, { status: 401 });
     }
-    // Helper: sanitize title per requirements
-    function sanitizeTitle(input: string): string {
-      if (!input) return '';
-      let s = input.trim();
-      // Strip wrapping quotes/backticks
-      if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith('\'') && s.endsWith('\'')) || (s.startsWith('`') && s.endsWith('`'))) {
-        s = s.slice(1, -1).trim();
-      }
-      // Remove markdown emphasis
-      s = s.replace(/\*\*([^*]+)\*\*|\*([^*]+)\*|__([^_]+)__|_([^_]+)_/g, (_m, a, b, c, d) => a || b || c || d || '');
-      // Remove emojis (basic unicode emoji ranges)
-      s = s.replace(/[\u{1F300}-\u{1FAFF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
-      // Collapse whitespace
-      s = s.replace(/\s+/g, ' ').trim();
-      // Sentence case
-      s = sentenceCase(s);
-      // Trim trailing punctuation noise
-      s = s.replace(/[\s\-–—:;,\.]+$/g, '').trim();
-      // Enforce 60 chars
-      if (s.length > 60) s = s.slice(0, 60).trim();
-      return s;
-    }
-
-    function sentenceCase(str: string): string {
-      if (!str) return '';
-      const lower = str.toLowerCase();
-      return lower.charAt(0).toUpperCase() + lower.slice(1);
-    }
 
     const paramsData = await params;
     const sessionId = paramsData.sessionId;
-    
+
     const validation = await parseAndValidateJSON(request, SessionMessageRequestSchema);
-    
+
     if (!validation.success) {
       return validation.response;
     }
@@ -165,7 +166,7 @@ export async function POST(
         if (current.title) return;
         current.title = title;
         await setKVValue(sessionKey, current, { storeName: config.defaultStoreName });
-        
+
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes('The operation was aborted') || msg.includes('aborted')) {
@@ -197,9 +198,9 @@ export async function POST(
         error instanceof Error && error.stack ? `Stack: ${error.stack}` : ''
       );
       return NextResponse.json(
-        { 
-          error: "Failed to save message to session", 
-          details: "Unable to persist the message. Please try again." 
+        {
+          error: "Failed to save message to session",
+          details: "Unable to persist the message. Please try again."
         },
         { status: 500 }
       );
@@ -222,7 +223,7 @@ export async function POST(
     // Get current tutorial state for the user
     const { TutorialStateManager } = await import('@/lib/tutorial/state-manager');
     const currentTutorialState = await TutorialStateManager.getCurrentTutorialState(userId);
-    
+
     const agentPayload = {
       message: message.content,
       conversationHistory: updatedSession.messages.slice(
@@ -273,7 +274,7 @@ export async function POST(
                 accumulatedContent += data.textDelta;
               } else if (data.type === "tutorial-data" && data.tutorialData) {
                 finalTutorialData = data.tutorialData;
-                
+
                 // Update user's tutorial progress
                 await TutorialStateManager.updateTutorialProgress(
                   userId,
