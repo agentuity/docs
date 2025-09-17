@@ -11,7 +11,3 @@ This is the technical documentation for the Agentuity Cloud, which covers:
 - And the different SDKs (/content/SDKs)
 
 This doc app is a NextJS app built on top of Fumadocs (https://fumadocs.vercel.app/docs/ui).
-
-This project also contains the agent the powers RAG and Tutorials. Those agents live in `/agent-docs` directory.
-To run the agent server locally, go into that directory with `cd agent-docs` and then start the agent with `agentuity dev`.
-To run the NextJS app, do `npm run dev` in the root of this repository. You will want to start these two apps in separate repositories.
