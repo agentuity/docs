@@ -11,7 +11,7 @@ export interface AgentConfig {
 import { config } from '@/lib/config';
 
 const buildAgentConfig = (agentId: string): AgentConfig => {
-  const baseUrl = process.env.AGENT_BASE_URL || config.baseUrl;
+  const baseUrl = process.env.AGENT_BASE_URL;
   const bearerToken = process.env.AGENT_BEARER_TOKEN;
 
   if (!baseUrl) {
@@ -29,7 +29,7 @@ const buildAgentConfig = (agentId: string): AgentConfig => {
   };
 };
 
-export const getAgentConfig = (): AgentConfig => {
+export const getAgentQaConfig = (): AgentConfig => {
   return buildAgentConfig(config.agentQaId);
 };
 
@@ -42,7 +42,7 @@ export const getAgentPulseConfig = (): AgentConfig => {
  */
 export const validateEnv = (): boolean => {
   try {
-    getAgentConfig();
+    getAgentQaConfig();
     console.log('✓ Environment variables validated');
     return true;
   } catch (error) {

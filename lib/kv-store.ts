@@ -59,7 +59,6 @@ export async function getKVValue<T = any>(
 
   try {
     const url = `${config.baseUrl}/sdk/kv/${encodeURIComponent(finalStoreName)}/${encodeURIComponent(key)}`;
-
     const response = await fetch(url, {
       method: 'GET',
       headers: {
