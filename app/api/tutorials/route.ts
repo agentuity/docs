@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { join } from 'path';
-import { readFile, readdir, stat } from 'fs/promises';
+import { readFile, stat } from 'fs/promises';
 import matter from 'gray-matter';
 
 export async function GET(request: NextRequest) {
@@ -9,10 +9,21 @@ export async function GET(request: NextRequest) {
     const tutorialRoot = join(repoRoot, 'content', 'Tutorial');
 
     // Use parent meta.json to control order and which tutorials show up
-    const parentMetaPath = join(tutorialRoot, 'meta.json');
-    const parentMetaRaw = await readFile(parentMetaPath, 'utf-8');
-    const parentMeta = JSON.parse(parentMetaRaw) as { title?: string; pages?: string[] };
-    const pages = (parentMeta.pages ?? []).filter(Boolean);
+    let pages: string[] = [];
+    try {
+      const parentMetaPath = join(tutorialRoot, 'meta.json');
+      const parentMetaRaw = await readFile(parentMetaPath, 'utf-8');
+      const parentMeta = JSON.parse(parentMetaRaw) as { title?: string; pages?: string[] };
+      pages = (parentMeta.pages ?? []).filter(Boolean);
+    } catch {
+      // If meta.json doesn't exist or is invalid, return empty array
+      return NextResponse.json([]);
+    }
+
+    // If no tutorials configured, return empty array
+    if (pages.length === 0) {
+      return NextResponse.json([]);
+    }
 
     const results: Array<{ id: string; title: string; description?: string; totalSteps: number }> = [];
 
