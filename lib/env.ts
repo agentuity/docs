@@ -6,17 +6,21 @@ export interface AgentConfig {
 	bearerToken?: string;
 }
 /**
- * Creates agent configuration from environment variables
+ * Builds agent configuration using non-secret IDs from config
  */
-const createAgentConfig = (agentIdKey: string): AgentConfig => {
-  const baseUrl = process.env.AGENT_BASE_URL;
-  const agentId = process.env[agentIdKey];
+import { config } from '@/lib/config';
+
+const buildAgentConfig = (agentId: string): AgentConfig => {
+  const baseUrl = process.env.AGENT_BASE_URL || config.baseUrl;
   const bearerToken = process.env.AGENT_BEARER_TOKEN;
 
-  if (!baseUrl || !agentId) {
+  if (!baseUrl) {
     throw new Error(
-      `Missing required environment variables. Set both AGENT_BASE_URL and ${agentIdKey}`
+      'Missing required configuration. Set AGENT_BASE_URL or ensure config.baseUrl is defined.'
     );
+  }
+  if (!agentId) {
+    throw new Error('Missing required agent ID in config');
   }
 
   return {
@@ -26,11 +30,11 @@ const createAgentConfig = (agentIdKey: string): AgentConfig => {
 };
 
 export const getAgentConfig = (): AgentConfig => {
-  return createAgentConfig('AGENT_QA_ID');
+  return buildAgentConfig(config.agentQaId);
 };
 
 export const getAgentPulseConfig = (): AgentConfig => {
-  return createAgentConfig('AGENT_PULSE_ID');
+  return buildAgentConfig(config.agentPulseId);
 };
 
 /**
@@ -43,9 +47,9 @@ export const validateEnv = (): boolean => {
     return true;
   } catch (error) {
     console.error('❌ Environment validation failed:', error);
-    console.error('💡 Make sure to set either:');
-    console.error('   - AGENT_FULL_URL, or');
-    console.error('   - Both AGENT_BASE_URL and AGENT_QA_ID');
+    console.error('💡 Make sure to set base URL via:');
+    console.error('   - AGENT_BASE_URL env var, or');
+    console.error('   - Use default from config.baseUrl');
     console.error('💡 Optionally set AGENT_BEARER_TOKEN for authentication');
     return false;
   }
@@ -58,8 +62,6 @@ export const validateEnv = (): boolean => {
 declare global {
   interface ProcessEnv {
     AGENT_BASE_URL?: string;
-    AGENT_QA_ID?: string;
     AGENT_BEARER_TOKEN?: string;
-    AGENT_FULL_URL?: string;
   }
 }
