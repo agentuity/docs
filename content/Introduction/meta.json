@@ -1,4 +1,4 @@
 {
 	"title": "Introduction",
-	"pages": ["index", "getting-started", "architecture", "templates"]
+	"pages": ["index", "getting-started", "kitchen-sink", "architecture", "templates"]
 }
