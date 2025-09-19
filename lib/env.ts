@@ -11,12 +11,12 @@ export interface AgentConfig {
 import { config } from '@/lib/config';
 
 const buildAgentConfig = (agentId: string): AgentConfig => {
-  const baseUrl = process.env.AGENT_BASE_URL;
+  const baseUrl = config.agentBaseUrl;
   const bearerToken = process.env.AGENT_BEARER_TOKEN;
 
   if (!baseUrl) {
     throw new Error(
-      'Missing required configuration. Set AGENT_BASE_URL or ensure config.baseUrl is defined.'
+      'Missing required configuration. Set AGENT_BASE_URL or ensure config.agentBaseUrl is defined.'
     );
   }
   if (!agentId) {
