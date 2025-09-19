@@ -2,8 +2,8 @@
  * Environment variable validation and configuration utility
  */
 export interface AgentConfig {
-	url: string;
-	bearerToken?: string;
+  url: string;
+  bearerToken?: string;
 }
 /**
  * Builds agent configuration using non-secret IDs from config
@@ -23,8 +23,16 @@ const buildAgentConfig = (agentId: string): AgentConfig => {
     throw new Error('Missing required agent ID in config');
   }
 
+  // For localhost/127.0.0.1, ensure agent ID has 'agent_' prefix
+  let finalAgentId = agentId;
+  if (baseUrl.includes('127.0.0.1') || baseUrl.includes('localhost')) {
+    if (!agentId.startsWith('agent_')) {
+      finalAgentId = `agent_${agentId}`;
+    }
+  }
+
   return {
-    url: `${baseUrl}/${agentId}`,
+    url: `${baseUrl}/${finalAgentId}`,
     bearerToken: bearerToken || undefined,
   };
 };
