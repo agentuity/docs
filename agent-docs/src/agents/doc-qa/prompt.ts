@@ -55,7 +55,6 @@ Return ONLY the query text, nothing else.`;
 		});
 
 		const rephrasedQuery = result.text?.trim() || input;
-		console.log(rephrasedQuery);
 		// Log if we actually rephrased it
 		if (rephrasedQuery !== input) {
 			ctx.logger.info(

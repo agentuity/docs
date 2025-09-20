@@ -42,8 +42,12 @@ Follow the interactive prompts to configure your agent.
 
 ### Development Mode
 
-Run your project in development mode with:
+Make sure bun packages are properly installed:
+```bash
+bun install
+```
 
+Run your project in development mode with:
 ```bash
 agentuity dev
 ```
