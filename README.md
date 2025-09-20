@@ -8,6 +8,7 @@
 
 This project contains the Agentuity documentation website, created using Fumadocs and running on NextJS 15.
 
+
 To make the search feature work, you must set up `.env.local` with the following steps.
 
 ## Quick Start Guide
