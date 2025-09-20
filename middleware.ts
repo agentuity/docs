@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { v4 as uuidv4 } from 'uuid';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 const TYPE_MAP: Record<string, string> = {
 	agent: 'agents',
@@ -12,23 +11,8 @@ const TYPE_MAP: Record<string, string> = {
 	sys: 'system',
 };
 
-const COOKIE_NAME = 'chat_user_id';
-const COOKIE_MAX_AGE = 24 * 60 * 60 * 14; // 14 days
-
 export function middleware(request: NextRequest) {
 	const { pathname } = request.nextUrl;
-	let userId = request.cookies.get(COOKIE_NAME)?.value;
-	const response = NextResponse.next();
-
-	if (!userId) {
-		userId = uuidv4();
-		response.cookies.set(COOKIE_NAME, userId, {
-			maxAge: COOKIE_MAX_AGE,
-			httpOnly: true,
-			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'lax',
-		});
-	}
 
 	// Match error code URLs
 	const errorMatch = pathname.match(
@@ -47,6 +31,4 @@ export function middleware(request: NextRequest) {
 
 		return NextResponse.redirect(url);
 	}
-
-	return response;
 }

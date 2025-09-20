@@ -198,67 +198,6 @@ figure > div:nth-child(2) {
 	border-color: var(--color-cyan-800);
 }
 
-/* Agentuity-Inspired Clean Theme */
-.agentuity-background {
-    background-color: #0a0a0a !important;
-    background-image: 
-        radial-gradient(at 20% 80%, rgba(0, 255, 255, 0.08) 0, transparent 50%),
-        radial-gradient(at 80% 20%, rgba(0, 255, 255, 0.04) 0, transparent 50%) !important;
-    min-height: 100vh;
-}
-
-.agentuity-card {
-    background-color: rgba(17, 17, 17, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-}
-
-.agentuity-card-elevated {
-    background-color: rgba(25, 25, 25, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 8px;
-}
-
-.agentuity-button {
-    background-color: rgba(17, 17, 17, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 6px;
-    transition: all 0.2s ease;
-}
-
-.agentuity-button:hover {
-    background-color: rgba(25, 25, 25, 0.9);
-    border-color: rgba(255, 255, 255, 0.16);
-}
-
-.agentuity-button-primary {
-    background-color: rgba(0, 255, 255, 0.1);
-    border: 1px solid rgba(0, 255, 255, 0.3);
-    color: #00ffff;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-}
-
-.agentuity-button-primary:hover {
-    background-color: rgba(0, 255, 255, 0.15);
-    border-color: rgba(0, 255, 255, 0.4);
-}
-
 article > p {
 	margin-bottom: 1rem;
-}
-
-/* Reusable scrollbar styling for dark theme */
-.agentuity-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-.agentuity-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.agentuity-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 2px;
-}
-.agentuity-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
 }
