@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { getAgentQaConfig } from '@/lib/env';
+import { getAgentConfig } from '@/lib/env';
 import { source } from '@/lib/source';
 
 function documentPathToUrl(docPath: string): string {
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
 	}
 
 	try {
-		const agentConfig = getAgentQaConfig();
+		const agentConfig = getAgentConfig();
 
 		// Prepare headers
 		const headers: Record<string, string> = {
