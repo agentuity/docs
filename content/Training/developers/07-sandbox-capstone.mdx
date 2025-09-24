@@ -120,7 +120,7 @@ const researchPlan = await generateObject({
 });
 
 // Coordinate multi-step research workflow
-const researcher = await ctx.getAgent({ name: 'deep-researcher' });
+const researcher = await context.getAgent({ name: 'deep-researcher' });
 const researchResult = await researcher.run({
   data: JSON.stringify({
     query,

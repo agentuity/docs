@@ -731,6 +731,11 @@ async def handle_manual_trigger(request: AgentRequest, response: AgentResponse, 
         context.logger.info(f"Returning cached weather for {location_query}")
         return response.json(cached_weather)
 
+    # Resolve location to coordinates (geocoding step)
+    coordinates = await geocode_location(location_query)
+    if not coordinates:
+        return response.json({"error": "Unable to find location coordinates"})
+
     # Fetch fresh data and cache with shorter TTL
     weather = await fetch_nws_weather(coordinates["lat"], coordinates["lon"], location_query, context)
     await context.kv.set("weather", cache_key, weather, {"ttl": 300})  # 5 minutes
@@ -754,6 +759,12 @@ async function handleManualTrigger(request: AgentRequest, response: AgentRespons
     const cachedWeather = await cached.data.json() as WeatherResult;
     context.logger.info(\`Returning cached weather for \${locationQuery}\`);
     return response.json(cachedWeather);
+  }
+
+  // Resolve location to coordinates (geocoding step)
+  const coordinates = await geocodeLocation(locationQuery);
+  if (!coordinates) {
+    return response.json({ error: 'Unable to find location coordinates' });
   }
 
   // Fetch fresh data and cache with shorter TTL
