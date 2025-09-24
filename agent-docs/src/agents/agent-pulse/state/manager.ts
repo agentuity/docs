@@ -30,15 +30,21 @@ export async function handleTutorialState(
               totalSteps: action.totalSteps,
               currentStep: action.currentStep,
               tutorialStep: {
-                title: (tutorialStep.data.meta?.title as string) || tutorialStep.data.slug,
-                mdx: tutorialStep.data.mdx,
-                snippets: tutorialStep.data.snippets,
-                totalSteps: action.totalSteps
+                title: tutorialStep.data.tutorialStep.title,
+                mdx: tutorialStep.data.tutorialStep.mdx,
+                snippets: tutorialStep.data.tutorialStep.snippets,
+                totalSteps: tutorialStep.data.tutorialStep.totalSteps
               }
             };
             state.clearAction();
             ctx.logger.info("Tutorial state processed successfully");
             return tutorialData;
+          } else {
+            // Handle API errors gracefully
+            ctx.logger.error("Failed to fetch tutorial step: %s", tutorialStep.error || 'Unknown error');
+            if (tutorialStep.details) {
+              ctx.logger.error("Error details: %s", JSON.stringify(tutorialStep.details));
+            }
           }
         }
         break;

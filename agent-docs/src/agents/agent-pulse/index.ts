@@ -73,7 +73,7 @@ function buildCurrentTutorialInfo(
  */
 function defaultFallbackContext(): string {
 	return `===AVAILABLE TUTORIALS====
-Unable to load tutorial list. Please try again later or contact support.`;
+Unable to load tutorial list currently`;
 }
 
 export default async function Agent(

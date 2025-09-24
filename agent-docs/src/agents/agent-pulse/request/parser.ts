@@ -15,10 +15,8 @@ export function parseAgentRequest(
 			const body = jsonData as any;
 			message = body.message || "";
 			useDirectLLM = body.use_direct_llm || false;
-			// Process conversation history
 			if (Array.isArray(body.conversationHistory)) {
 				conversationHistory = body.conversationHistory.map((msg: any) => {
-					// Extract only role and content
 					return {
 						role: msg.role || (msg.author ? msg.author.toUpperCase() : "USER"),
 						content: msg.content || "",
@@ -28,7 +26,6 @@ export function parseAgentRequest(
 
 			tutorialData = body.tutorialData || undefined;
 		} else {
-			// Fallback for non-object data
 			message = String(jsonData || "");
 		}
 
