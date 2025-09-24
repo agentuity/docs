@@ -1,9 +1,9 @@
 ---
-title: "Module 7: Sandbox & Capstone Project"
-description: Bringing it all together in a complete production system
+title: "Module 7: Advanced Multi-Agent Research System"
+description: Building sophisticated agent coordination with recursive research
 ---
 
-Time to combine everything you've learned into a complete, production-ready agent system.
+Time to build an advanced multi-agent research system that combines everything you've learned.
 
 ## Building Your Capstone
 
@@ -16,7 +16,7 @@ As you work on your capstone project:
 5. **Monitor everything** - You can't fix what you can't see
 
 <Callout type="info">
-Pro Tip: Build your capstone iteratively. Start with two agents (triage + one specialist), get that working perfectly, then add more complexity.
+Pro Tip: Build your research system iteratively. Start with orchestrator + web search agents, get that working perfectly, then add recursive research and report generation.
 </Callout>
 
 ## Coming Soon: Agentic Sandbox
@@ -55,358 +55,215 @@ An intelligent assistant that helps you learn:
 - **Learning paths**: Customized based on your experience
 - **Best practices**: Recommends patterns for your use case
 
-## Capstone Project: Customer Support System
+## Capstone Project: Deep Research System
 
-Let's build a complete customer support system that demonstrates mastery of all previous modules.
+Build an advanced multi-agent research system that demonstrates mastery of sophisticated agent coordination, recursive algorithms, and real-world API integration.
 
 ### Project Overview
 
-**Goal**: Build a multi-agent customer support system that can:
-- Handle customer inquiries autonomously
-- Escalate complex issues appropriately
-- Learn from interactions
-- Maintain conversation context
-- Ensure compliance and safety
+**Goal**: Create a research system that can:
+- Coordinate multiple specialized research agents
+- Conduct recursive deep-dive investigations
+- Accumulate knowledge across research iterations
+- Generate comprehensive structured reports
+- Handle complex multi-source information synthesis
 
 ### System Architecture
 
 <Mermaid chart="
 graph TD
-    User[Customer] --> Triage[Triage Agent]
-    Triage -->|FAQ/Tech/Billing| Specialist[Specialist Agent]
-    Triage -->|Urgent/Low Confidence| Human[Human Escalation]
-    Specialist --> User
-    Human --> User
-    Memory[(Memory)] -.-> Triage
-    Memory -.-> Specialist
+    User[Research Request] --> Orchestrator[Research Orchestrator]
+    Orchestrator --> Researcher[Deep Researcher]
+    Researcher -->|Recursive Calls| Researcher
+    Researcher --> WebSearch[Web Search Agent]
+    WebSearch --> Researcher
+    Researcher --> Author[Report Author]
+    Author --> User[Structured Report]
+    Memory[(Research State)] -.-> Orchestrator
+    Memory -.-> Researcher
+    Memory -.-> Author
 " />
 
-### Skills in Practice
+### Skills Progression
 
-Building this multi-agent system demonstrates the key concepts covered in this training:
+This sophisticated system builds on concepts from every previous module:
 
-| Module | Key Skills Applied |
-|--------|-------------------|
-| **Agent Basics** | Request/response handling, error management, welcome messages, trigger configuration |
-| **Agent Anatomy** | Lifecycle management, comprehensive logging, context usage, tool integration |
-| **Memory Management** | Conversation history, user preferences, session management, cleanup strategies |
-| **Multi-Agent Collaboration** | Routing logic, context sharing, smooth handoffs, information preservation |
-| **Production Readiness** | Input validation (Zod/Pydantic), rate limiting, observability spans, compliance rules |
-| **Deployment** | Environment configuration, production deployment, monitoring setup |
+| Module | Skills Applied in Deep Research |
+|--------|--------------------------------|
+| **Module 1** | Request handling, error management → Complex orchestration |
+| **Module 2** | Trigger behaviors → Agent coordination patterns |
+| **Module 3** | Memory management → Research state accumulation |
+| **Module 4** | Multi-agent basics → Advanced orchestration |
+| **Module 5** | Validation → Research quality assurance |
+| **Module 6** | Deployment → Production research system |
 
-### Phase 1: Triage Agent
+### Key Implementation: Research Orchestration
 
-The entry point for all customer interactions:
+The orchestrator coordinates the entire research workflow:
 
-<CodeExample py={`from pydantic import BaseModel
-from typing import Literal
-from ai import generate_object
-from anthropic import anthropic
+<CodeExample py={`# Python - Research orchestration with structured planning
+research_plan = await generate_research_plan(query)
 
-class CustomerIntent(BaseModel):
-    category: Literal['faq', 'technical', 'billing', 'urgent']
-    confidence: float
-    summary: str
-    
-async def run(request, response, context):
-    # Track the conversation
-    async with context.tracer.start_as_current_span("triage-request") as span:
-        session_id = request.metadata.get("session_id")
-        span.set_attribute("session.id", session_id)
-        
-        # Get conversation history
-        history = await context.kv.get("conversations", session_id)
-        messages = history.data.json() if history.exists else []
-        
-        # Analyze customer intent
-        customer_message = await request.data.text()
-        messages.append({"role": "user", "content": customer_message})
-        
-        intent = await generate_object(
-            model=anthropic("claude-3-7-sonnet"),
-            schema=CustomerIntent,
-            prompt=f"""
-            Analyze this customer support request:
-            Message: {customer_message}
-            History: {messages[-5:]}  # Last 5 messages for context
-            
-            Categorize as: faq, technical, billing, or urgent
-            """
-        )
-        
-        span.set_attribute("intent.category", intent.object.category)
-        span.set_attribute("intent.confidence", intent.object.confidence)
-        
-        # Route to appropriate agent
-        if intent.object.confidence < 0.7 or intent.object.category == "urgent":
-            # Low confidence or urgent = human escalation
-            span.add_event("escalating-to-human")
-            return response.json({
-                "action": "escalate",
-                "message": "Connecting you with a human agent...",
-                "reason": intent.object.summary
-            })
-        
-        # Hand off to specialist agent
-        return response.handoff(
-            {"name": f"{intent.object.category}-agent"},
-            customer_message,  # Pass message as data
-            {
-                "session_id": session_id,
-                "intent": intent.object.model_dump(),
-                "conversation_history": messages[-5:]  # Include recent context
-            }
-        )`} js={`import { z } from 'zod';
-import { generateObject } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
+# Coordinate multi-step research workflow
+researcher = await context.get_agent(name="deep-researcher")
+research_result = await researcher.run({
+    "query": query,
+    "plan": research_plan,
+    "max_depth": 3
+})
 
-const CustomerIntentSchema = z.object({
-  category: z.enum(['faq', 'technical', 'billing', 'urgent']),
-  confidence: z.number().min(0).max(1),
-  summary: z.string()
+return await research_result.data.json()`} js={`// TypeScript - Research orchestration with structured planning
+const researchPlan = await generateObject({
+  model: anthropic('claude-3-5-sonnet-20241022'),
+  schema: ResearchPlanSchema,
+  prompt: \`Create a research plan for: "\${query}"\`
 });
 
-const handler = async (request, response, context) => {
-  // Track the conversation
-  return context.tracer.startActiveSpan('triage-request', async (span) => {
-    const sessionId = request.metadata.get('session_id');
-    span.setAttribute('session.id', sessionId);
-    
-    // Get conversation history
-    const history = await context.kv.get('conversations', sessionId);
-    const messages = history.exists ? await history.data.json() : [];
-    
-    // Analyze customer intent
-    const customerMessage = await request.data.text();
-    messages.push({ role: 'user', content: customerMessage });
-    
-    const intent = await generateObject({
-      model: anthropic('claude-3-7-sonnet'),
-      schema: CustomerIntentSchema,
-      prompt: \`
-        Analyze this customer support request:
-        Message: \${customerMessage}
-        History: \${JSON.stringify(messages.slice(-5))}
-        
-        Categorize as: faq, technical, billing, or urgent
-      \`
-    });
-    
-    span.setAttribute('intent.category', intent.object.category);
-    span.setAttribute('intent.confidence', intent.object.confidence);
-    
-    // Route to appropriate agent
-    if (intent.object.confidence < 0.7 || intent.object.category === 'urgent') {
-      // Low confidence or urgent = human escalation
-      span.addEvent('escalating-to-human');
-      span.end();
-      return response.json({
-        action: 'escalate',
-        message: 'Connecting you with a human agent...',
-        reason: intent.object.summary
-      });
-    }
-    
-    // Hand off to specialist agent
-    span.end();
-    return response.handoff(
-      { name: intent.object.category + '-agent' },
-      {
-        data: customerMessage,
-        contentType: 'text/plain',
-        metadata: {
-          session_id: sessionId,
-          intent: intent.object,
-          conversation_history: messages.slice(-5)  // Include recent context
-        }
-      }
+// Coordinate multi-step research workflow
+const researcher = await ctx.getAgent({ name: 'deep-researcher' });
+const researchResult = await researcher.run({
+  data: JSON.stringify({
+    query,
+    plan: researchPlan.object,
+    maxDepth: 3
+  }),
+  contentType: 'application/json'
+});`} />
+
+### Key Implementation: Recursive Research Pattern
+
+The researcher agent conducts deep, iterative research:
+
+<CodeExample py={`# Python - Recursive research with learning accumulation
+async def conduct_research(query: str, accumulated_knowledge: list, depth: int, context: AgentContext):
+    if depth >= MAX_DEPTH or sufficient_information(accumulated_knowledge):
+        return accumulated_knowledge
+
+    # Conduct research iteration
+    new_findings = await search_and_analyze(query, context)
+    accumulated_knowledge.extend(new_findings)
+
+    # Generate follow-up questions based on findings
+    follow_up_queries = await generate_follow_ups(accumulated_knowledge)
+
+    # Recursive calls for deeper research
+    for follow_up in follow_up_queries:
+        deeper_knowledge = await conduct_research(
+            follow_up, accumulated_knowledge, depth + 1, context
+        )
+        accumulated_knowledge.extend(deeper_knowledge)
+
+    return accumulated_knowledge`} js={`// TypeScript - Recursive research with learning accumulation
+const conductResearch = async (
+  query: string,
+  accumulatedKnowledge: ResearchFinding[],
+  depth: number,
+  context: AgentContext
+) => {
+  if (depth >= MAX_DEPTH || sufficientInformation(accumulatedKnowledge)) {
+    return accumulatedKnowledge;
+  }
+
+  // Conduct research iteration
+  const newFindings = await searchAndAnalyze(query, context);
+  accumulatedKnowledge.push(...newFindings);
+
+  // Generate follow-up questions based on findings
+  const followUpQueries = await generateFollowUps(accumulatedKnowledge);
+
+  // Recursive calls for deeper research
+  for (const followUp of followUpQueries) {
+    const deeperKnowledge = await conductResearch(
+      followUp, accumulatedKnowledge, depth + 1, context
     );
-  });
+    accumulatedKnowledge.push(...deeperKnowledge);
+  }
+
+  return accumulatedKnowledge;
 };`} />
 
-### Phase 2: Specialist Agents
+### Key Implementation: Smart Caching Strategies
 
-Create specialized agents for each category:
+Different caching approaches based on research depth and complexity:
 
-#### FAQ Agent
-- Answers common questions
-- Uses vector search for knowledge base
-- Tracks which questions are most frequent
+<CodeExample py={`# Python - Smart caching strategies for research data
+# Different TTL strategies based on research type
+if research_type == 'comprehensive':
+    # Complex research - longer cache (1 hour)
+    await context.kv.set('research', cache_key, results, {'ttl': 3600})
+else:
+    # Quick research - shorter cache (15 minutes) for responsiveness
+    await context.kv.set('research', cache_key, results, {'ttl': 900})`} js={`// TypeScript - Smart caching strategies for research data
+// Different TTL strategies based on research type
+if (researchType === 'comprehensive') {
+  // Complex research - longer cache (1 hour)
+  await context.kv.set('research', cacheKey, results, { ttl: 3600 });
+} else {
+  // Quick research - shorter cache (15 minutes) for responsiveness
+  await context.kv.set('research', cacheKey, results, { ttl: 900 });
+}`} />
 
-#### Technical Support Agent
-- Troubleshoots technical issues
-- Guides through diagnostic steps
-- Creates tickets for engineering
+### Build This Project Yourself
 
-#### Billing Agent
-- Handles payment questions
-- Looks up account information (mock)
-- Processes refund requests
+Ready to implement this project? Follow our complete examples:
 
-### Phase 3: Memory & Learning
+<div className="flex flex-wrap gap-3 mb-6">
+  <a href="https://github.com/agentuity/examples/tree/add-tutorials/training/07-deep-research-ts" target="_blank" rel="noopener noreferrer"
+     className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.30 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    TypeScript
+  </a>
+  <div className="inline-flex items-center gap-2 px-4 py-3 bg-gray-400 text-white rounded-lg no-underline text-sm font-medium cursor-not-allowed opacity-75">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.30 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    Python (Coming Soon)
+  </div>
+</div>
 
-Implement sophisticated memory:
+### What This System Demonstrates
 
-```python
-# Store interaction outcomes
-await context.kv.set(
-    "outcomes",
-    f"{session_id}_{timestamp}",
-    {
-        "category": intent.category,
-        "resolved": was_resolved,
-        "escalated": was_escalated,
-        "satisfaction": customer_rating,
-        "agent_actions": actions_taken
-    },
-    {"ttl": 30 * 24 * 3600}  # Keep for 30 days
-)
+- **Advanced multi-agent orchestration**: Coordinated workflow between specialized research agents
+- **Recursive algorithms**: Self-improving research with learning accumulation across iterations
+- **External API integration**: Real-world web search with intelligent filtering and relevance evaluation
+- **State accumulation**: Complex memory management and knowledge aggregation
+- **Production patterns**: Error handling, rate limiting, comprehensive observability
 
-# Learn from patterns
-outcomes = await context.kv.list("outcomes", prefix=f"{user_id}_")
-if frequent_escalations(outcomes):
-    # Adjust confidence thresholds
-    # Flag for human review
-    pass
-```
+The complete examples show how to build sophisticated research systems that demonstrate mastery of advanced agent concepts.
 
-### Phase 4: Production Hardening
+## Testing Your Deep Research System
 
-Add all production features:
-
-#### Guardrails
-- PII detection and redaction
-- Compliance with support policies
-- Rate limiting per customer
-- Response length limits
-
-#### Observability
-- Custom spans for each decision point
-- Track resolution rates
-- Monitor escalation patterns
-- Cost per interaction
-
-#### Testing Suite
-```python
-# test_support_system.py
-test_cases = [
-    {
-        "input": "How do I reset my password?",
-        "expected_category": "faq",
-        "should_escalate": False
-    },
-    {
-        "input": "The app crashes when I click submit",
-        "expected_category": "technical",
-        "should_escalate": False
-    },
-    {
-        "input": "I was charged twice!!!",
-        "expected_category": "billing",
-        "confidence_threshold": 0.9  # Higher for financial
-    },
-    {
-        "input": "This is unacceptable! I demand a manager!",
-        "expected_category": "urgent",
-        "should_escalate": True
-    }
-]
-```
-
-### Phase 5: Deployment
-
-Deploy your complete system:
-
+1. **Start DevMode:**
 ```bash
-# Test locally
 agentuity dev
-
-# Run test suite
-npm test
-
-# Deploy to production
-agentuity deploy
-
-# Monitor performance
-agentuity logs --follow
 ```
 
-## Alternative Capstone Projects
+2. **Test research requests:**
+   - **Simple topics**: "Benefits of renewable energy"
+   - **Complex topics**: "Impact of quantum computing on cryptography"
+   - **Technical subjects**: "Latest developments in machine learning architectures"
 
-Not interested in customer support? Choose an alternative:
+3. **Monitor the orchestration:**
+   - Watch logs to see agent coordination and recursive research calls
+   - Observe how research accumulates across multiple iterations
+   - See report generation synthesis from accumulated findings
+## Key Takeaways
 
-### Option 2: Deep Research System
+By building this deep research system, you've mastered:
 
-Build a comprehensive research and analysis system:
-- **Research Coordinator**: Routes queries to appropriate researchers
-- **Web Research Agent**: Searches and gathers online sources
-- **Academic Research Agent**: Finds scholarly articles and papers
-- **Analysis Agent**: Synthesizes information across sources
-- **Report Generator**: Creates structured research reports
-- **Fact Verification Agent**: Cross-checks claims and citations
+- **Multi-agent orchestration**: Coordinating specialized agents for complex workflows
+- **Recursive algorithms**: Self-improving systems with learning accumulation
+- **Production integration**: Real-world APIs with intelligent filtering and caching
+- **Advanced memory management**: State accumulation across multiple agent interactions
+- **Sophisticated observability**: Comprehensive tracking of complex agent workflows
 
-Key challenges:
-- Multi-source information synthesis
-- Citation accuracy and tracking
-- Handling conflicting or outdated information
-- Maintaining research quality standards
-- Long-form document generation
-
-### Option 3: Financial Analysis System
-
-Build a financial research and advisory system:
-- **Market Research Agent**: Gathers financial data and news
-- **Risk Assessment Agent**: Analyzes investment risks
-- **Portfolio Advisor**: Provides investment recommendations
-- **Compliance Agent**: Ensures regulatory adherence
-- **Report Generator**: Creates financial summaries
-
-Key challenges:
-- Real-time financial data processing
-- Risk calculation and modeling
-- Regulatory compliance requirements
-- Investment strategy optimization
-- Market sentiment analysis
-
-### Option 4: Content Creation Pipeline
-
-Build a multi-agent content production system:
-- **Content Planner**: Develops content strategies and schedules
-- **Research Agent**: Gathers information and sources
-- **Writer Agent**: Creates draft content
-- **Editor Agent**: Reviews and improves content quality
-- **SEO Optimizer**: Optimizes for search and engagement
-- **Publisher Agent**: Handles final formatting and distribution
-
-Key challenges:
-- Content quality consistency
-- Brand voice maintenance
-- Multi-format content adaptation
-- Publishing workflow coordination
-- Performance analytics integration
-
-
-## Congratulations!
-
-By completing this capstone, you've demonstrated mastery of:
-- Agent architecture and design
-- Memory and state management
-- Multi-agent orchestration
-- Production deployment
-- Real-world problem solving
-
-You're now ready to build production agent systems with Agentuity!
+You're now ready to build advanced production agent systems with Agentuity!
 
 ## What's Next?
 
-- Deploy your capstone to production
-- Share your implementation with the community
-- Explore advanced patterns
-- Build agents for your own use cases
-- Contribute to the Agentuity ecosystem
+- Deploy your research system to production
+- Experiment with different research domains
+- Build agents for your own complex use cases
+- Share your implementations with the community
 
-Welcome to the future of agent development! 🚀
+Welcome to advanced agent development! 🚀
 
 ---
-
-**Ready to dive deeper?** Check the [documentation](https://docs.agentuity.com) for advanced patterns and deployment guides.

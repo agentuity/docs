@@ -20,6 +20,11 @@ Traditional cloud platforms (AWS Lambda, Google Cloud Functions, Azure Functions
 - **Stateless execution** (agents need persistent memory)
 - **Edge distribution** (agents need GPU proximity)
 
+This makes them poorly suited for:
+- **Long-running reasoning** processes that require extended compute time
+- **Persistent state management** across multiple interactions
+- **Complex agent workflows** that span multiple reasoning cycles
+
 ## What Exactly Is an AI Agent?
 
 <Callout type="info">
@@ -141,10 +146,7 @@ Traditional cloud platforms face fundamental limitations when running agents:
 | Pay per request | Continuous operation | Costs explode unexpectedly |
 | Human-centric monitoring | Agent observability | Can't debug agent decisions |
 
-Major cloud providers are pushing to adapt to the needs of agents:
-- **AWS** launched Bedrock AgentCore (still in preview)
-- **Google** released their Agent Development Kit (ADK)
-- **Microsoft** is retrofitting Azure with agent capabilities
+Major cloud providers like AWS, Google, and Microsoft are working to adapt their platforms for agents.
 
 But retrofitting existing infrastructure is like turning a highway into an airport - technically possible, but not optimal.
 
@@ -154,9 +156,11 @@ But retrofitting existing infrastructure is like turning a highway into an airpo
 Learn more about the Agent-Native Cloud paradigm in our [Agent-Native Cloud](/Guides/agent-native-cloud) guide.
 </Callout>
 
-While others retrofit, Agentuity was built from day one specifically for agents. Our agent-native platform puts AI agents at the center of everything we do.
+While others retrofit, Agentuity was built from day one specifically for agents. Agentuity's agent-native platform puts AI agents at the center of everything.
 
-### Purpose-Built for Agents
+### The Agentuity Difference: Purpose-Built for Agents
+
+Instead of asking "How do we make Lambda work for agents?", we asked "What would infrastructure look like if agents were the only thing that mattered?"
 
 Agentuity provides what agents actually need:
 
@@ -165,17 +169,9 @@ Agentuity provides what agents actually need:
 - **Agent-to-agent communication**: Seamless and secure [channels between agents](/Guides/agent-communication)
 - **Native observability**: Track agent decisions with [built-in tracing](/Guides/agent-tracing)
 - **Automatic scaling**: Based on agent workload, not request count
-- **Framework agnostic**: Run LangChain, CrewAI, or custom agents side by side
+- **Framework agnostic**: Run LangChain, CrewAI, or custom agents side by side - and easily integrate with popular tools like the Vercel AI SDK for streamlined AI development
 
-### The Agentuity Difference
-
-Instead of asking "How do we make Lambda work for agents?", we asked "What would infrastructure look like if agents were the only thing that mattered?"
-
-The result is a platform where:
-- Agents are first-class citizens, not adapted workloads
-- Memory and state are built-in, not bolted on
-- Long-running is the default, not an exception
-- Agent communication is native, not a hack
+The result is a platform where agents are first-class citizens, not adapted workloads; memory and state are built-in, not bolted on; long-running is the default, not an exception; and agent communication is native, not a hack.
 
 ## Your First Agent: Hello, Autonomous World
 
@@ -195,8 +191,23 @@ Before we start, make sure you have:
 ### Quick Setup
 
 ```bash
-# Install the Agentuity CLI (see full installation guide for other OS)
+# Install the Agentuity CLI
+
+# NPM (if you have Node.js)
+npm install -g @agentuity/cli
+
+# Bun (if you have Bun)
+bun install -g @agentuity/cli
+
+# macOS (Homebrew)
 brew tap agentuity/tap && brew install agentuity
+
+# Universal installer (Windows/Linux/macOS)
+curl -fsS https://agentuity.sh | sh
+# Note: Verify the checksum from https://agentuity.com/install for security
+
+# Direct download from releases
+# Visit https://github.com/agentuity/cli/releases for your platform
 
 # Verify installation
 agentuity --version
@@ -211,39 +222,41 @@ Let's create a simple agent that demonstrates the key concepts we've learned:
 
 ```bash
 # Create a new agent project
-agentuity create hello-agent --template python-starter
-# or for TypeScript:
-# agentuity create hello-agent --template typescript-starter
+agentuity create hello-agent --template typescript-starter
+# or for Python:
+# agentuity create hello-agent --template python-starter
 
 # Navigate to the project
 cd hello-agent
 
-# Install dependencies (Python)
-pip install -r requirements.txt
-# or for TypeScript:
-# npm install
+# Install dependencies (TypeScript)
+npm install
+# or for Python:
+# pip install -r requirements.txt
 ```
 
 ### Understanding the Agent Structure
 
 Here's a simple "Hello Agent" that demonstrates the core concepts:
 
-<CodeExample py={`async def run(request, response, context):
+<CodeExample py={`from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     # Get the name from request data
     data = await request.data.json()
     name = data.get("name", "World")
 
     # Return a simple greeting
-    return response.json({"message": f"Hello, {name}!"})`} js={`const handler = async (request, response, context) => {
+    return response.json({"message": f"Hello, {name}!"})`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
   // Get the name from request data
   const data = await request.data.json();
   const name = data.name || 'World';
 
   // Return a simple greeting
   return response.json({ message: \`Hello, \${name}!\` });
-};
-
-export default handler;`} />
+}`} />
 
 This simple agent demonstrates:
 - **Request handling**: Accepts JSON input with a `name` field
@@ -256,8 +269,9 @@ This simple agent demonstrates:
 Let's enhance our agent with logging and a simple state counter:
 
 <CodeExample py={`from datetime import datetime
+from agentuity import AgentRequest, AgentResponse, AgentContext
 
-async def run(request, response, context):
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     # Log the incoming request (built-in observability)
     context.logger.info("Hello agent received a request")
 
@@ -283,7 +297,9 @@ async def run(request, response, context):
         "message": f"Hello, {name}!",
         "greeting_number": count,
         "timestamp": datetime.now().isoformat()
-    })`} js={`const handler = async (request, response, context) => {
+    })`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
   // Log the incoming request (built-in observability)
   context.logger.info('Hello agent received a request');
 
@@ -312,12 +328,10 @@ async def run(request, response, context):
     greeting_number: count,
     timestamp: new Date().toISOString()
   });
-};
-
-export default handler;`} />
+}`} />
 
 This enhanced agent demonstrates:
-- **Observability**: Built-in logging with context.logger
+- **Comprehensive Observability**: Built-in logging with context.logger plus automatic OpenTelemetry tracing that captures all operations (storage calls, external requests) as structured spans without any additional code
 - **State Management**: Simple counter using key-value storage
 - **Agent Memory**: One storage type (KV) without complexity
 - **Request/Response**: JSON input and structured output
@@ -351,7 +365,9 @@ Once DevMode is running:
 
 Add a `welcome()` function to your agent to create clickable test scenarios in DevMode:
 
-<CodeExample py={`def welcome():
+<CodeExample py={`from agentuity import AgentRequest, AgentResponse, AgentContext
+
+def welcome():
     """Configure test scenarios for DevMode."""
     return {
         "welcome": "Welcome to my Hello Agent! Try these examples:",
@@ -371,8 +387,10 @@ Add a `welcome()` function to your agent to create clickable test scenarios in D
         ]
     }
 
-async def run(request, response, context):
-    # Your existing agent code...`} js={`export const welcome = () => {
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    # Your existing agent code...`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export const welcome = () => {
     return {
         welcome: "Welcome to my Hello Agent! Try these examples:",
         prompts: [
@@ -392,7 +410,7 @@ async def run(request, response, context):
     };
 };
 
-const handler: AgentHandler = async (request, response, context) => {
+export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
     // Your existing agent code...`} />
 
 These prompts appear as clickable buttons in the DevMode interface. Try calling the agent multiple times with the same name - it will remember you, and you can see the memory operations in the real-time logs!
@@ -424,101 +442,98 @@ Now that you have a working agent, let's enhance it with more capabilities. Use 
 ### Challenge 1: Add Error Handling
 Enhance your agent with proper error handling and validation:
 
-<CodeExample py={`async def run(request, response, context):
-    try:
-        data = await request.data.json()
-        name = data.get("name")
-
-        if not name:
-            context.logger.warn("No name provided in request")
-            return response.json({"error": "Name is required"})
-
-        context.logger.info(f"Processing request for {name}")
-
-        # Your agent logic here
-        return response.json({"message": f"Hello, {name}!"})
-
-    except Exception as e:
-        context.logger.error(f"Error processing request: {str(e)}")
-        return response.json({"error": "Internal server error"})`} js={`const handler = async (request, response, context) => {
-  try {
-    const data = await request.data.json();
-    const name = data.name;
-
-    if (!name) {
-      context.logger.warn('No name provided in request');
-      return response.json({ error: 'Name is required' });
-    }
-
-    context.logger.info(\`Processing request for \${name}\`);
-
-    // Your agent logic here
-    return response.json({ message: \`Hello, \${name}!\` });
-
-  } catch (error) {
-    context.logger.error(\`Error processing request: \${error}\`);
-    return response.json({ error: 'Internal server error' });
-  }
-};`} />
-
-### Challenge 2: Add Time-Based Context
-Enhance your agent to greet differently based on the time of day:
-
-<CodeExample py={`from datetime import datetime
-
-async def run(request, response, context):
+<CodeExample py={`# Key pattern: Defensive error handling
+try:
     data = await request.data.json()
-    name = data.get("name", "World")
+    name = data.get("name")
 
-    # Time-based greeting
-    hour = datetime.now().hour
-    if hour < 12:
-        time_greeting = "Good morning"
-    elif hour < 17:
-        time_greeting = "Good afternoon"
-    else:
-        time_greeting = "Good evening"
+    if not name:
+        context.logger.warn("No name provided in request")
+        return response.json({"error": "Name is required"})
 
-    # Include your existing counter logic here
-    return response.json({
-        "message": f"{time_greeting}, {name}!",
-        "local_time": datetime.now().isoformat()
-    })`} js={`const handler = async (request, response, context) => {
+    # Your agent logic here...`} js={`// Key pattern: Defensive error handling
+try {
   const data = await request.data.json();
-  const name = data.name || 'World';
+  const name = data.name;
 
-  // Time-based greeting
-  const hour = new Date().getHours();
-  let timeGreeting;
-  if (hour < 12) {
-    timeGreeting = 'Good morning';
-  } else if (hour < 17) {
-    timeGreeting = 'Good afternoon';
-  } else {
-    timeGreeting = 'Good evening';
+  if (!name) {
+    context.logger.warn('No name provided in request');
+    return response.json({ error: 'Name is required' });
   }
 
-  // Include your existing counter logic here
-  return response.json({
-    message: \`\${timeGreeting}, \${name}!\`,
-    local_time: new Date().toISOString()
-  });
-};`} />
+  // Your agent logic here...`} />
 
-### Challenge 3: Combine Features
-Combine error handling, time-based greetings, and your counter into one robust agent.
+### Challenge 2: Handle Multiple Input Types
+Enhance your agent to handle both JSON and text inputs gracefully:
 
-### Testing Your Enhancements
+<CodeExample py={`# Key pattern: Flexible input handling
+try:
+    if request.data.contentType == "application/json":
+        data = await request.data.json()
+        name = data.get("name", "World")
+    elif request.data.contentType == "text/plain":
+        name = await request.data.text() or "World"
+    else:
+        name = "World"
+except Exception as e:
+    context.logger.error(f"Error parsing request: {e}")
+    name = "World"  # Graceful fallback`} js={`// Key pattern: Flexible input handling
+let name = 'World';
+try {
+  if (request.data.contentType === 'application/json') {
+    const data = await request.data.json();
+    name = data.name || 'World';
+  } else if (request.data.contentType === 'text/plain') {
+    name = await request.data.text() || 'World';
+  }
+} catch (error) {
+  context.logger.error(\`Error parsing request: \${error}\`);
+  // Graceful fallback to default
+}`} />
 
-After implementing each challenge:
-1. Update your `welcome()` function with relevant test scenarios
-2. Run `agentuity dev` to start DevMode
-3. Use the DevMode interface to test your changes
-4. Monitor the logs to verify your agent behaves correctly
-5. Check the Sessions tab to track performance and costs
+### Challenge 3: Complete Production Implementation
+
+Now let's combine all features (and add some simple storage provided by Agentuity) into a fully-functional agent.
+
+This complete implementation demonstrates:
+- **Error handling** with try/catch
+- **Multiple content types** (JSON and text input support)
+- **Statistics tracking** (personal greeting counts)
+- **Memory management** (stores only last 5 names)
+- **TTL storage** (24-hour expiration on stats)
+- **DevMode integration** with clickable test scenarios via `welcome()`
+- **Logging** for debugging and monitoring
+
+### Build This Agent Yourself
+
+Ready to implement this agent? Follow our complete examples:
+
+<div className="flex flex-wrap gap-3 mb-6">
+  <a href="https://github.com/agentuity/examples/tree/add-tutorials/training/01-hello-world-ts" target="_blank" rel="noopener noreferrer"
+     className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    TypeScript
+  </a>
+  <a href="https://github.com/agentuity/examples/tree/add-tutorials/training/01_hello_world_py" target="_blank" rel="noopener noreferrer"
+     className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.30 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    Python
+  </a>
+</div>
+
+## Testing Your Complete Agent
+
+After implementing this complete version:
+1. Run `agentuity dev` to start DevMode
+2. Use the clickable prompts from the `welcome()` function
+3. Test with both JSON and text inputs
+4. Call the agent multiple times with the same name to see statistics
+5. Monitor the logs to see detailed operation tracking
+6. Check the key-value storage to see the personal greeting counts
+7. Check the Sessions tab for performance metrics
 
 <Callout type="info">
-For more examples, check our [Templates](/Introduction/templates) and [Examples](/Examples) sections.
+This complete implementation shows production patterns you'll use throughout the training modules. Notice how we handle errors gracefully, store data efficiently, and provide rich observability.
 </Callout>
 
 ## Key Takeaways

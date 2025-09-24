@@ -60,7 +60,7 @@ async def run(request, response, context):
 ```python
 # Short-term memory for session continuity
 async def run(request, response, context):
-    session_id = request.metadata.get("session_id")
+    session_id = context.sessionId
     
     # Retrieve session context
     session_data = await context.kv.get("sessions", session_id)
@@ -81,10 +81,12 @@ async def run(request, response, context):
 **Storage**: Vector database for semantic search
 
 ```python
+from datetime import datetime
+
 # Long-term memory for learning and relationships
 async def run(request, response, context):
     user_id = request.metadata.get("user_id")
-    
+
     # Store learned preferences
     await context.vector.upsert("user_knowledge", [{
         "key": f"pref_{user_id}_{datetime.now()}",
@@ -95,7 +97,7 @@ async def run(request, response, context):
             "learned_from": "conversation_analysis"
         }
     }])
-    
+
     # Retrieve relevant memories
     memories = await context.vector.search(
         "user_knowledge",
@@ -155,7 +157,7 @@ Best for discrete, queryable data:
     }
   };
   
-  await context.kv.set('users', userId, JSON.stringify(profile));
+  await context.kv.set('users', userId, profile);
 };`} />
 
 ### Searchable Memory (Vector Storage)
@@ -203,7 +205,8 @@ Best for semantic search and knowledge retrieval:
   // Later, retrieve relevant context
   const similarConvos = await context.vector.search('conversations', {
     query: 'deployment and scaling concerns',
-    limit: 3
+    limit: 3,
+    similarity: 0.7
   });
 };`} />
 
@@ -214,11 +217,18 @@ Best for files and large data:
 - Media files
 - Model outputs
 
-<CodeExample py={`async def run(request, response, context):
+<CodeExample py={`from datetime import datetime
+import json
+
+async def run(request, response, context):
+    # Assume analysis_results and user_id are defined above
+    analysis_results = {"data": "sample analysis"}  # placeholder
+    user_id = request.metadata.get("user_id")
+
     # Store generated report
     report_data = generate_pdf_report(analysis_results)
     report_key = f"reports/{user_id}/{datetime.now().strftime('%Y%m%d')}_analysis.pdf"
-    
+
     # Auto-detects content type from file extension and data
     await context.objectstore.put(
         "documents",
@@ -226,13 +236,17 @@ Best for files and large data:
         report_data
     )
     # Note: For explicit content type, use ObjectStorePutParams class (see API reference)
-    
+
     # Create public URL for sharing (expires in 1 hour)
     share_url = await context.objectstore.createPublicURL(
         "documents",
         report_key,
         3600000  # milliseconds
     )`} js={`const handler: AgentHandler = async (request, response, context) => {
+  // Assume analysisResults and userId are defined above
+  const analysisResults = { data: 'sample analysis' }; // placeholder
+  const userId = request.metadata.get('user_id');
+
   // Store generated report
   const reportData = generatePdfReport(analysisResults);
   const reportKey = \`reports/\${userId}/\${new Date().toISOString().split('T')[0]}_analysis.pdf\`;
@@ -259,7 +273,7 @@ Best for files and large data:
 Keep recent conversation context while managing memory size:
 
 <CodeExample py={`async def run(request, response, context):
-    session_id = request.metadata.get("session_id")
+    session_id = context.sessionId
     max_messages = 20  # Keep last 20 messages
     
     # Get existing conversation
@@ -306,7 +320,7 @@ Keep recent conversation context while managing memory size:
     }, {"ttl": 7200})  # 2 hour TTL
     
     return response.json({"message": agent_response})`} js={`const handler: AgentHandler = async (request, response, context) => {
-  const sessionId = request.metadata.get('session_id');
+  const sessionId = context.sessionId;
   const maxMessages = 20; // Keep last 20 messages
   
   // Get existing conversation
@@ -348,10 +362,10 @@ Keep recent conversation context while managing memory size:
   });
   
   // Save updated conversation
-  await context.kv.set('conversations', sessionId, JSON.stringify({
+  await context.kv.set('conversations', sessionId, {
     messages,
     updated: new Date().toISOString()
-  }), { ttl: 7200 }); // 2 hour TTL
+  }, { ttl: 7200 }); // 2 hour TTL
   
   return response.json({ message: agentResponse });
 };`} />
@@ -475,6 +489,7 @@ Build user profiles over time:
   const memories = await context.vector.search('user_preferences', {
     query: userInput,
     limit: 3,
+    similarity: 0.7,
     metadata: { user_id: userId }
   });
   
@@ -486,7 +501,7 @@ Build user profiles over time:
   );
   
   // Save updated profile
-  await context.kv.set('profiles', userId, JSON.stringify(profile));
+  await context.kv.set('profiles', userId, profile);
   
   return response.json({
     message: responseText,
@@ -779,347 +794,242 @@ Implement automated cleanup to manage costs:
   }
 };`} />
 
-## Lab: Building a Memory-Powered Customer Service Agent
+## Lab: Building a Docs Q&A Agent with Memory
 
-Let's build an agent that remembers customer interactions and provides increasingly personalized support:
+Let's build an agent that helps users find documentation using semantic search and learns from user interactions to provide better responses over time.
 
-<CodeExample py={`from datetime import datetime, timedelta
-import json
+### Key Implementation: Upload & Index Pattern
 
-def welcome():
-    """Test scenarios for our customer service agent."""
-    return {
-        "welcome": "Customer Service Agent - I remember you!",
-        "prompts": [
-            {
-                "data": {
-                    "action": "support",
-                    "user_id": "customer_123", 
-                    "message": "My order hasn't arrived yet",
-                    "order_id": "ORD-789"
-                },
-                "contentType": "application/json"
-            },
-            {
-                "data": {
-                    "action": "support",
-                    "user_id": "customer_123",
-                    "message": "Still waiting for my order"
-                },
-                "contentType": "application/json"
-            },
-            {
-                "data": {
-                    "action": "get_history",
-                    "user_id": "customer_123"
-                },
-                "contentType": "application/json"
-            }
-        ]
-    }
+The core pattern shows how agents use all storage types together in a cohesive workflow:
 
-async def run(request, response, context):
-    """Customer service agent with memory."""
-    data = await request.data.json()
-    action = data.get("action")
-    user_id = data.get("user_id")
-    
-    if action == "support":
-        message = data.get("message")
-        
-        # Get customer profile
-        profile_result = await context.kv.get("customers", user_id)
-        if profile_result.exists:
-            profile = await profile_result.data.json()
-            profile["interaction_count"] = profile.get("interaction_count", 0) + 1
-        else:
-            profile = {
-                "user_id": user_id,
-                "first_contact": datetime.now().isoformat(),
-                "interaction_count": 1,
-                "issues": []
-            }
-        
-        # Search for similar past issues
-        past_issues = await context.vector.search(
-            "support_history",
-            message,
-            limit=3,
-            metadata={"user_id": user_id}
-        )
-        
-        # Determine if this is a recurring issue
-        is_recurring = False
-        for issue in past_issues:
-            if issue.similarity > 0.8:
-                is_recurring = True
-                break
-        
-        # Store this interaction
-        interaction_key = f"{user_id}_{datetime.now().timestamp()}"
-        await context.vector.upsert("support_history", [{
-            "key": interaction_key,
-            "document": message,
+<CodeExample py={`# Key pattern: Upload, store, and index documents
+async def handle_upload(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    file_content = await request.data.text()
+    file_name = request.metadata.get("filename", "document.txt")
+
+    # 1. Store in object storage with proper UTF-8 encoding
+    binary_data = file_content.encode('utf-8')
+    await context.objectstore.put(OBJECT_STORAGE_BUCKET, file_name, binary_data)
+
+    # 2. Chunk and embed for search
+    chunks = chunk_document(file_content, chunk_size=500)
+
+    for i, chunk in enumerate(chunks):
+        chunk_id = f"{file_name}_chunk_{i}"
+        # Python vector storage uses array format
+        await context.vector.upsert(VECTOR_STORAGE_NAME, [{
+            "key": chunk_id,
+            "document": chunk,
             "metadata": {
-                "user_id": user_id,
-                "timestamp": datetime.now().isoformat(),
-                "order_id": data.get("order_id"),
-                "resolved": False
+                "source_file": file_name,
+                "chunk_index": i,
+                "uploaded_at": datetime.now().isoformat()
             }
         }])
-        
-        # Add to profile issues
-        profile["issues"].append({
-            "message": message,
-            "timestamp": datetime.now().isoformat(),
-            "recurring": is_recurring
-        })
-        
-        # Generate response based on history
-        if is_recurring:
-            response_text = (
-                f"I see you've contacted us about this before. "
-                f"Let me escalate this to our senior support team immediately. "
-                f"Your case has been prioritized."
-            )
-            priority = "high"
-        elif profile["interaction_count"] > 5:
-            response_text = (
-                f"Thank you for being a valued customer. "
-                f"I'm looking into your issue right away."
-            )
-            priority = "medium"
-        else:
-            response_text = (
-                f"Thank you for contacting support. "
-                f"I'll help you with your issue."
-            )
-            priority = "normal"
-        
-        # Save updated profile
-        await context.kv.set("customers", user_id, profile)
-        
-        # Log for analytics
-        context.logger.info(f"Support request from {user_id}: {priority} priority")
-        
-        return response.json({
-            "response": response_text,
-            "is_recurring": is_recurring,
-            "interaction_number": profile["interaction_count"],
-            "priority": priority,
-            "similar_issues_found": len(past_issues)
-        })
-    
-    elif action == "get_history":
-        # Retrieve customer history
-        profile_result = await context.kv.get("customers", user_id)
-        
-        if not profile_result.exists:
-            return response.json({
-                "error": "No history found for this customer"
-            })
-        
-        profile = await profile_result.data.json()
-        
-        # Get recent issues from vector storage
-        recent_issues = await context.vector.search(
-            "support_history",
-            f"all issues for user {user_id}",
-            limit=10,
-            metadata={"user_id": user_id}
-        )
-        
-        return response.json({
-            "customer_profile": profile,
-            "recent_issues": [
-                {
-                    "message": issue.document,
-                    "metadata": issue.metadata
-                }
-                for issue in recent_issues
-            ]
-        })
-    
-    return response.json({
-        "error": "Unknown action"
-    })`} js={`const welcome = () => {
-    return {
-        welcome: "Customer Service Agent - I remember you!",
-        prompts: [
-            {
-                data: JSON.stringify({
-                    action: "support",
-                    user_id: "customer_123",
-                    message: "My order hasn't arrived yet",
-                    order_id: "ORD-789"
-                }),
-                contentType: "application/json"
-            },
-            {
-                data: JSON.stringify({
-                    action: "support",
-                    user_id: "customer_123",
-                    message: "Still waiting for my order"
-                }),
-                contentType: "application/json"
-            },
-            {
-                data: JSON.stringify({
-                    action: "get_history",
-                    user_id: "customer_123"
-                }),
-                contentType: "application/json"
-            }
-        ]
-    };
-};
 
-const handler: AgentHandler = async (request, response, context) => {
-  const data = await request.data.json();
-  const { action, user_id } = data;
-  
-  if (action === 'support') {
-    const { message } = data;
-    
-    // Get customer profile
-    const profileResult = await context.kv.get('customers', user_id);
-    let profile;
-    
-    if (profileResult.exists) {
-      profile = await profileResult.data.json();
-      profile.interaction_count = (profile.interaction_count || 0) + 1;
-    } else {
-      profile = {
-        user_id,
-        first_contact: new Date().toISOString(),
-        interaction_count: 1,
-        issues: []
-      };
-    }
-    
-    // Search for similar past issues
-    const pastIssues = await context.vector.search('support_history', {
-      query: message,
-      limit: 3,
-      metadata: { user_id }
-    });
-    
-    // Determine if this is a recurring issue
-    let isRecurring = false;
-    for (const issue of pastIssues) {
-      if (issue.similarity > 0.8) {
-        isRecurring = true;
-        break;
-      }
-    }
-    
-    // Store this interaction
-    const interactionKey = \`\${user_id}_\${Date.now()}\`;
-    await context.vector.upsert('support_history', {
-      key: interactionKey,
-      document: message,
+    return response.json({
+        "status": "indexed",
+        "chunks": len(chunks),
+        "file": file_name
+    })`} js={`// Key pattern: Upload, store, and index documents
+async function handleUpload(request: AgentRequest, response: AgentResponse, context: AgentContext) {
+  const fileContent = await request.data.text();
+  const fileName = request.metadata.get('filename') || 'document.txt';
+
+  // 1. Store in object storage with proper UTF-8 encoding
+  const binaryData = new TextEncoder().encode(fileContent);
+  await context.objectstore.put(OBJECT_STORAGE_BUCKET, fileName, binaryData);
+
+  // 2. Chunk and embed for search
+  const chunks = chunkDocument(fileContent, 500);
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunkId = \`\${fileName}_chunk_\${i}\`;
+    // TypeScript vector storage uses single object format
+    await context.vector.upsert(VECTOR_STORAGE_NAME, {
+      key: chunkId,
+      document: chunks[i],
       metadata: {
-        user_id,
-        timestamp: new Date().toISOString(),
-        order_id: data.order_id,
-        resolved: false
+        sourceFile: fileName,
+        chunkIndex: i,
+        uploadedAt: new Date().toISOString()
       }
-    });
-    
-    // Add to profile issues
-    profile.issues.push({
-      message,
-      timestamp: new Date().toISOString(),
-      recurring: isRecurring
-    });
-    
-    // Generate response based on history
-    let responseText, priority;
-    
-    if (isRecurring) {
-      responseText = 
-        "I see you've contacted us about this before. " +
-        "Let me escalate this to our senior support team immediately. " +
-        "Your case has been prioritized.";
-      priority = 'high';
-    } else if (profile.interaction_count > 5) {
-      responseText = 
-        "Thank you for being a valued customer. " +
-        "I'm looking into your issue right away.";
-      priority = 'medium';
-    } else {
-      responseText = 
-        "Thank you for contacting support. " +
-        "I'll help you with your issue.";
-      priority = 'normal';
-    }
-    
-    // Save updated profile
-    await context.kv.set('customers', user_id, JSON.stringify(profile));
-    
-    // Log for analytics
-    context.logger.info(\`Support request from \${user_id}: \${priority} priority\`);
-    
-    return response.json({
-      response: responseText,
-      is_recurring: isRecurring,
-      interaction_number: profile.interaction_count,
-      priority,
-      similar_issues_found: pastIssues.length
-    });
-  
-  } else if (action === 'get_history') {
-    // Retrieve customer history
-    const profileResult = await context.kv.get('customers', user_id);
-    
-    if (!profileResult.exists) {
-      return response.json({
-        error: 'No history found for this customer'
-      });
-    }
-    
-    const profile = await profileResult.data.json();
-    
-    // Get recent issues from vector storage
-    const recentIssues = await context.vector.search('support_history', {
-      query: \`all issues for user \${user_id}\`,
-      limit: 10,
-      metadata: { user_id }
-    });
-    
-    return response.json({
-      customer_profile: profile,
-      recent_issues: recentIssues.map(issue => ({
-        message: issue.document,
-        metadata: issue.metadata
-      }))
     });
   }
-  
+
   return response.json({
-    error: 'Unknown action'
+    status: 'indexed',
+    chunks: chunks.length,
+    file: fileName
   });
-};
+}`} />
 
-export default handler;
-export { welcome };`} />
+### Key Implementation: Semantic Search with Context
 
-### Testing Your Memory Agent
+Agents combine search results with user history for intelligent responses:
+
+<CodeExample py={`# Key pattern: Semantic search with context and intelligent file detection
+async def search_documents(query: str, context: AgentContext, limit: int = 5):
+    # Detect if this is a file upload (llms.txt pattern)
+    is_file_upload = (query.startswith('# Agentuity') and
+                     ('## Features' in query or '## Product Features' in query) and
+                     '## About' in query)
+
+    if is_file_upload:
+        # Handle structured file indexing
+        return await handle_file_upload(query, context)
+
+    # 1. Vector search for relevant chunks
+    search_results = await context.vector.search(
+        VECTOR_STORAGE_NAME,
+        query,
+        limit=limit,
+        similarity=0.5  # Minimum similarity threshold
+    )
+
+    # 2. Track query history for learning
+    query_history = await context.kv.get(KV_STORAGE_NAME, "recent_queries")
+    if query_history.exists:
+        recent = await query_history.data.json()
+        recent.append({"query": query, "timestamp": datetime.now().isoformat()})
+    else:
+        recent = [{"query": query, "timestamp": datetime.now().isoformat()}]
+
+    # Store updated query history (keep last 10)
+    await context.kv.set(KV_STORAGE_NAME, "recent_queries", recent[-10:])
+
+    return search_results`} js={`// Key pattern: Semantic search with context and intelligent file detection
+async function searchDocuments(query: string, context: AgentContext, limit: number = 5) {
+  // Detect if this is a file upload (llms.txt pattern)
+  const isFileUpload = query.startsWith('# Agentuity') &&
+                      (query.includes('## Features') || query.includes('## Product Features')) &&
+                      query.includes('## About');
+
+  if (isFileUpload) {
+    // Handle structured file indexing
+    return await handleFileUpload(query, context);
+  }
+
+  // 1. Vector search for relevant chunks
+  const searchResults = await context.vector.search(VECTOR_STORAGE_NAME, {
+    query,
+    limit,
+    similarity: 0.5  // Minimum similarity threshold
+  });
+
+  // 2. Track query history for learning
+  const queryHistory = await context.kv.get(KV_STORAGE_NAME, 'recent_queries');
+  let recent;
+  if (queryHistory.exists) {
+    recent = await queryHistory.data.json();
+    recent.push({ query, timestamp: new Date().toISOString() });
+  } else {
+    recent = [{ query, timestamp: new Date().toISOString() }];
+  }
+
+  // Store updated query history (keep last 10)
+  await context.kv.set(KV_STORAGE_NAME, 'recent_queries', recent.slice(-10));
+
+  return searchResults;
+}`} />
+
+### Key Implementation: AI-Powered Documentation Q&A
+
+Combining search results with AI for intelligent documentation responses:
+
+<CodeExample py={`# Key pattern: AI-powered documentation Q&A with context building
+async def build_smart_response(query: str, search_results: list, context: AgentContext):
+    # Build context from top search results (metadata contains full content)
+    doc_context = '\n\n'.join([
+        result.metadata.get('content', '')
+        for result in search_results[:2]  # Use top 2 results
+        if result.metadata.get('content')
+    ])
+
+    # Generate AI response using OpenAI
+    response = await client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": "Answer questions about Agentuity based on the documentation provided. Be helpful and concise."
+            },
+            {
+                "role": "user",
+                "content": f"Documentation context:\n{doc_context or 'No relevant documentation found.'}\n\nQuestion: {query}\n\nProvide a helpful answer in 2-3 sentences."
+            }
+        ]
+    )
+
+    return response.choices[0].message.content.strip()`} js={`// Key pattern: AI-powered documentation Q&A with context building
+async function buildSmartResponse(query: string, searchResults: any[], context: AgentContext) {
+  // Build context from top search results (metadata contains full content)
+  const docContext = searchResults
+    .slice(0, 2)  // Use top 2 results for context
+    .map(result => result.metadata?.content || '')
+    .filter(content => content)  // Remove any empty results
+    .join('\\n\\n');
+
+  // Generate AI response using Vercel AI SDK
+  const { text: aiAnswer } = await generateText({
+    model: openai('gpt-4o-mini'),
+    prompt: \`Answer this question about Agentuity based on the documentation provided.
+
+Documentation context:
+\${docContext || 'No relevant documentation found.'}
+
+Question: \${query}
+
+Provide a helpful, concise answer in 2-3 sentences. If no context is available, politely indicate that.\`
+  });
+
+  return aiAnswer;
+}`} />
+
+### Build This Agent Yourself
+
+Ready to implement this agent? Follow our complete examples:
+
+<div className="flex flex-wrap gap-3 mb-6">
+  <a href="https://github.com/agentuity/examples/tree/add-tutorials/training/03-docs-qa-agent-ts" target="_blank" rel="noopener noreferrer"
+     className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    TypeScript
+  </a>
+  <a href="https://github.com/agentuity/examples/tree/add-tutorials/training/03_docs_qa_agent_py" target="_blank" rel="noopener noreferrer"
+     className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    Python
+  </a>
+</div>
+
+### What This Agent Demonstrates
+
+- **Semantic search**: Vector similarity for finding relevant documentation
+- **User learning**: Tracking search patterns and feedback to improve responses
+- **Context building**: Combining search results with conversation history
+- **Feedback loops**: Learning from user interactions to boost helpful content
+- **Personalization**: Adapting responses based on user's experience level
+
+The complete examples show you how to build intelligent documentation agents that get smarter over time through user interaction.
+
+
+## Testing Your Docs Q&A Agent
 
 1. **Start DevMode:**
 ```bash
 agentuity dev
 ```
 
-2. **Test the scenarios:**
-   - First support request - notice the standard response
-   - Second similar request - see how it recognizes the recurring issue
-   - Check history - view all stored interactions
+2. **Test the documentation search:**
+   - Ask questions about different documentation topics
+   - Notice how semantic search finds relevant content
+   - Test similar queries to see cached vs fresh results
 
 3. **Observe the memory in action:**
-   - Watch the logs to see KV and vector operations
-   - Try different user IDs to see isolated memory
-   - Test with various message similarities
+   - Watch the logs to see vector search operations
+   - Try different user patterns to see personalized responses
+   - Test feedback loops by rating search results
 
 ## Memory at Scale
 

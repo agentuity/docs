@@ -37,187 +37,202 @@ Agents spring into action when triggered. Agentuity supports multiple trigger ty
 
 Each trigger provides different metadata and context:
 
-<CodeExample py={`async def run(request, response, context):
+<CodeExample py={`from datetime import datetime
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     # Identify the trigger type
     trigger = request.trigger
-    
+
     if trigger == "webhook":
         # Handle HTTP request
         data = await request.data.json()
         context.logger.info(f"Webhook triggered with data: {data}")
-    
+
     elif trigger == "cron":
         # Handle scheduled execution
         context.logger.info(f"Cron job running at {datetime.now()}")
         # No input data for cron triggers
-    
+
     elif trigger == "agent":
         # Handle agent-to-agent call
         calling_agent = request.metadata.get("source_agent")
         context.logger.info(f"Called by agent: {calling_agent}")
-    
+
     return response.json({
         "trigger_type": trigger,
         "processed_at": datetime.now().isoformat()
-    })`} js={`const handler: AgentHandler = async (request, response, context) => {
+    })`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
   // Identify the trigger type
   const trigger = request.trigger;
-  
+
   if (trigger === 'webhook') {
     // Handle HTTP request
     const data = await request.data.json();
     context.logger.info(\`Webhook triggered with data: \${JSON.stringify(data)}\`);
-  
+
   } else if (trigger === 'cron') {
     // Handle scheduled execution
     context.logger.info(\`Cron job running at \${new Date().toISOString()}\`);
     // No input data for cron triggers
-  
+
   } else if (trigger === 'agent') {
     // Handle agent-to-agent call
     const callingAgent = request.metadata.get('source_agent');
     context.logger.info(\`Called by agent: \${callingAgent}\`);
   }
-  
+
   return response.json({
     trigger_type: trigger,
     processed_at: new Date().toISOString()
   });
-};`} />
+}`} />
 
 ### 2. Request and Response Handling
 
 Every agent receives a request and must return a response. The request contains the trigger data and metadata, while the response can be in various formats:
 
-<CodeExample py={`async def run(request, response, context):
+<CodeExample py={`from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     # Access request data in different formats
-    
+
     # JSON data (most common)
     json_data = await request.data.json()
-    
+
     # Plain text
     text_data = await request.data.text()
-    
+
     # Binary data
     binary_data = await request.data.binary()
-    
-    # Base64 encoded
-    base64_data = await request.data.base64()
-    
+
     # Response options
-    
+
     # JSON response (most common)
     return response.json({"result": "success"})
-    
+
     # Text response
     # return response.text("Hello, World!")
-    
+
     # HTML response
     # return response.html("<h1>Hello</h1>")
-    
+
     # Binary response (for files)
     # return response.binary(file_bytes)
-    
+
     # Redirect to another agent
-    # return response.handoff({"name": "other-agent"}, data, metadata={})`} js={`const handler: AgentHandler = async (request, response, context) => {
+    # return response.handoff({"name": "other-agent"}, data, metadata={})`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
   // Access request data in different formats
-  
+
   // JSON data (most common)
   const jsonData = await request.data.json();
-  
+
   // Plain text
   const textData = await request.data.text();
-  
+
   // Binary data
   const binaryData = await request.data.binary();
-  
-  // Base64 encoded
-  const base64Data = await request.data.base64();
-  
+
   // Response options
-  
+
   // JSON response (most common)
   return response.json({ result: 'success' });
-  
+
   // Text response
   // return response.text('Hello, World!');
-  
+
   // HTML response
   // return response.html('<h1>Hello</h1>');
-  
+
   // Binary response (for files)
   // return response.binary(fileBytes);
-  
+
   // Redirect to another agent
   // return response.handoff({ name: 'other-agent' }, { data: jsonData, contentType: 'application/json' });
-};`} />
+}`} />
 
 ### 3. The Agent Context
 
-The context object is your agent's gateway to Agentuity's services. It provides access to storage, logging, tracing, and more:
+The context object is your agent's gateway to Agentuity's services. It provides access to storage, logging, tracing, agent communication, and more:
 
-<CodeExample py={`async def run(request, response, context):
+<CodeExample py={`from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     # Logging at different levels
     context.logger.debug("Debug information")
     context.logger.info("General information")
     context.logger.warn("Warning message")
     context.logger.error("Error occurred")
-    
+
     # Access metadata
     agent_id = context.agent.id
     agent_name = context.agent.name
     project_id = context.projectId
     session_id = context.sessionId
-    
+
     # Key-Value storage
     await context.kv.set("cache", "key", {"data": "value"})
     result = await context.kv.get("cache", "key")
-    
+
     # Vector storage for semantic search
     await context.vector.upsert("docs", [{
         "key": "doc1",
         "document": "AI agents are autonomous systems",
         "metadata": {"category": "intro"}
     }])
-    
+
     # Object storage for files
     await context.objectstore.put("files", "report.pdf", pdf_bytes)
-    
+
+    # Get reference to another agent for inter-agent communication
+    other_agent = context.get_agent("specialist-agent")
+    # agent_response = await other_agent.run({"data": "Hello from triage agent"})
+
     return response.json({
         "agent": agent_name,
         "session": session_id
-    })`} js={`const handler: AgentHandler = async (request, response, context) => {
+    })`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
   // Logging at different levels
   context.logger.debug('Debug information');
   context.logger.info('General information');
   context.logger.warn('Warning message');
   context.logger.error('Error occurred');
-  
+
   // Access metadata
   const agentId = context.agent.id;
   const agentName = context.agent.name;
   const projectId = context.projectId;
   const sessionId = context.sessionId;
-  
+
   // Key-Value storage
-  await context.kv.set('cache', 'key', JSON.stringify({ data: 'value' }));
+  await context.kv.set('cache', 'key', { data: 'value' });
   const result = await context.kv.get('cache', 'key');
-  
+
   // Vector storage for semantic search
-  await context.vector.upsert('docs', {
+  await context.vector.upsert('docs', [{
     key: 'doc1',
     document: 'AI agents are autonomous systems',
     metadata: { category: 'intro' }
-  });
-  
+  }]);
+
   // Object storage for files
   await context.objectstore.put('files', 'report.pdf', pdfBytes);
-  
+
+  // Get reference to another agent for inter-agent communication
+  const otherAgent = context.getAgent({ name: 'specialist-agent' });
+  // const agentResponse = await otherAgent.run({ data: 'Hello from triage agent' });
+
   return response.json({
     agent: agentName,
     session: sessionId
   });
-};`} />
+}`} />
 
 ## Planning and Reasoning: The Agent's Brain
 
@@ -254,8 +269,9 @@ Agents become powerful when they can use external tools and services:
 <CodeExample py={`import httpx
 import os
 from typing import Dict, Any
+from agentuity import AgentRequest, AgentResponse, AgentContext
 
-async def use_web_search(query: str, context) -> Dict[str, Any]:
+async def use_web_search(query: str, context: AgentContext) -> Dict[str, Any]:
     """Search the web using a real API."""
     try:
         # Example using a hypothetical search API
@@ -274,10 +290,10 @@ async def use_web_search(query: str, context) -> Dict[str, Any]:
         context.logger.error(f"Search failed: {str(e)}")
         return {"error": "Search failed"}
 
-async def call_another_agent(agent_name: str, data: dict, context) -> Dict[str, Any]:
+async def call_another_agent(agent_name: str, data: dict, context: AgentContext) -> Dict[str, Any]:
     """Call another agent within the same project."""
     try:
-        agent = await context.getAgent({"name": agent_name})
+        agent = context.get_agent(agent_name)
         result = await agent.run({
             "data": data,
             "contentType": "application/json"
@@ -287,7 +303,7 @@ async def call_another_agent(agent_name: str, data: dict, context) -> Dict[str, 
         context.logger.error(f"Agent call failed: {str(e)}")
         return {"error": "Agent call failed"}
 
-async def run(request, response, context):
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     data = await request.data.json()
     tool = data.get("tool")
 
@@ -298,7 +314,9 @@ async def run(request, response, context):
     else:
         result = {"error": "Unknown tool"}
 
-    return response.json(result)`} js={`async function useWebSearch(query: string, context: any): Promise<any> {
+    return response.json(result)`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+async function useWebSearch(query: string, context: AgentContext): Promise<any> {
   try {
     // Example using a hypothetical search API
     const apiKey = process.env.SEARCH_API_KEY;
@@ -316,9 +334,9 @@ async def run(request, response, context):
   }
 }
 
-async function callAnotherAgent(agentName: string, data: any, context: any): Promise<any> {
+async function callAnotherAgent(agentName: string, data: any, context: AgentContext): Promise<any> {
   try {
-    const agent = await context.getAgent({ name: agentName });
+    const agent = context.getAgent({ name: agentName });
     const result = await agent.run({
       data,
       contentType: 'application/json'
@@ -330,7 +348,7 @@ async function callAnotherAgent(agentName: string, data: any, context: any): Pro
   }
 }
 
-const handler: AgentHandler = async (request, response, context) => {
+export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
   const data = await request.data.json();
   const tool = data.tool;
 
@@ -344,7 +362,7 @@ const handler: AgentHandler = async (request, response, context) => {
   }
 
   return response.json(result);
-};`} />
+}`} />
 
 ## Memory Patterns: How Agents Remember
 
@@ -354,8 +372,9 @@ Memory enables agents to learn and maintain state across interactions. The durat
 For temporary data that should expire:
 
 <CodeExample py={`from datetime import datetime
+from agentuity import AgentRequest, AgentResponse, AgentContext
 
-async def run(request, response, context):
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     session_id = request.metadata.get("session_id")
 
     # Store temporary session data with TTL
@@ -374,26 +393,31 @@ async def run(request, response, context):
     session_data = await context.kv.get("sessions", session_id)
     if session_data.exists:
         data = await session_data.data.json()
-        context.logger.info(f"Session active for {len(data['messages'])} messages")`} js={`const handler: AgentHandler = async (request, response, context) => {
+        context.logger.info(f"Session active for {len(data['messages'])} messages")`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
   const sessionId = request.metadata.get('session_id');
 
   // Store temporary session data with TTL
   await context.kv.set(
     'sessions',
     sessionId,
-    JSON.stringify({
+    {
       messages: [],
-      context: {},
+      user_preferences: {},
       timestamp: new Date().toISOString()
-    }),
+    },
     { ttl: 3600 } // Expires in 1 hour
   );
-};`} />
+}`} />
 
 ### Persistent Memory
 For data that should survive restarts:
 
-<CodeExample py={`async def run(request, response, context):
+<CodeExample py={`from datetime import datetime
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     user_id = request.metadata.get("user_id")
 
     # Store user preferences permanently (no TTL)
@@ -413,7 +437,9 @@ For data that should survive restarts:
         "user_documents",
         f"{user_id}/resume.pdf",
         pdf_bytes
-    )`} js={`const handler: AgentHandler = async (request, response, context) => {
+    )`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
   const userId = request.metadata.get('user_id');
 
   // Store user preferences permanently (no TTL)
@@ -434,12 +460,14 @@ For data that should survive restarts:
     \`\${userId}/resume.pdf\`,
     pdfBytes
   );
-};`} />
+}`} />
 
 ### Searchable Memory
 For semantic search and knowledge retrieval:
 
-<CodeExample py={`async def run(request, response, context):
+<CodeExample py={`from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     # Store searchable knowledge
     await context.vector.upsert("knowledge", [{
         "key": "user_feedback_001",
@@ -462,7 +490,9 @@ For semantic search and knowledge retrieval:
     if results:
         context.logger.info(f"Found {len(results)} relevant insights")
         for result in results:
-            context.logger.info(f"Insight: {result.document}")`} js={`const handler: AgentHandler = async (request, response, context) => {
+            context.logger.info(f"Insight: {result.document}")`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
   // Store searchable knowledge
   await context.vector.upsert('knowledge', [{
     key: 'user_feedback_001',
@@ -488,7 +518,7 @@ For semantic search and knowledge retrieval:
       context.logger.info(\`Insight: \${result.document}\`);
     });
   }
-};`} />
+}`} />
 
 ## Framework Awareness: Choosing the Right Tool
 
@@ -505,6 +535,8 @@ Different frameworks excel at different tasks. Here's when to use each:
 | **LangChain** | Complex chains, RAG applications | Python, TypeScript | Native SDK support |
 | **CrewAI** | Multi-agent teams, role-based systems | Python | Container deployment |
 | **AutoGen** | Research, conversational AI | Python | Direct deployment |
+| **Mastra** | TypeScript agents, workflows, modern DX | TypeScript | Full compatibility |
+| **Vercel AI SDK** | UI-integrated agents, streaming, web apps | TypeScript | Direct integration |
 | **Custom** | Specific requirements, full control | Python, TypeScript, Bun | Full platform features |
 
 ### Framework Comparison Example
@@ -512,7 +544,9 @@ Different frameworks excel at different tasks. Here's when to use each:
 Here's the same agent built with different approaches:
 
 <CodeExample py={`# Vanilla Python Agent
-async def run(request, response, context):
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     data = await request.data.json()
     # Direct implementation
     result = process_data(data)
@@ -521,8 +555,9 @@ async def run(request, response, context):
 # LangChain Agent
 from langchain.agents import initialize_agent
 from langchain.llms import OpenAI
+from agentuity import AgentRequest, AgentResponse, AgentContext
 
-async def run(request, response, context):
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     llm = OpenAI()
     agent = initialize_agent(tools, llm, agent="zero-shot")
     result = agent.run(await request.data.text())
@@ -530,41 +565,47 @@ async def run(request, response, context):
 
 # CrewAI Agent
 from crewai import Agent, Task, Crew
+from agentuity import AgentRequest, AgentResponse, AgentContext
 
-async def run(request, response, context):
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     researcher = Agent(role="Researcher", goal="Find information")
     writer = Agent(role="Writer", goal="Create content")
-    
+
     crew = Crew(agents=[researcher, writer])
     result = crew.kickoff(await request.data.json())
     return response.json(result)`} js={`// Vanilla TypeScript Agent
-const handler: AgentHandler = async (request, response, context) => {
+import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
   const data = await request.data.json();
   // Direct implementation
   const result = processData(data);
   return response.json(result);
-};
+}
 
 // LangChain Agent
 import { initializeAgentExecutor } from 'langchain/agents';
 import { OpenAI } from 'langchain/llms/openai';
+import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
 
-const handler: AgentHandler = async (request, response, context) => {
+export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
   const llm = new OpenAI();
   const agent = await initializeAgentExecutor(tools, llm, 'zero-shot');
   const result = await agent.call({ input: await request.data.text() });
   return response.text(result.output);
-};
+}
 
 // Custom Multi-Agent System
-const handler: AgentHandler = async (request, response, context) => {
+import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
   const researcher = new Agent('Researcher', 'Find information');
   const writer = new Agent('Writer', 'Create content');
-  
+
   const researchResult = await researcher.execute(data);
   const writeResult = await writer.execute(researchResult);
   return response.json(writeResult);
-};`} />
+}`} />
 
 ### When to Use Which Framework
 
@@ -577,258 +618,198 @@ const handler: AgentHandler = async (request, response, context) => {
 
 ## Lab: Building a Weather Agent with Multiple Triggers
 
-Let's build an agent that demonstrates different behaviors based on how it's triggered. This weather agent will show you how the same code can serve different purposes:
+Let's build an agent that demonstrates different behaviors based on how it's triggered - the same agent code serves different purposes depending on the trigger type.
 
-<CodeExample py={`from datetime import datetime
+### Key Implementation: Trigger-Based Routing
 
-async def run(request, response, context):
-    """Weather agent with different trigger behaviors."""
+The core pattern shows how agents can behave differently based on their trigger:
 
-    trigger = request.trigger
-    context.logger.info(f"Weather agent triggered via: {trigger}")
-
-    if trigger == "webhook":
-        # Manual requests for specific cities
-        try:
-            data = await request.data.json()
-            city = data.get("city", "London")
-        except:
-            city = await request.data.text() or "London"
-
-        context.logger.info(f"Manual weather request for: {city}")
-
-        # Check cache first (10 minutes TTL)
-        cache_key = f"weather_{city.lower()}"
-        cached = await context.kv.get("weather_cache", cache_key)
-
-        if cached.exists:
-            weather = await cached.data.json()
-            context.logger.info(f"Returning cached weather for {city}")
-            return response.json({
-                **weather,
-                "cached": True,
-                "cache_age_minutes": 5  # Mock age
-            })
-
-        # Mock weather data (in production, call real API)
-        weather = {
-            "city": city,
-            "temperature": 22,
-            "description": "partly cloudy",
-            "humidity": 65,
-            "timestamp": datetime.now().isoformat()
-        }
-
-        # Cache for 10 minutes
-        await context.kv.set("weather_cache", cache_key, weather, {"ttl": 600})
-
-        return response.json({**weather, "cached": False})
-
-    elif trigger == "cron":
-        # Batch update for major cities
-        cities = ["London", "New York", "Tokyo", "Sydney"]
-        context.logger.info(f"Cron job: Updating weather for {len(cities)} cities")
-
-        weather_data = {}
-        for city in cities:
-            # Mock weather data
-            weather_data[city] = {
-                "temperature": 20 + hash(city) % 15,  # Mock variation
-                "description": "sunny",
-                "updated": datetime.now().isoformat()
-            }
-
-        # Store daily weather report
-        await context.kv.set("weather_reports", "daily", weather_data, {"ttl": 86400})
-
-        return response.json({
-            "task": "weather_update",
-            "cities_updated": len(cities),
-            "timestamp": datetime.now().isoformat()
-        })
-
-    elif trigger == "manual":
-        # DevMode testing - show available commands
-        return response.json({
-            "message": "Weather Agent DevMode",
-            "commands": [
-                "Test webhook: POST {\"city\": \"Paris\"}",
-                "Test cron: Use simulate button in DevMode"
-            ],
-            "current_time": datetime.now().isoformat()
-        })
-
+<CodeExample py={`# Key pattern: Different behavior based on trigger type
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    if request.trigger == "cron":
+        # Bulk monitoring mode
+        context.logger.info("Running scheduled weather monitoring")
+        return await monitor_multiple_cities(context)
     else:
-        return response.json({
-            "error": f"Unsupported trigger: {trigger}",
-            "supported": ["webhook", "cron", "manual"]
-        })`} js={`const handler: AgentHandler = async (request, response, context) => {
-  const trigger = request.trigger;
-  context.logger.info(\`Weather agent triggered via: \${trigger}\`);
-
-  if (trigger === 'webhook') {
-    // Manual requests for specific cities
-    let city = 'London';
-    try {
-      const data = await request.data.json();
-      city = data.city || 'London';
-    } catch {
-      city = await request.data.text() || 'London';
-    }
-
-    context.logger.info(\`Manual weather request for: \${city}\`);
-
-    // Check cache first (10 minutes TTL)
-    const cacheKey = \`weather_\${city.toLowerCase()}\`;
-    const cached = await context.kv.get('weather_cache', cacheKey);
-
-    if (cached.exists) {
-      const weather = await cached.data.json();
-      context.logger.info(\`Returning cached weather for \${city}\`);
-      return response.json({
-        ...weather,
-        cached: true,
-        cache_age_minutes: 5  // Mock age
-      });
-    }
-
-    // Mock weather data (in production, call real API)
-    const weather = {
-      city,
-      temperature: 22,
-      description: 'partly cloudy',
-      humidity: 65,
-      timestamp: new Date().toISOString()
-    };
-
-    // Cache for 10 minutes
-    await context.kv.set('weather_cache', cacheKey, weather, { ttl: 600 });
-
-    return response.json({ ...weather, cached: false });
-
-  } else if (trigger === 'cron') {
-    // Batch update for major cities
-    const cities = ['London', 'New York', 'Tokyo', 'Sydney'];
-    context.logger.info(\`Cron job: Updating weather for \${cities.length} cities\`);
-
-    const weatherData: Record<string, any> = {};
-    cities.forEach(city => {
-      // Mock weather data with variation
-      weatherData[city] = {
-        temperature: 20 + (city.length % 15),  // Mock variation
-        description: 'sunny',
-        updated: new Date().toISOString()
-      };
-    });
-
-    // Store daily weather report
-    await context.kv.set('weather_reports', 'daily', weatherData, { ttl: 86400 });
-
-    return response.json({
-      task: 'weather_update',
-      cities_updated: cities.length,
-      timestamp: new Date().toISOString()
-    });
-
-  } else if (trigger === 'manual') {
-    // DevMode testing - show available commands
-    return response.json({
-      message: 'Weather Agent DevMode',
-      commands: [
-        'Test webhook: POST {"city": "Paris"}',
-        'Test cron: Use simulate button in DevMode'
-      ],
-      current_time: new Date().toISOString()
-    });
-
+        # On-demand single query
+        data = await request.data.json()
+        location = data.get("location", "San Francisco, CA")
+        return await get_single_weather(location, context)`} js={`// Key pattern: Different behavior based on trigger type
+export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
+  if (request.trigger === 'cron') {
+    // Bulk monitoring mode
+    context.logger.info('Running scheduled weather monitoring');
+    return await monitorMultipleCities(context);
   } else {
-    return response.json({
-      error: \`Unsupported trigger: \${trigger}\`,
-      supported: ['webhook', 'cron', 'manual']
-    });
+    // On-demand single query
+    const data = await request.data.json();
+    const location = data.location || 'San Francisco, CA';
+    return await getSingleWeather(location, context);
   }
-};`} />
+}`} />
 
-### Testing Your Weather Agent
+### Key Implementation: External API Integration
 
-<Callout type="info">
-DevMode makes it easy to test all trigger types. You can simulate webhooks, test manual triggers, and even simulate cron jobs through the interface.
-</Callout>
+Real-world agents integrate with external services using proper error handling:
 
-#### What This Agent Demonstrates
+<CodeExample py={`# Key pattern: NWS API two-step process with proper error handling
+async def fetch_nws_weather(lat: float, lon: float, location_name: str, context: AgentContext):
+    try:
+        # Step 1: Get grid coordinates from lat/lon
+        points_url = f"https://api.weather.gov/points/{lat},{lon}"
 
-- **Webhook trigger**: Handles real-time weather requests with caching
-- **Cron trigger**: Batch updates for multiple cities
-- **Manual trigger**: DevMode testing and debugging interface
-- **Caching strategy**: Uses TTL to balance freshness and performance
-- **Error handling**: Graceful fallbacks for different input types
+        async with aiohttp.ClientSession() as session:
+            async with session.get(points_url, headers={"User-Agent": USER_AGENT},
+                                 timeout=aiohttp.ClientTimeout(total=10)) as points_response:
+                if points_response.status != 200:
+                    raise Exception(f"NWS points API error: {points_response.status}")
 
-Try calling this agent with different cities and watch how it caches responses for efficiency!
+                points_data = await points_response.json()
+                grid_props = points_data.get("properties", {})
 
-<CodeExample py={`def welcome():
-    """Configure test scenarios for different trigger types."""
-    return {
-        "welcome": "Multi-Trigger Agent Test Suite",
-        "prompts": [
-            # Webhook trigger tests
-            {
-                "data": {"action": "store", "key": "test", "value": "data"},
-                "contentType": "application/json"
-            },
-            {
-                "data": {"action": "retrieve", "key": "test"},
-                "contentType": "application/json"
-            },
-            # Simulate what a cron trigger would do
-            {
-                "data": {"_simulate_cron": True},
-                "contentType": "application/json"
-            },
-            # Simulate agent-to-agent communication
-            {
-                "data": {"message": "Hello from another agent", "source_agent": "agent_123"},
-                "contentType": "application/json"
-            }
-        ]
-    }`} js={`export const welcome = () => {
-    return {
-        welcome: "Multi-Trigger Agent Test Suite",
-        prompts: [
-            // Webhook trigger tests
-            {
-                data: JSON.stringify({ action: "store", key: "test", value: "data" }),
-                contentType: "application/json"
-            },
-            {
-                data: JSON.stringify({ action: "retrieve", key: "test" }),
-                contentType: "application/json"
-            },
-            // Simulate what a cron trigger would do
-            {
-                data: JSON.stringify({ _simulate_cron: true }),
-                contentType: "application/json"
-            },
-            // Simulate agent-to-agent communication
-            {
-                data: JSON.stringify({ message: "Hello from another agent", source_agent: "agent_123" }),
-                contentType: "application/json"
-            }
-        ]
-    };
-};`} />
+                # Extract and validate grid data
+                grid_id = grid_props.get("gridId")
+                grid_x = grid_props.get("gridX")
+                grid_y = grid_props.get("gridY")
 
-#### Testing in DevMode
+                if not all([grid_id, grid_x, grid_y]):
+                    raise Exception("Invalid grid data from NWS points API")
+
+            # Step 2: Get forecast using grid coordinates
+            forecast_url = f"https://api.weather.gov/gridpoints/{grid_id}/{grid_x},{grid_y}/forecast"
+            # ... fetch and process forecast data
+
+    except Exception as e:
+        context.logger.error(f"Weather API failed for {location_name}: {e}")
+        raise`} js={`// Key pattern: NWS API two-step process with proper error handling
+async function fetchNWSWeather(lat: number, lon: number, locationName: string, context: AgentContext): Promise<WeatherResult | null> {
+  try {
+    // Step 1: Get grid coordinates from lat/lon
+    const pointsUrl = \`https://api.weather.gov/points/\${lat},\${lon}\`;
+
+    const pointsResponse = await fetch(pointsUrl, {
+      headers: { 'User-Agent': USER_AGENT },
+      signal: AbortSignal.timeout(10000)  // 10 second timeout
+    });
+
+    if (!pointsResponse.ok) {
+      throw new Error(\`NWS points API failed: \${pointsResponse.status} \${pointsResponse.statusText}\`);
+    }
+
+    const pointsData = await pointsResponse.json() as NWSPointsResponse;
+    const gridProps = pointsData.properties;
+
+    // Validate and extract grid properties
+    if (!gridProps || gridProps.gridId === undefined || gridProps.gridX === undefined || gridProps.gridY === undefined) {
+      throw new Error('Could not extract grid information from NWS points API response.');
+    }
+
+    // Step 2: Get forecast using grid coordinates
+    const forecastUrl = \`https://api.weather.gov/gridpoints/\${gridProps.gridId}/\${gridProps.gridX},\${gridProps.gridY}/forecast\`;
+    // ... fetch and process forecast data
+
+  } catch (error) {
+    context.logger.error(\`Weather API failed for \${locationName}: \${error}\`);
+    throw new Error(\`Weather service unavailable: \${error instanceof Error ? error.message : 'Unknown error'}\`);
+  }
+}`} />
+
+### Key Implementation: Smart Caching Strategies
+
+Different caching approaches based on use case and trigger:
+
+<CodeExample py={`# Key pattern: Trigger-based caching with different TTL strategies
+async def handle_manual_trigger(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    # Parse location and create cache key
+    location_query = await request.data.text() or "San Francisco"
+    cache_key = f"city_{location_query.lower().replace(' ', '_')}"
+
+    # Check cache first (5 minutes for manual requests)
+    cached = await context.kv.get("weather", cache_key)
+    if cached.exists:
+        cached_weather = await cached.data.json()
+        context.logger.info(f"Returning cached weather for {location_query}")
+        return response.json(cached_weather)
+
+    # Fetch fresh data and cache with shorter TTL
+    weather = await fetch_nws_weather(coordinates["lat"], coordinates["lon"], location_query, context)
+    await context.kv.set("weather", cache_key, weather, {"ttl": 300})  # 5 minutes
+
+    return response.json(weather)
+
+async def handle_cron_trigger(response: AgentResponse, context: AgentContext):
+    # Bulk processing with longer cache (1 hour for monitoring)
+    for city in MONITORED_CITIES:
+        weather = await fetch_nws_weather(city["lat"], city["lon"], city["name"], context)
+        await context.kv.set("weather", f"city_{city['name'].lower()}", weather, {"ttl": 3600})
+        context.logger.info(f"Cached weather for {city['name']}: {weather['temperature']}°F")`} js={`// Key pattern: Trigger-based caching with different TTL strategies
+async function handleManualTrigger(request: AgentRequest, response: AgentResponse, context: AgentContext) {
+  // Parse location and create cache key
+  const locationQuery = await request.data.text() || 'San Francisco';
+  const cacheKey = \`city_\${locationQuery.toLowerCase().replace(/\\s+/g, '_')}\`;
+
+  // Check cache first (5 minutes for manual requests)
+  const cached = await context.kv.get('weather', cacheKey);
+  if (cached.exists) {
+    const cachedWeather = await cached.data.json() as WeatherResult;
+    context.logger.info(\`Returning cached weather for \${locationQuery}\`);
+    return response.json(cachedWeather);
+  }
+
+  // Fetch fresh data and cache with shorter TTL
+  const weather = await fetchNWSWeather(coordinates.lat, coordinates.lon, locationQuery, context);
+  await context.kv.set('weather', cacheKey, weather, { ttl: 300 }); // 5 minutes
+
+  return response.json(weather);
+}
+
+async function handleCronTrigger(response: AgentResponse, context: AgentContext) {
+  // Bulk processing with longer cache (1 hour for monitoring)
+  for (const city of MONITORED_CITIES) {
+    const weather = await fetchNWSWeather(city.lat, city.lon, city.name, context);
+    await context.kv.set('weather', \`city_\${city.name.toLowerCase()}\`, weather, { ttl: 3600 });
+    context.logger.info(\`Cached weather for \${city.name}: \${weather.temperature}°F\`);
+  }
+}`} />
+
+### Build This Agent Yourself
+
+Ready to implement this agent? Follow our complete examples:
+
+<div className="flex flex-wrap gap-3 mb-6">
+  <a href="https://github.com/agentuity/examples/tree/add-tutorials/training/02-weather-agent-ts" target="_blank" rel="noopener noreferrer"
+     className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.30 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    TypeScript
+  </a>
+  <a href="https://github.com/agentuity/examples/tree/add-tutorials/training/02_weather_agent_py" target="_blank" rel="noopener noreferrer"
+     className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.30 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    Python
+  </a>
+</div>
+
+### What This Agent Demonstrates
+
+- **Trigger-based behavior**: Same agent code behaves differently based on trigger type
+- **External API integration**: Real National Weather Service API calls with proper error handling
+- **Smart caching strategies**: Different TTL based on use case (cron vs manual)
+- **Production patterns**: Timeouts, defensive typing, comprehensive logging
+- **AI enhancement**: Vercel AI SDK for weather interpretation
+
+The complete examples show you how to build real agents that integrate external APIs and use multiple triggers with caching and error handling.
+
+## Testing Your Weather Agent
 
 1. **Start DevMode:**
 ```bash
 agentuity dev
 ```
 
-2. **Open the DevMode interface** and click the pre-configured prompts to test different scenarios
+2. **Test the weather agent** with different city names and trigger types
+3. **Monitor the execution** in the Logs and Sessions tabs to see caching behavior
 
-3. **Monitor the execution** in the Logs and Sessions tabs
-
-#### Configuring Cron Triggers for Production
+### Configuring Cron Triggers for Production
 
 For actual scheduled execution, configure cron triggers through the [Agentuity Console](https://app.agentuity.com):
 
@@ -852,20 +833,24 @@ Effective cost optimization strategies include:
 
 - **Cache frequently used data** in KV storage to reduce repeated processing
 - **Batch operations** when possible to minimize API calls
-- **Use appropriate LLM models** - use reasoning models (like GPT-4) only when you need complex reasoning
+- **Use appropriate LLM models** - use reasoning models only when you need complex reasoning
 - **Consider fast inference providers** - Groq offers high-speed inference for many models
 - **Implement early exits** in reasoning loops to avoid unnecessary iterations
 
 ### Latency vs. Capability Trade-offs
 
+Different approaches offer varying trade-offs between speed and intelligence:
+
 | Approach | Latency | Capability | Use Case |
 |----------|---------|------------|----------|
-| Simple rules | &lt;100ms | Low | Basic routing |
-| Small LLM | 200-500ms | Medium | Classification |
-| Large LLM | 1-3s | High | Complex reasoning |
-| Multi-agent | 3-10s | Very High | Research tasks |
+| Simple rules | Fastest | Low | Basic routing, simple classification |
+| Small LLM | Fast | Medium | Text classification, simple reasoning |
+| Large LLM | Moderate | High | Complex reasoning, nuanced understanding |
+| Multi-agent | Slowest | Very High | Research, complex workflows |
 
-<CodeExample py={`async def run(request, response, context):
+<CodeExample py={`from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     data = await request.data.json()
     complexity = assess_complexity(data)
     
@@ -882,26 +867,28 @@ Effective cost optimization strategies include:
     else:
         # Use full agent capabilities
         result = await full_agent_process(data, context)
-        return response.json(result)`} js={`const handler: AgentHandler = async (request, response, context) => {
+        return response.json(result)`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+
+export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
   const data = await request.data.json();
   const complexity = assessComplexity(data);
-  
+
   if (complexity === 'simple') {
     // Use rules-based approach
     const result = applyRules(data);
     return response.json(result);
-  
+
   } else if (complexity === 'medium') {
     // Use small, fast model
     const result = await smallModelProcess(data);
     return response.json(result);
-  
+
   } else {
     // Use full agent capabilities
     const result = await fullAgentProcess(data, context);
     return response.json(result);
   }
-};`} />
+}`} />
 
 ## Key Takeaways
 
