@@ -82,7 +82,29 @@ export default async function Agent(
 	ctx: AgentContext
 ) {
 	try {
-		const parsedRequest = parseAgentRequest(await req.data.json(), ctx);
+		let requestData: any = null;
+		try {
+			requestData = await req.data.json();
+		} catch (_error) {
+			const textData = await req.data.text();
+			if (!textData.trim()) {
+				return resp.json(
+					{
+						error: "No input provided. Please send a message or valid JSON request.",
+						expectedFormat: {
+							message: "Your question here",
+							conversationHistory: [],
+							tutorialData: { tutorialId: "string", currentStep: 1 },
+							useDirectLLM: false
+						}
+					},
+					{ status: 400 }
+				);
+			}
+			requestData = { message: textData };
+		}
+
+		const parsedRequest = parseAgentRequest(requestData, ctx);
 
 		// Create state manager
 		const state = createAgentState();
@@ -94,7 +116,7 @@ export default async function Agent(
 		];
 
 		let tools: any;
-		let systemPrompt: string = "";
+		let systemPrompt = "";
 		// Direct LLM access won't require any tools or system prompt
 		if (!parsedRequest.useDirectLLM) {
 			// Create tools with state context
