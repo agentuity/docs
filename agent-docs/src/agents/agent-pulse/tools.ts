@@ -24,7 +24,7 @@ export async function createTools(context: ToolContext) {
      * Tool for starting a tutorial - adds action to state queue
      */
     const startTutorialAtStep = tool({
-        description: "Start a specific tutorial for the user. You must call this function in order for the user to see the tutorial step content. The step number should be between 1 and the total number of steps in the tutorial.",
+        description: "Start a specific tutorial for the user. You must call this function in order for the user to see the tutorial step content. The tutorial content will be injected to the final response automatically -- you do not have to narrate the tutorial content. The step number should be between 1 and the total number of steps in the tutorial.",
         parameters: z.object({
             tutorialId: z.string().describe("The exact ID of the tutorial to start"),
             stepNumber: z.number().describe("The step number of the tutorial to start (1 to total available steps in the tutorial)")
@@ -53,7 +53,7 @@ export async function createTools(context: ToolContext) {
     });
 
     /**
-     * Tool for talking to other agents (nong-tutorial functionality)
+     * Tool that talks to docs agent.
      * This tool doesn't use state - it returns data directly
      */
     const askDocsAgentTool = tool({
@@ -71,25 +71,9 @@ export async function createTools(context: ToolContext) {
                 data: agentPayload,
                 contentType: 'application/json'
             })
-             // TODO: handle the docs referencing and inject it to the frontend response
+            // TODO: handle the docs referencing and inject it to the frontend response
             const responseData = await response.data.json();
             return responseData;
-        },
-    });
-
-    /**
-     * TODO: This tool allow the agent to get details information about the code execution that the user performed.
-     */
-    const fetchCodeExecutionResultTool = tool({
-        description: "Fetch code execution results from the frontend",
-        parameters: z.object({
-            executionId: z.string().describe("The ID of the code execution"),
-        }),
-        execute: async ({ executionId }) => {
-            agentContext.logger.info("Fetching execution result for: %s", executionId);
-            // This would actually fetch execution results
-            // For now, just return a mock response
-            return `Result for execution ${executionId}: console.log('Hello, World!');\n// Output: Hello, World!`;
         },
     });
 

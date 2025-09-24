@@ -39,10 +39,10 @@
 		"react-dom": "^19.0.0",
 		"react-markdown": "^10.1.0",
 		"remark-gfm": "^4.0.1",
-		"twoslash": "^0.3.1",
 		"swr": "^2.3.6",
+		"twoslash": "^0.3.1",
 		"uuid": "^11.1.0",
-		"zod": "^4.1.8"
+		"zod": "^4.1.11"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.1.2",
