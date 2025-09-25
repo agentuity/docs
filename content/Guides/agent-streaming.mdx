@@ -35,12 +35,16 @@ description: How to use streaming in your agents
 
 ## How Streaming Works in Agentuity
 
-1. **Outbound:** `resp.stream(source)` – where `source` can be:
+Agentuity provides multiple approaches for streaming data:
+
+1. **High-level Streaming:** `resp.stream(source)` – where `source` can be:
    - An async iterator (e.g. OpenAI SDK stream)
    - A ReadableStream
    - Another agent's stream
-2. **Inbound:** `await request.data.stream()` – consume the client's incoming stream.
-3. Under the hood Agentuity handles the details of the streaming input and output for you.
+2. **Low-level Stream Control:** `context.stream.create(name, props)` – create and manage server-side streams directly
+3. **Inbound:** `await request.data.stream()` – consume the client's incoming stream.
+
+Under the hood Agentuity handles the details of the streaming input and output for you.
 
 ### OpenAI Streaming Example
 
@@ -181,6 +185,139 @@ export default async function Agent(
 ```
 
 Chain as many agents as you like; each one can inspect, transform, or just relay the chunks.
+
+## Low-Level Stream Control
+
+For advanced use cases, you can use `context.stream.create()` to create and manage streams directly. This gives you fine-grained control over stream creation, data flow, and background processing.
+
+### Creating Streams with `context.stream.create`
+
+The `context.stream.create()` method creates a named, writable stream that returns immediately, allowing for non-blocking operation and background data processing.
+
+```ts
+import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+import { openai } from '@ai-sdk/openai';
+import { streamText } from 'ai';
+
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext,
+) {
+  const { prompt } = await req.data.json();
+
+  // Create a stream immediately - this returns right away
+  const stream = ctx.stream.create('llm-response', {
+    contentType: 'text/plain',
+    metadata: {
+      requestId: req.id,
+      type: 'llm-generation',
+      model: 'gpt-4o',
+      userId: req.headers.get('user-id')
+    }
+  });
+
+  // Use waitUntil to handle streaming in the background
+  ctx.waitUntil(async () => {
+    const { textStream } = streamText({
+      model: openai('gpt-4o'),
+      prompt
+    });
+
+    // Pipe the LLM stream to our created stream
+    await textStream.pipeTo(stream);
+  });
+
+  // Return stream information immediately
+  return resp.json({
+    streamId: stream.id,
+    streamUrl: stream.url,
+    status: 'streaming'
+  });
+}
+```
+
+### Manual Stream Writing
+
+You can also write to streams manually for complete control over the data flow:
+
+```ts
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext,
+) {
+  const stream = ctx.stream.create('progress-updates', {
+    contentType: 'application/json',
+    metadata: { type: 'progress-tracking' }
+  });
+
+  ctx.waitUntil(async () => {
+    try {
+      // Send progress updates
+      const steps = ['Initializing', 'Processing', 'Analyzing', 'Finalizing'];
+      
+      for (let i = 0; i < steps.length; i++) {
+        await stream.write(JSON.stringify({
+          step: i + 1,
+          total: steps.length,
+          message: steps[i],
+          progress: ((i + 1) / steps.length) * 100,
+          timestamp: new Date().toISOString()
+        }) + '\n');
+        
+        // Simulate work
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    } finally {
+      await stream.close();
+    }
+  });
+
+  return resp.json({
+    streamId: stream.id,
+    streamUrl: stream.url
+  });
+}
+```
+
+### Stream as Direct Response
+
+You can return a stream directly from your agent handler, which will automatically redirect clients to the stream URL:
+
+```ts
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext,
+) {
+  const { prompt } = await req.data.json();
+
+  const stream = ctx.stream.create('direct-stream', {
+    contentType: 'text/plain'
+  });
+
+  ctx.waitUntil(async () => {
+    const { textStream } = streamText({
+      model: openai('gpt-4o'),
+      prompt
+    });
+    await textStream.pipeTo(stream);
+  });
+
+  // Return the stream directly - client gets redirected to stream URL
+  return stream;
+}
+```
+
+### Benefits of Low-Level Stream Control
+
+- **Non-blocking**: Stream creation returns immediately, allowing instant responses
+- **Background Processing**: Use `ctx.waitUntil()` to handle data streaming without blocking
+- **Rich Metadata**: Associate custom metadata with streams for tracking and debugging
+- **Direct Access**: Clients can access streams via direct URLs
+- **Flexible Content Types**: Support any content type (text, JSON, binary, etc.)
+- **Manual Control**: Write data chunks manually for complex streaming scenarios
 
 ---
 
