@@ -7,17 +7,115 @@ This section provides detailed documentation for the Agentuity JavaScript SDK AP
 
 ## Table of Contents
 
+- [File Imports](#file-imports)
 - [Agent Lifecycle](#agent-lifecycle)
+- [Context API](#context-api)
+  - [Background Tasks (waitUntil)](#background-tasks-waituntil)
 - [Storage APIs](#storage-apis)
   - [Key-Value Storage](#key-value-storage)
   - [Vector Storage](#vector-storage)
   - [Object Storage](#object-storage)
+  - [Stream Storage](#stream-storage)
 - [Agent Communication](#agent-communication)
 - [Response Types](#response-types)
   - [Stream Method](#stream-method)
 - [Request Handling](#request-handling)
 - [Logging](#logging)
 - [Telemetry](#telemetry)
+
+## File Imports
+
+The Agentuity JavaScript SDK supports automatic importing of various file types directly into your agent code. Files are processed at build time and their contents are embedded in your agent bundle, making the data immediately available without disk I/O.
+
+### Supported File Types
+
+| File Extension | Data Type | Description |
+|----------------|-----------|-------------|
+| `.json` | `object` | Parsed JSON data as a JavaScript object |
+| `.yaml`, `.yml` | `object` | Parsed YAML data as a JavaScript object |
+| `.txt` | `string` | Text content as a string |
+| `.md` | `string` | Markdown content as a string |
+| `.csv` | `string` | CSV data as a string |
+| `.xml` | `string` | XML content as a string |
+| `.sql` | `string` | SQL query content as a string |
+| `.png` | `Uint8Array` | Binary image data |
+| `.jpg`, `.jpeg` | `Uint8Array` | Binary image data |
+| `.gif` | `Uint8Array` | Binary image data |
+| `.svg` | `Uint8Array` | Binary SVG data |
+| `.webp` | `Uint8Array` | Binary image data |
+| `.pdf` | `Uint8Array` | Binary PDF data |
+
+### Usage Examples
+
+```typescript
+import { AgentHandler } from '@agentuity/sdk';
+
+// Import various file types
+import config from './config.yaml';          // object
+import userData from './users.json';         // object
+import readme from './README.md';            // string
+import csvData from './data.csv';            // string
+import sqlQuery from './queries/users.sql';  // string
+import xmlConfig from './config.xml';        // string
+import logo from './assets/logo.png';        // Uint8Array
+import iconSvg from './assets/icon.svg';     // Uint8Array
+
+const handler: AgentHandler = async (request, response, context) => {
+  // Use YAML/JSON data directly as objects
+  const apiUrl = config.api.baseUrl;
+  const userCount = userData.users.length;
+  
+  // Use text data as strings
+  const instructions = readme;
+  const query = sqlQuery.replace('{{limit}}', '10');
+  
+  // Use binary data (e.g., for object storage)
+  await context.objectstore.put('assets', 'logo.png', logo, {
+    contentType: 'image/png'
+  });
+  
+  await context.objectstore.put('assets', 'icon.svg', iconSvg, {
+    contentType: 'image/svg+xml'
+  });
+  
+  // Process CSV data
+  const csvLines = csvData.split('\n');
+  const headers = csvLines[0].split(',');
+  
+  return response.json({
+    config: apiUrl,
+    userCount,
+    logoSize: logo.length,
+    svgSize: iconSvg.length,
+    csvHeaders: headers,
+    sqlQuery: query
+  });
+};
+
+export default handler;
+```
+
+### Key Features
+
+- **Build-time Processing**: Files are processed and embedded during the build process
+- **No Disk I/O**: Data is immediately available in memory, no file system access required
+- **Automatic Parsing**: JSON and YAML files are automatically parsed into JavaScript objects
+- **Type Safety**: TypeScript users get proper type inference for imported data
+- **Relative Paths**: Support for relative imports from your agent directory and parent directories
+
+### File Import Paths
+
+```typescript
+// Import from same directory
+import localData from './data.json';
+
+// Import from subdirectory
+import assetData from './assets/config.yaml';
+
+// Import from parent directories
+import sharedConfig from '../shared/config.json';
+import rootData from '../../../files/data.csv';
+```
 
 ## Agent Lifecycle
 
@@ -90,9 +188,69 @@ const handler: AgentHandler = async (request, response, context) => {
 export default handler;
 ```
 
+## Context API
+
+The `AgentContext` provides access to various capabilities and services within your agent handler. In addition to storage APIs and logging, it offers background task management and stream creation capabilities.
+
+### Background Tasks (waitUntil)
+
+The `waitUntil` method allows you to execute background tasks that don't need to block the immediate response to the client. These tasks will be completed after the main response is sent.
+
+#### waitUntil
+
+`waitUntil(callback: WaitUntilCallback): void`
+
+Defers the execution of a background task until after the main response has been sent.
+
+**Parameters**
+
+- `callback`: A function that will be executed asynchronously in the background
+
+**Example**
+
+```typescript
+import { AgentHandler } from '@agentuity/sdk';
+
+const handler: AgentHandler = async (request, response, context) => {
+  const { userId, message } = await request.data.json();
+
+  // Send immediate response
+  const responseData = { status: 'received', timestamp: Date.now() };
+
+  // Schedule background tasks
+  context.waitUntil(async () => {
+    // Log the message asynchronously
+    await logMessageToDatabase(userId, message);
+  });
+
+  context.waitUntil(async () => {
+    // Send notification email in the background
+    await sendNotificationEmail(userId, message);
+  });
+
+  context.waitUntil(async () => {
+    // Update analytics in the background
+    await updateAnalytics(userId, 'message_received');
+  });
+
+  // Return immediately without waiting for background tasks
+  return response.json(responseData);
+};
+
+export default handler;
+```
+
+**Use Cases**
+
+- Logging and analytics that don't affect the user experience
+- Sending notifications or emails
+- Database cleanup or maintenance tasks
+- Third-party API calls that don't impact the response
+- Background data processing or enrichment
+
 ## Storage APIs
 
-The Agentuity SDK provides three storage APIs: Key-Value Storage, Vector Storage, and Object Storage.
+The Agentuity SDK provides four storage APIs: Key-Value Storage, Vector Storage, Object Storage, and Stream Storage.
 
 ### Key-Value Storage
 
@@ -498,6 +656,334 @@ const autoMinUrl = await context.objectstore.createPublicURL(
   'auto-min.txt', 
   30000 // Will be set to 60000ms (1 minute)
 );
+```
+
+### Stream Storage
+
+The Stream Storage API provides first-class support for creating and managing server-side streams, enabling efficient data streaming within your agents. Streams are accessible via the `context.stream` object.
+
+#### create
+
+`create(name: string, props?: StreamCreateProps): Stream`
+
+Creates a new, named, writable stream that returns immediately for non-blocking operation.
+
+**Parameters**
+
+- `name`: A string identifier for the stream
+- `props` (optional): Configuration object with the following properties:
+  - `metadata`: An optional object containing key-value pairs to help identify, search, or tag specific information about the stream (e.g., `customerId`, `type`, `requestId`, `userId`)
+  - `contentType`: Specifies the content type of the stream (defaults to `application/octet-stream`)
+
+**Return Value**
+
+Returns a `Stream` object immediately with the following properties:
+- `id`: The unique identifier of the stream
+- `url`: The URL to consume the stream
+- Extends `WritableStream` for standard stream operations
+
+**Stream Characteristics**
+
+- **Read-Many**: Streams can be read by multiple consumers simultaneously
+- **Re-readable**: Streams can be read multiple times - each new request starts from the beginning
+- **Resumable**: Streams support HTTP Range requests for resuming from specific byte offsets
+- **Persistent**: Stream URLs remain accessible until the stream expires
+- **HTTP Range Support**: Clients can request specific byte ranges using standard HTTP Range headers
+
+**Example**
+
+```typescript
+import { AgentHandler } from '@agentuity/sdk';
+import { openai } from '@ai-sdk/openai';
+import { streamText } from 'ai';
+
+const handler: AgentHandler = async (request, response, context) => {
+  const { prompt, userId, sessionId } = await request.data.json();
+
+  // Create a stream with metadata for identification and searching
+  const stream = context.stream.create('llm-response', {
+    contentType: 'text/plain',
+    metadata: {
+      userId,
+      sessionId,
+      requestId: request.id,
+      type: 'llm-generation',
+      model: 'gpt-4o',
+      category: 'chat-completion',
+      promptLength: prompt.length
+    }
+  });
+
+  // Use waitUntil to pipe data in the background
+  context.waitUntil(async () => {
+    const { textStream } = streamText({
+      model: openai('gpt-4o'),
+      prompt
+    });
+
+    // Pipe the LLM stream to our created stream
+    await textStream.pipeTo(stream);
+  });
+
+  // Return stream info immediately
+  return response.json({
+    streamId: stream.id,
+    streamUrl: stream.url,
+    status: 'streaming'
+  });
+};
+
+export default handler;
+```
+
+**Manual Writing Example**
+
+```typescript
+const handler: AgentHandler = async (request, response, context) => {
+  const { taskId, steps } = await request.data.json();
+  
+  const stream = context.stream.create('progress-updates', {
+    contentType: 'application/json',
+    metadata: { 
+      type: 'progress-tracking',
+      taskId,
+      totalSteps: steps.length,
+      environment: 'production'
+    }
+  });
+
+  context.waitUntil(async () => {
+    // Stream implements WritableStream, so we can write directly to it
+    try {
+      for (let i = 0; i < steps.length; i++) {
+        await stream.write(JSON.stringify({
+          step: i + 1,
+          total: steps.length,
+          message: steps[i],
+          progress: ((i + 1) / steps.length) * 100,
+          timestamp: new Date().toISOString()
+        }) + '\n');
+        
+        // Simulate processing time
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    } finally {
+      await stream.close();
+    }
+  });
+
+  return response.json({
+    streamId: stream.id,
+    streamUrl: stream.url
+  });
+};
+```
+
+#### Stream Interface
+
+The `Stream` interface extends `WritableStream` and provides additional properties:
+
+```typescript
+interface Stream extends WritableStream {
+  /**
+   * The unique identifier of the stream
+   */
+  id: string;
+  
+  /**
+   * The URL to consume the stream
+   */
+  url: string;
+  
+  /**
+   * Get a reader for consuming the stream
+   */
+  getReader(): ReadableStream<Uint8Array>;
+}
+```
+
+**Consuming Streams**
+
+Streams can be consumed in two ways:
+
+**1. Complete Stream Reads**
+Each request to the stream URL starts from the beginning and reads the entire stream:
+
+```bash
+# Read the entire stream from the beginning (can be repeated multiple times)
+curl "https://streams.agentuity.cloud/stream_abc1234567890"
+
+# Multiple consumers can read the same stream simultaneously
+curl "https://streams.agentuity.cloud/stream_abc1234567890" &
+curl "https://streams.agentuity.cloud/stream_abc1234567890" &
+```
+
+**2. Range-Based Reads (Resumable/Partial)**
+Use HTTP Range requests for resuming from specific positions or accessing partial content:
+
+```bash
+# Get the first 1024 bytes
+curl -H "Range: bytes=0-1023" "https://streams.agentuity.cloud/stream_abc1234567890"
+
+# Resume from byte 1024 to the end (useful for interrupted downloads)
+curl -H "Range: bytes=1024-" "https://streams.agentuity.cloud/stream_abc1234567890"
+
+# Get specific byte range
+curl -H "Range: bytes=2048-4095" "https://streams.agentuity.cloud/stream_abc1234567890"
+```
+
+**Stream Reading with getReader() Example**
+
+```typescript
+const handler: AgentHandler = async (request, response, context) => {
+  const { action, streamId } = await request.data.json();
+  
+  if (action === 'read-direct') {
+    // Create or get an existing stream
+    const stream = context.stream.create('data-source', {
+      contentType: 'text/plain',
+      metadata: { type: 'data-processing', sourceId: streamId }
+    });
+    
+    // Use getReader() to get a direct reader from the stream
+    const reader = stream.getReader();
+    const chunks = [];
+    
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+      }
+      
+      // Process collected data
+      const data = new TextDecoder().decode(
+        new Uint8Array(chunks.reduce((acc, chunk) => [...acc, ...chunk], []))
+      );
+      
+      return response.json({ 
+        data, 
+        totalBytes: chunks.reduce((total, chunk) => total + chunk.length, 0),
+        chunksReceived: chunks.length
+      });
+    } finally {
+      reader.releaseLock();
+    }
+  }
+  
+  if (action === 'stream-reader-response') {
+    // Create a stream with some data
+    const sourceStream = context.stream.create('source-data', {
+      contentType: 'application/json',
+      metadata: { type: 'generated-data', requestId: request.id }
+    });
+    
+    // Populate the stream with data in the background
+    context.waitUntil(async () => {
+      // Stream implements WritableStream, so we write directly to it
+      try {
+        for (let i = 1; i <= 5; i++) {
+          await sourceStream.write(JSON.stringify({
+            id: i,
+            message: `Data chunk ${i}`,
+            timestamp: new Date().toISOString()
+          }) + '\n');
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } finally {
+        await sourceStream.close();
+      }
+    });
+    
+    // Return the stream reader directly as the response
+    // This pipes the stream content directly to the client
+    return response.stream(sourceStream.getReader());
+  }
+  
+  return response.json({ error: 'Invalid action. Use "read-direct" or "stream-reader-response"' });
+};
+```
+
+**Piping Between Streams with getReader()**
+
+```typescript
+const handler: AgentHandler = async (request, response, context) => {
+  const { sourceData } = await request.data.json();
+  
+  // Create a source stream with input data
+  const sourceStream = context.stream.create('input-stream', {
+    contentType: 'text/plain',
+    metadata: { type: 'input-processing' }
+  });
+  
+  // Create a processing stream for transformed output
+  const processedStream = context.stream.create('processed-output', {
+    contentType: 'text/plain',
+    metadata: { type: 'processed-data', transformation: 'uppercase' }
+  });
+  
+  context.waitUntil(async () => {
+    // Write source data to the input stream
+    try {
+      await sourceStream.write(sourceData);
+    } finally {
+      await sourceStream.close();
+    }
+    
+    // Read from source stream and write processed data to output stream
+    const reader = sourceStream.getReader();
+    // Note: processedStream is written to directly, no writer needed
+    
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        // Transform the data (convert to uppercase)
+        const text = new TextDecoder().decode(value);
+        const processedText = text.toUpperCase();
+        const processedBuffer = new TextEncoder().encode(processedText);
+        
+        await processedStream.write(processedBuffer);
+      }
+    } finally {
+      reader.releaseLock();
+      await processedStream.close();
+    }
+  });
+  
+  // Return the processed stream reader as the response
+  return response.stream(processedStream.getReader());
+};
+```
+
+**Stream as Return Value**
+
+Agent handlers can return a `Stream` object directly, which will cause the router to issue a 302 redirect to the stream's URL:
+
+```typescript
+const handler: AgentHandler = async (request, response, context) => {
+  const { prompt } = await request.data.json();
+
+  const stream = context.stream.create('direct-stream', {
+    contentType: 'text/plain',
+    metadata: {
+      type: 'direct-response',
+      timestamp: new Date().toISOString()
+    }
+  });
+
+  context.waitUntil(async () => {
+    const { textStream } = streamText({
+      model: openai('gpt-4o'),
+      prompt
+    });
+    await textStream.pipeTo(stream);
+  });
+
+  // Return the stream directly - client will be redirected to stream URL
+  return stream;
+};
 ```
 
 ## Agent Communication
