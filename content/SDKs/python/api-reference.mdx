@@ -1390,7 +1390,7 @@ from agentuity.sdk import AgentContext
 from opentelemetry.trace.status import Status, StatusCode
 
 # Create a span
-async with context.tracer.start_as_current_span("process-data") as span:
+with context.tracer.start_as_current_span("process-data") as span:
     try:
         # Add attributes to the span
         span.set_attribute("userId", "123")
