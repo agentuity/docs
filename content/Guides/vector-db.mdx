@@ -3,7 +3,15 @@ title: Using Vector DB
 description: Using the Vector DB for search and retrieval
 ---
 
+## When to Use Vector Storage
+
 Vector storage enables semantic search for your agents, allowing them to find information by meaning rather than keywords. Ideal for knowledge bases, RAG systems, and persistent agent memory.
+
+Choose the right storage for your use case:
+
+- **Vector Storage**: Semantic search, embeddings, similarity matching
+- **[Key-Value Storage](/Cloud/key-value-memory)**: Fast lookups, simple data, temporary state
+- **[Object Storage](/Cloud/object-storage)**: Large files, media, backups
 
 ## Understanding Vector Storage
 
@@ -58,9 +66,7 @@ The `upsert` operation inserts new documents or updates existing ones. You can p
 **Idempotent Behavior:**
 The upsert operation is idempotent - upserting with an existing key updates the existing vector rather than creating a duplicate. The same internal vector ID is reused, ensuring your vector storage remains clean and efficient.
 
-<CodeExample>
-```javascript
-// JavaScript/TypeScript
+<CodeExample js={`// JavaScript/TypeScript
 // Upsert documents with text (automatic embedding)
 const ids = await context.vector.upsert(
   'knowledge-base',
@@ -84,11 +90,7 @@ const embeddingIds = await context.vector.upsert(
     embeddings: [0.1, 0.2, 0.3, 0.4], 
     metadata: { id: 'doc-1', type: 'custom' } 
   }
-);
-```
-
-```python
-# Python
+);`} py={`# Python
 # Upsert documents with text
 documents = [
     {
@@ -114,17 +116,13 @@ embedding_docs = [
     }
 ]
 
-ids = await context.vector.upsert("custom-embeddings", embedding_docs)
-```
-</CodeExample>
+ids = await context.vector.upsert("custom-embeddings", embedding_docs)`} />
 
 ### Searching Vector Storage
 
 Search operations find semantically similar documents based on a text query. You can control the number of results, similarity threshold, and filter by metadata.
 
-<CodeExample>
-```javascript
-// JavaScript/TypeScript
+<CodeExample js={`// JavaScript/TypeScript
 // Basic semantic search
 const results = await context.vector.search('knowledge-base', {
   query: 'What is an agent platform?',
@@ -135,13 +133,9 @@ const results = await context.vector.search('knowledge-base', {
 
 // Process results
 results.forEach(result => {
-  console.log(`Found: ${result.metadata.source}`);
-  console.log(`Similarity: ${result.similarity}`);
-});
-```
-
-```python
-# Python
+  console.log(\`Found: \${result.metadata.source}\`);
+  console.log(\`Similarity: \${result.similarity}\`);
+});`} py={`# Python
 # Semantic search with parameters
 results = await context.vector.search(
     "knowledge-base",
@@ -154,9 +148,7 @@ results = await context.vector.search(
 # Process results
 for result in results:
     print(f"Found: {result.metadata['source']}")
-    print(f"Similarity: {result.similarity}")
-```
-</CodeExample>
+    print(f"Similarity: {result.similarity}")`} />
 
 **Search Parameters:**
 - `query` (required): Text query to search for
@@ -168,33 +160,108 @@ for result in results:
 - **Both SDKs**: Return results with `similarity` field (1.0 = perfect match, 0.0 = no match)
 - **Note**: The JavaScript SDK also returns a `distance` field for backward compatibility; prefer `similarity`
 
+### Retrieving Vectors by Key
+
+The `get` method retrieves a specific vector directly using its key, without performing a similarity search.
+
+<CodeExample js={`// JavaScript/TypeScript
+// Direct lookup by key
+const vector = await context.vector.get('knowledge-base', 'doc-1');
+
+if (vector) {
+  console.log(\`Found: \${vector.id}\`);
+  console.log(\`Key: \${vector.key}\`);
+  console.log('Metadata:', vector.metadata);
+} else {
+  console.log('Vector not found');
+}
+
+// Common use cases:
+
+// 1. Check if a vector exists before updating
+const existing = await context.vector.get('products', 'product-123');
+if (existing) {
+  // Update with merged metadata
+  await context.vector.upsert('products', {
+    key: 'product-123',
+    document: 'Updated product description',
+    metadata: { ...(existing.metadata ?? {}), lastUpdated: Date.now() }
+  });
+}
+
+// 2. Retrieve full metadata after search
+const searchResults = await context.vector.search('products', {
+  query: 'office chair',
+  limit: 5
+});
+
+// Get complete details for the top result
+if (searchResults[0]) {
+  const fullDetails = await context.vector.get('products', searchResults[0].key);
+  console.log('Full metadata:', fullDetails?.metadata);
+}`} py={`# Python
+import time
+
+# Direct lookup by key
+vector = await context.vector.get("knowledge-base", "doc-1")
+
+if vector:
+    print(f"Found: {vector.id}")
+    print(f"Key: {vector.key}")
+    print(f"Metadata: {vector.metadata}")
+else:
+    print("Vector not found")
+
+# Common use cases:
+
+# 1. Check if a vector exists before updating
+existing = await context.vector.get("products", "product-123")
+if existing:
+    # Update with merged metadata
+    metadata = existing.metadata or {}
+    await context.vector.upsert("products", [{
+        "key": "product-123", 
+        "document": "Updated product description",
+        "metadata": {**metadata, "lastUpdated": int(time.time() * 1000)}
+    }])
+
+# 2. Retrieve full metadata after search
+search_results = await context.vector.search(
+    "products",
+    query="office chair",
+    limit=5
+)
+
+# Get complete details for the top result
+if search_results:
+    full_details = await context.vector.get("products", search_results[0].key)
+    if full_details:
+        print(f"Full metadata: {full_details.metadata}")`} />
+
+**When to use `get` vs `search`:**
+- Use `get` when you know the exact key (like a database primary key lookup)
+- Use `search` when finding vectors by semantic similarity
+- `get` is faster for single lookups since it doesn't compute similarities
+- `get` returns `null` (JS) / `None` (Python) if the key is not found, but may throw errors for other failures
+
 ### Deleting Vectors
 
 Remove specific vectors from storage using their keys.
 
-<CodeExample>
-```javascript
-// JavaScript/TypeScript
+<CodeExample js={`// JavaScript/TypeScript
 // Delete single vector
 const deletedCount = await context.vector.delete('knowledge-base', 'doc-1');
-
 
 // Delete multiple vectors
 const bulkDeleteCount = await context.vector.delete(
   'knowledge-base', 
   'doc-1', 'doc-2', 'doc-3'
-);
-```
-
-```python
-# Python
+);`} py={`# Python
 # Delete single vector
 count = await context.vector.delete("knowledge-base", "doc_1")
 
 # Note: Python SDK currently supports single deletion
-# For bulk operations, call delete multiple times
-```
-</CodeExample>
+# For bulk operations, call delete multiple times`} />
 
 ## Practical Examples
 

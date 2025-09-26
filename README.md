@@ -8,6 +8,7 @@
 
 This project contains the Agentuity documentation website, created using Fumadocs and running on NextJS 15.
 
+
 To make the search feature work, you must set up `.env.local` with the following steps.
 
 ## Quick Start Guide
@@ -17,19 +18,24 @@ To make the search feature work, you must set up `.env.local` with the following
    cd agent-docs
    ```
 
-2. **Start the Agent:**
+2. **Generate Agent Environment:**
    ```bash
    agentuity dev
    ```
+   This will generate a `.env` file in the `agent-docs` directory with your SDK key. The key is required for the next steps.
+
+
 
 3. **Copy Environment Configuration:**
-   For local development, copy the `.env.example` file to `.env.local`:
+   For local development, copy the `.env.example` file to `.env.local` in the root directory of the docs project:
    ```bash
+   # Make sure you are in the root directory, not in agent-docs
+   cd ../
    cp .env.example .env.local
    ```
 
-4. **Update `AGENT_ID`:**
-   If you are a contributor from outside the Agentuity organization, ensure that you update the `AGENT_ID` in your `.env.local` file with your specific agent ID from the `agentuity dev` run.
+4. **Update `AGENTUITY_API_KEY`:**
+   If you are a contributor from outside the Agentuity organization, ensure that you update the `AGENTUITY_API_KEY` in your `.env.local` file with your specific SDK key from the `agentuity dev` run.
 
 ## Running Docs Application
 

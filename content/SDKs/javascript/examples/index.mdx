@@ -435,6 +435,309 @@ async function processData(data: any, context: any) {
 export default handler;
 ```
 
+## Background Tasks and Stream Creation Example
+
+This comprehensive example demonstrates how to use `context.waitUntil` for background processing and `context.stream.create` for low-level stream control:
+
+```typescript
+import { AgentHandler } from '@agentuity/sdk';
+import { openai } from '@ai-sdk/openai';
+import { streamText } from 'ai';
+
+const handler: AgentHandler = async (request, response, context) => {
+  const { 
+    action, 
+    prompt, 
+    userId, 
+    includeAnalytics = true 
+  } = await request.data.json();
+
+  if (action === 'stream-with-background') {
+    // Create a stream for the LLM response
+    const stream = context.stream.create('llm-response', {
+      contentType: 'text/plain',
+      metadata: {
+        userId,
+        requestId: request.id,
+        model: 'gpt-4o',
+        type: 'llm-generation'
+      }
+    });
+
+    // Background task for streaming LLM response
+    context.waitUntil(async () => {
+      const { textStream } = streamText({
+        model: openai('gpt-4o'),
+        prompt: prompt || 'Tell me a short story'
+      });
+
+      await textStream.pipeTo(stream);
+    });
+
+    // Background task for analytics (doesn't block response)
+    if (includeAnalytics) {
+      context.waitUntil(async () => {
+        await logRequestAnalytics(userId, {
+          action: 'stream_created',
+          streamId: stream.id,
+          prompt: prompt?.substring(0, 100), // Log first 100 chars
+          timestamp: new Date()
+        });
+      });
+    }
+
+    // Background task for user activity tracking
+    context.waitUntil(async () => {
+      await updateUserActivity(userId, 'llm_stream_request');
+    });
+
+    // Return immediately with stream information
+    return response.json({
+      streamId: stream.id,
+      streamUrl: stream.url,
+      status: 'streaming',
+      message: 'Stream created successfully'
+    });
+  }
+
+  if (action === 'multi-step-stream') {
+    // Create a progress stream for multi-step processing
+    const progressStream = context.stream.create('progress', {
+      contentType: 'application/json',
+      metadata: { 
+        type: 'multi-step-progress',
+        userId 
+      }
+    });
+
+    context.waitUntil(async () => {
+      try {
+        const steps = [
+          { name: 'Analyzing input', duration: 1000 },
+          { name: 'Generating response', duration: 2000 },
+          { name: 'Post-processing', duration: 500 },
+          { name: 'Finalizing', duration: 300 }
+        ];
+
+        for (let i = 0; i < steps.length; i++) {
+          const step = steps[i];
+          
+          // Write progress update
+          await progressStream.write(JSON.stringify({
+            step: i + 1,
+            total: steps.length,
+            name: step.name,
+            progress: ((i + 1) / steps.length) * 100,
+            timestamp: new Date().toISOString()
+          }) + '\n');
+
+          // Simulate processing time
+          await new Promise(resolve => setTimeout(resolve, step.duration));
+        }
+
+        // Write final completion message
+        await progressStream.write(JSON.stringify({
+          completed: true,
+          message: 'All steps completed successfully',
+          timestamp: new Date().toISOString()
+        }) + '\n');
+      } finally {
+        await progressStream.close();
+      }
+    });
+
+    // Background cleanup task
+    context.waitUntil(async () => {
+      // Clean up temporary resources after a delay
+      await new Promise(resolve => setTimeout(resolve, 30000)); // 30 seconds
+      await cleanupTemporaryResources(progressStream.id);
+    });
+
+    return response.json({
+      progressStreamId: progressStream.id,
+      progressStreamUrl: progressStream.url,
+      estimatedDuration: '3-4 seconds'
+    });
+  }
+
+  if (action === 'direct-stream-response') {
+    const stream = context.stream.create('direct', {
+      contentType: 'text/plain'
+    });
+
+    context.waitUntil(async () => {
+      const { textStream } = streamText({
+        model: openai('gpt-4o'),
+        prompt: prompt || 'Write a haiku about programming'
+      });
+      
+      await textStream.pipeTo(stream);
+    });
+
+    // Return the stream directly - client gets redirected
+    return stream;
+  }
+
+  return response.json({ 
+    error: 'Invalid action. Use "stream-with-background", "multi-step-stream", or "direct-stream-response"' 
+  });
+};
+
+// Helper functions (would be implemented based on your needs)
+async function logRequestAnalytics(userId: string, data: any) {
+  // Implementation for logging analytics
+  console.log(`Analytics for user ${userId}:`, data);
+}
+
+async function updateUserActivity(userId: string, activity: string) {
+  // Implementation for updating user activity
+  console.log(`Updated activity for user ${userId}: ${activity}`);
+}
+
+async function cleanupTemporaryResources(streamId: string) {
+  // Implementation for cleaning up resources
+  console.log(`Cleaned up resources for stream ${streamId}`);
+}
+
+export default handler;
+```
+
+This example demonstrates:
+
+- **Non-blocking Stream Creation**: Using `context.stream.create()` to create streams that return immediately
+- **Background Processing**: Using `context.waitUntil()` for analytics, logging, and cleanup tasks
+- **Manual Stream Writing**: Writing progress updates and structured data to streams
+- **Stream Metadata**: Associating metadata with streams for tracking
+- **Direct Stream Response**: Returning streams directly from handlers
+- **Multiple Background Tasks**: Running several background tasks concurrently
+
+## File Import Example
+
+This example demonstrates how to use the automatic file import feature to include various file types in your agent:
+
+```typescript
+import { AgentHandler } from '@agentuity/sdk';
+
+// Import different file types
+import config from './agent-config.yaml';     // Parsed YAML object
+import prompts from './prompts.json';         // Parsed JSON object
+import instructions from './README.md';       // String content
+import csvData from './data/users.csv';       // String content
+import sqlQuery from './queries/users.sql';   // String content
+import xmlConfig from './config.xml';         // String content
+import logoImage from './assets/logo.png';    // Uint8Array binary
+import iconSvg from './assets/icon.svg';      // Uint8Array binary
+
+const handler: AgentHandler = async (request, response, context) => {
+  const { action, userId } = await request.data.json();
+
+  if (action === 'get-config') {
+    // Use parsed YAML configuration directly
+    return response.json({
+      apiVersion: config.api.version,
+      features: config.features,
+      environment: config.environment
+    });
+  }
+
+  if (action === 'get-prompt') {
+    const { promptType } = await request.data.json();
+    
+    // Use parsed JSON data
+    const prompt = prompts[promptType] || prompts.default;
+    
+    return response.json({
+      prompt: prompt.text,
+      temperature: prompt.temperature,
+      maxTokens: prompt.maxTokens
+    });
+  }
+
+  if (action === 'process-users') {
+    // Process CSV data
+    const lines = csvData.trim().split('\n');
+    const headers = lines[0].split(',');
+    const users = lines.slice(1).map(line => {
+      const values = line.split(',');
+      return headers.reduce((user, header, index) => {
+        user[header] = values[index];
+        return user;
+      }, {} as Record<string, string>);
+    });
+
+    return response.json({
+      totalUsers: users.length,
+      users: users.slice(0, 10), // Return first 10 users
+      headers
+    });
+  }
+
+  if (action === 'store-assets') {
+    // Store binary image data
+    await context.objectstore.put('assets', 'company-logo.png', logoImage, {
+      contentType: 'image/png',
+      metadata: {
+        uploadedBy: 'agent',
+        purpose: 'branding'
+      }
+    });
+
+    // Store SVG data (note: SVG is Uint8Array, not string)
+    await context.objectstore.put('assets', 'icon.svg', iconSvg, {
+      contentType: 'image/svg+xml',
+      metadata: {
+        uploadedBy: 'agent',
+        purpose: 'icon'
+      }
+    });
+
+    const logoUrl = await context.objectstore.createPublicURL('assets', 'company-logo.png');
+    const iconUrl = await context.objectstore.createPublicURL('assets', 'icon.svg');
+
+    return response.json({
+      message: 'Assets uploaded successfully',
+      logoUrl,
+      iconUrl,
+      logoSize: logoImage.length,
+      svgSize: iconSvg.length
+    });
+  }
+
+  if (action === 'execute-query') {
+    // Use SQL query with parameter substitution
+    const { limit = 10 } = await request.data.json();
+    const query = sqlQuery.replace('{{limit}}', limit.toString());
+    
+    // In a real implementation, you would execute the SQL query
+    context.logger.info(`Would execute SQL: ${query}`);
+
+    return response.json({
+      message: 'Query prepared',
+      sql: query,
+      originalQuery: sqlQuery
+    });
+  }
+
+  return response.json({
+    error: 'Invalid action',
+    availableActions: ['get-config', 'get-prompt', 'process-users', 'store-assets', 'execute-query']
+  });
+};
+
+export default handler;
+```
+
+This example shows how to:
+
+- **Import Configuration**: Use YAML/JSON files for structured configuration data
+- **Process Text Files**: Work with Markdown, CSV, XML, and SQL content as strings
+- **Handle Binary Data**: Store images and SVG files in object storage (note: SVG files are Uint8Array, not strings)
+- **Template Processing**: Use SQL queries with parameter substitution
+- **Data Processing**: Parse CSV data into structured objects
+- **Multiple File Types**: Combine different file formats in a single agent
+
+The imported data is available immediately at runtime without any file system operations, making your agents fast and efficient.
+
 ## Welcome Function Example
 
 This example demonstrates how to customize the initial appearance of DevMode when it starts interacting with your agents:

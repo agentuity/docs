@@ -2,55 +2,65 @@
  * Environment variable validation and configuration utility
  */
 export interface AgentConfig {
-	url: string;
-	bearerToken?: string;
+  url: string;
+  bearerToken?: string;
 }
-
 /**
- * Validates and returns agent configuration from environment variables
+ * Builds agent configuration using non-secret IDs from config
  */
-export const getAgentConfig = (): AgentConfig => {
-	const baseUrl = process.env.AGENT_BASE_URL;
-	const agentId = process.env.AGENT_ID;
-	const bearerToken = process.env.AGENT_BEARER_TOKEN;
-	const fullUrl = process.env.AGENT_FULL_URL;
+import { config } from '@/lib/config';
 
-	// Validate required environment variables
-	if (!fullUrl && (!baseUrl || !agentId)) {
-		throw new Error(
-			'Missing required environment variables. Either set AGENT_FULL_URL or both AGENT_BASE_URL and AGENT_ID'
-		);
-	}
+const buildAgentConfig = (agentId: string): AgentConfig => {
+  const baseUrl = config.agentBaseUrl;
+  const bearerToken = process.env.AGENT_BEARER_TOKEN;
 
-	const url = fullUrl || `${baseUrl}/${agentId}`;
+  if (!baseUrl) {
+    throw new Error(
+      'Missing required configuration. Set AGENT_BASE_URL or ensure config.agentBaseUrl is defined.'
+    );
+  }
+  if (!agentId) {
+    throw new Error('Missing required agent ID in config');
+  }
 
-	return {
-		url,
-		bearerToken: bearerToken || undefined,
-	};
+  // For localhost/127.0.0.1, ensure agent ID has 'agent_' prefix
+  let finalAgentId = agentId;
+  if (baseUrl.includes('127.0.0.1') || baseUrl.includes('localhost')) {
+    if (!agentId.startsWith('agent_')) {
+      finalAgentId = `agent_${agentId}`;
+    }
+  }
+
+  return {
+    url: `${baseUrl}/${finalAgentId}`,
+    bearerToken: bearerToken || undefined,
+  };
+};
+
+export const getAgentQaConfig = (): AgentConfig => {
+  return buildAgentConfig(config.agentQaId);
+};
+
+export const getAgentPulseConfig = (): AgentConfig => {
+  return buildAgentConfig(config.agentPulseId);
 };
 
 /**
  * Validates environment variables at startup
  */
 export const validateEnv = (): boolean => {
-	try {
-		const config = getAgentConfig();
-		console.log('✓ Environment variables validated');
-		console.log('✓ Agent URL:', config.url);
-		console.log(
-			'✓ Bearer token:',
-			config.bearerToken ? 'configured' : 'Not Set'
-		);
-		return true;
-	} catch (error) {
-		console.error('❌ Environment validation failed:', error);
-		console.error('💡 Make sure to set either:');
-		console.error('   - AGENT_FULL_URL, or');
-		console.error('   - Both AGENT_BASE_URL and AGENT_ID');
-		console.error('💡 Optionally set AGENT_BEARER_TOKEN for authentication');
-		return false;
-	}
+  try {
+    getAgentQaConfig();
+    console.log('✓ Environment variables validated');
+    return true;
+  } catch (error) {
+    console.error('❌ Environment validation failed:', error);
+    console.error('💡 Make sure to set base URL via:');
+    console.error('   - AGENT_BASE_URL env var, or');
+    console.error('   - Use default from config.baseUrl');
+    console.error('💡 Optionally set AGENT_BEARER_TOKEN for authentication');
+    return false;
+  }
 };
 
 /**
@@ -58,10 +68,8 @@ export const validateEnv = (): boolean => {
  * Use .env.local for development and .env.production for production
  */
 declare global {
-	interface ProcessEnv {
-		AGENT_BASE_URL?: string;
-		AGENT_ID?: string;
-		AGENT_BEARER_TOKEN?: string;
-		AGENT_FULL_URL?: string;
-	}
+  interface ProcessEnv {
+    AGENT_BASE_URL?: string;
+    AGENT_BEARER_TOKEN?: string;
+  }
 }

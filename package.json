@@ -23,6 +23,7 @@
 	"dependencies": {
 		"@radix-ui/react-dialog": "^1.1.14",
 		"@radix-ui/react-visually-hidden": "^1.2.3",
+		"allotment": "^1.20.4",
 		"cmdk": "^1.1.1",
 		"fumadocs-core": "15.2.6",
 		"fumadocs-mdx": "11.5.8",
@@ -38,7 +39,10 @@
 		"react-dom": "^19.0.0",
 		"react-markdown": "^10.1.0",
 		"remark-gfm": "^4.0.1",
-		"twoslash": "^0.3.1"
+		"swr": "^2.3.6",
+		"twoslash": "^0.3.1",
+		"uuid": "^11.1.0",
+		"zod": "^4.1.11"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.1.2",

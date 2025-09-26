@@ -3,10 +3,11 @@ title: Agent Data Handling
 description: How to handle data formats in your agents
 ---
 
+## Overview
 
-We provide a few different ways to handle data formats in your agents to make it easier to work with different data types.  Of course, your agent can always perform its own data handling by use the raw data and the content type property.  However, most common data types are supported out of the box.
+We provide a few different ways to handle data formats in your agents to make it easier to work with different data types. Of course, your agent can always perform its own data handling by using the raw data and the content type property. However, most common data types are supported out of the box.
 
-### How it works
+## How it works
 
 Data that is sent to your agent is transferred as raw binary data and the content type is provided to the agent.  The agent can then use the content type to determine how to handle the data.  The `AgentRequest` object provides a `data` property that contains the `Data` object.  The `Data` object provides a `contentType` property that contains the content type of the data.  The `Data` object also provides a number of helper methods to help you handle the data.
 
@@ -38,26 +39,25 @@ export default async function Agent(
 }`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-   contentType = request.data.contentType
-        if contentType == 'text/plain':
-            text = await request.data.text()
-            # do something with the text
-        elif contentType == 'application/json':
-            json = await request.data.json()
-            # do something with the json
-        else:
-            # do something with the data
-            pass
+    contentType = request.data.contentType
+    if contentType == 'text/plain':
+        text = await request.data.text()
+        # do something with the text
+    elif contentType == 'application/json':
+        json = await request.data.json()
+        # do something with the json
+    else:
+        # do something with the data
+        pass
 `} />
 
-
-### Request Data Formats
+## Request Data Formats
 
 The following request data formats are supported out of the box:
 
-#### Text
+### Text
 
-You use use the `text` method on the `Data` object to get the raw text data.
+You can use the `text` method on the `Data` object to get the raw text data.
 
 <CodeExample js={`import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
 
@@ -77,7 +77,7 @@ You must await the `text` method to get the raw text data since the data could b
 
 In the case the data is another content type that isn't text, the `text` method will return the raw data as a string.  For example, if the content type is `application/json`, the `text` method will return the raw JSON data as a string.
 
-#### JSON
+### JSON
 
 You can use the `json` method on the `Data` object to get the raw JSON data.
 
@@ -99,7 +99,7 @@ You must await the `json` method to get the raw JSON data since the data could b
 
 In the case the data is another content type that isn't JSON, the `json` method will attempt to parse the data as JSON.  If the data is not valid JSON, the `json` method will throw an error.
 
-#### Object
+### Object
 
 You can use the `object` method on the `Data` object to get the JSON data as an object cast to the type you provide. This currently only works for JSON data and the JavaScript SDK.
 
@@ -113,8 +113,7 @@ export default async function Agent(
    const obj = await req.data.object<{ name: string }>();
 }`}  />
 
-
-#### Binary
+### Binary
 
 If you want to get the raw binary data, you can use the `binary` method on the `Data` object.
 
@@ -136,7 +135,7 @@ You must await the `binary` method to get the raw binary data since the data cou
 
 For JavaScript, the `binary` method returns a `Uint8Array` object.  For Python, the `binary` method returns a `bytes` object.
 
-#### Stream
+### Stream
 
 If you want to get the raw binary data as a stream, you can use the `stream` method on the `Data` object.
 
@@ -163,8 +162,7 @@ You must await the `stream` method to get a stream of the raw binary data.  The 
 
 See the [Streaming](/Guides/agent-streaming) guide for more information on how Agent Streaming works.
 
-
-#### Base64
+### Base64
 
 If you want to get the raw binary data as a base64 encoded string, you can use the `base64` method on the `Data` object.
 
@@ -184,10 +182,9 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
 
 You must await the `base64` method to get the base64 encoded string.
 
-#### Email
+### Email
 
 If you want to get the raw binary data as an email object, you can use the `email` method on the `Data` object. This assumes that the request payload was an RFC822 encoded email.
-
 
 <CodeExample js={`import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
 
@@ -227,11 +224,9 @@ The `Attachment` object has the following properties:
 - `contentDisposition`: The content disposition of the attachment which is either `inline` or `attachment`. Defaults to `attachment`.
 - `data`: The `DataType` of the attachment.
 
-## Sending Email Replies
+#### Sending Email Replies
 
 Both SDKs support sending replies to incoming emails using the `sendReply` method. This requires the email-auth-token to be present in the request metadata.
-
-### JavaScript SDK
 
 <CodeExample js={`import type { AgentContext, AgentRequest, AgentResponse } from '@agentuity/sdk';
 
@@ -295,7 +290,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
 Using a custom email address in the reply requires organizational email domain setup. Please contact us if you would like to configure for your organization.
 </Callout>
 
-### Large Attachment Support
+#### Large Attachment Support
 
 Both SDKs now support large email attachments through streaming mechanisms:
 
@@ -303,12 +298,11 @@ Both SDKs now support large email attachments through streaming mechanisms:
 - **Outgoing attachments**: Can handle large files efficiently through the attachment data handling
 - **OpenTelemetry tracing**: Automatic tracing is included for attachment operations to monitor performance
 
-
-### Response Data Formats
+## Response Data Formats
 
 The following response data formats are supported out of the box. Use these methods on the `AgentResponse` object to send data in the desired format from your agent.
 
-#### Text
+### Text
 
 You can use the `text` method to send a plain text response.
 
@@ -326,7 +320,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
    return response.text("Hello, world!")
 `} />
 
-#### JSON
+### JSON
 
 You can use the `json` method to send a JSON response.
 
@@ -347,7 +341,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
    })
 `} />
 
-#### Binary
+### Binary
 
 You can use the `binary` method to send raw binary data.
 
@@ -367,7 +361,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
    return response.binary(binary_data)
 `} />
 
-#### Media Types (Images, Audio, Video, PDF, etc.)
+### Media Types (Images, Audio, Video, PDF, etc.)
 
 The SDK provides helpers for common media types. Use the corresponding method for the type you want to return (e.g., `png`, `jpeg`, `pdf`, `mp3`, etc.).
 
@@ -387,7 +381,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
    return response.png(image_data)
 `} />
 
-#### Markdown
+### Markdown
 
 You can use the `markdown` method to return markdown content.
 
@@ -405,7 +399,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
    return response.markdown("# Hello, world!\\nThis is a markdown response.")
 `} />
 
-#### HTML
+### HTML
 
 You can use the `html` method to return HTML content.
 
@@ -423,7 +417,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
    return response.html("<h1>Hello, world!</h1><p>This is an HTML response.</p>")
 `} />
 
-#### Streaming
+### Streaming
 
 For large or real-time responses, you can stream data using the `stream` method. The source can be an async iterator, a stream, or another agent's stream.
 
@@ -450,7 +444,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     chat_completion = client.chat.completions.create(
         messages=[
             {"role": "system", "content": "You are a friendly assistant!"},
-            {"role": "user", "content": request.data.text or "Why is the sky blue?"},
+            {"role": "user", "content": (await request.data.text()) or "Why is the sky blue?"},
         ],
         model="gpt-4o",
         stream=True,
@@ -458,8 +452,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     return response.stream(chat_completion, lambda chunk: chunk.choices[0].delta.content)
 `} />
 
-
-#### Custom Response
+### Custom Response
 
 For advanced use cases, you can return a native Response object from your agent.
 

@@ -19,6 +19,9 @@ import { source } from '@/lib/source';
 import { CommunityButton } from '../../../components/Community';
 import CopyPageDropdown from '../../../components/CopyPageDropdown';
 import { NavButton } from '../../../components/NavButton';
+import CodeFromFiles from '../../../components/CodeFromFiles';
+import TutorialStep from '../../../components/TutorialStep';
+
 
 export default async function Page(props: {
 	params: Promise<{ slug?: string[] }>;
@@ -56,6 +59,7 @@ export default async function Page(props: {
 						PopupContent,
 						PopupTrigger,
 						CodeExample,
+						CodeFromFiles,
 						CLICommand,
 						CommunityButton,
 						Mermaid,
@@ -64,6 +68,7 @@ export default async function Page(props: {
 						Tab,
 						Tabs,
 						ThemeImage,
+						TutorialStep,
 						TypingAnimation,
 					}}
 				/>

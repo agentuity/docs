@@ -493,6 +493,35 @@ except Exception as e:
     # Handle the error appropriately
 ```
 
+#### get
+
+`async get(name: str, key: str) -> VectorSearchResult | None`
+
+Retrieves a specific vector from the vector storage using its key.
+
+**Parameters**
+
+- `name`: The name of the vector storage
+- `key`: The unique key of the vector to retrieve
+
+**Return Value**
+
+Returns a `VectorSearchResult` object if found, or `None` if the key doesn't exist.
+
+**Example**
+
+```python
+# Retrieve a specific vector by key
+vector = await context.vector.get("product-descriptions", "chair-001")
+
+if vector:
+    print(f"Found vector: {vector.id}")
+    print(f"Key: {vector.key}")
+    print(f"Metadata: {vector.metadata}")
+else:
+    print("Vector not found")
+```
+
 #### delete
 
 `async delete(name: str, key: str) -> int`
@@ -596,7 +625,7 @@ user_data = {"name": "John", "age": 30}
 await context.objectstore.put("users", "user-123.json", user_data)
 
 # Store binary data
-image_data = bytes([/* image bytes */])
+image_data = b"\x00\x01..."  # example bytes
 await context.objectstore.put(
     "images",
     "photo.jpg",
@@ -752,12 +781,13 @@ agent = await context.get_agent({"id": "agent-123"})
 # Get an agent by name
 agent2 = await context.get_agent({
     "name": "data-processing-agent",
-    "project_id": "project-456"
+    "projectId": "project-456" # Note: projectId is camelCase
 })
 
 # Invoke the agent with error handling
 try:
-    result = await agent.run({"data": "process this"}, "application/json")
+    # Pass raw payload (content type inferred)
+    result = await agent.run("process this")
     # Process the result
     print(f"Agent response: {result}")
 except Exception as e:
@@ -797,11 +827,11 @@ Returns an `AgentRedirectResponse` object.
 ```python
 # Handoff to another agent
 return response.handoff(
-    {"name": "data-processing-agent"},
-    {"data": "process this"},
-    "application/json",
-    {"source": "web-agent"}
+    {"name": "data-processing-agent"},  # params
+    "process this",                     # payload (inferred as text/plain)
+    metadata={"source": "web-agent"}    # metadata (keyword arg)
 )
+# Note: Python infers content-type from data (string→text/plain, dict→application/json)
 ```
 
 ## Response Types
@@ -991,7 +1021,7 @@ print(f"User ID: {user_id}")
 
 #### json
 
-`json() -> dict`
+`async json() -> dict`
 
 Gets the payload of the request as a JSON object.
 
@@ -1008,7 +1038,7 @@ print(f"Request data: {data}")
 
 #### text
 
-`text() -> str`
+`async text() -> str`
 
 Gets the payload of the request as a string.
 
@@ -1019,13 +1049,13 @@ Returns the request payload as a string.
 **Example**
 
 ```python
-text = request.data.text
+text = await request.data.text()
 print(f"Request text: {text}")
 ```
 
 #### binary
 
-`binary() -> bytes`
+`async binary() -> bytes`
 
 Gets the payload of the request as bytes.
 
@@ -1036,7 +1066,7 @@ Returns the request payload as bytes.
 **Example**
 
 ```python
-binary_data = request.binary()
+binary_data = await request.data.binary()
 print(f"Binary data size: {len(binary_data)} bytes")
 ```
 
@@ -1044,15 +1074,15 @@ print(f"Binary data size: {len(binary_data)} bytes")
 
 The SDK provides specialized methods for various media types:
 
-- `pdf() -> bytes`
-- `png() -> bytes`
-- `jpeg() -> bytes`
-- `gif() -> bytes`
-- `webp() -> bytes`
-- `mp3() -> bytes`
-- `wav() -> bytes`
-- `ogg() -> bytes`
-- `email() -> Email`
+- `async pdf() -> bytes`
+- `async png() -> bytes`
+- `async jpeg() -> bytes`
+- `async gif() -> bytes`
+- `async webp() -> bytes`
+- `async mp3() -> bytes`
+- `async wav() -> bytes`
+- `async ogg() -> bytes`
+- `async email() -> Email`
 
 Each method returns the request payload as bytes with the appropriate content type validation, except for `email()` which returns an `Email` object.
 
@@ -1060,17 +1090,17 @@ Each method returns the request payload as bytes with the appropriate content ty
 
 ```python
 # Get an image from the request
-image = request.png()
+image = await request.data.png()
 # Process the image...
 
 # Get audio from the request
-audio = request.mp3()
+audio = await request.data.mp3()
 # Process the audio...
 ```
 
 #### email
 
-`email() -> Email`
+`async email() -> Email`
 
 Gets the payload of the request as an Email object. This method validates that the content type is `message/rfc822` before parsing.
 
@@ -1225,97 +1255,98 @@ The Agentuity SDK provides logging functionality through the `context.logger` ob
 
 ### Logger Interface
 
-The `Logger` class defines the following methods:
+The Python SDK provides a standard `logging.Logger` instance through `context.logger`:
 
 ```python
-class Logger:
+class Logger(logging.Logger):
     """
     Logger for agent execution.
     """
-    def debug(self, message: str, *args, **kwargs) -> None:
+    def debug(self, message: str, *args) -> None:
         """Log a debug message."""
         pass
 
-    def info(self, message: str, *args, **kwargs) -> None:
+    def info(self, message: str, *args) -> None:
         """Log an informational message."""
         pass
 
-    def warn(self, message: str, *args, **kwargs) -> None:
+    def warning(self, message: str, *args) -> None:
         """Log a warning message."""
         pass
 
-    def error(self, message: str, *args, **kwargs) -> None:
+    def error(self, message: str, *args) -> None:
         """Log an error message."""
         pass
 
-    def child(self, **kwargs) -> 'Logger':
-        """Create a child logger with additional context."""
-        pass
+    # Note: child() method coming soon for API consistency with JavaScript SDK
 ```
 
 ### Logging Methods
 
 #### debug
 
-`debug(message: str, *args, **kwargs) -> None`
+`debug(message: str, *args) -> None`
 
 Logs a debug message.
 
 **Parameters**
 
 - `message`: The message to log
-- `args`, `kwargs`: Additional arguments to include in the log
+- `args`: Additional arguments to include in the log
 
 **Example**
 
 ```python
-context.logger.debug("Processing request", request_id="123")
+request_id = "123"
+context.logger.debug(f"Processing request request_id={request_id}")
 ```
 
 #### info
 
-`info(message: str, *args, **kwargs) -> None`
+`info(message: str, *args) -> None`
 
 Logs an informational message.
 
 **Parameters**
 
 - `message`: The message to log
-- `args`, `kwargs`: Additional arguments to include in the log
+- `args`: Additional arguments to include in the log
 
 **Example**
 
 ```python
-context.logger.info("Request processed successfully", request_id="123")
+request_id = "123"
+context.logger.info(f"Request processed successfully request_id={request_id}")
 ```
 
-#### warn
+#### warning
 
-`warn(message: str, *args, **kwargs) -> None`
+`warning(message: str, *args) -> None`
 
 Logs a warning message.
 
 **Parameters**
 
 - `message`: The message to log
-- `args`, `kwargs`: Additional arguments to include in the log
+- `args`: Additional arguments to include in the log
 
 **Example**
 
 ```python
-context.logger.warn("Resource not found", resource_id="456")
+resource_id = "456"
+context.logger.warning(f"Resource not found resource_id={resource_id}")
 ```
 
 #### error
 
-`error(message: str, *args, **kwargs) -> None`
+`error(message: str, *args) -> None`
 
 Logs an error message.
 
 **Parameters**
 
 - `message`: The message to log
-- `args`, `kwargs`: Additional arguments to include in the log
+- `args`: Additional arguments to include in the log
 
 **Example**
 
@@ -1324,30 +1355,24 @@ try:
     # Some code that might raise an exception
     result = process_data()
 except Exception as e:
-    context.logger.error("Failed to process request", error=str(e))
+    context.logger.error(f"Failed to process request: {str(e)}")
 ```
 
 ### Creating Child Loggers
 
-#### child
+Child logger functionality is coming soon for API consistency with the JavaScript SDK.
 
-`child(**kwargs) -> Logger`
-
-Creates a child logger with additional context.
-
-**Parameters**
-
-- `kwargs`: Additional context to include in all logs from the child logger
-
-**Return Value**
-
-Returns a new `Logger` instance with the additional context.
-
-**Example**
+**Current approach (manual context):**
 
 ```python
-request_logger = context.logger.child(request_id="123", user_id="456")
-request_logger.info("Processing request")  # Includes request_id and user_id
+# Python: Include context in each log message  
+request_id = "123"
+user_id = "456"
+endpoint = "/api/users"
+
+context.logger.info(f"Starting request processing request_id={request_id} endpoint={endpoint}")
+context.logger.info(f"User authenticated request_id={request_id} user_id={user_id}")
+context.logger.error(f"Failed to fetch user data request_id={request_id} error={str(error)}")
 ```
 
 ## Telemetry
@@ -1365,7 +1390,7 @@ from agentuity.sdk import AgentContext
 from opentelemetry.trace.status import Status, StatusCode
 
 # Create a span
-async with context.tracer.start_as_current_span("process-data") as span:
+with context.tracer.start_as_current_span("process-data") as span:
     try:
         # Add attributes to the span
         span.set_attribute("userId", "123")

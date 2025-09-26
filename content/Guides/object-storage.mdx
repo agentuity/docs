@@ -43,9 +43,8 @@ const handler: AgentHandler = async (request, response, context) => {
   // Bucket is created automatically on first use
   const imageData = Buffer.from(await request.data.binary());
   
-  await context.objectstore.put('user-uploads', 'profile-123.jpg', imageData, {
-    contentType: 'image/jpeg'
-  });
+  // Auto-detect content type (simplest approach)
+  await context.objectstore.put('user-uploads', 'profile-123.jpg', imageData)
   
   return response.json({ message: 'Image uploaded successfully' });
 };
@@ -57,9 +56,8 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     # Bucket is created automatically on first use
     image_data = await request.data.binary()
     
-    await context.objectstore.put("user-uploads", "profile-123.jpg", image_data, {
-        "content_type": "image/jpeg"
-    })
+    # Auto-detect content type (simplest approach)
+    await context.objectstore.put("user-uploads", "profile-123.jpg", image_data)
     
     return response.json({"message": "Image uploaded successfully"})
 `} />
@@ -70,7 +68,10 @@ The object storage API provides four core operations: `get`, `put`, `delete`, an
 
 ### Storing Objects
 
-Store files with automatic content type detection or explicit metadata:
+Object storage supports two approaches for storing files:
+
+1. **Automatic content type detection** (recommended for most cases) - The SDK detects the content type from the data
+2. **Explicit parameters** - Specify content type, metadata, and other options manually
 
 <CodeExample js={`// Store with automatic content type detection
 await context.objectstore.put('documents', 'report.json', { data: 'values' });
@@ -81,10 +82,11 @@ await context.objectstore.put('images', 'photo.jpg', imageBuffer, {
 });
 
 // Store with full metadata
+// These optional parameters control how the object is served
 await context.objectstore.put('uploads', 'document.pdf', pdfData, {
   contentType: 'application/pdf',
-  contentDisposition: 'attachment; filename="report.pdf"',
-  cacheControl: 'max-age=3600',
+  contentDisposition: 'attachment; filename="report.pdf"',  // Download as 'report.pdf'
+  cacheControl: 'max-age=3600',  // Browser caches for 1 hour
   metadata: {
     'uploaded-by': userId,
     'processed': 'false'
@@ -95,30 +97,39 @@ await context.objectstore.put('uploads', 'document.pdf', pdfData, {
 await context.objectstore.put('logs', 'agent.log', logContent, {
   contentType: 'text/plain',
   contentEncoding: 'utf-8'
-});`} py={`# Store with automatic content type detection
+});`} py={`# Store with automatic content type detection (simplest approach)
+# The SDK will automatically detect content type from the file extension or data
 await context.objectstore.put("documents", "report.json", {"data": "values"})
+await context.objectstore.put("images", "photo.jpg", image_buffer)
+await context.objectstore.put("logs", "agent.log", log_content)
 
-# Store with explicit content type
-await context.objectstore.put("images", "photo.jpg", image_buffer, {
-    "content_type": "image/jpeg"
-})
+# Store with explicit parameters using ObjectStorePutParams
+# Use this when you need to set specific metadata or explicit content type
+from agentuity.server.objectstore import ObjectStorePutParams
 
-# Store with full metadata
-await context.objectstore.put("uploads", "document.pdf", pdf_data, {
-    "content_type": "application/pdf",
-    "content_disposition": 'attachment; filename="report.pdf"',
-    "cache_control": "max-age=3600",
-    "metadata": {
+# With explicit content type
+params = ObjectStorePutParams(content_type="image/jpeg")
+await context.objectstore.put("images", "photo.jpg", image_buffer, params)
+
+# With full metadata
+# These optional parameters control how the object is served via public URLs
+params = ObjectStorePutParams(
+    content_type="application/pdf",
+    content_disposition='attachment; filename="report.pdf"',  # Download as 'report.pdf'
+    cache_control="max-age=3600",  # Browser caches for 1 hour  
+    metadata={
         "uploaded-by": user_id,
         "processed": "false"
     }
-})
+)
+await context.objectstore.put("uploads", "document.pdf", pdf_data, params)
 
-# Store text file
-await context.objectstore.put("logs", "agent.log", log_content, {
-    "content_type": "text/plain",
-    "content_encoding": "utf-8"
-})`} />
+# Text file with encoding
+params = ObjectStorePutParams(
+    content_type="text/plain",
+    content_encoding="utf-8"
+)
+await context.objectstore.put("logs", "agent.log", log_content, params)`} />
 
 ### Retrieving Objects
 
@@ -257,6 +268,9 @@ await context.objectstore.put('uploads', filename, data, {
   contentType
 });`} py={`import os
 
+# Auto-detect or use explicit params
+from agentuity.server.objectstore import ObjectStorePutParams
+
 content_types = {
     ".jpg": "image/jpeg",
     ".png": "image/png",
@@ -268,9 +282,8 @@ content_types = {
 extension = os.path.splitext(filename)[1]
 content_type = content_types.get(extension, "application/octet-stream")
 
-await context.objectstore.put("uploads", filename, data, {
-    "contentType": content_type
-})`} />
+params = ObjectStorePutParams(content_type=content_type)
+await context.objectstore.put("uploads", filename, data, params)`} />
 
 ### Public URL Security
 
@@ -360,13 +373,17 @@ Create a robust file upload handler:
     file_data = await request.data.binary()
     key = f"uploads/{int(time.time())}-{file_name}"
     
-    await context.objectstore.put("user-files", key, file_data, {
-        "content_type": content_type,
-        "metadata": {
+    # Using explicit params for metadata
+    from agentuity.server.objectstore import ObjectStorePutParams
+    
+    params = ObjectStorePutParams(
+        content_type=content_type,
+        metadata={
             "original-name": file_name,
             "upload-time": datetime.now().isoformat()
         }
-    })
+    )
+    await context.objectstore.put("user-files", key, file_data, params)
     
     # Generate access URL
     url = await context.objectstore.create_public_url(
