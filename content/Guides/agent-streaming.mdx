@@ -116,11 +116,7 @@ The SDK automatically detects object streams and converts them to JSON newline f
 
 ### Stream Transformers
 
-You can provide transformer functions to filter and transform stream data. The `resp.stream()` signature is:
-
-```ts
-stream(source, contentType?, metadata?, transformer?)
-```
+You can provide an optional `transformer` parameter to `resp.stream()` to filter and transform stream data before it's sent to the client:
 
 <CodeExample js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
 
@@ -259,6 +255,8 @@ await writer.write(new Uint8Array([72, 101, 108, 108]));  // Binary - passed thr
 
 The SDK handles JSON serialization and UTF-8 encoding as needed.
 
+**Note:** While the SDK auto-serializes objects to JSON, it doesn't include line terminators. When streaming multiple JSON objects (such as NDJSON - newline-delimited JSON), you'll need to manually add delimiters between objects. See the example below for a common pattern.
+
 ```ts
 export default async function Agent(
   req: AgentRequest,
@@ -287,8 +285,8 @@ export default async function Agent(
           timestamp: new Date().toISOString()
         };
 
-        // SDK handles encoding - pass strings, objects, or binary data directly
-        await writer.write(`${JSON.stringify(progressData)}\n`);
+        // Streaming multiple JSON objects line-by-line (NDJSON pattern)
+        await writer.write(JSON.stringify(progressData) + '\n');
 
         // Simulate work
         await new Promise(resolve => setTimeout(resolve, 1000));

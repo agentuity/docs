@@ -664,7 +664,7 @@ The Stream Storage API provides first-class support for creating and managing se
 
 #### create
 
-`create(name: string, props?: StreamCreateProps): Stream`
+`create(name: string, props?: StreamCreateProps): Promise<Stream>`
 
 Creates a new, named, writable stream that returns immediately for non-blocking operation.
 
@@ -677,7 +677,7 @@ Creates a new, named, writable stream that returns immediately for non-blocking 
 
 **Return Value**
 
-Returns a `Stream` object immediately with the following properties:
+Returns a `Promise<Stream>` that resolves immediately with the following properties:
 - `id`: The unique identifier of the stream
 - `url`: The URL to consume the stream
 - Extends `WritableStream` for standard stream operations
@@ -757,14 +757,16 @@ const handler: AgentHandler = async (request, response, context) => {
 
     try {
       for (let i = 0; i < steps.length; i++) {
-        // SDK handles string encoding automatically
-        await writer.write(`${JSON.stringify({
+        const progressData = {
           step: i + 1,
           total: steps.length,
           message: steps[i],
           progress: ((i + 1) / steps.length) * 100,
           timestamp: new Date().toISOString()
-        })}\n`);
+        };
+
+        // Streaming multiple JSON objects line-by-line (NDJSON pattern)
+        await writer.write(JSON.stringify(progressData) + '\n');
 
         // Simulate processing time
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -889,11 +891,12 @@ const handler: AgentHandler = async (request, response, context) => {
 
       try {
         for (let i = 1; i <= 5; i++) {
-          await writer.write(`${JSON.stringify({
+          // Streaming multiple JSON objects line-by-line (NDJSON pattern)
+          await writer.write(JSON.stringify({
             id: i,
             message: `Data chunk ${i}`,
             timestamp: new Date().toISOString()
-          })}\n`);
+          }) + '\n');
           await new Promise(resolve => setTimeout(resolve, 500));
         }
       } finally {
