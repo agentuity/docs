@@ -64,7 +64,7 @@ export default async function Agent(
     prompt: "Invent a new holiday and describe its traditions.",
   });
 
-  return resp.stream(textStream);
+  return resp.stream(textStream, 'text/plain');
 }`} py={`from openai import OpenAI
 from agentuity import AgentRequest, AgentResponse, AgentContext
 
@@ -116,7 +116,11 @@ The SDK automatically detects object streams and converts them to JSON newline f
 
 ### Stream Transformers
 
-You can provide transformer functions to filter and transform stream data:
+You can provide transformer functions to filter and transform stream data. The `resp.stream()` signature is:
+
+```ts
+stream(source, contentType?, metadata?, transformer?)
+```
 
 <CodeExample js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
 
@@ -127,12 +131,12 @@ export default async function Agent(
 ) {
   // Get stream from another source
   const dataStream = getDataStream();
-  
+
   // Transform and filter items
   const transformer = (item: any) => {
     // Filter out items (return null/undefined to skip)
     if (!item.active) return null;
-    
+
     // Transform the item
     return {
       id: item.id,
@@ -141,7 +145,8 @@ export default async function Agent(
     };
   };
 
-  return resp.stream(dataStream, undefined, {}, transformer);
+  // Optional parameters can be omitted by passing undefined or left out entirely
+  return resp.stream(dataStream, 'application/json', undefined, transformer);
 }`} />
 
 You can also use generator functions for more complex transformations:
@@ -194,6 +199,8 @@ For advanced use cases, you can use `context.stream.create()` to create and mana
 
 The `context.stream.create()` method creates a named, writable stream that returns immediately, allowing for non-blocking operation and background data processing.
 
+When you have a ReadableStream source (like an LLM response, file stream, or another agent's output), use `pipeTo()` to efficiently pipe data to your created stream:
+
 ```ts
 import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
 import { openai } from '@ai-sdk/openai';
@@ -207,7 +214,7 @@ export default async function Agent(
   const { prompt } = await req.data.json();
 
   // Create a stream immediately - this returns right away
-  const stream = ctx.stream.create('llm-response', {
+  const stream = await ctx.stream.create('llm-response', {
     contentType: 'text/plain',
     metadata: {
       requestId: req.id,
@@ -239,7 +246,18 @@ export default async function Agent(
 
 ### Manual Stream Writing
 
-You can also write to streams manually for complete control over the data flow:
+For chunk-by-chunk control over stream data (such as progress updates or custom formatting), use the `getWriter()` pattern. Since `Stream` extends `WritableStream`, you need to get a writer first.
+
+**Type Flexibility:** The SDK automatically handles type conversion and encoding. You can pass different data types directly to `writer.write()`:
+
+```typescript
+// All of these work:
+await writer.write('Hello World\n');                      // String - auto-encoded to UTF-8
+await writer.write({ status: 'processing' });             // Object - auto-serialized to JSON
+await writer.write(new Uint8Array([72, 101, 108, 108]));  // Binary - passed through
+```
+
+The SDK handles JSON serialization and UTF-8 encoding as needed.
 
 ```ts
 export default async function Agent(
@@ -247,29 +265,37 @@ export default async function Agent(
   resp: AgentResponse,
   ctx: AgentContext,
 ) {
-  const stream = ctx.stream.create('progress-updates', {
+  const stream = await ctx.stream.create('progress-updates', {
     contentType: 'application/json',
     metadata: { type: 'progress-tracking' }
   });
 
   ctx.waitUntil(async () => {
+    // Get a writer from the WritableStream
+    const writer = stream.getWriter();
+
     try {
       // Send progress updates
       const steps = ['Initializing', 'Processing', 'Analyzing', 'Finalizing'];
-      
+
       for (let i = 0; i < steps.length; i++) {
-        await stream.write(JSON.stringify({
+        const progressData = {
           step: i + 1,
           total: steps.length,
           message: steps[i],
           progress: ((i + 1) / steps.length) * 100,
           timestamp: new Date().toISOString()
-        }) + '\n');
-        
+        };
+
+        // SDK handles encoding - pass strings, objects, or binary data directly
+        await writer.write(`${JSON.stringify(progressData)}\n`);
+
         // Simulate work
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     } finally {
+      // Always release the lock and close the stream
+      writer.releaseLock();
       await stream.close();
     }
   });
@@ -280,6 +306,41 @@ export default async function Agent(
   });
 }
 ```
+
+### Reading from Streams with `getReader()`
+
+The `Stream` object provides a `getReader()` method that returns a `ReadableStream<Uint8Array>`. This is useful for consuming streams you've created internally:
+
+```ts
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext,
+) {
+  const stream = await ctx.stream.create('internal-stream', {
+    contentType: 'text/plain'
+  });
+
+  // Write data in the background
+  ctx.waitUntil(async () => {
+    const writer = stream.getWriter();
+    try {
+      await writer.write(new TextEncoder().encode('Processing data...\n'));
+      // ... more processing ...
+      await writer.write(new TextEncoder().encode('Complete!\n'));
+    } finally {
+      writer.releaseLock();
+      await stream.close();
+    }
+  });
+
+  // Get a ReadableStream from the stream's URL and forward it
+  const readable = stream.getReader();
+  return resp.stream(readable, 'text/plain');
+}
+```
+
+**Note:** The `getReader()` method fetches data from the stream's URL and will block until data starts being written to the stream.
 
 ### Stream as Direct Response
 
@@ -293,7 +354,7 @@ export default async function Agent(
 ) {
   const { prompt } = await req.data.json();
 
-  const stream = ctx.stream.create('direct-stream', {
+  const stream = await ctx.stream.create('direct-stream', {
     contentType: 'text/plain'
   });
 
@@ -318,6 +379,16 @@ export default async function Agent(
 - **Direct Access**: Clients can access streams via direct URLs
 - **Flexible Content Types**: Support any content type (text, JSON, binary, etc.)
 - **Manual Control**: Write data chunks manually for complex streaming scenarios
+
+### When to Use Each Pattern
+
+| Your Use Case | Recommended Approach |
+|---------------|---------------------|
+| Streaming LLM responses in background | `pipeTo()` with `ctx.stream.create()` |
+| Progress updates during long operations | `getWriter()` with `ctx.stream.create()` |
+| Reading back from your created stream | `stream.getReader()` |
+| Forwarding data directly to the client | `resp.stream()` |
+| Chaining to another agent | `resp.stream(await agent.data.stream())` |
 
 ---
 

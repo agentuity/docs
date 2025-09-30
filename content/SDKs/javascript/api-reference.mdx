@@ -701,7 +701,7 @@ const handler: AgentHandler = async (request, response, context) => {
   const { prompt, userId, sessionId } = await request.data.json();
 
   // Create a stream with metadata for identification and searching
-  const stream = context.stream.create('llm-response', {
+  const stream = await context.stream.create('llm-response', {
     contentType: 'text/plain',
     metadata: {
       userId,
@@ -741,10 +741,10 @@ export default handler;
 ```typescript
 const handler: AgentHandler = async (request, response, context) => {
   const { taskId, steps } = await request.data.json();
-  
-  const stream = context.stream.create('progress-updates', {
+
+  const stream = await context.stream.create('progress-updates', {
     contentType: 'application/json',
-    metadata: { 
+    metadata: {
       type: 'progress-tracking',
       taskId,
       totalSteps: steps.length,
@@ -753,21 +753,24 @@ const handler: AgentHandler = async (request, response, context) => {
   });
 
   context.waitUntil(async () => {
-    // Stream implements WritableStream, so we can write directly to it
+    const writer = stream.getWriter();
+
     try {
       for (let i = 0; i < steps.length; i++) {
-        await stream.write(JSON.stringify({
+        // SDK handles string encoding automatically
+        await writer.write(`${JSON.stringify({
           step: i + 1,
           total: steps.length,
           message: steps[i],
           progress: ((i + 1) / steps.length) * 100,
           timestamp: new Date().toISOString()
-        }) + '\n');
-        
+        })}\n`);
+
         // Simulate processing time
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     } finally {
+      writer.releaseLock();
       await stream.close();
     }
   });
@@ -807,6 +810,7 @@ interface Stream extends WritableStream {
 Streams can be consumed in two ways:
 
 **1. Complete Stream Reads**
+
 Each request to the stream URL starts from the beginning and reads the entire stream:
 
 ```bash
@@ -819,6 +823,7 @@ curl "https://streams.agentuity.cloud/stream_abc1234567890" &
 ```
 
 **2. Range-Based Reads (Resumable/Partial)**
+
 Use HTTP Range requests for resuming from specific positions or accessing partial content:
 
 ```bash
@@ -840,7 +845,7 @@ const handler: AgentHandler = async (request, response, context) => {
   
   if (action === 'read-direct') {
     // Create or get an existing stream
-    const stream = context.stream.create('data-source', {
+    const stream = await context.stream.create('data-source', {
       contentType: 'text/plain',
       metadata: { type: 'data-processing', sourceId: streamId }
     });
@@ -873,24 +878,26 @@ const handler: AgentHandler = async (request, response, context) => {
   
   if (action === 'stream-reader-response') {
     // Create a stream with some data
-    const sourceStream = context.stream.create('source-data', {
+    const sourceStream = await context.stream.create('source-data', {
       contentType: 'application/json',
       metadata: { type: 'generated-data', requestId: request.id }
     });
-    
+
     // Populate the stream with data in the background
     context.waitUntil(async () => {
-      // Stream implements WritableStream, so we write directly to it
+      const writer = sourceStream.getWriter();
+
       try {
         for (let i = 1; i <= 5; i++) {
-          await sourceStream.write(JSON.stringify({
+          await writer.write(`${JSON.stringify({
             id: i,
             message: `Data chunk ${i}`,
             timestamp: new Date().toISOString()
-          }) + '\n');
+          })}\n`);
           await new Promise(resolve => setTimeout(resolve, 500));
         }
       } finally {
+        writer.releaseLock();
         await sourceStream.close();
       }
     });
@@ -911,43 +918,45 @@ const handler: AgentHandler = async (request, response, context) => {
   const { sourceData } = await request.data.json();
   
   // Create a source stream with input data
-  const sourceStream = context.stream.create('input-stream', {
+  const sourceStream = await context.stream.create('input-stream', {
     contentType: 'text/plain',
     metadata: { type: 'input-processing' }
   });
-  
+
   // Create a processing stream for transformed output
-  const processedStream = context.stream.create('processed-output', {
+  const processedStream = await context.stream.create('processed-output', {
     contentType: 'text/plain',
     metadata: { type: 'processed-data', transformation: 'uppercase' }
   });
-  
+
   context.waitUntil(async () => {
     // Write source data to the input stream
+    const sourceWriter = sourceStream.getWriter();
     try {
-      await sourceStream.write(sourceData);
+      await sourceWriter.write(sourceData);
     } finally {
+      sourceWriter.releaseLock();
       await sourceStream.close();
     }
-    
+
     // Read from source stream and write processed data to output stream
     const reader = sourceStream.getReader();
-    // Note: processedStream is written to directly, no writer needed
-    
+    const processedWriter = processedStream.getWriter();
+
     try {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
+
         // Transform the data (convert to uppercase)
         const text = new TextDecoder().decode(value);
         const processedText = text.toUpperCase();
-        const processedBuffer = new TextEncoder().encode(processedText);
-        
-        await processedStream.write(processedBuffer);
+
+        await processedWriter.write(processedText);
       }
     } finally {
       reader.releaseLock();
+      processedWriter.releaseLock();
       await processedStream.close();
     }
   });
@@ -965,7 +974,7 @@ Agent handlers can return a `Stream` object directly, which will cause the route
 const handler: AgentHandler = async (request, response, context) => {
   const { prompt } = await request.data.json();
 
-  const stream = context.stream.create('direct-stream', {
+  const stream = await context.stream.create('direct-stream', {
     contentType: 'text/plain',
     metadata: {
       type: 'direct-response',
