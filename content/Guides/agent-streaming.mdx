@@ -206,8 +206,8 @@ export default async function Agent(
 ) {
   const { prompt } = await req.data.json();
 
-  // Create a stream immediately - this returns right away
-  const stream = ctx.stream.create('llm-response', {
+  // Create a stream
+  const stream = await ctx.stream.create('llm-response', {
     contentType: 'text/plain',
     metadata: {
       requestId: ctx.sessionId,
@@ -246,7 +246,7 @@ export default async function Agent(
   resp: AgentResponse,
   ctx: AgentContext,
 ) {
-  const stream = ctx.stream.create('progress-updates', {
+  const stream = await ctx.stream.create('progress-updates', {
     contentType: 'application/json',
     metadata: { type: 'progress-tracking' }
   });
@@ -304,7 +304,7 @@ ctx.logger.info(`Progress: ${stream.bytesWritten} bytes`); // e.g., "Progress: 2
 
 ### Stream Compression
 
-Stream compression reduces bandwidth usage by automatically applying gzip encoding to outbound data:
+Stream compression reduces bandwidth usage by automatically applying gzip encoding to outbound data (defaults to disabled):
 
 ```ts
 export default async function Agent(
@@ -314,7 +314,7 @@ export default async function Agent(
 ) {
   const { dataset } = await req.data.json();
 
-  const stream = ctx.stream.create('dataset-export', {
+  const stream = await ctx.stream.create('dataset-export', {
     contentType: 'application/json',
     compress: true,  // Automatic gzip compression
     metadata: {
@@ -373,7 +373,7 @@ export default async function Agent(
 ) {
   const { prompt } = await req.data.json();
 
-  const stream = ctx.stream.create('direct-stream', {
+  const stream = await ctx.stream.create('direct-stream', {
     contentType: 'text/plain'
   });
 
