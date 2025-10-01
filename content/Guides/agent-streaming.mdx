@@ -192,7 +192,7 @@ For advanced use cases, you can create and manage streams directly with `context
 
 ### Creating Streams with `context.stream.create`
 
-This method creates a named, writable stream that returns immediately, allowing for non-blocking operation and background data processing.
+This method returns a Promise that resolves to a named, writable stream. The stream is created immediately, enabling background data processing without blocking the response:
 
 ```ts
 import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";

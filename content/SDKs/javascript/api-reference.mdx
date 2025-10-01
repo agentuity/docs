@@ -678,7 +678,7 @@ Creates a new, named, writable stream.
 
 **Return Value**
 
-Returns a `Stream` object immediately with the following properties:
+Returns a Promise that resolves to a `Stream` object with the following properties:
 - `id`: The unique identifier of the stream
 - `url`: The URL to consume the stream
 - Extends `WritableStream` for standard stream operations
@@ -711,7 +711,7 @@ const handler: AgentHandler = async (request, response, context) => {
       type: 'llm-generation',
       model: 'gpt-4o',
       category: 'chat-completion',
-      promptLength: String(prompt.length)
+      promptLength: String(prompt?.length ?? 0)
     }
   });
 
