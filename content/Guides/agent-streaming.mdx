@@ -188,11 +188,11 @@ Chain as many agents as you like; each one can inspect, transform, or just relay
 
 ## Low-Level Stream Control
 
-For advanced use cases, you can use `context.stream.create()` to create and manage streams directly. This gives you fine-grained control over stream creation, data flow, and background processing.
+For advanced use cases, you can create and manage streams directly with `context.stream.create()`, giving you fine-grained control over stream creation, data flow, and background processing.
 
 ### Creating Streams with `context.stream.create`
 
-The `context.stream.create()` method creates a named, writable stream that returns immediately, allowing for non-blocking operation and background data processing.
+This method returns a Promise that resolves to a named, writable stream. The stream is created immediately, enabling background data processing without blocking the response:
 
 ```ts
 import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
@@ -206,14 +206,13 @@ export default async function Agent(
 ) {
   const { prompt } = await req.data.json();
 
-  // Create a stream immediately - this returns right away
-  const stream = ctx.stream.create('llm-response', {
+  // Create a stream
+  const stream = await ctx.stream.create('llm-response', {
     contentType: 'text/plain',
     metadata: {
-      requestId: req.id,
+      requestId: ctx.sessionId,
       type: 'llm-generation',
-      model: 'gpt-4o',
-      userId: req.headers.get('user-id')
+      model: 'gpt-4o'
     }
   });
 
@@ -239,7 +238,7 @@ export default async function Agent(
 
 ### Manual Stream Writing
 
-You can also write to streams manually for complete control over the data flow:
+You can write to streams manually for complete control over the data flow. The Stream API provides a simple `write()` method that handles writer management automatically:
 
 ```ts
 export default async function Agent(
@@ -247,7 +246,7 @@ export default async function Agent(
   resp: AgentResponse,
   ctx: AgentContext,
 ) {
-  const stream = ctx.stream.create('progress-updates', {
+  const stream = await ctx.stream.create('progress-updates', {
     contentType: 'application/json',
     metadata: { type: 'progress-tracking' }
   });
@@ -256,7 +255,7 @@ export default async function Agent(
     try {
       // Send progress updates
       const steps = ['Initializing', 'Processing', 'Analyzing', 'Finalizing'];
-      
+
       for (let i = 0; i < steps.length; i++) {
         await stream.write(JSON.stringify({
           step: i + 1,
@@ -265,10 +264,13 @@ export default async function Agent(
           progress: ((i + 1) / steps.length) * 100,
           timestamp: new Date().toISOString()
         }) + '\n');
-        
+
         // Simulate work
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
+
+      // Track progress with bytesWritten
+      ctx.logger.info(`Stream complete: ${stream.bytesWritten} bytes written`);
     } finally {
       await stream.close();
     }
@@ -280,6 +282,84 @@ export default async function Agent(
   });
 }
 ```
+
+**Writing Patterns**
+
+The Stream API supports two writing patterns:
+
+- **`stream.write()`** - Simplified API that handles writer acquisition and locking automatically. Recommended for most use cases.
+- **`stream.getWriter()`** - Direct access to the underlying WritableStream writer for scenarios requiring precise control over the writer lifecycle (e.g., sharing a single writer across multiple operations or custom error handling).
+
+**Tracking Stream Progress**
+
+The `bytesWritten` property provides real-time visibility into stream progress:
+
+```ts
+await stream.write(chunk1);
+ctx.logger.info(`Progress: ${stream.bytesWritten} bytes`); // e.g., "Progress: 1024 bytes"
+
+await stream.write(chunk2);
+ctx.logger.info(`Progress: ${stream.bytesWritten} bytes`); // e.g., "Progress: 2048 bytes"
+```
+
+### Stream Compression
+
+Stream compression reduces bandwidth usage by automatically applying gzip encoding to outbound data (defaults to disabled):
+
+```ts
+export default async function Agent(
+  req: AgentRequest,
+  resp: AgentResponse,
+  ctx: AgentContext,
+) {
+  const { dataset } = await req.data.json();
+
+  const stream = await ctx.stream.create('dataset-export', {
+    contentType: 'application/json',
+    compress: true,  // Automatic gzip compression
+    metadata: {
+      type: 'data-export',
+      recordCount: String(dataset.length),
+      timestamp: String(Date.now())
+    }
+  });
+
+  ctx.waitUntil(async () => {
+    try {
+      for (const record of dataset) {
+        await stream.write(JSON.stringify(record) + '\n');
+
+        // Log progress periodically
+        if (stream.bytesWritten % 100000 < 1000) {
+          ctx.logger.info(`Export progress: ${stream.bytesWritten} bytes written`);
+        }
+      }
+
+      ctx.logger.info(
+        `Export complete: ${stream.bytesWritten} bytes (uncompressed), ` +
+        `compression: ${stream.compressed ? 'enabled' : 'disabled'}`
+      );
+    } finally {
+      await stream.close();
+    }
+  });
+
+  return resp.json({
+    streamUrl: stream.url,
+    compressed: stream.compressed,
+    totalBytes: stream.bytesWritten
+  });
+}
+```
+
+**When to Use Compression**
+
+Enable compression for highly compressible data formats:
+- JSON APIs and structured data streams
+- Text-based logs and documents
+- CSV files and tabular data
+
+The `bytesWritten` property tracks uncompressed bytes, while clients receive gzip-encoded responses that are automatically decompressed by standard HTTP clients.
 
 ### Stream as Direct Response
 
@@ -293,7 +373,7 @@ export default async function Agent(
 ) {
   const { prompt } = await req.data.json();
 
-  const stream = ctx.stream.create('direct-stream', {
+  const stream = await ctx.stream.create('direct-stream', {
     contentType: 'text/plain'
   });
 
@@ -317,7 +397,9 @@ export default async function Agent(
 - **Rich Metadata**: Associate custom metadata with streams for tracking and debugging
 - **Direct Access**: Clients can access streams via direct URLs
 - **Flexible Content Types**: Support any content type (text, JSON, binary, etc.)
-- **Manual Control**: Write data chunks manually for complex streaming scenarios
+- **Direct Writing**: Use `stream.write()` for simple data writing without manual lock management
+- **Progress Monitoring**: Track bytes written in real-time with `stream.bytesWritten`
+- **Automatic Compression**: Enable optional compression to reduce bandwidth for compressible content
 
 ---
 
