@@ -1,57 +1,46 @@
 import { NextResponse } from 'next/server';
-import { readdir } from 'fs/promises';
 import { join } from 'path';
 import { parseTutorialMDXCached } from '@/lib/tutorial/mdx-parser';
 import { TutorialListItemSchema, type TutorialListItem } from '@/lib/tutorial/schemas';
+import { getTutorialsConfig } from '@/lib/tutorial';
 
 export async function GET() {
   try {
-    const tutorialsDir = join(process.cwd(), 'content', 'Tutorial');
-    
-    // Check if Tutorial directory exists, if not create it for future use
-    let entries: string[];
-    try {
-      entries = await readdir(tutorialsDir);
-    } catch (error) {
-      // Return empty array if Tutorial directory doesn't exist yet
-      return NextResponse.json([]);
-    }
-    
-    const mdxFiles = entries.filter(file => file.endsWith('.mdx'));
-    
+    const config = await getTutorialsConfig();
+
     const tutorials = await Promise.all(
-      mdxFiles.map(async (file): Promise<TutorialListItem | null> => {
+      config.tutorials.map(async (tutorialMeta): Promise<TutorialListItem | null> => {
         try {
-          const filePath = join(tutorialsDir, file);
+          const filePath = join(process.cwd(), 'content', tutorialMeta.path);
           const parsed = await parseTutorialMDXCached(filePath);
-          
+
           const tutorialItem = {
-            id: file.replace('.mdx', ''),
-            title: parsed.metadata.title,
-            description: parsed.metadata.description,
-            totalSteps: parsed.metadata.totalSteps,
-            difficulty: parsed.metadata.difficulty,
-            estimatedTime: parsed.metadata.estimatedTime,
+            id: tutorialMeta.id,
+            title: tutorialMeta.title,
+            description: tutorialMeta.description,
+            totalSteps: parsed.metadata.totalSteps || parsed.steps.length,
+            difficulty: tutorialMeta.difficulty,
+            estimatedTime: tutorialMeta.estimatedTime,
           };
 
           // Validate the tutorial list item
           const validationResult = TutorialListItemSchema.safeParse(tutorialItem);
           if (!validationResult.success) {
-            console.warn(`Invalid tutorial item ${file}:`, validationResult.error.message);
+            console.warn(`Invalid tutorial item ${tutorialMeta.id}:`, validationResult.error.message);
             return null;
           }
 
           return validationResult.data;
         } catch (error) {
-          console.warn(`Failed to parse tutorial ${file}:`, error);
+          console.warn(`Failed to parse tutorial ${tutorialMeta.id} at ${tutorialMeta.path}:`, error);
           return null;
         }
       })
     );
-    
+
     // Filter out failed tutorials
     const validTutorials = tutorials.filter(tutorial => tutorial !== null);
-    
+
     return NextResponse.json(validTutorials);
   } catch (error) {
     console.error('Failed to load tutorials:', error);
