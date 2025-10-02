@@ -7,6 +7,28 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 This page documents the release history of the [Agentuity JavaScript SDK](https://github.com/agentuity/sdk-js).
 
+## v0.0.148
+
+<Callout type="info">
+  Released: October 2, 2025
+</Callout>
+
+**Changes**
+
+- **Added**: Experimental support for prompts ([PR #184](https://github.com/agentuity/sdk-js/pull/184))
+
+## v0.0.147
+
+<Callout type="info">
+  Released: October 1, 2025
+</Callout>
+
+**Changes**
+
+- **Added**: Support for automatic stream compression with new `bytesWritten` and `compressed` properties on Stream interface ([PR #186](https://github.com/agentuity/sdk-js/pull/186))
+- **Added**: Support for direct write to Stream in addition to getWriter() method ([PR #186](https://github.com/agentuity/sdk-js/pull/186))
+- **Fixed**: Remove the explicit Content-Type header for application/json in send (internal) to allow each service caller to properly set ([PR #185](https://github.com/agentuity/sdk-js/pull/185))
+
 ## v0.0.146
 
 <Callout type="info">
