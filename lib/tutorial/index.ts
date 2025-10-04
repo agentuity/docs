@@ -5,6 +5,7 @@ export * from './state-manager';
 // Tutorial configuration utilities
 import { join } from 'path';
 import { readFile } from 'fs/promises';
+import { resolveSecurePath } from '@/lib/utils/secure-path';
 
 interface TutorialMeta {
   id: string;
@@ -29,7 +30,8 @@ export async function getTutorialsConfig(): Promise<TutorialsConfig> {
 }
 
 /**
- * Gets the full file path for a specific tutorial based on tutorials.json
+ * Gets the full file path for a specific tutorial based on tutorials.json.
+ * Validates that the tutorial path doesn't escape the content directory.
  */
 export async function getTutorialFilePath(tutorialId: string): Promise<string | null> {
   const config = await getTutorialsConfig();
@@ -39,5 +41,17 @@ export async function getTutorialFilePath(tutorialId: string): Promise<string | 
     return null;
   }
   
-  return join(process.cwd(), 'content', tutorial.path);
+  // Ensure the path is secure and doesn't escape the content directory
+  const contentDir = join(process.cwd(), 'content');
+  const tutorialPath = `/${tutorial.path}`;
+  
+  try {
+    return resolveSecurePath(tutorialPath, {
+      baseDir: contentDir,
+      requireLeadingSlash: true
+    });
+  } catch (error) {
+    console.error(`Security validation failed for tutorial ${tutorialId}:`, error);
+    return null;
+  }
 }

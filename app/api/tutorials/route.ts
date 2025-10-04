@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { join } from 'path';
 import { parseTutorialMDXCached } from '@/lib/tutorial/mdx-parser';
 import { TutorialListItemSchema, type TutorialListItem } from '@/lib/tutorial/schemas';
-import { getTutorialsConfig } from '@/lib/tutorial';
+import { getTutorialsConfig, getTutorialFilePath } from '@/lib/tutorial';
 
 export async function GET() {
   try {
@@ -11,7 +10,11 @@ export async function GET() {
     const tutorials = await Promise.all(
       config.tutorials.map(async (tutorialMeta): Promise<TutorialListItem | null> => {
         try {
-          const filePath = join(process.cwd(), 'content', tutorialMeta.path);
+          const filePath = await getTutorialFilePath(tutorialMeta.id);
+          if (!filePath) {
+            console.warn(`Tutorial file not found for ${tutorialMeta.id}`);
+            return null;
+          }
           const parsed = await parseTutorialMDXCached(filePath);
 
           const tutorialItem = {

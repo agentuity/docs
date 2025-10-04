@@ -1,12 +1,12 @@
 import matter from 'gray-matter';
 import { readFile, stat } from 'fs/promises';
-import path from 'path';
 import {
   TutorialMetadataSchema,
   ParsedTutorialSchema,
   type TutorialStepData,
   type ParsedTutorial
 } from './schemas';
+import { readSecureFile } from '@/lib/utils/secure-path';
 
 export async function parseTutorialMDX(filePath: string): Promise<ParsedTutorial> {
   const fileContent = await readFile(filePath, 'utf-8');
@@ -218,21 +218,11 @@ function parseSnippetObject(objectString: string): {
 
 async function loadSnippetContent(snippet: { path: string; from?: number; to?: number }): Promise<string> {
   try {
-    const repoRoot = process.cwd();
-    const absolutePath = path.resolve(repoRoot, `.${snippet.path}`);
-
-    // Security check
-    if (!absolutePath.startsWith(repoRoot)) {
-      throw new Error('Path escapes repository root');
-    }
-
-    const fileContent = await readFile(absolutePath, 'utf-8');
-    const lines = fileContent.split(/\r?\n/);
-
-    const startIdx = Math.max(0, (snippet.from ? snippet.from - 1 : 0));
-    const endIdx = Math.min(lines.length, snippet.to ? snippet.to : lines.length);
-
-    return lines.slice(startIdx, endIdx).join('\n');
+    return await readSecureFile(snippet.path, {
+      from: snippet.from,
+      to: snippet.to,
+      requireLeadingSlash: true
+    });
   } catch (error) {
     return `// Failed to load ${snippet.path}: ${error}`;
   }
