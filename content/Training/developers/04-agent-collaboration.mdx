@@ -1,0 +1,885 @@
+---
+title: "Module 4: Agent-to-Agent Collaboration"
+description: Building multi-agent systems that work together
+---
+
+So far, we've built single agents that can reason, act, and remember. But what if one agent can't do everything? What if you need specialized expertise, parallel processing, or simply want to break down complex problems into manageable pieces?
+
+Welcome to the world of multi-agent systems.
+
+## Why Multi-Agent Systems?
+
+According to industry research, multi-agent architectures are becoming the standard for production AI systems. As [Microsoft's Build 2025 announcement](https://blogs.microsoft.com/blog/2025/05/19/microsoft-build-2025-the-age-of-ai-agents-and-building-the-open-agentic-web/) highlighted, the future is about agents working together in an "open agentic web."
+
+Think about how human organizations work:
+- **Specialization**: Different people excel at different tasks
+- **Scalability**: Teams can handle more work than individuals
+- **Reliability**: If one person is unavailable, others can step in
+- **Modularity**: Easy to add new team members with specific skills
+
+The same principles apply to agent systems.
+
+## Industry Multi-Agent Patterns
+
+Most production multi-agent systems follow one of two patterns:
+
+### Direct Handoff (Sequential)
+Agents pass control directly to each other, like a relay race:
+```
+Data Fetcher → Analyzer → Report Writer → User
+```
+
+**Best for:** Linear workflows where each step depends on the previous one.
+
+### Orchestrator Pattern (Hub-and-Spoke)
+A central orchestrator manages and routes to specialized agents:
+```
+           ┌→ Technical Agent
+User → Orchestrator →→ Sales Agent
+           └→ Support Agent
+```
+
+**Best for:** Complex systems with multiple specialized agents.
+
+## Industry Challenges vs. Agentuity's Approach
+
+According to [Microsoft's multi-agent orchestration announcements](https://www.microsoft.com/en-us/microsoft-copilot/blog/copilot-studio/multi-agent-orchestration-maker-controls-and-more-microsoft-copilot-studio-announcements-at-microsoft-build-2025/), most platforms require complex orchestration layers with state management, workflow engines, and coordination services. [AWS's multi-agent design patterns](https://aws.amazon.com/blogs/machine-learning/design-multi-agent-orchestration-with-reasoning-using-amazon-bedrock-and-open-source-frameworks/) show similar complexity, often requiring custom orchestrators and complex coordination mechanisms.
+
+### Agentuity's Approach: Multiple Communication Methods
+
+While other platforms build complex orchestration layers, Agentuity provides flexible agent communication options:
+
+**The handoff mechanism** is one approach that's simpler but focused:
+- **What it does**: Transfers control from one agent to another (like call forwarding)
+- **What it doesn't do**: Parallel execution, getting responses back, complex coordination
+- **Why it works**: Most real-world agent workflows are actually sequential or conditional
+
+Agentuity also supports other communication patterns including parallel execution through `ctx.getAgent()` for more complex coordination when needed.
+
+## Agent Communication Methods
+
+Agentuity provides two primary ways for agents to communicate with each other, each suited for different scenarios:
+
+### 1. Delegation with `response.handoff()`
+
+Use handoff when you want to delegate control to another agent and exit. This is like forwarding a phone call - the current agent passes control to another agent, along with any necessary data.
+
+<CodeExample py={`async def run(request, response, context):
+    """Delegation example: route to specialist and exit."""
+
+    task = await request.data.json()
+
+    # Decide we need help from a specialist
+    if task.get("type") == "web_research":
+        # Delegate to web search specialist (we exit, they respond to client)
+        return response.handoff(
+            {"name": "web-search"},  # Target agent
+            task.get("query"),  # Data to pass
+            metadata={"original_task": task}  # Metadata
+        )
+
+    # Handle other task types...
+    return response.json({"result": "Task completed"})`} js={`const handler: AgentHandler = async (request, response, context) => {
+  // Delegation example: route to specialist and exit
+
+  const task = await request.data.json();
+
+  // Decide we need help from a specialist
+  if (task.type === 'web_research') {
+    // Delegate to web search specialist (we exit, they respond to client)
+    return response.handoff(
+      { name: 'web-search' }, // Target agent
+      {
+        data: JSON.stringify({ query: task.query }),
+        contentType: 'application/json',
+        metadata: { original_task: task }
+      }
+    );
+  }
+
+  // Handle other task types...
+  return response.json({ result: 'Task completed' });
+};`} />
+
+### 2. Request-Response with `ctx.getAgent()`
+
+Use getAgent when you need to stay in control and process responses from other agents. This enables parallel execution, conditional logic, and result aggregation.
+
+<CodeExample py={`import asyncio
+
+async def run(request, response, context):
+    """Request-response example: coordinate multiple agents."""
+
+    query = (await request.data.json()).get("query", "")
+
+    # Get references to specialist agents
+    web_agent = context.get_agent("web-search")
+    news_agent = context.get_agent("news-search")
+
+    # Execute searches in parallel and process responses
+    results = await asyncio.gather(
+        web_agent.run({"query": query, "source": "web"}),
+        news_agent.run({"query": query, "source": "news"}),
+        return_exceptions=True
+    )
+
+    # Process and combine results (we stay in control)
+    combined_results = []
+    for i, result in enumerate(results):
+        if not isinstance(result, Exception):
+            data = await result.data.json()
+            combined_results.append({
+                "source": ["web", "news"][i],
+                "results": data
+            })
+
+    # We respond to client with aggregated results
+    return response.json({
+        "query": query,
+        "combined_results": combined_results,
+        "total_sources": len(combined_results)
+    })`} js={`const handler: AgentHandler = async (request, response, context) => {
+  // Request-response example: coordinate multiple agents
+
+  const { query } = await request.data.json();
+
+  // Get references to specialist agents
+  const webAgent = await context.getAgent({ name: 'web-search' });
+  const newsAgent = await context.getAgent({ name: 'news-search' });
+
+  // Execute searches in parallel and process responses
+  const results = await Promise.allSettled([
+    webAgent.run({ data: JSON.stringify({ query, source: 'web' }), contentType: 'application/json' }),
+    newsAgent.run({ data: JSON.stringify({ query, source: 'news' }), contentType: 'application/json' })
+  ]);
+
+  // Process and combine results (we stay in control)
+  const combinedResults = [];
+  const sources = ['web', 'news'];
+
+  for (let i = 0; i < results.length; i++) {
+    if (results[i].status === 'fulfilled') {
+      const data = await results[i].value.data.json();
+      combinedResults.push({
+        source: sources[i],
+        results: data
+      });
+    }
+  }
+
+  // We respond to client with aggregated results
+  return response.json({
+    query,
+    combined_results: combinedResults,
+    total_sources: combinedResults.length
+  });
+};`} />
+
+### When to Use Each Method
+
+| Method | Use When | Control Flow | Response Handling | Constraints |
+|--------|----------|--------------|-------------------|-------------|
+| **`handoff`** | Sequential workflows, simple routing, delegation | One-way, exit current agent | Target agent responds to client | No response back, can't handoff to self, project isolation |
+| **`getAgent`** | Parallel execution, conditional logic, result aggregation | Stay in control | You process responses, then respond | More complex, manual coordination required |
+
+### Agent Discovery
+
+Agents can find each other using either name or ID. The context object knows about all agents in your project:
+
+<CodeExample py={`async def run(request, response, context):
+    # List all available agents
+    available_agents = context.agents
+    context.logger.info(f"Available agents: {[a.name for a in available_agents]}")
+
+    # Check if a specific agent exists before communicating
+    if any(agent.name == "summarizer" for agent in context.agents):
+        # Agent exists, safe to use either method
+
+        # Option 1: Delegate and exit
+        return response.handoff(
+            {"name": "summarizer"},
+            "Long article to summarize..."
+        )
+
+        # Option 2: Get response and stay in control
+        # summarizer = context.get_agent("summarizer")
+        # result = await summarizer.run({"text": "Long article..."})
+        # summary = await result.data.json()
+        # return response.json({"processed_summary": summary})`} js={`const handler: AgentHandler = async (request, response, context) => {
+  // List all available agents
+  const availableAgents = context.agents;
+  context.logger.info(\`Available agents: \${availableAgents.map(a => a.name)}\`);
+
+  // Check if a specific agent exists before communicating
+  if (availableAgents.some(agent => agent.name === 'summarizer')) {
+    // Agent exists, safe to use either method
+
+    // Option 1: Delegate and exit
+    return response.handoff(
+      { name: 'summarizer' },
+      {
+        data: JSON.stringify({ text: 'Long article to summarize...' }),
+        contentType: 'application/json'
+      }
+    );
+
+    // Option 2: Get response and stay in control
+    // const summarizer = await context.getAgent({ name: 'summarizer' });
+    // const result = await summarizer.run({
+    //   data: JSON.stringify({ text: 'Long article...' }),
+    //   contentType: 'application/json'
+    // });
+    // const summary = await result.data.json();
+    // return response.json({ processed_summary: summary });
+  }
+};`} />
+
+## Agentuity's Built-in Features
+
+Agentuity provides powerful built-in features for multi-agent systems:
+
+<CodeExample py={`async def run(request, response, context):
+    # Use context.sessionId for automatic request tracking
+    context.logger.info(f"Processing request {context.sessionId} in {context.agent.name}")
+
+    # Built-in OpenTelemetry tracing (automatic spans)
+    # Each handoff creates a new span in the trace
+
+    # Use agent metadata for debugging
+    context.logger.debug(f"Agent ID: {context.agent.id}")
+    context.logger.debug(f"Project ID: {context.projectId}")
+
+    # Track the chain of agents
+    metadata = request.metadata or {}
+    agent_chain = metadata.get("agent_chain", [])
+    agent_chain.append(context.agent.name)
+
+    # Log the full chain for debugging
+    context.logger.info(f"Agent chain: {' -> '.join(agent_chain)}")
+
+    return response.handoff(
+        {"name": "next-agent"},
+        processed_data,
+        {"agent_chain": agent_chain, "original_session_id": context.sessionId}
+    )`} js={`const handler: AgentHandler = async (request, response, context) => {
+  // Use context.sessionId for automatic request tracking
+  context.logger.info(\`Processing request \${context.sessionId} in \${context.agent.name}\`);
+
+  // Built-in OpenTelemetry tracing (automatic spans)
+  // Each handoff creates a new span in the trace
+
+  // Use agent metadata for debugging
+  context.logger.debug(\`Agent ID: \${context.agent.id}\`);
+  context.logger.debug(\`Project ID: \${context.projectId}\`);
+
+  // Track the chain of agents
+  const metadata = request.metadata || {};
+  const agentChain = metadata.agent_chain || [];
+  agentChain.push(context.agent.name);
+
+  // Log the full chain for debugging
+  context.logger.info(\`Agent chain: \${agentChain.join(' -> ')}\`);
+
+  return response.handoff(
+    { name: 'next-agent' },
+    {
+      data: JSON.stringify(processedData),
+      contentType: 'application/json',
+      metadata: { agent_chain: agentChain, original_session_id: context.sessionId }
+    }
+  );
+};`} />
+
+## Common Communication Patterns
+
+### 1. Sequential Chain Pattern
+
+Perfect for pipelines where each agent completes its work and passes to the next. **Best approach: `handoff`** - Natural fit for one-way delegation through a pipeline.
+
+**Cleaner Agent** - processes raw data:
+<CodeExample py={`async def run(request, response, context):
+    """Data cleaner agent - first in the pipeline."""
+
+    data = await request.data.json()
+    context.logger.info("Cleaning incoming data")
+
+    # Clean and validate the data
+    cleaned_data = {
+        "original": data,
+        "cleaned": True,
+        "processed_by": context.agent.name,
+        "timestamp": datetime.now().isoformat()
+    }
+
+    # Pass to processor agent
+    return response.handoff({"name": "processor"}, cleaned_data)`} js={`const handler: AgentHandler = async (request, response, context) => {
+  // Data cleaner agent - first in the pipeline
+
+  const data = await request.data.json();
+  context.logger.info('Cleaning incoming data');
+
+  // Clean and validate the data
+  const cleanedData = {
+    original: data,
+    cleaned: true,
+    processed_by: context.agent.name,
+    timestamp: new Date().toISOString()
+  };
+
+  // Pass to processor agent
+  return response.handoff({ name: 'processor' }, {
+    data: JSON.stringify(cleanedData),
+    contentType: 'application/json'
+  });
+};`} />
+
+**Processor Agent** - enriches cleaned data:
+<CodeExample py={`async def run(request, response, context):
+    """Data processor agent - enriches cleaned data."""
+
+    data = await request.data.json()
+    context.logger.info("Processing cleaned data")
+
+    # Add enrichments
+    enriched_data = {
+        **data,
+        "enriched": True,
+        "enrichments": ["validation", "normalization", "metadata"],
+        "processed_by": context.agent.name
+    }
+
+    # Pass to final validator
+    return response.handoff({"name": "validator"}, enriched_data)`} js={`const handler: AgentHandler = async (request, response, context) => {
+  // Data processor agent - enriches cleaned data
+
+  const data = await request.data.json();
+  context.logger.info('Processing cleaned data');
+
+  // Add enrichments
+  const enrichedData = {
+    ...data,
+    enriched: true,
+    enrichments: ['validation', 'normalization', 'metadata'],
+    processed_by: context.agent.name
+  };
+
+  // Pass to final validator
+  return response.handoff({ name: 'validator' }, {
+    data: JSON.stringify(enrichedData),
+    contentType: 'application/json'
+  });
+};`} />
+
+**Validator Agent** - final validation and response:
+<CodeExample py={`async def run(request, response, context):
+    """Validator agent - final step, responds to client."""
+
+    data = await request.data.json()
+    context.logger.info("Final validation")
+
+    # Final validation and response to client
+    final_result = {
+        **data,
+        "validated": True,
+        "pipeline_complete": True,
+        "final_processor": context.agent.name,
+        "pipeline_chain": ["cleaner", "processor", "validator"]
+    }
+
+    # Respond directly to client (no further handoff)
+    return response.json(final_result)`} js={`const handler: AgentHandler = async (request, response, context) => {
+  // Validator agent - final step, responds to client
+
+  const data = await request.data.json();
+  context.logger.info('Final validation');
+
+  // Final validation and response to client
+  const finalResult = {
+    ...data,
+    validated: true,
+    pipeline_complete: true,
+    final_processor: context.agent.name,
+    pipeline_chain: ['cleaner', 'processor', 'validator']
+  };
+
+  // Respond directly to client (no further handoff)
+  return response.json(finalResult);
+};`} />
+
+### 2. Conditional Routing Pattern
+
+Route to different agents based on the request type - ideal for dispatcher/router agents. **Best approach: `handoff`** - Simple delegation based on input analysis.
+
+<CodeExample py={`async def run(request, response, context):
+    """Router pattern: Direct to appropriate specialist."""
+
+    task = await request.data.json()
+    task_type = task.get("type", "").lower()
+
+    # Route based on task type
+    agent_map = {
+        "math": "calculator-agent",
+        "translation": "translator-agent",
+        "search": "web-search",
+        "summary": "summarizer"
+    }
+
+    target_agent = agent_map.get(task_type)
+
+    if target_agent:
+        context.logger.info(f"Routing {task_type} task to {target_agent}")
+        return response.handoff(
+            {"name": target_agent},
+            task.get("payload", {})  # Pass payload directly as data
+        )
+
+    # Unknown task type
+    return response.json({
+        "error": f"Unknown task type: {task_type}",
+        "available_types": list(agent_map.keys())
+    })`} js={`const handler: AgentHandler = async (request, response, context) => {
+  // Router pattern: Direct to appropriate specialist
+
+  const task = await request.data.json();
+  const taskType = (task.type || '').toLowerCase();
+
+  // Route based on task type
+  const agentMap = {
+    math: 'calculator-agent',
+    translation: 'translator-agent',
+    search: 'web-search',
+    summary: 'summarizer'
+  };
+
+  const targetAgent = agentMap[taskType];
+
+  if (targetAgent) {
+    context.logger.info(\`Routing \${taskType} task to \${targetAgent}\`);
+    return response.handoff(
+      { name: targetAgent },
+      {
+        data: JSON.stringify(task.payload || {}),
+        contentType: 'application/json'
+      }
+    );
+  }
+
+  // Unknown task type
+  return response.json({
+    error: \`Unknown task type: \${taskType}\`,
+    available_types: Object.keys(agentMap)
+  });
+};`} />
+
+### 3. Parallel Execution Pattern
+
+Execute multiple agents simultaneously and aggregate results. **Best approach: `getAgent`** - Requires collecting and processing responses from multiple agents.
+
+<CodeExample py={`import asyncio
+
+async def run(request, response, context):
+    """Parallel execution example: comprehensive research."""
+
+    query = (await request.data.json()).get("query", "")
+
+    # Get multiple specialist agents
+    web_agent = context.get_agent("web-search")
+    academic_agent = context.get_agent("academic-search")
+    news_agent = context.get_agent("news-search")
+
+    # Execute all searches in parallel
+    results = await asyncio.gather(
+        web_agent.run({"query": query, "source": "web"}),
+        academic_agent.run({"query": query, "source": "academic"}),
+        news_agent.run({"query": query, "source": "news"}),
+        return_exceptions=True
+    )
+
+    # Process and combine results
+    combined_results = []
+    sources = ["web", "academic", "news"]
+
+    for i, result in enumerate(results):
+        if not isinstance(result, Exception):
+            data = await result.data.json()
+            combined_results.append({
+                "source": sources[i],
+                "results": data.get("results", []),
+                "count": len(data.get("results", []))
+            })
+
+    # Return aggregated results
+    return response.json({
+        "query": query,
+        "research_results": combined_results,
+        "total_sources": len(combined_results),
+        "execution_pattern": "parallel"
+    })`} js={`const handler: AgentHandler = async (request, response, context) => {
+  // Parallel execution example: comprehensive research
+
+  const { query } = await request.data.json();
+
+  // Get multiple specialist agents
+  const webAgent = await context.getAgent({ name: 'web-search' });
+  const academicAgent = await context.getAgent({ name: 'academic-search' });
+  const newsAgent = await context.getAgent({ name: 'news-search' });
+
+  // Execute all searches in parallel
+  const results = await Promise.allSettled([
+    webAgent.run({ data: JSON.stringify({ query, source: 'web' }), contentType: 'application/json' }),
+    academicAgent.run({ data: JSON.stringify({ query, source: 'academic' }), contentType: 'application/json' }),
+    newsAgent.run({ data: JSON.stringify({ query, source: 'news' }), contentType: 'application/json' })
+  ]);
+
+  // Process and combine results
+  const combinedResults = [];
+  const sources = ['web', 'academic', 'news'];
+
+  for (let i = 0; i < results.length; i++) {
+    if (results[i].status === 'fulfilled') {
+      const data = await results[i].value.data.json();
+      combinedResults.push({
+        source: sources[i],
+        results: data.results || [],
+        count: (data.results || []).length
+      });
+    }
+  }
+
+  // Return aggregated results
+  return response.json({
+    query,
+    research_results: combinedResults,
+    total_sources: combinedResults.length,
+    execution_pattern: 'parallel'
+  });
+};`} />
+
+### 4. Smart Orchestration Pattern
+
+A central agent analyzes requests, makes decisions based on responses, and orchestrates complex workflows. **Best approach: `getAgent`** - Requires response processing for intelligent decision-making.
+
+<CodeExample py={`async def run(request, response, context):
+    """Smart orchestration with decision-making."""
+
+    user_request = await request.data.json()
+    query = user_request.get("query", "")
+
+    # First, analyze the request complexity
+    analyzer = context.get_agent("complexity-analyzer")
+    analysis = await analyzer.run({"query": query})
+    analysis_data = await analysis.data.json()
+
+    # Make routing decisions based on analysis
+    if analysis_data.get("complexity") == "high":
+        # High complexity: get multiple perspectives
+        research_agent = context.get_agent("research-specialist")
+        expert_agent = context.get_agent("domain-expert")
+
+        research_result = await research_agent.run({"query": query})
+        expert_result = await expert_agent.run({"query": query})
+
+        # Combine insights for comprehensive response
+        return response.json({
+            "approach": "comprehensive",
+            "research": await research_result.data.json(),
+            "expert_opinion": await expert_result.data.json(),
+            "confidence": "high"
+        })
+
+    elif analysis_data.get("complexity") == "medium":
+        # Medium complexity: single specialist
+        specialist = context.get_agent("general-specialist")
+        result = await specialist.run({"query": query})
+
+        return response.json({
+            "approach": "specialist",
+            "result": await result.data.json(),
+            "confidence": "medium"
+        })
+
+    else:
+        # Low complexity: handle directly
+        return response.json({
+            "approach": "direct",
+            "result": f"Simple answer for: {query}",
+            "confidence": "low"
+        })`} js={`const handler: AgentHandler = async (request, response, context) => {
+  // Smart orchestration with decision-making
+
+  const { query } = await request.data.json();
+
+  // First, analyze the request complexity
+  const analyzer = await context.getAgent({ name: 'complexity-analyzer' });
+  const analysis = await analyzer.run({
+    data: JSON.stringify({ query }),
+    contentType: 'application/json'
+  });
+  const analysisData = await analysis.data.json();
+
+  // Make routing decisions based on analysis
+  if (analysisData.complexity === 'high') {
+    // High complexity: get multiple perspectives
+    const researchAgent = await context.getAgent({ name: 'research-specialist' });
+    const expertAgent = await context.getAgent({ name: 'domain-expert' });
+
+    const researchResult = await researchAgent.run({
+      data: JSON.stringify({ query }),
+      contentType: 'application/json'
+    });
+    const expertResult = await expertAgent.run({
+      data: JSON.stringify({ query }),
+      contentType: 'application/json'
+    });
+
+    // Combine insights for comprehensive response
+    return response.json({
+      approach: 'comprehensive',
+      research: await researchResult.data.json(),
+      expert_opinion: await expertResult.data.json(),
+      confidence: 'high'
+    });
+
+  } else if (analysisData.complexity === 'medium') {
+    // Medium complexity: single specialist
+    const specialist = await context.getAgent({ name: 'general-specialist' });
+    const result = await specialist.run({
+      data: JSON.stringify({ query }),
+      contentType: 'application/json'
+    });
+
+    return response.json({
+      approach: 'specialist',
+      result: await result.data.json(),
+      confidence: 'medium'
+    });
+
+  } else {
+    // Low complexity: handle directly
+    return response.json({
+      approach: 'direct',
+      result: \`Simple answer for: \${query}\`,
+      confidence: 'low'
+    });
+  }
+};`} />
+
+## Lab: Build a Conference Concierge System
+
+Build a concierge system that routes user requests to different specialized agents using structured AI responses. This shows how agents can work together by analyzing user intent and routing to the right specialist.
+
+### Key Implementation: Intent Analysis with Zod Validation
+
+The core pattern shows how agents use structured AI responses to decide where to route requests:
+
+<CodeExample py={`# Python - Intent analysis with structured output
+from pydantic import BaseModel
+from typing import Literal
+
+class UserIntent(BaseModel):
+    agent_type: Literal['sf_local_guide', 'conference_expert', 'dev_experience']
+    confidence: float
+
+# AI generates structured routing decision
+intent = await generate_structured_intent(user_message, schema=UserIntent)
+
+# Validated intent enables confident routing
+if intent.confidence < 0.8:
+    return response.json({
+        "message": "I'll connect you with a human specialist"
+    })
+
+# Route to appropriate domain specialist
+agent = await context.get_agent(name=intent.agent_type)
+return await agent.run(request)`} js={`// TypeScript - Intent analysis with Zod validation
+import { z } from 'zod';
+import { generateObject } from 'ai';
+
+const UserIntentSchema = z.object({
+  agentType: z.enum(['sf_local_guide', 'conference_expert', 'dev_experience']),
+  confidence: z.number().min(0).max(1)
+});
+
+// AI generates structured, validated routing decision
+const { object: userIntent } = await generateObject({
+  model: anthropic('claude-3-5-sonnet-20241022'),
+  schema: UserIntentSchema,
+  prompt: \`Analyze this user message and determine routing: "\${userMessage}"\`
+});
+
+// Validated intent enables confident routing
+if (userIntent.confidence < 0.8) {
+  return response.json({
+    message: "I'll connect you with a human specialist"
+  });
+}
+
+// Route to appropriate domain specialist
+const agent = await ctx.getAgent({ name: userIntent.agentType });
+return await agent.run({ data: userMessage, contentType: 'text/plain' });`} />
+
+### Key Implementation: Routing to Specialized Agents
+
+The concierge routes to different agents based on what the user needs:
+
+<CodeExample py={`# Python - Domain-specific routing with conversation memory
+from datetime import datetime
+
+# Analyze intent with structured output
+intent = await analyze_user_intent(user_message)
+
+# Store conversation context in KV storage
+session_id = request.sessionId
+await context.kv.set("conversations", session_id, {
+    "last_message": user_message,
+    "routed_to": intent.agent_type,
+    "timestamp": datetime.now().isoformat()
+}, {"ttl": 3600})  # 1 hour session memory
+
+# Route based on validated intent
+if intent.agent_type == "sf_local_guide":
+    agent = await context.get_agent(name="sf-local-guide")
+    return await agent.run(request)
+elif intent.agent_type == "conference_expert":
+    agent = await context.get_agent(name="conference-expert")
+    return await agent.run(request)
+else:
+    agent = await context.get_agent(name="dev-experience")
+    return await agent.run(request)`} js={`// TypeScript - Domain-specific routing with conversation memory
+
+// Analyze intent with structured output
+const intent = await analyzeUserIntent(userMessage);
+
+// Store conversation context in KV storage
+const sessionId = request.sessionId;
+await context.kv.set('conversations', sessionId, {
+  last_message: userMessage,
+  routed_to: intent.agentType,
+  timestamp: new Date().toISOString()
+}, { ttl: 3600 });  // 1 hour session memory
+
+// Route based on validated intent
+if (intent.agentType === 'sf_local_guide') {
+  const agent = await context.getAgent({ name: 'sf-local-guide' });
+  return await agent.run(request);
+} else if (intent.agentType === 'conference_expert') {
+  const agent = await context.getAgent({ name: 'conference-expert' });
+  return await agent.run(request);
+} else {
+  const agent = await context.getAgent({ name: 'dev-experience' });
+  return await agent.run(request);
+}`} />
+
+### Key Implementation: Conversation Memory and Context
+
+Sophisticated orchestrators maintain conversation state across agent interactions:
+
+<CodeExample py={`# Python - Session memory and context management
+from datetime import datetime
+
+# Retrieve existing conversation context
+existing_context = await ctx.kv.get('conversations', session_id)
+conversation_history = (
+    await existing_context.data.json() if existing_context.exists
+    else {'messages': [], 'preferences': {}}
+)
+
+# Update conversation record
+conversation_history['messages'].append({
+    'timestamp': datetime.now().isoformat(),
+    'intent': user_intent.agentType,
+    'confidence': user_intent.confidence
+})
+
+# Extract user preferences for better routing
+if user_intent.agentType == 'sf_local_guide':
+    conversation_history['preferences']['location_interests'] = (
+        conversation_history['preferences'].get('location_interests', 0) + 1
+    )
+
+# Store updated context with TTL
+await ctx.kv.set('conversations', session_id, conversation_history, {'ttl': 3600})`} js={`// TypeScript - Session memory and context management
+
+// Retrieve existing conversation context
+const existingContext = await ctx.kv.get('conversations', sessionId);
+const conversationHistory = existingContext.exists
+  ? await existingContext.data.json()
+  : { messages: [], preferences: {} };
+
+// Update conversation record
+conversationHistory.messages.push({
+  timestamp: new Date().toISOString(),
+  intent: userIntent.agentType,
+  confidence: userIntent.confidence,
+  context: userIntent.context
+});
+
+// Extract user preferences for better routing
+if (userIntent.agentType === 'sf_local_guide') {
+  conversationHistory.preferences.location_interests =
+    (conversationHistory.preferences.location_interests || 0) + 1;
+}
+
+// Store updated context with TTL
+await ctx.kv.set('conversations', sessionId, conversationHistory, { ttl: 3600 });`} />
+
+### Build This Project Yourself
+
+Ready to implement this project? Follow our complete examples:
+<div className="flex flex-wrap gap-3 mb-6">
+  <a href="https://github.com/agentuity/examples/tree/add-tutorials/training/04-concierge-ts" target="_blank" rel="noopener noreferrer"
+     className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.30 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    TypeScript
+  </a>
+  <div className="inline-flex items-center gap-2 px-4 py-3 bg-gray-400 text-white rounded-lg no-underline text-sm font-medium cursor-not-allowed opacity-75">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.30 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    Python (Coming Soon)
+  </div>
+</div>
+
+### What This System Demonstrates
+
+- **Structured AI responses**: Zod and Pydantic schemas ensure reliable routing decisions
+- **Agent specialization**: Different agents handle SF questions, conference info, and developer support
+- **Conversation memory**: KV storage keeps track of context across agent interactions
+- **Practical patterns**: Confidence thresholds, fallback handling, and session management
+- **Intent-based routing**: AI analyzes user messages to figure out which agent can help
+
+The complete examples show how to build agent coordination systems that route users to the right specialists based on AI analysis.
+
+## Testing Your Conference Concierge
+
+1. **Start DevMode:**
+```bash
+agentuity dev
+```
+
+2. **Test different intents:**
+   - **Local questions**: "Where's the best coffee near Moscone Center?"
+   - **Conference questions**: "What time does the keynote start?"
+   - **Developer questions**: "How do I implement agent handoffs?"
+
+3. **Watch the routing in action:**
+   - Check logs to see intent analysis and confidence scores
+   - See how conversation context helps routing get better over time
+   - Test edge cases where confidence is too low
+
+## Key Takeaways
+
+- **Multi-agent systems** enable specialization, scalability, and modularity
+- **Handoff mechanism** allows agents to delegate tasks in a simple, sequential manner
+- **Orchestration patterns** include sequential chains, conditional routing, and smart orchestration
+- **Constraints matter**: Handoffs are one-way, agents can't call themselves, and responses go directly to clients
+- **Agentuity simplifies** multi-agent coordination with built-in agent resolution and communication
+
+## What's Next?
+
+Now that you can build multi-agent systems, Module 5 will cover **Observability, Guardrails, & Evals** - how to ensure your agent teams behave safely and predictably in production.
+
+Questions to consider:
+- How do you prevent agents from taking harmful actions?
+- How do you track what decisions agents are making?
+- How do you ensure compliance and audit requirements?
+
+Continue to [Module 5: Observability, Guardrails, & Evals →](./05-observability-guardrails-evals)

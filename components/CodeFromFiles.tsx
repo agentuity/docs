@@ -1,8 +1,8 @@
 import React from 'react';
-import { readFile } from 'fs/promises';
 import path from 'path';
 import CodeBlock from '@/app/chat/components/CodeBlock';
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
+import { readSecureFile } from '@/lib/utils/secure-path';
 
 export interface CodeFromFilesSnippet {
   path: string; // repo-root-relative, e.g. "/examples/poc-tutorial/src/agent.ts"
@@ -41,20 +41,15 @@ export default async function CodeFromFiles(props: CodeFromFilesProps) {
     return null;
   }
 
-  const repoRoot = process.cwd();
-
   const loaded = await Promise.all(
     snippets.map(async (s) => {
-      if (!s.path.startsWith('/')) {
-        throw new Error('CodeFromFiles: each snippet.path must start with "/" (repo-root-relative)');
-      }
-      const absolutePath = path.resolve(repoRoot, `.${s.path}`);
-      if (!absolutePath.startsWith(repoRoot)) {
-        throw new Error('CodeFromFiles: resolved path escapes repository root');
-      }
-      let fileContent = '';
+      let content = '';
       try {
-        fileContent = await readFile(absolutePath, 'utf-8');
+        content = await readSecureFile(s.path, {
+          from: s.from,
+          to: s.to,
+          requireLeadingSlash: true
+        });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         return {
@@ -63,14 +58,10 @@ export default async function CodeFromFiles(props: CodeFromFilesProps) {
           content: `// Failed to load ${s.path}: ${message}`,
         };
       }
-      const lines = fileContent.split(/\r?\n/);
-      const startIdx = Math.max(0, (s.from ? s.from - 1 : 0));
-      const endIdx = Math.min(lines.length, s.to ? s.to : lines.length);
-      const sliced = lines.slice(startIdx, endIdx).join('\n');
       return {
         label: s.title || path.basename(s.path) || s.lang || 'code',
         lang: s.lang || inferLanguageFromExtension(s.path) || 'text',
-        content: sliced,
+        content,
       };
     })
   );
