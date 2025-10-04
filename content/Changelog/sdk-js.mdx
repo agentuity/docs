@@ -7,6 +7,29 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 This page documents the release history of the [Agentuity JavaScript SDK](https://github.com/agentuity/sdk-js).
 
+## v0.0.149
+
+<Callout type="info">
+  Released: October 3, 2025
+</Callout>
+
+**Changes**
+
+- **Changed**: Prompt API signature from `_experimental_prompts()` method to `prompts` property ([PR #190](https://github.com/agentuity/sdk-js/pull/190))
+- **Added**: Generic types for prompts (PromptName, PromptObject, PromptsAPI) ([PR #190](https://github.com/agentuity/sdk-js/pull/190))
+- **Added**: Conditional exports with fallback handling for generated content ([PR #190](https://github.com/agentuity/sdk-js/pull/190))
+
+
+## v0.0.148
+
+<Callout type="info">
+  Released: October 2, 2025
+</Callout>
+
+**Changes**
+
+- **Added**: Experimental support for prompts ([PR #184](https://github.com/agentuity/sdk-js/pull/184))
+
 ## v0.0.147
 
 <Callout type="info">
@@ -20,7 +43,6 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
 - **Added**: Property `bytesWritten` to the Stream interface to track total bytes written ([PR #186](https://github.com/agentuity/sdk-js/pull/186))
 - **Added**: Property `compressed` to the Stream interface to indicate if compression is enabled ([PR #186](https://github.com/agentuity/sdk-js/pull/186))
 - **Fixed**: Remove explicit Content-Type header for application/json in GET requests ([PR #185](https://github.com/agentuity/sdk-js/pull/185))
-
 ## v0.0.146
 
 <Callout type="info">

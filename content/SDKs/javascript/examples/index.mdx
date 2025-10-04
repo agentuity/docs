@@ -454,7 +454,7 @@ const handler: AgentHandler = async (request, response, context) => {
 
   if (action === 'stream-with-background') {
     // Create a stream for the LLM response
-    const stream = context.stream.create('llm-response', {
+    const stream = await context.stream.create('llm-response', {
       contentType: 'text/plain',
       metadata: {
         userId,
@@ -502,7 +502,7 @@ const handler: AgentHandler = async (request, response, context) => {
 
   if (action === 'multi-step-stream') {
     // Create a progress stream for multi-step processing
-    const progressStream = context.stream.create('progress', {
+    const progressStream = await context.stream.create('progress', {
       contentType: 'application/json',
       metadata: { 
         type: 'multi-step-progress',
@@ -561,7 +561,7 @@ const handler: AgentHandler = async (request, response, context) => {
   }
 
   if (action === 'direct-stream-response') {
-    const stream = context.stream.create('direct', {
+    const stream = await context.stream.create('direct', {
       contentType: 'text/plain'
     });
 
