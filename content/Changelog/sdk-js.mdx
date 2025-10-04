@@ -38,10 +38,11 @@ This page documents the release history of the [Agentuity JavaScript SDK](https:
 
 **Changes**
 
-- **Added**: Support for automatic stream compression with new `bytesWritten` and `compressed` properties on Stream interface ([PR #186](https://github.com/agentuity/sdk-js/pull/186))
-- **Added**: Support for direct write to Stream in addition to getWriter() method ([PR #186](https://github.com/agentuity/sdk-js/pull/186))
-- **Fixed**: Remove the explicit Content-Type header for application/json in send (internal) to allow each service caller to properly set ([PR #185](https://github.com/agentuity/sdk-js/pull/185))
-
+- **Added**: Support for automatic stream compression (defaults off) ([PR #186](https://github.com/agentuity/sdk-js/pull/186))
+- **Added**: Support for direct write to Stream in addition to getWriter() ([PR #186](https://github.com/agentuity/sdk-js/pull/186))
+- **Added**: Property `bytesWritten` to the Stream interface to track total bytes written ([PR #186](https://github.com/agentuity/sdk-js/pull/186))
+- **Added**: Property `compressed` to the Stream interface to indicate if compression is enabled ([PR #186](https://github.com/agentuity/sdk-js/pull/186))
+- **Fixed**: Remove explicit Content-Type header for application/json in GET requests ([PR #185](https://github.com/agentuity/sdk-js/pull/185))
 ## v0.0.146
 
 <Callout type="info">
