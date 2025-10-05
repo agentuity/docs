@@ -230,6 +230,7 @@ export async function POST(
         -DEFAULT_CONVERSATION_HISTORY_LIMIT
       ),
       tutorialData: currentTutorialState,
+      userId: userId,
     };
 
     // Prepare headers with optional bearer token

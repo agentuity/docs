@@ -97,10 +97,11 @@ export default async function Agent(
 		let systemPrompt: string = "";
 		// Direct LLM access won't require any tools or system prompt
 		if (!parsedRequest.useDirectLLM) {
-			// Create tools with state context
+			// Create tools with state context and userId
 			tools = await createTools({
 				state,
 				agentContext: ctx,
+				userId: parsedRequest.userId,
 			});
 
 			// Build tutorial context and system prompt
