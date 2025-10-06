@@ -88,7 +88,6 @@ export async function DELETE(request: NextRequest) {
     const { tutorialId } = validation.data;
 
     const state = await TutorialStateManager.getUserTutorialState(userId);
-    console.log('state', state);
     if (!state.tutorials) {
       state.tutorials = {};
     }
