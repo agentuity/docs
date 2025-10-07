@@ -25,7 +25,7 @@ export async function createTools(context: ToolContext) {
      * Tool for starting a tutorial - adds action to state queue
      */
     const startTutorialAtStep = tool({
-        description: "Start a specific tutorial for the user. You must call this function in order for the user to see the tutorial step content. The tutorial content will be injected to the final response automatically -- you do not have to narrate the tutorial content. The step number should be between 1 and the total number of steps in the tutorial.",
+        description: "Start a specific tutorial for the user. You must call this function in order for the user to see the tutorial step content. The tutorial content will be injected to the final response automatically -- you do not have to narrate the tutorial content. The step number should be between 1 and the total number of steps in the tutorial. On successful execution, return the title of which the tutorial is starting, the total steps in the tutorial, and the description of the tutorial. Otherwise, return error message based on the error reason.",
         parameters: z.object({
             tutorialId: z.string().describe("The exact ID of the tutorial to start"),
             stepNumber: z.number().describe("The step number of the tutorial to start (1 to total available steps in the tutorial)")
@@ -50,7 +50,7 @@ export async function createTools(context: ToolContext) {
             });
             agentContext.logger.info("Added start_tutorial action to state for: %s at step %d", tutorialId, stepNumber);
             return `Starting "${data.title}". Total steps: ${data.totalSteps} \n\n Description: ${data.description}`;
-        },
+        }
     });
 
     /**
@@ -111,7 +111,7 @@ export async function createTools(context: ToolContext) {
             const inProgress = tutorialList.filter(t => !t.completedAt);
 
             let summary = `User Tutorial Progress:\n`;
-            
+
             if (completed.length > 0) {
                 summary += `\nCompleted Tutorials (${completed.length}):\n`;
                 completed.forEach(t => {
