@@ -200,21 +200,22 @@ export function SessionSidebar({
             return (
               <div
                 key={session.sessionId}
+                onClick={() => handleSessionClick(session.sessionId)}
                 className={`
                       relative w-full flex items-center gap-2 p-2 rounded-lg text-left
-                      transition-all duration-200 group
+                      transition-all duration-200 group cursor-pointer
                       ${isActive
                     ? 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400'
                     : 'hover:bg-white/5 text-gray-300 hover:text-gray-200'
                   }
                       ${isCollapsed ? 'justify-center' : 'justify-start'}
                     `}
+                role="button"
+                aria-label={`Switch to conversation: ${preview}`}
+                title={isCollapsed ? preview : undefined}
               >
-                <button
-                  onClick={() => handleSessionClick(session.sessionId)}
+                <div
                   className="flex items-center gap-2 flex-1 min-w-0"
-                  aria-label={`Switch to conversation: ${preview}`}
-                  title={isCollapsed ? preview : undefined}
                 >
                   <div className="flex-shrink-0">
                     {isTutorial ? (
@@ -272,7 +273,7 @@ export function SessionSidebar({
                       )}
                     </div>
                   )}
-                </button>
+                </div>
 
                 {/* Action Menu Button */}
                 {!isCollapsed && !isEditing && (onDeleteSession || onEditSession) && (
