@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { join } from 'path';
 import { parseTutorialMDXCached } from '@/lib/tutorial/mdx-parser';
 import { StepParamsSchema } from '@/lib/tutorial/schemas';
+import { getTutorialFilePath } from '@/lib/tutorial';
 
 interface RouteParams {
   params: Promise<{ id: string; stepNumber: string }>;
@@ -10,8 +10,7 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const rawParams = await params;
-    
-    // Validate and transform parameters with Zod
+
     const validationResult = StepParamsSchema.safeParse(rawParams);
     if (!validationResult.success) {
       return NextResponse.json(
@@ -19,12 +18,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         { status: 400 }
       );
     }
-    
+
     const { id, stepNumber: stepNum } = validationResult.data;
-    
-    const filePath = join(process.cwd(), 'content', 'Tutorial', `${id}.mdx`);
+
+    const filePath = await getTutorialFilePath(id);
+    if (!filePath) {
+      return NextResponse.json(
+        { success: false, error: 'Tutorial not found' },
+        { status: 404 }
+      );
+    }
     const parsed = await parseTutorialMDXCached(filePath);
-    
+
     const step = parsed.steps.find(s => s.stepNumber === stepNum);
     if (!step) {
       return NextResponse.json(
@@ -32,7 +37,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json({
       success: true,
       data: {

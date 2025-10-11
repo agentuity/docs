@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const TutorialMetadataSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
-  totalSteps: z.number().positive('Total steps must be a positive number'),
+  totalSteps: z.number().positive('Total steps must be a positive number').optional(),
   difficulty: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
   estimatedTime: z.string().optional()
 });
