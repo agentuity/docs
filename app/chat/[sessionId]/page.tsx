@@ -161,7 +161,7 @@ export default function ChatSessionPage() {
         setCreationError(error.message || 'Error creating session');
         revalidateSessions?.();
       });
-  }, [sessionId]);
+  }, [sessionId, sessions]);
 
 
   const toggleEditor = () => { setEditorOpen(false) };

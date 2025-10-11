@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { parseTutorialMDXCached } from '@/lib/tutorial/mdx-parser';
 import { StepParamsSchema } from '@/lib/tutorial/schemas';
 import { getTutorialFilePath } from '@/lib/tutorial';
+import { convertMdxToMarkdown } from '@/lib/tutorial/mdx-to-markdown';
 
 interface RouteParams {
   params: Promise<{ id: string; stepNumber: string }>;
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         currentStep: stepNum,
         tutorialStep: {
           title: step.title,
-          mdx: step.mdxContent,
+          mdx: convertMdxToMarkdown(step.mdxContent),
           snippets: step.snippets,
           totalSteps: parsed.metadata.totalSteps,
           estimatedTime: step.estimatedTime,

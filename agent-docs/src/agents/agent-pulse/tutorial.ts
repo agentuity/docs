@@ -162,3 +162,88 @@ export async function getTutorialStep(tutorialId: string, stepNumber: number, ct
     };
   }
 }
+
+export interface UserTutorialProgress {
+  userId: string;
+  tutorials: {
+    [tutorialId: string]: {
+      tutorialId: string;
+      currentStep: number;
+      totalSteps: number;
+      startedAt: string;
+      completedAt?: string;
+      lastAccessedAt: string;
+    };
+  };
+}
+
+/**
+ * Fetches the user's tutorial progress from the API
+ */
+export async function getUserTutorialProgress(
+  userId: string,
+  ctx: AgentContext
+): Promise<ApiResponse<UserTutorialProgress>> {
+  try {
+    if (!userId) {
+      return {
+        success: false,
+        error: 'User ID is required to fetch tutorial progress'
+      };
+    }
+
+    const response = await fetch(
+      `${TUTORIAL_API_BASE_URL}/api/users/tutorial-state`,
+      {
+        headers: {
+          'Cookie': `chat_user_id=${userId}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ 
+        error: response.statusText 
+      })) as { error?: string; details?: any };
+      
+      ctx.logger.error(
+        'Failed to fetch user tutorial progress: %s', 
+        JSON.stringify(errorData)
+      );
+      
+      return {
+        success: false,
+        status: response.status,
+        error: errorData.error || response.statusText,
+        details: errorData.details
+      };
+    }
+
+    const responseData = await response.json() as ApiResponse<UserTutorialProgress>;
+    
+    if (!responseData.success) {
+      return {
+        success: false,
+        error: responseData.error || 'Failed to fetch tutorial progress'
+      };
+    }
+
+    ctx.logger.info(
+      'Fetched tutorial progress for user %s: %d tutorials', 
+      userId, 
+      Object.keys(responseData.data?.tutorials || {}).length
+    );
+    
+    return responseData;
+  } catch (error) {
+    ctx.logger.error(
+      'Error fetching user tutorial progress: %s', 
+      error instanceof Error ? error.message : String(error)
+    );
+    
+    return {
+      success: false,
+      error: `Network error: ${error instanceof Error ? error.message : String(error)}`
+    };
+  }
+}

@@ -61,36 +61,36 @@ export function createContentAwareSplitter(contentType: string) {
 			chunkOverlap: 0,
 			separators: ['\n---\n'],
 		});
-	}if (contentType === 'code_block') {
+	} if (contentType === 'code_block') {
 		return new RecursiveCharacterTextSplitter({
 			chunkSize: 800,
 			chunkOverlap: 100,
 			separators: ['\n```\n', '\n\n', '\n'],
 		});
-	}if (contentType === 'header_section') {
+	} if (contentType === 'header_section') {
 		return new RecursiveCharacterTextSplitter({
 			chunkSize: 1200,
 			chunkOverlap: 150,
 			separators: ['\n## ', '\n### ', '\n#### ', '\n\n', '\n'],
 		});
-	}if (contentType === 'table') {
+	} if (contentType === 'table') {
 		return new RecursiveCharacterTextSplitter({
 			chunkSize: 1500,
 			chunkOverlap: 0,
 			separators: ['\n\n'],
 		});
-	}if (contentType === 'list') {
+	} if (contentType === 'list') {
 		return new RecursiveCharacterTextSplitter({
 			chunkSize: 800,
 			chunkOverlap: 100,
 			separators: ['\n\n', '\n- ', '\n* ', '\n+ '],
 		});
 	}
-		return new RecursiveCharacterTextSplitter({
-			chunkSize: 1000,
-			chunkOverlap: 200,
-			separators: ['\n\n', '\n', ' '],
-		});
+	return new RecursiveCharacterTextSplitter({
+		chunkSize: 1000,
+		chunkOverlap: 200,
+		separators: ['\n\n', '\n', ' '],
+	});
 }
 
 export async function hybridChunkDocument(doc: Document) {
@@ -112,19 +112,6 @@ export async function hybridChunkDocument(doc: Document) {
 		finalChunks.push(...refinedChunks);
 	}
 	return finalChunks;
-}
-
-export async function generateDocsChunks(docsPath: string) {
-	const loader = new DirectoryLoader(docsPath, {
-		'.mdx': (filePath: string) => new TextLoader(filePath),
-	});
-	const docs = await loader.load();
-	const allChunks: any[] = [];
-	for (const doc of docs) {
-		const docChunks = await hybridChunkDocument(doc);
-		allChunks.push(...docChunks);
-	}
-	return allChunks;
 }
 
 /**
