@@ -216,7 +216,10 @@ export function SessionSidebar({
       </div>
 
       {/* Sessions List */}
-      <div ref={sessionsListRef} className="flex-1 overflow-y-auto">
+      <div 
+        ref={sessionsListRef} 
+        className="flex-1 overflow-y-auto scrollbar-thin"
+      >
         <div className="p-2 space-y-1">
           {sessions.map((session: Session) => {
             const isActive = session.sessionId === currentSessionId;
