@@ -7,6 +7,7 @@ import {
   MessageCircle,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   MoreVertical,
   Pencil,
   Trash2
@@ -52,6 +53,9 @@ export function SessionSidebar({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
+  const sessionsListRef = useRef<HTMLDivElement>(null);
+  const previousSessionsLengthRef = useRef(sessions.length);
+  const shouldScrollRef = useRef(false);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -68,6 +72,23 @@ export function SessionSidebar({
       };
     }
   }, [openMenuId]);
+
+  // Scroll to bottom when new sessions are loaded after clicking load more
+  useEffect(() => {
+    if (shouldScrollRef.current && sessions.length > previousSessionsLengthRef.current) {
+      // Use requestAnimationFrame to ensure DOM has been updated
+      requestAnimationFrame(() => {
+        if (sessionsListRef.current) {
+          sessionsListRef.current.scrollTo({
+            top: sessionsListRef.current.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      });
+      shouldScrollRef.current = false;
+    }
+    previousSessionsLengthRef.current = sessions.length;
+  }, [sessions]);
 
   const toggleCollapsed = () => {
     setIsCollapsed(!isCollapsed);
@@ -108,6 +129,13 @@ export function SessionSidebar({
       onDeleteSession(sessionId);
     }
     setOpenMenuId(null);
+  };
+
+  const handleLoadMore = () => {
+    if (onLoadMore && !isLoadingMore) {
+      shouldScrollRef.current = true;
+      onLoadMore();
+    }
   };
 
   // Get session display title
@@ -188,7 +216,7 @@ export function SessionSidebar({
       </div>
 
       {/* Sessions List */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={sessionsListRef} className="flex-1 overflow-y-auto">
         <div className="p-2 space-y-1">
           {sessions.map((session: Session) => {
             const isActive = session.sessionId === currentSessionId;
@@ -323,11 +351,12 @@ export function SessionSidebar({
           <>
             {typeof onLoadMore === 'function' && hasMore && (
               <button
-                onClick={onLoadMore}
+                onClick={handleLoadMore}
                 disabled={isLoadingMore}
-                className="w-full px-2 py-1 text-sm rounded-md bg-white/5 hover:bg-white/10 disabled:opacity-60"
+                className="w-full flex items-center justify-center p-2 rounded-md bg-white/5 hover:bg-white/10 disabled:opacity-60 transition-all"
+                aria-label={isLoadingMore ? 'Loading more sessions...' : 'Load more sessions'}
               >
-                {isLoadingMore ? 'Loading...' : 'Load more'}
+                <ChevronDown className={`w-5 h-5 text-gray-400 ${isLoadingMore ? 'animate-pulse' : ''}`} />
               </button>
             )}
           </>

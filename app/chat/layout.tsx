@@ -23,7 +23,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
     };
 
     const fetchPage = async ([, cursor]: [string, number]) => {
-        const res = await sessionService.getSessionsPage({ cursor, limit: 10 });
+        const res = await sessionService.getSessionsPage({ cursor, limit: 20 });
         if (!res.success || !res.data) throw new Error(res.error || 'Failed to fetch sessions');
         return res.data;
     };
