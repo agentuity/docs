@@ -29,7 +29,7 @@ export async function parseTutorialMDX(filePath: string): Promise<ParsedTutorial
     const [fullMatch, attributes, stepContent] = match;
 
     // Parse attributes
-    const stepNumber = parseInt(extractAttribute(attributes, 'number') || '0');
+    const stepNumber = parseInt(extractAttribute(attributes, 'number') || '1');
     const title = extractAttribute(attributes, 'title') || `Step ${stepNumber}`;
     const estimatedTime = extractAttribute(attributes, 'estimatedTime');
 
@@ -46,7 +46,10 @@ export async function parseTutorialMDX(filePath: string): Promise<ParsedTutorial
   }
 
   const result = {
-    metadata,
+    metadata: {
+      ...metadata,
+      totalSteps: steps.length  // Calculate from actual parsed steps
+    },
     fullContent: content,
     steps: steps.sort((a, b) => a.stepNumber - b.stepNumber)
   };

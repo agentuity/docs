@@ -3,11 +3,11 @@ title: "Module 3: Agent Memory"
 description: How agents remember, learn, and build context over time
 ---
 
-Without memory, an agent is just a stateless function. With memory, it becomes a system that learns, adapts, and builds relationships over time.
+Without memory, an agent is just a stateless function. With memory, it becomes a system that learns, adapts, and evolves over time.
 
 ## The Memory Challenge
 
-According to [IBM's research on AI agent memory](https://www.ibm.com/think/topics/ai-agent-memory), the biggest limitation of current LLMs is their inability to retain information between sessions. Every conversation starts from scratch, every user must re-explain their context, and every task begins without learning from the past.
+LLMs can't remember things on their own—the memory component must be added separately. [One of the biggest challenges](https://www.ibm.com/think/topics/ai-agent-memory) in AI memory design is optimizing retrieval efficiency, since storing too much data can slow down response times.
 
 As highlighted in a recent [memory management blog post](https://medium.com/@nomannayeem/building-ai-agents-that-actually-remember-a-developers-guide-to-memory-management-in-2025-062fd0be80a1):
 
@@ -27,776 +27,205 @@ For implementation details on Agentuity's storage systems, see our guides on [Ke
 
 ### Memory Types Overview
 
-Agent memory serves different purposes based on how long data needs to persist:
+Agent memory maps to three storage APIs, each serving different patterns:
 
-| Memory Type | Duration | Storage | Purpose |
-|-------------|----------|---------|----------|
-| **Working Memory** | Single request | In-memory variables | Process current task |
-| **Session Memory** | Minutes to hours | KV with TTL | Maintain conversation context |
-| **Persistent Memory** | Until deleted | KV without TTL | Store user preferences, profiles |
-| **Searchable Memory** | Until deleted | Vector storage | Semantic search and retrieval |
+| Memory Pattern | Storage API | Duration | Common Use Cases |
+|----------------|-------------|----------|------------------|
+| **Working Memory** | In-memory variables | Single request | Temporary calculations, request context |
+| **Session State** | KV with TTL | Minutes-hours | Conversation context, temporary cache |
+| **Persistent Data** | KV (no TTL) | Permanent | User profiles, preferences, settings |
+| **Knowledge Base** | Vector storage | Permanent | Semantic search, RAG, learned insights |
+| **File Storage** | Object storage | Permanent | Documents, images, media, backups |
 
-Let's explore each level:
+### Storage API Quick Reference
 
-### 1. Working Memory (Request Context)
-**Lifetime**: Single request
-**Purpose**: Process current task
-**Storage**: In-memory variables
+Agentuity provides three storage APIs, each optimized for different data types:
 
-```python
-# Working memory exists only during request processing
-async def run(request, response, context):
-    # These variables are working memory
-    user_intent = analyze_request(request)
-    current_plan = create_plan(user_intent)
-    execution_result = execute(current_plan)
-```
+- **Key-Value (KV)**: Fast exact-match lookups. Use TTL for auto-expiring data (sessions), omit TTL for permanent storage (preferences)
+- **Vector Storage**: Semantic similarity search using embeddings. Perfect for "find relevant information" use cases
+- **Object Storage**: Binary file storage with public URL generation. For media, documents, and large files
 
-### 2. Short-term Memory (Session State)
-**Lifetime**: Minutes to hours
-**Purpose**: Maintain conversation context
-**Storage**: Key-Value with TTL
+### Structured vs. Unstructured Memory
 
-```python
-# Short-term memory for session continuity
-async def run(request, response, context):
-    session_id = context.sessionId
-    
-    # Retrieve session context
-    session_data = await context.kv.get("sessions", session_id)
-    
-    if session_data.exists:
-        conversation = await session_data.data.json()
-        conversation["messages"].append(user_message)
-    else:
-        conversation = {"messages": [user_message], "started": datetime.now()}
-    
-    # Update with TTL for automatic cleanup
-    await context.kv.set("sessions", session_id, conversation, {"ttl": 3600})
-```
+Choose your storage API based on how you need to query and retrieve data:
 
-### 3. Long-term Memory (Persistent Knowledge)
-**Lifetime**: Permanent until deleted
-**Purpose**: Build user relationships and domain knowledge
-**Storage**: Vector database for semantic search
+**Structured Memory (Key-Value Storage)**
 
-```python
-from datetime import datetime
+Use when you need exact-match lookups with known keys:
+- User preferences and profiles
+- Session state and temporary cache
+- Configuration settings and feature flags
+- Counters, metrics, and structured data
 
-# Long-term memory for learning and relationships
-async def run(request, response, context):
-    user_id = request.metadata.get("user_id")
+**Unstructured Memory (Vector Storage)**
 
-    # Store learned preferences
-    await context.vector.upsert("user_knowledge", [{
-        "key": f"pref_{user_id}_{datetime.now()}",
-        "document": "User prefers technical explanations with code examples",
-        "metadata": {
-            "user_id": user_id,
-            "confidence": 0.9,
-            "learned_from": "conversation_analysis"
-        }
-    }])
+Use when you need semantic search across text content:
+- Conversation history you want to search by meaning
+- Knowledge bases and documentation
+- User feedback and learned insights
+- Any content requiring "find similar" functionality
 
-    # Retrieve relevant memories
-    memories = await context.vector.search(
-        "user_knowledge",
-        f"What do I know about user {user_id}?",
-        limit=5,
-        similarity=0.7
-    )
-```
+**Binary Memory (Object Storage)**
 
-### 4. Collective Memory (Shared Knowledge)
-**Lifetime**: Permanent, shared across agents
-**Purpose**: Organizational knowledge base
-**Storage**: Vector database with access controls
+Use for files and large binary content:
+- User uploads and generated documents
+- Images, videos, and media files
+- Backups and archives
+- Large datasets and exports
 
-## Structured vs. Unstructured Memory
+## Build Agent Memory Step-by-Step
 
-Different types of information require different storage approaches:
+Now let's get hands-on with memory patterns. Each step below focuses on one core concept, with simple code you can run immediately in DevMode. These tutorial steps teach platform-specific SDK patterns. The lab at the end shows all three storage types working together in a real docs Q&A agent.
 
-### Structured Memory (Key-Value Storage)
-Best for discrete, queryable data:
-- User preferences
-- Session state
-- Configuration settings
-- Counters and metrics
+### Step 1: Session Memory
 
-<CodeExample py={`async def run(request, response, context):
-    user_id = request.metadata.get("user_id")
-    
-    # Store structured user profile
-    profile = {
-        "name": "Alice Smith",
-        "preferences": {
-            "language": "python",
-            "timezone": "America/New_York",
-            "communication_style": "formal"
-        },
-        "metrics": {
-            "total_interactions": 42,
-            "last_seen": datetime.now().isoformat()
-        }
-    }
-    
-    await context.kv.set("users", user_id, profile)`} js={`const handler: AgentHandler = async (request, response, context) => {
-  const userId = request.metadata.get('user_id');
-  
-  // Store structured user profile
-  const profile = {
-    name: 'Alice Smith',
-    preferences: {
-      language: 'typescript',
-      timezone: 'America/New_York',
-      communication_style: 'formal'
-    },
-    metrics: {
-      total_interactions: 42,
-      last_seen: new Date().toISOString()
-    }
-  };
-  
-  await context.kv.set('users', userId, profile);
-};`} />
+<TutorialStep number={1} title="Session Memory with KV + TTL" estimatedTime="5 min">
 
-### Searchable Memory (Vector Storage)
-Best for semantic search and knowledge retrieval:
-- Conversation history you want to search through
-- Domain knowledge and learned information
-- User feedback and insights
-- Document content that needs to be findable
+Short-term conversation context needs automatic cleanup. Key-value storage with TTL (time-to-live) makes sessions expire automatically, preventing storage bloat.
 
-<CodeExample py={`async def run(request, response, context):
-    # Store conversation for semantic retrieval
-    await context.vector.upsert("conversations", [{
-        "key": f"conv_{datetime.now().isoformat()}",
-        "document": "User asked about deploying agents in production. " +
-                   "They're concerned about costs and scaling. " +
-                   "Recommended starting with dev environment.",
-        "metadata": {
-            "user_id": user_id,
-            "topic": "deployment",
-            "sentiment": "cautious",
-            "timestamp": datetime.now().isoformat()
-        }
-    }])
-    
-    # Later, retrieve relevant context
-    similar_convos = await context.vector.search(
-        "conversations",
-        "deployment and scaling concerns",
-        limit=3
-    )`} js={`const handler: AgentHandler = async (request, response, context) => {
-  // Store conversation for semantic retrieval
-  await context.vector.upsert('conversations', {
-    key: \`conv_\${new Date().toISOString()}\`,
-    document: "User asked about deploying agents in production. " +
-              "They're concerned about costs and scaling. " +
-              "Recommended starting with dev environment.",
-    metadata: {
-      user_id: userId,
-      topic: 'deployment',
-      sentiment: 'cautious',
-      timestamp: new Date().toISOString()
-    }
-  });
-  
-  // Later, retrieve relevant context
-  const similarConvos = await context.vector.search('conversations', {
-    query: 'deployment and scaling concerns',
-    limit: 3,
-    similarity: 0.7
-  });
-};`} />
+<CodeFromFiles snippets={[
+  { path: "/examples/training/03-memory/step1-session-memory.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/03-memory/step1-session-memory.py", lang: "python", title: "Python" }
+]} />
 
-### Binary Memory (Object Storage)
-Best for files and large data:
-- Generated reports
-- User uploads
-- Media files
-- Model outputs
+**What this demonstrates:**
+- Using `context.sessionId` for consistent session tracking
+- Checking `result.exists` to handle new vs returning sessions
+- Setting TTL (3600 seconds = 1 hour) for automatic expiration
+- Building conversation history by appending messages
 
-<CodeExample py={`from datetime import datetime
-import json
+**Try it:**
+1. Send a message - creates a new session
+2. Send another message - retrieves and appends to history
+3. Check back later - session data expires automatically (after 1 hour in this example; adjust as needed)
+4. Check DevMode logs to see session operations
 
-async def run(request, response, context):
-    # Assume analysis_results and user_id are defined above
-    analysis_results = {"data": "sample analysis"}  # placeholder
-    user_id = request.metadata.get("user_id")
+**Key insight:** TTL-based memory is perfect for temporary data like chat sessions, preventing manual cleanup and storage costs.
 
-    # Store generated report
-    report_data = generate_pdf_report(analysis_results)
-    report_key = f"reports/{user_id}/{datetime.now().strftime('%Y%m%d')}_analysis.pdf"
+</TutorialStep>
 
-    # Auto-detects content type from file extension and data
-    await context.objectstore.put(
-        "documents",
-        report_key,
-        report_data
-    )
-    # Note: For explicit content type, use ObjectStorePutParams class (see API reference)
+### Step 2: Persistent Preferences
 
-    # Create public URL for sharing (expires in 1 hour)
-    share_url = await context.objectstore.createPublicURL(
-        "documents",
-        report_key,
-        3600000  # milliseconds
-    )`} js={`const handler: AgentHandler = async (request, response, context) => {
-  // Assume analysisResults and userId are defined above
-  const analysisResults = { data: 'sample analysis' }; // placeholder
-  const userId = request.metadata.get('user_id');
+<TutorialStep number={2} title="Persistent Preferences with KV" estimatedTime="4 min">
 
-  // Store generated report
-  const reportData = generatePdfReport(analysisResults);
-  const reportKey = \`reports/\${userId}/\${new Date().toISOString().split('T')[0]}_analysis.pdf\`;
-  
-  await context.objectstore.put(
-    'documents',
-    reportKey,
-    reportData,
-    { contentType: 'application/pdf' }
-  );
-  
-  // Create public URL for sharing (expires in 1 hour)
-  const shareUrl = await context.objectstore.createPublicURL(
-    'documents',
-    reportKey,
-    3600000  // milliseconds
-  );
-};`} />
+User profiles and preferences should survive restarts. Omitting the TTL parameter makes data permanent until explicitly deleted.
 
-## Memory Patterns and Best Practices
+<CodeFromFiles snippets={[
+  { path: "/examples/training/03-memory/step2-persistent-preferences.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/03-memory/step2-persistent-preferences.py", lang: "python", title: "Python" }
+]} />
 
-### Pattern 1: Conversation Memory with Sliding Window
+**What this demonstrates:**
+- Permanent storage by omitting TTL parameter
+- Handling first-time users (create profile) vs returning users (update profile)
+- Tracking interaction counts and timestamps
+- Updating nested preference objects
 
-Keep recent conversation context while managing memory size:
+**Try it:**
+1. Send `{"theme": "dark", "language": "en"}` - creates profile
+2. Send `{"theme": "light"}` - updates theme, keeps language
+3. Restart DevMode - profile persists
+4. Check interaction count incrementing
 
-<CodeExample py={`async def run(request, response, context):
-    session_id = context.sessionId
-    max_messages = 20  # Keep last 20 messages
-    
-    # Get existing conversation
-    result = await context.kv.get("conversations", session_id)
-    
-    if result.exists:
-        convo = await result.data.json()
-        messages = convo["messages"]
-    else:
-        messages = []
-    
-    # Add new message
-    messages.append({
-        "role": "user",
-        "content": await request.data.text(),
-        "timestamp": datetime.now().isoformat()
-    })
-    
-    # Sliding window - keep only recent messages
-    if len(messages) > max_messages:
-        # Before removing, summarize older messages
-        summary = await summarize_messages(messages[:10])
-        await context.vector.upsert("summaries", [{
-            "key": f"{session_id}_summary_{datetime.now()}",
-            "document": summary,
-            "metadata": {"session_id": session_id}
-        }])
-        messages = messages[-max_messages:]
-    
-    # Process with context
-    agent_response = await process_with_context(messages)
-    
-    # Add agent response
-    messages.append({
-        "role": "agent",
-        "content": agent_response,
-        "timestamp": datetime.now().isoformat()
-    })
-    
-    # Save updated conversation
-    await context.kv.set("conversations", session_id, {
-        "messages": messages,
-        "updated": datetime.now().isoformat()
-    }, {"ttl": 7200})  # 2 hour TTL
-    
-    return response.json({"message": agent_response})`} js={`const handler: AgentHandler = async (request, response, context) => {
-  const sessionId = context.sessionId;
-  const maxMessages = 20; // Keep last 20 messages
-  
-  // Get existing conversation
-  const result = await context.kv.get('conversations', sessionId);
-  
-  let messages = [];
-  if (result.exists) {
-    const convo = await result.data.json();
-    messages = convo.messages;
-  }
-  
-  // Add new message
-  messages.push({
-    role: 'user',
-    content: await request.data.text(),
-    timestamp: new Date().toISOString()
-  });
-  
-  // Sliding window - keep only recent messages
-  if (messages.length > maxMessages) {
-    // Before removing, summarize older messages
-    const summary = await summarizeMessages(messages.slice(0, 10));
-    await context.vector.upsert('summaries', {
-      key: \`\${sessionId}_summary_\${new Date().toISOString()}\`,
-      document: summary,
-      metadata: { session_id: sessionId }
-    });
-    messages = messages.slice(-maxMessages);
-  }
-  
-  // Process with context
-  const agentResponse = await processWithContext(messages);
-  
-  // Add agent response
-  messages.push({
-    role: 'agent',
-    content: agentResponse,
-    timestamp: new Date().toISOString()
-  });
-  
-  // Save updated conversation
-  await context.kv.set('conversations', sessionId, {
-    messages,
-    updated: new Date().toISOString()
-  }, { ttl: 7200 }); // 2 hour TTL
-  
-  return response.json({ message: agentResponse });
-};`} />
+**Key insight:** No TTL means data persists forever, perfect for user profiles, settings, and application state.
 
-### Pattern 2: Personalization Through Learning
+</TutorialStep>
 
-Build user profiles over time:
+### Step 3: Basic Search
+
+<TutorialStep number={3} title="Vector Upsert & Basic Search" estimatedTime="6 min">
+
+Vector storage enables semantic search—finding information by meaning rather than keywords. Documents are converted to embeddings automatically.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/03-memory/step3-vector-basics.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/03-memory/step3-vector-basics.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- **TypeScript:** Upsert single object `{ key, document, metadata }`
+- **Python:** Upsert array of objects `[{ key, document, metadata }]`
+- Searching with query text, limit, and similarity threshold
+- Handling empty results gracefully
+- Similarity scores (0-1, where 1 = perfect match)
+- Cleanup by deleting demo vectors
+
+**Try it:**
+1. Run the agent with query "What is Agentuity?"
+2. See semantic matches (finds "agent-native cloud platform")
+3. Try "How does storage work?" - finds storage-related facts
+4. Notice similarity scores in results
+
+**Key insight:** Vector search finds meaning, not keywords. "What is Agentuity?" matches "agent-native cloud platform" even without exact words.
+
+</TutorialStep>
+
+### Step 4: Metadata Filtering
+
+<TutorialStep number={4} title="Vector Metadata Filtering" estimatedTime="5 min">
+
+Combine semantic similarity with structured filters to narrow results by category, user, status, or any metadata field.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/03-memory/step4-vector-filtering.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/03-memory/step4-vector-filtering.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- Adding metadata to vectors (category, price, inStock, etc.)
+- Filtering search results with `metadata` parameter
+- Metadata filters use AND logic (all conditions must match)
+- Lower similarity threshold (0.3) when using strict filters
+- Post-processing results for additional filtering
+
+**Try it:**
+1. Send `{"query": "office furniture", "category": "furniture", "inStock": true}`
+2. See only furniture items that are in stock
+3. Try `{"query": "desk accessories", "category": "electronics"}`
+4. Notice results filtered by both meaning AND category
+
+**Key insight:** Metadata filtering is exact-match, not fuzzy. Use it to combine semantic search with business rules.
 
 <Callout type="info">
 **Metadata Filtering in Vector Search**: The `metadata` parameter in vector search is used to filter results, not just for returning metadata. When you specify `metadata={"user_id": user_id}` in Python or `metadata: { user_id: userId }` in JavaScript, the search will only return vectors that match those metadata criteria. This is useful for isolating user-specific memories or filtering by any other metadata field you've stored.
 </Callout>
 
-<CodeExample py={`async def run(request, response, context):
-    user_id = request.metadata.get("user_id")
-    user_input = await request.data.text()
-    
-    # Retrieve user profile
-    profile_result = await context.kv.get("profiles", user_id)
-    
-    if profile_result.exists:
-        profile = await profile_result.data.json()
-    else:
-        profile = {
-            "interaction_count": 0,
-            "topics": {},
-            "preferences": {},
-            "created": datetime.now().isoformat()
-        }
-    
-    # Update interaction count
-    profile["interaction_count"] += 1
-    
-    # Analyze input for topics and preferences
-    analysis = await analyze_user_input(user_input)
-    
-    # Update topic frequencies
-    for topic in analysis["topics"]:
-        profile["topics"][topic] = profile["topics"].get(topic, 0) + 1
-    
-    # Store notable preferences as vectors for semantic search
-    if analysis["preferences"]:
-        for pref in analysis["preferences"]:
-            await context.vector.upsert("user_preferences", [{
-                "key": f"{user_id}_{hash(pref)}",
-                "document": pref,
-                "metadata": {
-                    "user_id": user_id,
-                    "confidence": analysis["confidence"],
-                    "learned_at": datetime.now().isoformat()
-                }
-            }])
-    
-    # Get relevant memories for this conversation
-    memories = await context.vector.search(
-        "user_preferences",
-        user_input,
-        limit=3,
-        metadata={"user_id": user_id}
-    )
-    
-    # Generate personalized response
-    response_text = await generate_response(
-        user_input,
-        profile,
-        memories
-    )
-    
-    # Save updated profile
-    await context.kv.set("profiles", user_id, profile)
-    
-    return response.json({
-        "message": response_text,
-        "personalized": True,
-        "interaction_number": profile["interaction_count"]
-    })`} js={`const handler: AgentHandler = async (request, response, context) => {
-  const userId = request.metadata.get('user_id');
-  const userInput = await request.data.text();
-  
-  // Retrieve user profile
-  const profileResult = await context.kv.get('profiles', userId);
-  
-  let profile;
-  if (profileResult.exists) {
-    profile = await profileResult.data.json();
-  } else {
-    profile = {
-      interaction_count: 0,
-      topics: {},
-      preferences: {},
-      created: new Date().toISOString()
-    };
-  }
-  
-  // Update interaction count
-  profile.interaction_count++;
-  
-  // Analyze input for topics and preferences
-  const analysis = await analyzeUserInput(userInput);
-  
-  // Update topic frequencies
-  for (const topic of analysis.topics) {
-    profile.topics[topic] = (profile.topics[topic] || 0) + 1;
-  }
-  
-  // Store notable preferences as vectors for semantic search
-  if (analysis.preferences) {
-    for (const pref of analysis.preferences) {
-      await context.vector.upsert('user_preferences', {
-        key: \`\${userId}_\${hashString(pref)}\`,
-        document: pref,
-        metadata: {
-          user_id: userId,
-          confidence: analysis.confidence,
-          learned_at: new Date().toISOString()
-        }
-      });
-    }
-  }
-  
-  // Get relevant memories for this conversation
-  const memories = await context.vector.search('user_preferences', {
-    query: userInput,
-    limit: 3,
-    similarity: 0.7,
-    metadata: { user_id: userId }
-  });
-  
-  // Generate personalized response
-  const responseText = await generateResponse(
-    userInput,
-    profile,
-    memories
-  );
-  
-  // Save updated profile
-  await context.kv.set('profiles', userId, profile);
-  
-  return response.json({
-    message: responseText,
-    personalized: true,
-    interaction_number: profile.interaction_count
-  });
-};`} />
+</TutorialStep>
 
-### Pattern 3: Semantic Knowledge Base
+### Step 5: Object Storage Basics
 
-Build a searchable knowledge base from interactions:
+<TutorialStep number={5} title="Object Storage Basics" estimatedTime="5 min">
 
-<CodeExample py={`async def run(request, response, context):
-    action = (await request.data.json()).get("action")
-    
-    if action == "learn":
-        # Extract and store knowledge
-        knowledge = await request.data.json()
-        
-        await context.vector.upsert("knowledge_base", [{
-            "key": f"fact_{datetime.now().timestamp()}",
-            "document": knowledge["fact"],
-            "metadata": {
-                "category": knowledge.get("category", "general"),
-                "source": knowledge.get("source", "user_provided"),
-                "confidence": knowledge.get("confidence", 0.8),
-                "tags": knowledge.get("tags", []),
-                "created": datetime.now().isoformat()
-            }
-        }])
-        
-        return response.json({"status": "learned", "fact": knowledge["fact"]})
-    
-    elif action == "query":
-        # Search the knowledge base
-        query = (await request.data.json())["query"]
-        
-        # Semantic search
-        results = await context.vector.search(
-            "knowledge_base",
-            query,
-            limit=10,
-            similarity=0.6
-        )
-        
-        # Format results with relevance scores
-        formatted_results = []
-        for result in results:
-            formatted_results.append({
-                "fact": result.document,
-                "relevance": result.similarity,
-                "metadata": result.metadata
-            })
-        
-        return response.json({
-            "query": query,
-            "results": formatted_results,
-            "count": len(formatted_results)
-        })
-    
-    elif action == "analyze":
-        # Analyze knowledge base patterns
-        topic = (await request.data.json()).get("topic")
-        
-        # Get all related facts
-        facts = await context.vector.search(
-            "knowledge_base",
-            topic,
-            limit=50,
-            similarity=0.5
-        )
-        
-        # Analyze patterns
-        analysis = {
-            "topic": topic,
-            "fact_count": len(facts),
-            "categories": {},
-            "confidence_avg": 0,
-            "sources": {}
-        }
-        
-        for fact in facts:
-            category = fact.metadata.get("category", "unknown")
-            analysis["categories"][category] = \
-                analysis["categories"].get(category, 0) + 1
-            
-            source = fact.metadata.get("source", "unknown")
-            analysis["sources"][source] = \
-                analysis["sources"].get(source, 0) + 1
-            
-            analysis["confidence_avg"] += fact.metadata.get("confidence", 0)
-        
-        if facts:
-            analysis["confidence_avg"] /= len(facts)
-        
-        return response.json(analysis)`} js={`const handler: AgentHandler = async (request, response, context) => {
-  const { action } = await request.data.json();
-  
-  if (action === 'learn') {
-    // Extract and store knowledge
-    const knowledge = await request.data.json();
-    
-    await context.vector.upsert('knowledge_base', {
-      key: \`fact_\${Date.now()}\`,
-      document: knowledge.fact,
-      metadata: {
-        category: knowledge.category || 'general',
-        source: knowledge.source || 'user_provided',
-        confidence: knowledge.confidence || 0.8,
-        tags: knowledge.tags || [],
-        created: new Date().toISOString()
-      }
-    });
-    
-    return response.json({ status: 'learned', fact: knowledge.fact });
-  
-  } else if (action === 'query') {
-    // Search the knowledge base
-    const { query } = await request.data.json();
-    
-    // Semantic search
-    const results = await context.vector.search('knowledge_base', {
-      query,
-      limit: 10,
-      similarity: 0.6
-    });
-    
-    // Format results with relevance scores
-    const formattedResults = results.map(result => ({
-      fact: result.document,
-      relevance: result.similarity,
-      metadata: result.metadata
-    }));
-    
-    return response.json({
-      query,
-      results: formattedResults,
-      count: formattedResults.length
-    });
-  
-  } else if (action === 'analyze') {
-    // Analyze knowledge base patterns
-    const { topic } = await request.data.json();
-    
-    // Get all related facts
-    const facts = await context.vector.search('knowledge_base', {
-      query: topic,
-      limit: 50,
-      similarity: 0.5
-    });
-    
-    // Analyze patterns
-    const analysis = {
-      topic,
-      fact_count: facts.length,
-      categories: {},
-      confidence_avg: 0,
-      sources: {}
-    };
-    
-    for (const fact of facts) {
-      const category = fact.metadata?.category || 'unknown';
-      analysis.categories[category] = (analysis.categories[category] || 0) + 1;
-      
-      const source = fact.metadata?.source || 'unknown';
-      analysis.sources[source] = (analysis.sources[source] || 0) + 1;
-      
-      analysis.confidence_avg += fact.metadata?.confidence || 0;
-    }
-    
-    if (facts.length > 0) {
-      analysis.confidence_avg /= facts.length;
-    }
-    
-    return response.json(analysis);
-  }
-};`} />
+Files and media need different storage than structured data. Object storage handles binary content and provides shareable public URLs.
 
-## Memory Management Strategies
+<CodeFromFiles snippets={[
+  { path: "/examples/training/03-memory/step5-object-storage.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/03-memory/step5-object-storage.py", lang: "python", title: "Python" }
+]} />
 
-### TTL (Time To Live) Strategies
+**What this demonstrates:**
+- Storing files with auto-detected content type (simplest approach)
+- Retrieving stored objects and checking `result.exists`
+- Creating temporary public URLs (expires in 1 hour)
+- Cleanup by deleting demo files
 
-Different memory types require different retention policies:
+**Try it:**
+1. Send any text content
+2. See file stored, retrieved, and public URL created
+3. Access the URL in browser (works for 1 hour)
+4. Notice file is deleted after demo (cleanup pattern)
 
-| Memory Type | Recommended TTL | Use Case |
-|------------|-----------------|----------|
-| Session state | 1-2 hours | Active conversations |
-| Daily cache | 24 hours | Frequently accessed data |
-| User preferences | No TTL | Permanent personalization |
-| Temporary results | 5-15 minutes | Computation cache |
-| Audit logs | 30-90 days | Compliance requirements |
+**Key insight:** Public URLs expire automatically, perfect for temporary file sharing without permanent public access.
 
-### Memory Strategy Guidelines
+</TutorialStep>
 
-Start with simple patterns and scale based on actual usage:
+## Lab: Try It All Together
 
-- **Start small**: Begin with essential data only
-- **Monitor usage**: Track storage costs and access patterns
-- **Use appropriate TTL**: Match expiration to business needs
-- **Scale gradually**: Add memory features as you understand usage patterns
+You've learned the core memory patterns through focused steps. Now let's see them combined in a real-world agent that uses **all three storage types together**:
 
-Common TTL patterns:
-- Chat sessions: 1-4 hours
-- Daily summaries: 24-48 hours
-- User preferences: No TTL (permanent)
-- Temporary calculations: 5-15 minutes
-
-### Memory Cleanup Patterns
-
-Implement automated cleanup to manage costs:
-
-<CodeExample py={`async def run(request, response, context):
-    # Scheduled cleanup agent (triggered by cron)
-    if request.trigger == "cron":
-        context.logger.info("Running memory cleanup")
-        
-        # Clean expired sessions
-        # Note: KV items with TTL auto-expire, but we can proactively clean
-        
-        # Archive old conversations to object storage
-        cutoff_date = datetime.now() - timedelta(days=30)
-        
-        # In production, you'd iterate through keys with a pattern
-        # This is a simplified example
-        old_sessions = await get_old_sessions(cutoff_date)
-        
-        for session_id in old_sessions:
-            # Get conversation
-            result = await context.kv.get("conversations", session_id)
-            if result.exists:
-                convo = await result.data.json()
-                
-                # Archive to object storage (auto-detects JSON content type)
-                archive_key = f"archives/{session_id}/{cutoff_date.isoformat()}.json"
-                await context.objectstore.put(
-                    "archives",
-                    archive_key,
-                    json.dumps(convo)
-                )
-                
-                # Delete from KV
-                await context.kv.delete("conversations", session_id)
-                
-                context.logger.info(f"Archived session {session_id}")
-        
-        return response.json({
-            "task": "cleanup",
-            "archived_sessions": len(old_sessions),
-            "timestamp": datetime.now().isoformat()
-        })`} js={`const handler: AgentHandler = async (request, response, context) => {
-  // Scheduled cleanup agent (triggered by cron)
-  if (request.trigger === 'cron') {
-    context.logger.info('Running memory cleanup');
-    
-    // Archive old conversations to object storage
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - 30);
-    
-    // In production, you'd iterate through keys with a pattern
-    // This is a simplified example
-    const oldSessions = await getOldSessions(cutoffDate);
-    
-    for (const sessionId of oldSessions) {
-      // Get conversation
-      const result = await context.kv.get('conversations', sessionId);
-      if (result.exists) {
-        const convo = await result.data.json();
-        
-        // Archive to object storage
-        const archiveKey = \`archives/\${sessionId}/\${cutoffDate.toISOString()}.json\`;
-        await context.objectstore.put(
-          'archives',
-          archiveKey,
-          JSON.stringify(convo),
-          { contentType: 'application/json' }
-        );
-        
-        // Delete from KV
-        await context.kv.delete('conversations', sessionId);
-        
-        context.logger.info(\`Archived session \${sessionId}\`);
-      }
-    }
-    
-    return response.json({
-      task: 'cleanup',
-      archived_sessions: oldSessions.length,
-      timestamp: new Date().toISOString()
-    });
-  }
-};`} />
-
-## Lab: Building a Docs Q&A Agent with Memory
-
-Let's build an agent that helps users find documentation using semantic search and learns from user interactions to provide better responses over time.
+- **Vector storage** for semantic document search
+- **KV storage** for tracking query history and caching
+- **Object storage** for uploaded documentation files
 
 ### Key Implementation: Upload & Index Pattern
 
@@ -805,19 +234,20 @@ The core pattern shows how agents use all storage types together in a cohesive w
 <CodeExample py={`# Key pattern: Upload, store, and index documents
 async def handle_upload(request: AgentRequest, response: AgentResponse, context: AgentContext):
     file_content = await request.data.text()
-    file_name = request.metadata.get("filename", "document.txt")
+    file_name = request.get("filename", "document.txt")
 
     # 1. Store in object storage with proper UTF-8 encoding
     binary_data = file_content.encode('utf-8')
     await context.objectstore.put(OBJECT_STORAGE_BUCKET, file_name, binary_data)
 
-    # 2. Chunk and embed for search
+    # 2. Chunk and embed for search (batch upsert is more efficient)
     chunks = chunk_document(file_content, chunk_size=500)
 
+    # Build all chunk documents for batch upsert
+    chunk_docs = []
     for i, chunk in enumerate(chunks):
         chunk_id = f"{file_name}_chunk_{i}"
-        # Python vector storage uses array format
-        await context.vector.upsert(VECTOR_STORAGE_NAME, [{
+        chunk_docs.append({
             "key": chunk_id,
             "document": chunk,
             "metadata": {
@@ -825,7 +255,10 @@ async def handle_upload(request: AgentRequest, response: AgentResponse, context:
                 "chunk_index": i,
                 "uploaded_at": datetime.now().isoformat()
             }
-        }])
+        })
+
+    # Python vector storage uses array format - upsert all at once
+    await context.vector.upsert(VECTOR_STORAGE_NAME, chunk_docs)
 
     return response.json({
         "status": "indexed",
@@ -834,7 +267,7 @@ async def handle_upload(request: AgentRequest, response: AgentResponse, context:
     })`} js={`// Key pattern: Upload, store, and index documents
 async function handleUpload(request: AgentRequest, response: AgentResponse, context: AgentContext) {
   const fileContent = await request.data.text();
-  const fileName = request.metadata.get('filename') || 'document.txt';
+  const fileName = request.get('filename', 'document.txt');
 
   // 1. Store in object storage with proper UTF-8 encoding
   const binaryData = new TextEncoder().encode(fileContent);
@@ -843,19 +276,19 @@ async function handleUpload(request: AgentRequest, response: AgentResponse, cont
   // 2. Chunk and embed for search
   const chunks = chunkDocument(fileContent, 500);
 
-  for (let i = 0; i < chunks.length; i++) {
-    const chunkId = \`\${fileName}_chunk_\${i}\`;
-    // TypeScript vector storage uses single object format
-    await context.vector.upsert(VECTOR_STORAGE_NAME, {
-      key: chunkId,
-      document: chunks[i],
+  // TypeScript vector storage uses rest parameters - pass all objects at once
+  await context.vector.upsert(
+    VECTOR_STORAGE_NAME,
+    ...chunks.map((chunk, i) => ({
+      key: \`\${fileName}_chunk_\${i}\`,
+      document: chunk,
       metadata: {
         sourceFile: fileName,
         chunkIndex: i,
         uploadedAt: new Date().toISOString()
       }
-    });
-  }
+    }))
+  );
 
   return response.json({
     status: 'indexed',
@@ -1013,8 +446,7 @@ Ready to implement this agent? Follow our complete examples:
 
 The complete examples show you how to build intelligent documentation agents that get smarter over time through user interaction.
 
-
-## Testing Your Docs Q&A Agent
+### Testing Your Docs Q&A Agent
 
 1. **Start DevMode:**
 ```bash
@@ -1064,7 +496,7 @@ But first, experiment with memory patterns:
 - Create memory cleanup strategies
 - Test different TTL strategies for various use cases
 
-Remember: Memory is what transforms an agent from a tool into a partner.
+Remember: Memory is what transforms an agent from a simple tool into a useful, effective, and adaptive system.
 
 ---
 

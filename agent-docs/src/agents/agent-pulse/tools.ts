@@ -38,8 +38,15 @@ export async function createTools(context: ToolContext) {
 
             const data = tutorialResponse.data
             const totalSteps = tutorialResponse.data.totalSteps;
+
+            // Guard: reject invalid step numbers (steps are 1-indexed)
+            if (stepNumber < 1) {
+                return `Step number must be 1 or greater. You requested step ${stepNumber}.`;
+            }
+
+            // Guard: reject steps beyond tutorial length
             if (stepNumber > totalSteps) {
-                return `This tutorial only has ${totalSteps} steps. You either reached the end of the tutorial or selected an incorrect step number.`;
+                return `This tutorial only has ${totalSteps} step${totalSteps === 1 ? '' : 's'}. You requested step ${stepNumber}.`;
             }
             state.setAction({
                 type: ActionType.START_TUTORIAL_STEP,
@@ -57,7 +64,16 @@ export async function createTools(context: ToolContext) {
      * This tool doesn't use state - it returns data directly
      */
     const askDocsAgentTool = tool({
-        description: "Query the Agentuity Development Documentation agent using RAG (Retrieval Augmented Generation) to get relevant documentation and answers about the Agentuity platform, APIs, and development concepts",
+        description: `Query the Agentuity Development Documentation agent using RAG (Retrieval Augmented Generation).
+
+USE THIS TOOL when users ask about:
+- Agentuity SDK objects (AgentContext, AgentRequest, AgentResponse)
+- SDK methods (ctx.logger, ctx.vector, ctx.kv, resp.json, resp.stream, etc.)
+- Platform features (deployment, authentication, agent configuration, etc.)
+- CLI commands (agentuity agent create, deploy, etc.)
+- Agentuity APIs and development workflows (e.g. agent.run, agent.create, etc.)
+
+This tool provides authoritative, up-to-date documentation specific to the Agentuity platform.`,
         parameters: z.object({
             query: z.string().describe("The question or query to send to the query function"),
         }),
