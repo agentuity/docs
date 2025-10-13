@@ -15,22 +15,6 @@ import {
 import { AgentuityLogo } from '@/components/icons/AgentuityLogo';
 import { Session, SessionSidebarProps } from '../types';
 
-// Helper function to format relative dates
-const formatRelativeDate = (date: Date): string => {
-  const now = new Date();
-  const diffInMs = now.getTime() - date.getTime();
-  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-  if (diffInDays === 0) return 'Today';
-  if (diffInDays === 1) return 'Yesterday';
-  if (diffInDays < 7) return `${diffInDays} days ago`;
-
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric'
-  });
-};
-
 // Helper function to truncate text with ellipsis
 const truncateText = (text: string, maxLength: number): string => {
   if (text.length <= maxLength) return text;
@@ -156,7 +140,6 @@ export function SessionSidebar({
     }
     return 'New conversation';
   };
-  const relativeDate = formatRelativeDate(new Date());
 
   return (
     <div
@@ -291,19 +274,9 @@ export function SessionSidebar({
                         autoFocus
                       />
                     ) : (
-                      <>
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-sm font-medium truncate">
-                            {truncateText(preview, 25)}
-                          </p>
-                          <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
-                            {relativeDate}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <span>{session.messages?.length || 0} messages</span>
-                        </div>
-                      </>
+                      <p className="text-sm font-medium truncate">
+                        {truncateText(preview, 25)}
+                      </p>
                     )}
                   </div>
                 </div>
