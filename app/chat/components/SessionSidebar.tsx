@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import {
-  Plus,
+  PenSquare,
   BookAIcon,
   MessageCircle,
   ChevronLeft,
@@ -155,36 +155,38 @@ export function SessionSidebar({
     <div
       className={`
           fixed lg:static inset-y-0 left-0 z-50
-          transform transition-all duration-300 ease-out
-          -translate-x-full lg:translate-x-0
+          transform -translate-x-full lg:translate-x-0
           ${isCollapsed ? 'w-12 lg:w-12' : 'w-70 lg:w-70'}
           bg-black/20 backdrop-blur-md border-r border-white/10
           flex flex-col h-full
+          transition-[width] duration-300 ease-in-out
         `}
     >
       {/* Header Section */}
-      <div className="p-3 border-b border-white/8">
+      <div className={`p-3 ${isCollapsed ? '' : 'border-b border-white/8'}`}>
         <div className="flex items-center justify-between">
-          {!isCollapsed && (
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 bg-cyan-500/10 rounded-lg flex items-center justify-center border border-cyan-500/20">
-                <AgentuityLogo className="w-4 h-4 text-cyan-400" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-sm font-semibold text-gray-200 truncate">
-                  Agentuity
-                </h1>
-                <p className="text-xs text-gray-400 truncate">
-                  AI Playground
-                </p>
-              </div>
+          <div className={`
+            flex items-center gap-3 min-w-0
+            transition-opacity duration-200
+            ${isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100'}
+          `}>
+            <div className="w-8 h-8 bg-cyan-500/10 rounded-lg flex items-center justify-center border border-cyan-500/20">
+              <AgentuityLogo className="w-4 h-4 text-cyan-400" />
             </div>
-          )}
+            <div className="min-w-0">
+              <h1 className="text-sm font-semibold text-gray-200 truncate">
+                Agentuity
+              </h1>
+              <p className="text-xs text-gray-400 truncate">
+                AI Playground
+              </p>
+            </div>
+          </div>
 
           {/* Desktop Toggle Button */}
           <button
             onClick={toggleCollapsed}
-            className="hidden lg:flex items-center justify-center w-6 h-6 rounded-md text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors"
+            className="hidden lg:flex items-center justify-center w-6 h-6 rounded-md text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors flex-shrink-0"
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {isCollapsed ? (
@@ -197,30 +199,39 @@ export function SessionSidebar({
       </div>
 
       {/* Action Section */}
-      <div className="p-2 border-b border-white/8">
+      <div className='p-2'>
         <button
           onClick={onNewSession}
           className={`
-              w-full flex items-center gap-3 p-1 rounded-lg
-              bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20
-              text-cyan-400 hover:text-cyan-300 transition-all duration-200
-              ${isCollapsed ? 'justify-center' : 'justify-start'}
+              w-full flex items-center gap-3 p-2 rounded-lg
+              hover:bg-cyan-500/20 hover:text-cyan-300 transition-colors duration-200
+              justify-start
             `}
           aria-label="Start new chat"
         >
-          <Plus className="w-5 h-5 flex-shrink-0" />
-          {!isCollapsed && (
-            <span className="text-sm font-medium">New Chat</span>
+          <PenSquare className="w-4 h-4" />
+          {!isCollapsed && (<span className={`
+            text-sm font-medium whitespace-nowrap
+            transition-opacity duration-200 opacity-100
+            `}>
+            New Chat
+          </span>
           )}
         </button>
       </div>
-
       {/* Sessions List */}
-      <div 
-        ref={sessionsListRef} 
-        className="flex-1 overflow-y-auto scrollbar-thin"
+      {!isCollapsed && (
+        <p className="text-sm text-gray-400 p-2">Chats</p>
+      )}
+      <div
+        ref={sessionsListRef}
+        className={`
+          flex-1 overflow-y-auto scrollbar-thin
+          transition-opacity duration-200 p-2
+          ${isCollapsed ? 'opacity-0 h-0 overflow-hidden pointer-events-none' : 'opacity-100'}
+        `}
       >
-        <div className="p-2 space-y-1">
+        <div className="space-y-1">
           {sessions.map((session: Session) => {
             const isActive = session.sessionId === currentSessionId;
             const preview = getSessionPreview(session);
@@ -234,16 +245,14 @@ export function SessionSidebar({
                 onClick={() => handleSessionClick(session.sessionId)}
                 className={`
                       relative w-full flex items-center gap-2 p-2 rounded-lg text-left
-                      transition-all duration-200 group cursor-pointer
+                      transition-all duration-200 group cursor-pointer justify-start
                       ${isActive
                     ? 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400'
                     : 'hover:bg-white/5 text-gray-300 hover:text-gray-200'
                   }
-                      ${isCollapsed ? 'justify-center' : 'justify-start'}
                     `}
                 role="button"
                 aria-label={`Switch to conversation: ${preview}`}
-                title={isCollapsed ? preview : undefined}
               >
                 <div
                   className="flex items-center gap-2 flex-1 min-w-0"
@@ -256,58 +265,56 @@ export function SessionSidebar({
                     )}
                   </div>
 
-                  {!isCollapsed && (
-                    <div className="flex-1 min-w-0">
-                      {isEditing ? (
-                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="text"
-                            value={editTitle}
-                            onChange={(e) => setEditTitle(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                handleEditSave(session.sessionId, e as any);
-                              } else if (e.key === 'Escape') {
-                                handleEditCancel(e as any);
-                              }
-                            }}
-                            className="flex-1 bg-black/30 border border-cyan-500/30 rounded px-2 py-1 text-sm text-gray-200 focus:outline-none focus:border-cyan-500/50"
-                            autoFocus
-                          />
-                          <button
-                            onClick={(e) => handleEditSave(session.sessionId, e)}
-                            className="px-2 py-1 text-xs bg-cyan-500/20 hover:bg-cyan-500/30 rounded"
-                          >
-                            ✓
-                          </button>
-                          <button
-                            onClick={handleEditCancel}
-                            className="px-2 py-1 text-xs bg-red-500/20 hover:bg-red-500/30 rounded"
-                          >
-                            ✕
-                          </button>
+                  <div className="flex-1 min-w-0">
+                    {isEditing ? (
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="text"
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleEditSave(session.sessionId, e as any);
+                            } else if (e.key === 'Escape') {
+                              handleEditCancel(e as any);
+                            }
+                          }}
+                          className="flex-1 bg-black/30 border border-cyan-500/30 rounded px-2 py-1 text-sm text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                          autoFocus
+                        />
+                        <button
+                          onClick={(e) => handleEditSave(session.sessionId, e)}
+                          className="px-2 py-1 text-xs bg-cyan-500/20 hover:bg-cyan-500/30 rounded"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          onClick={handleEditCancel}
+                          className="px-2 py-1 text-xs bg-red-500/20 hover:bg-red-500/30 rounded"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-sm font-medium truncate">
+                            {truncateText(preview, 25)}
+                          </p>
+                          <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
+                            {relativeDate}
+                          </span>
                         </div>
-                      ) : (
-                        <>
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="text-sm font-medium truncate">
-                              {truncateText(preview, 25)}
-                            </p>
-                            <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
-                              {relativeDate}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <span>{session.messages?.length || 0} messages</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <span>{session.messages?.length || 0} messages</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 {/* Action Menu Button */}
-                {!isCollapsed && !isEditing && (onDeleteSession || onEditSession) && (
+                {!isEditing && (onDeleteSession || onEditSession) && (
                   <div className="relative flex-shrink-0" ref={isMenuOpen ? menuRef : null}>
                     <button
                       onClick={(e) => handleMenuToggle(session.sessionId, e)}
@@ -349,21 +356,22 @@ export function SessionSidebar({
       </div>
 
       {/* Footer Section */}
-      <div className="p-3 border-t border-white/8">
-        {!isCollapsed && (
-          <>
-            {typeof onLoadMore === 'function' && hasMore && (
-              <button
-                onClick={handleLoadMore}
-                disabled={isLoadingMore}
-                className="w-full flex items-center justify-center p-2 rounded-md bg-white/5 hover:bg-white/10 disabled:opacity-60 transition-all"
-                aria-label={isLoadingMore ? 'Loading more sessions...' : 'Load more sessions'}
-              >
-                <ChevronDown className={`w-5 h-5 text-gray-400 ${isLoadingMore ? 'animate-pulse' : ''}`} />
-              </button>
-            )}
-          </>
-        )}
+      <div className={`p-3 ${isCollapsed ? '' : 'border-t border-white/8'}`}>
+        <div className={`
+          transition-opacity duration-200
+          ${isCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}
+        `}>
+          {typeof onLoadMore === 'function' && hasMore && (
+            <button
+              onClick={handleLoadMore}
+              disabled={isLoadingMore}
+              className="w-full flex items-center justify-center p-2 rounded-md bg-white/5 hover:bg-white/10 disabled:opacity-60 transition-colors"
+              aria-label={isLoadingMore ? 'Loading more sessions...' : 'Load more sessions'}
+            >
+              <ChevronDown className={`w-5 h-5 text-gray-400 ${isLoadingMore ? 'animate-pulse' : ''}`} />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
