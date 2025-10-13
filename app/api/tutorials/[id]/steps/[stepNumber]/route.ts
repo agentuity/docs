@@ -39,17 +39,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    // Calculate totalSteps if missing from frontmatter
+    const totalSteps = parsed.metadata.totalSteps ?? parsed.steps.length;
+
     return NextResponse.json({
       success: true,
       data: {
         tutorialId: id,
-        totalSteps: parsed.metadata.totalSteps,
+        totalSteps,
         currentStep: stepNum,
         tutorialStep: {
           title: step.title,
           mdx: convertMdxToMarkdown(step.mdxContent),
           snippets: step.snippets,
-          totalSteps: parsed.metadata.totalSteps,
+          totalSteps,
           estimatedTime: step.estimatedTime,
         }
       }
