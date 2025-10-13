@@ -110,17 +110,24 @@ export function SessionSidebar({
     setOpenMenuId(null);
   };
 
-  const handleEditSave = (sessionId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleEditSave = (sessionId: string) => {
     if (editTitle.trim() && onEditSession) {
       onEditSession(sessionId, editTitle.trim());
     }
     setEditingId(null);
   };
 
-  const handleEditCancel = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleEditCancel = () => {
     setEditingId(null);
+  };
+
+  const handleEditBlur = (sessionId: string) => {
+    // Cancel if empty, otherwise save
+    if (!editTitle.trim()) {
+      handleEditCancel();
+    } else {
+      handleEditSave(sessionId);
+    }
   };
 
   const handleDelete = (sessionId: string, e: React.MouseEvent) => {
@@ -267,34 +274,22 @@ export function SessionSidebar({
 
                   <div className="flex-1 min-w-0">
                     {isEditing ? (
-                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="text"
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              handleEditSave(session.sessionId, e as any);
-                            } else if (e.key === 'Escape') {
-                              handleEditCancel(e as any);
-                            }
-                          }}
-                          className="flex-1 bg-black/30 border border-cyan-500/30 rounded px-2 py-1 text-sm text-gray-200 focus:outline-none focus:border-cyan-500/50"
-                          autoFocus
-                        />
-                        <button
-                          onClick={(e) => handleEditSave(session.sessionId, e)}
-                          className="px-2 py-1 text-xs bg-cyan-500/20 hover:bg-cyan-500/30 rounded"
-                        >
-                          ✓
-                        </button>
-                        <button
-                          onClick={handleEditCancel}
-                          className="px-2 py-1 text-xs bg-red-500/20 hover:bg-red-500/30 rounded"
-                        >
-                          ✕
-                        </button>
-                      </div>
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        onBlur={() => handleEditBlur(session.sessionId)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleEditBlur(session.sessionId);
+                          } else if (e.key === 'Escape') {
+                            handleEditCancel();
+                          }
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full bg-black/30 border border-cyan-500/30 rounded px-2 py-1 text-sm text-gray-200 focus:outline-none focus:border-cyan-500/50"
+                        autoFocus
+                      />
                     ) : (
                       <>
                         <div className="flex items-center justify-between mb-1">
@@ -333,7 +328,7 @@ export function SessionSidebar({
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-white/10"
                           >
                             <Pencil className="w-4 h-4" />
-                            Edit name
+                            Rename
                           </button>
                         )}
                         {onDeleteSession && (

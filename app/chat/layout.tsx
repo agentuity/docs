@@ -104,12 +104,19 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
             title: newTitle
         };
 
+        // Optimistically update the session in the cache
+        const updatedPages = pages.map(page => ({
+            ...page,
+            sessions: page.sessions.map(s =>
+                s.sessionId === sessionIdToEdit ? updatedSession : s
+            )
+        }));
+
+        await swrMutate(updatedPages, { revalidate: false });
         const response = await sessionService.updateSession(updatedSession);
-        if (response.success && response.data) {
-            // Update the session in the cache
-            await mutate([response.data], { revalidate: false });
-        } else {
+        if (!response.success) {
             alert(`Failed to update session: ${response.error}`);
+            await swrMutate(undefined, { revalidate: true });
         }
     };
 
