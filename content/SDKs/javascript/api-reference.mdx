@@ -64,24 +64,24 @@ const handler: AgentHandler = async (request, response, context) => {
   // Use YAML/JSON data directly as objects
   const apiUrl = config.api.baseUrl;
   const userCount = userData.users.length;
-  
+
   // Use text data as strings
   const instructions = readme;
   const query = sqlQuery.replace('{{limit}}', '10');
-  
+
   // Use binary data (e.g., for object storage)
   await context.objectstore.put('assets', 'logo.png', logo, {
     contentType: 'image/png'
   });
-  
+
   await context.objectstore.put('assets', 'icon.svg', iconSvg, {
     contentType: 'image/svg+xml'
   });
-  
+
   // Process CSV data
   const csvLines = csvData.split('\n');
   const headers = csvLines[0].split(',');
-  
+
   return response.json({
     config: apiUrl,
     userCount,
@@ -170,10 +170,10 @@ const handler: AgentHandler = async (request, response, context) => {
   try {
     // Get the request data
     const { name } = await request.data.json();
-    
+
     // Log the request
     context.logger.info(`Received greeting request for ${name}`);
-    
+
     // Return a personalized greeting
     return response.json({
       message: `Hello, ${name}! Welcome to Agentuity.`
@@ -632,8 +632,8 @@ Returns a Promise that resolves to a public URL string that can be used to acces
 ```typescript
 // Create a public URL that expires in 1 hour
 const publicUrl = await context.objectstore.createPublicURL(
-  'user-uploads', 
-  'document.pdf', 
+  'user-uploads',
+  'document.pdf',
   3600000 // 1 hour in milliseconds
 );
 
@@ -645,15 +645,15 @@ const defaultUrl = await context.objectstore.createPublicURL('images', 'photo.jp
 
 // Create a URL with minimum expiration (1 minute)
 const shortUrl = await context.objectstore.createPublicURL(
-  'temp-files', 
-  'quick-access.txt', 
+  'temp-files',
+  'quick-access.txt',
   60000 // 1 minute in milliseconds
 );
 
 // Values less than 1 minute will be automatically set to 1 minute
 const autoMinUrl = await context.objectstore.createPublicURL(
-  'temp-files', 
-  'auto-min.txt', 
+  'temp-files',
+  'auto-min.txt',
   30000 // Will be set to 60000ms (1 minute)
 );
 ```
@@ -724,6 +724,7 @@ const handler: AgentHandler = async (request, response, context) => {
 
     // Pipe the LLM stream to our created stream
     await textStream.pipeTo(stream);
+    await stream.close();
   });
 
   // Return stream info immediately
@@ -869,32 +870,32 @@ curl -H "Range: bytes=2048-4095" "https://streams.agentuity.cloud/stream_abc1234
 ```typescript
 const handler: AgentHandler = async (request, response, context) => {
   const { action, streamId } = await request.data.json();
-  
+
   if (action === 'read-direct') {
     // Create or get an existing stream
     const stream = await context.stream.create('data-source', {
       contentType: 'text/plain',
       metadata: { type: 'data-processing', sourceId: streamId }
     });
-    
+
     // Use getReader() to get a direct reader from the stream
     const reader = stream.getReader();
     const chunks = [];
-    
+
     try {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         chunks.push(value);
       }
-      
+
       // Process collected data
       const data = new TextDecoder().decode(
         new Uint8Array(chunks.reduce((acc, chunk) => [...acc, ...chunk], []))
       );
-      
-      return response.json({ 
-        data, 
+
+      return response.json({
+        data,
         totalBytes: chunks.reduce((total, chunk) => total + chunk.length, 0),
         chunksReceived: chunks.length
       });
@@ -902,14 +903,14 @@ const handler: AgentHandler = async (request, response, context) => {
       reader.releaseLock();
     }
   }
-  
+
   if (action === 'stream-reader-response') {
     // Create a stream with some data
     const sourceStream = await context.stream.create('source-data', {
       contentType: 'application/json',
       metadata: { type: 'generated-data', requestId: context.sessionId }
     });
-    
+
     // Populate the stream with data in the background
     context.waitUntil(async () => {
       // Stream implements WritableStream, so we write directly to it
@@ -926,12 +927,12 @@ const handler: AgentHandler = async (request, response, context) => {
         await sourceStream.close();
       }
     });
-    
+
     // Return the stream reader directly as the response
     // This pipes the stream content directly to the client
     return response.stream(sourceStream.getReader());
   }
-  
+
   return response.json({ error: 'Invalid action. Use "read-direct" or "stream-reader-response"' });
 };
 ```
@@ -941,19 +942,19 @@ const handler: AgentHandler = async (request, response, context) => {
 ```typescript
 const handler: AgentHandler = async (request, response, context) => {
   const { sourceData } = await request.data.json();
-  
+
   // Create a source stream with input data
   const sourceStream = await context.stream.create('input-stream', {
     contentType: 'text/plain',
     metadata: { type: 'input-processing' }
   });
-  
+
   // Create a processing stream for transformed output
   const processedStream = await context.stream.create('processed-output', {
     contentType: 'text/plain',
     metadata: { type: 'processed-data', transformation: 'uppercase' }
   });
-  
+
   context.waitUntil(async () => {
     // Write source data to the input stream
     try {
@@ -961,21 +962,21 @@ const handler: AgentHandler = async (request, response, context) => {
     } finally {
       await sourceStream.close();
     }
-    
+
     // Read from source stream and write processed data to output stream
     const reader = sourceStream.getReader();
     // Note: processedStream is written to directly, no writer needed
-    
+
     try {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
+
         // Transform the data (convert to uppercase)
         const text = new TextDecoder().decode(value);
         const processedText = text.toUpperCase();
         const processedBuffer = new TextEncoder().encode(processedText);
-        
+
         await processedStream.write(processedBuffer);
       }
     } finally {
@@ -983,7 +984,7 @@ const handler: AgentHandler = async (request, response, context) => {
       await processedStream.close();
     }
   });
-  
+
   // Return the processed stream reader as the response
   return response.stream(processedStream.getReader());
 };
@@ -1011,6 +1012,7 @@ const handler: AgentHandler = async (request, response, context) => {
       prompt
     });
     await textStream.pipeTo(stream);
+    await stream.close();
   });
 
   // Return the stream directly - client will be redirected to stream URL
@@ -1043,7 +1045,7 @@ Returns a Promise that resolves to a `RemoteAgent` object that can be used to in
 const agent = await context.getAgent({ id: 'agent-123' });
 
 // Get an agent by name
-const agent2 = await context.getAgent({ 
+const agent2 = await context.getAgent({
   name: 'data-processing-agent',
   projectId: 'project-456'
 });
@@ -1147,7 +1149,7 @@ export default async function Agent(
 ) {
   // Stream from another source
   const dataStream = getDataStream();
-  
+
   return resp.stream(dataStream);
 }
 ```
@@ -1195,12 +1197,12 @@ export default async function Agent(
   ctx: AgentContext,
 ) {
   const dataStream = getUserStream();
-  
+
   // Transform and filter items
   const transformer = (user: any) => {
     // Filter out inactive users (return null to skip)
     if (!user.active) return null;
-    
+
     // Transform the user object
     return {
       id: user.id,
@@ -1224,7 +1226,7 @@ export default async function Agent(
   ctx: AgentContext,
 ) {
   const batchStream = getBatchStream();
-  
+
   // Generator that can yield multiple items or filter
   function* transformer(batch: any) {
     if (batch.type === 'user_batch') {
@@ -1256,13 +1258,13 @@ export default async function Agent(
   ctx: AgentContext,
 ) {
   const dataStream = getDataStream();
-  
+
   const transformer = (item: any) => {
     // Validate item before transformation
     if (!item || typeof item !== 'object') {
       throw new Error(`Invalid item: ${JSON.stringify(item)}`);
     }
-    
+
     return { ...item, validated: true };
   };
 
@@ -1299,7 +1301,7 @@ Returns an `AgentResponseType` object with the JSON data.
 **Example**
 
 ```typescript
-return response.json({ 
+return response.json({
   message: 'Success',
   data: { id: 123, name: 'Example' }
 });
@@ -1798,13 +1800,13 @@ Returns a `Promise<void>` that resolves when the reply is sent successfully.
 ```typescript
 async function handler(request, response, context) {
     const email = await request.data.email();
-    
+
     const attachment = {
         filename: "response.pdf",
         data: pdfData,
         contentDisposition: "attachment"
     };
-    
+
     await email.sendReply(request, context, {
         subject: "Re: Your inquiry",
         text: "Thank you for contacting us. We'll get back to you soon.",
@@ -1814,10 +1816,10 @@ async function handler(request, response, context) {
         name: "Support Team",
         email: "support@yourcompany.com"
     });
-    
+
     context.logger.info("Reply sent successfully");
-    
-    return response.json({ 
+
+    return response.json({
         status: "Reply sent successfully"
     });
 }
@@ -1865,18 +1867,18 @@ Asynchronously retrieves the attachment data as a Data object. For large attachm
 ```typescript
 async function handler(request, response, context) {
     const email = await request.data.email();
-    
+
     for (const attachment of email.attachments()) {
         context.logger.debug(`Processing: ${attachment.filename}`);
         context.logger.debug(`Disposition: ${attachment.contentDisposition}`);
-        
+
         const data = await attachment.data();
         const buffer = await data.buffer();
-        
+
         context.logger.debug(`Size: ${buffer.length} bytes`);
         context.logger.debug(`Content-Type: ${data.contentType}`);
     }
-    
+
     return response.json({ message: "Attachments processed" });
 }
 ```
@@ -2085,13 +2087,13 @@ context.tracer.startActiveSpan('process-data', async (span) => {
   try {
     // Add attributes to the span
     span.setAttribute('userId', '123');
-    
+
     // Perform some work
     const result = await processData();
-    
+
     // Add events to the span
     span.addEvent('data-processed', { itemCount: result.length });
-    
+
     return result;
   } catch (error) {
     // Record the error
@@ -2138,4 +2140,3 @@ This change affects all methods on the `Data` interface:
 ### `/run/:id` Route
 
 The `/run/:id` route is now deprecated as it provides the same functionality as `/:id`. Applications should update their code to use the `/:id` route instead.
-

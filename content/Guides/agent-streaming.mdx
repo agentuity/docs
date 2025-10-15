@@ -127,12 +127,12 @@ export default async function Agent(
 ) {
   // Get stream from another source
   const dataStream = getDataStream();
-  
+
   // Transform and filter items
   const transformer = (item: any) => {
     // Filter out items (return null/undefined to skip)
     if (!item.active) return null;
-    
+
     // Transform the item
     return {
       id: item.id,
@@ -225,6 +225,7 @@ export default async function Agent(
 
     // Pipe the LLM stream to our created stream
     await textStream.pipeTo(stream);
+    await stream.close();
   });
 
   // Return stream information immediately
@@ -383,6 +384,7 @@ export default async function Agent(
       prompt
     });
     await textStream.pipeTo(stream);
+    await stream.close();
   });
 
   // Return the stream directly - client gets redirected to stream URL
@@ -408,4 +410,3 @@ export default async function Agent(
 - Blog Post: [Agents just want to have streams](https://agentuity.com/blog/agent-streaming)
 - SDK Examples: [JavaScript](/SDKs/javascript/examples#openai-streaming-example) · [Python](/SDKs/python/examples#streaming-responses-from-openai)
 - Streaming Video Demo: [Watch on YouTube](https://youtu.be/HN_ElBfsWtE)
-

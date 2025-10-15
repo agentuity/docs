@@ -18,10 +18,10 @@ const handler: AgentHandler = async (request, response, context) => {
     // Get the request data
     const data = await request.data.json();
     const name = data.name || 'Guest';
-    
+
     // Log the request
     context.logger.info(`Received greeting request for ${name}`);
-    
+
     // Return a personalized greeting
     return response.json({
       message: `Hello, ${name}! Welcome to Agentuity.`,
@@ -30,7 +30,7 @@ const handler: AgentHandler = async (request, response, context) => {
   } catch (error) {
     // Handle errors
     context.logger.error('Error processing request', error);
-    return response.json({ 
+    return response.json({
       error: 'Failed to process request',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -49,41 +49,41 @@ import { AgentHandler } from '@agentuity/sdk';
 
 const handler: AgentHandler = async (request, response, context) => {
   const { action, userId, preferences } = await request.data.json();
-  
+
   switch (action) {
     case 'get': {
       // Retrieve user preferences
       const result = await context.kv.get('user-preferences', userId);
-      
+
       if (!result.exists) {
         return response.json({ message: 'No preferences found' });
       }
-      
+
       // Access data using the Data interface
       const userPrefs = await result.data.json();
-      
+
       return response.json({ preferences: userPrefs });
     }
-    
+
     case 'set': {
       // Store user preferences
       await context.kv.set(
-        'user-preferences', 
-        userId, 
+        'user-preferences',
+        userId,
         JSON.stringify(preferences),
         // Optional TTL (30 days in seconds)
         60 * 60 * 24 * 30
       );
-      
+
       return response.json({ message: 'Preferences saved successfully' });
     }
-    
+
     case 'delete': {
       // Delete user preferences
       await context.kv.delete('user-preferences', userId);
       return response.json({ message: 'Preferences deleted successfully' });
     }
-    
+
     default:
       return response.json({ error: 'Invalid action' });
   }
@@ -101,19 +101,19 @@ import { AgentHandler } from '@agentuity/sdk';
 
 const handler: AgentHandler = async (request, response, context) => {
   const { action, query, products } = await request.data.json();
-  
+
   switch (action) {
     case 'index': {
       // Index products in vector storage
       if (!Array.isArray(products) || products.length === 0) {
         return response.json({ error: 'No products to index' });
       }
-      
+
       // Validate that all products have IDs
       if (products.some(p => !p.id)) {
         return response.json({ error: 'All products must have a non-empty id' });
       }
-      
+
       // Prepare documents for vector storage with string normalization
       const documents = products.map(product => ({
         key: String(product.id),
@@ -125,29 +125,29 @@ const handler: AgentHandler = async (request, response, context) => {
           category: product.category
         }
       }));
-      
+
       // Store in vector database
       const ids = await context.vector.upsert('products', ...documents);
-      
-      return response.json({ 
+
+      return response.json({
         message: `Indexed ${ids.length} products successfully`,
         ids
       });
     }
-    
+
     case 'search': {
       // Search for products
       if (!query) {
         return response.json({ error: 'Query is required' });
       }
-      
+
       // Search vector storage
       const results = await context.vector.search('products', {
         query,
         limit: 5,
         similarity: 0.7
       });
-      
+
       // Format results with id, key, and similarity
       const formattedResults = results.map(result => ({
         id: result.id,
@@ -155,29 +155,29 @@ const handler: AgentHandler = async (request, response, context) => {
         ...result.metadata,
         similarity: result.similarity
       }));
-      
-      return response.json({ 
+
+      return response.json({
         results: formattedResults,
         count: formattedResults.length
       });
     }
-    
+
     case 'delete': {
       // Delete products from vector storage
       if (!products || !Array.isArray(products) || products.length === 0) {
         return response.json({ error: 'No product IDs to delete' });
       }
-      
+
       // Support both single and bulk deletion
       const productIds = products.map(p => p.id || p);
       const count = await context.vector.delete('products', ...productIds);
-      
-      return response.json({ 
+
+      return response.json({
         message: `Deleted ${count} product(s) successfully`,
         deletedCount: count
       });
     }
-    
+
     default:
       return response.json({ error: 'Invalid action' });
   }
@@ -195,43 +195,43 @@ import { AgentHandler } from '@agentuity/sdk';
 
 const handler: AgentHandler = async (request, response, context) => {
   const { task, data } = await request.data.json();
-  
+
   // Log the incoming request
   context.logger.info(`Received task: ${task}`);
-  
+
   switch (task) {
     case 'process-data': {
       // Get a reference to the data processing agent
-      const processingAgent = await context.getAgent({ 
+      const processingAgent = await context.getAgent({
         name: 'data-processor'
       });
-      
+
       // Invoke the data processing agent
       const processingResult = await processingAgent.run(
         { data },
         'application/json'
       );
-      
+
       // Get a reference to the notification agent
       const notificationAgent = await context.getAgent({
         name: 'notification-sender'
       });
-      
+
       // Invoke the notification agent with the processing result
       await notificationAgent.run(
-        { 
+        {
           message: 'Data processing completed',
           result: processingResult
         },
         'application/json'
       );
-      
-      return response.json({ 
+
+      return response.json({
         message: 'Task orchestrated successfully',
         processingResult
       });
     }
-    
+
     case 'handoff': {
       // Handoff to another agent
       return response.handoff(
@@ -241,7 +241,7 @@ const handler: AgentHandler = async (request, response, context) => {
         { source: 'orchestrator' }
       );
     }
-    
+
     default:
       return response.json({ error: 'Unknown task' });
   }
@@ -276,23 +276,23 @@ const handler: AgentHandler = async (request, response, context) => {
   try {
     // Get the request data
     const data = await request.data.json();
-    
+
     // Validate the request
     if (!data.resourceId) {
       throw new ValidationError('resourceId is required');
     }
-    
+
     // Log the request
     context.logger.info(`Processing resource: ${data.resourceId}`);
-    
+
     // Simulate resource lookup
     const resource = await lookupResource(data.resourceId, context);
-    
+
     // Process the resource
     const result = await processResource(resource, context);
-    
+
     // Return the result
-    return response.json({ 
+    return response.json({
       message: 'Resource processed successfully',
       result
     });
@@ -300,23 +300,23 @@ const handler: AgentHandler = async (request, response, context) => {
     // Handle different types of errors
     if (error instanceof ValidationError) {
       context.logger.warn(`Validation error: ${error.message}`);
-      return response.json({ 
+      return response.json({
         error: 'Validation error',
         message: error.message
       });
     }
-    
+
     if (error instanceof ResourceNotFoundError) {
       context.logger.warn(`Resource not found: ${error.message}`);
-      return response.json({ 
+      return response.json({
         error: 'Resource not found',
         message: error.message
       });
     }
-    
+
     // Handle unexpected errors
     context.logger.error('Unexpected error', error);
-    return response.json({ 
+    return response.json({
       error: 'Internal server error',
       message: 'An unexpected error occurred'
     });
@@ -327,20 +327,20 @@ const handler: AgentHandler = async (request, response, context) => {
 async function lookupResource(resourceId: string, context: any) {
   // Simulate resource lookup
   const result = await context.kv.get('resources', resourceId);
-  
+
   if (!result.exists) {
     throw new ResourceNotFoundError(resourceId);
   }
-  
+
   return await result.data.json();
 }
 
 async function processResource(resource: any, context: any) {
   // Simulate resource processing
   context.logger.debug('Processing resource', resource);
-  
+
   // Add processing logic here
-  
+
   return {
     id: resource.id,
     status: 'processed',
@@ -364,11 +364,11 @@ const handler: AgentHandler = async (request, response, context) => {
     try {
       // Add attributes to the span
       span.setAttribute('trigger', request.trigger());
-      
+
       // Get the request data
       const data = await request.data.json();
       span.setAttribute('data.type', typeof data);
-      
+
       // Create a child span for data processing
       return await context.tracer.startActiveSpan('process-data', async (childSpan) => {
         try {
@@ -376,19 +376,19 @@ const handler: AgentHandler = async (request, response, context) => {
           childSpan.addEvent('processing-started', {
             timestamp: Date.now()
           });
-          
+
           // Simulate data processing
           const result = await processData(data, context);
-          
+
           // Add event to the span
           childSpan.addEvent('processing-completed', {
             timestamp: Date.now(),
             resultSize: JSON.stringify(result).length
           });
-          
+
           // Set span status
           childSpan.setStatus({ code: SpanStatusCode.OK });
-          
+
           return response.json(result);
         } catch (error) {
           // Record exception in the span
@@ -397,7 +397,7 @@ const handler: AgentHandler = async (request, response, context) => {
             code: SpanStatusCode.ERROR,
             message: (error as Error).message
           });
-          
+
           throw error;
         }
       });
@@ -408,10 +408,10 @@ const handler: AgentHandler = async (request, response, context) => {
         code: SpanStatusCode.ERROR,
         message: (error as Error).message
       });
-      
+
       // Log the error
       context.logger.error('Error processing request', error);
-      
+
       // Return error response
       return response.json({
         error: 'Failed to process request',
@@ -424,7 +424,7 @@ const handler: AgentHandler = async (request, response, context) => {
 async function processData(data: any, context: any) {
   // Simulate data processing
   await new Promise(resolve => setTimeout(resolve, 100));
-  
+
   return {
     processed: true,
     input: data,
@@ -445,11 +445,11 @@ import { openai } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 
 const handler: AgentHandler = async (request, response, context) => {
-  const { 
-    action, 
-    prompt, 
-    userId, 
-    includeAnalytics = true 
+  const {
+    action,
+    prompt,
+    userId,
+    includeAnalytics = true
   } = await request.data.json();
 
   if (action === 'stream-with-background') {
@@ -472,6 +472,7 @@ const handler: AgentHandler = async (request, response, context) => {
       });
 
       await textStream.pipeTo(stream);
+      await stream.close();
     });
 
     // Background task for analytics (doesn't block response)
@@ -504,9 +505,9 @@ const handler: AgentHandler = async (request, response, context) => {
     // Create a progress stream for multi-step processing
     const progressStream = await context.stream.create('progress', {
       contentType: 'application/json',
-      metadata: { 
+      metadata: {
         type: 'multi-step-progress',
-        userId 
+        userId
       }
     });
 
@@ -521,7 +522,7 @@ const handler: AgentHandler = async (request, response, context) => {
 
         for (let i = 0; i < steps.length; i++) {
           const step = steps[i];
-          
+
           // Write progress update
           await progressStream.write(JSON.stringify({
             step: i + 1,
@@ -570,7 +571,7 @@ const handler: AgentHandler = async (request, response, context) => {
         model: openai('gpt-4o'),
         prompt: prompt || 'Write a haiku about programming'
       });
-      
+
       await textStream.pipeTo(stream);
     });
 
@@ -578,8 +579,8 @@ const handler: AgentHandler = async (request, response, context) => {
     return stream;
   }
 
-  return response.json({ 
-    error: 'Invalid action. Use "stream-with-background", "multi-step-stream", or "direct-stream-response"' 
+  return response.json({
+    error: 'Invalid action. Use "stream-with-background", "multi-step-stream", or "direct-stream-response"'
   });
 };
 
@@ -642,10 +643,10 @@ const handler: AgentHandler = async (request, response, context) => {
 
   if (action === 'get-prompt') {
     const { promptType } = await request.data.json();
-    
+
     // Use parsed JSON data
     const prompt = prompts[promptType] || prompts.default;
-    
+
     return response.json({
       prompt: prompt.text,
       temperature: prompt.temperature,
@@ -707,7 +708,7 @@ const handler: AgentHandler = async (request, response, context) => {
     // Use SQL query with parameter substitution
     const { limit = 10 } = await request.data.json();
     const query = sqlQuery.replace('{{limit}}', limit.toString());
-    
+
     // In a real implementation, you would execute the SQL query
     context.logger.info(`Would execute SQL: ${query}`);
 
