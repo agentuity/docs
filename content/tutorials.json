@@ -40,22 +40,6 @@
             "path": "Training/developers/05-observability-guardrails-evals.mdx",
             "difficulty": "intermediate",
             "estimatedTime": "25 minutes"
-        },
-        {
-            "id": "06-deployment-environments",
-            "title": "Module 6: Deployment Environments",
-            "description": "From local development to global production",
-            "path": "Training/developers/06-deployment-environments.mdx",
-            "difficulty": "intermediate",
-            "estimatedTime": "20 minutes"
-        },
-        {
-            "id": "07-sandbox-capstone",
-            "title": "Module 7: Advanced Multi-Agent Research System",
-            "description": "Building sophisticated agent coordination with recursive research",
-            "path": "Training/developers/07-sandbox-capstone.mdx",
-            "difficulty": "advanced",
-            "estimatedTime": "45 minutes"
         }
     ]
 }

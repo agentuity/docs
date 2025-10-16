@@ -70,6 +70,15 @@ Build an advanced multi-agent research system that demonstrates mastery of sophi
 
 ### System Architecture
 
+The research system coordinates four specialized agents working together:
+
+| Agent | Role |
+|-------|------|
+| **Orchestrator** | Workflow coordination and error handling |
+| **Researcher** | Recursive research with learning accumulation |
+| **Web Search** | Intelligent search with AI-powered relevance filtering |
+| **Author** | Report synthesis and markdown generation |
+
 <Mermaid chart="
 graph TD
     User[Research Request] --> Orchestrator[Research Orchestrator]
@@ -97,111 +106,188 @@ This sophisticated system builds on concepts from every previous module:
 | **Module 5** | Validation → Research quality assurance |
 | **Module 6** | Deployment → Production research system |
 
+<Callout type="info">
+The code examples below demonstrate key patterns from the Deep Research system. They're simplified to highlight core concepts. For complete implementations with all helper functions, schemas, and error handling, see the [full GitHub example](#build-this-project-yourself).
+</Callout>
+
 ### Key Implementation: Research Orchestration
 
-The orchestrator coordinates the entire research workflow:
+The orchestrator is the system's entry point. It receives research requests with configurable depth and breadth parameters, then coordinates the researcher and author agents sequentially using the run-and-wait pattern from Module 4.
 
-<CodeExample py={`# Python - Research orchestration with structured planning
-research_plan = await generate_research_plan(query)
+<CodeExample py={`# Python - Orchestrator coordinates multi-agent workflow
+request = DeepResearchSchema.parse(await req.data.json())
+query, depth, breadth = request["query"], request.get("depth", 2), request.get("breadth", 3)
 
-# Coordinate multi-step research workflow
-researcher = await context.get_agent(name="deep-researcher")
-research_result = await researcher.run({
-    "query": query,
-    "plan": research_plan,
-    "max_depth": 3
-})
+try:
+    # Step 1: Deep research via researcher agent
+    researcher = await ctx.get_agent({"name": "researcher"})
+    research_results = await researcher.run({
+        "data": {"query": query, "depth": depth, "breadth": breadth}
+    })
+    research = ResearchSchema.parse(await research_results.data.json())
 
-return await research_result.data.json()`} js={`// TypeScript - Research orchestration with structured planning
-const researchPlan = await generateObject({
-  model: anthropic('claude-3-5-sonnet-20241022'),
-  schema: ResearchPlanSchema,
-  prompt: \`Create a research plan for: "\${query}"\`
-});
+    # Step 2: Generate report via author agent
+    author = await ctx.get_agent({"name": "author"})
+    report = await (await author.run({"data": research})).data.text()
 
-// Coordinate multi-step research workflow
-const researcher = await context.getAgent({ name: 'deep-researcher' });
-const researchResult = await researcher.run({
-  data: JSON.stringify({
-    query,
-    plan: researchPlan.object,
-    maxDepth: 3
-  }),
-  contentType: 'application/json'
-});`} />
+    return resp.markdown(report)
+except Exception as error:
+    return resp.text(f"Failed to generate report: {error}", {"status": 500})`} js={`// TypeScript - Orchestrator coordinates multi-agent workflow
+const { query, depth = 2, breadth = 3, maxResults = 20 } =
+  DeepResearchSchema.parse(await req.data.json());
+
+try {
+  // Step 1: Deep research via researcher agent
+  const researcher = await ctx.getAgent({ name: "researcher" });
+  const researchResults = await researcher.run({
+    data: { query, depth, breadth, maxResults }
+  });
+  const research = ResearchSchema.parse(await researchResults.data.json());
+
+  // Step 2: Generate report via author agent
+  const author = await ctx.getAgent({ name: "author" });
+  const agentResult = await author.run({ data: research });
+  const report = await agentResult.data.text();
+
+  return resp.markdown(report);
+} catch (error) {
+  return resp.text(\`Failed to generate report: \${error}\`, { status: 500 });
+}`} />
+
+Notice that the orchestrator manages the workflow *without knowing implementation details* of the researcher or author agents.
 
 ### Key Implementation: Recursive Research Pattern
 
-The researcher agent conducts deep, iterative research:
+The researcher implements *recursive research* with controlled depth and breadth. It generates multiple search queries at each level, extracts learnings from results, and recursively explores follow-up questions - with breadth reducing by half each level to prevent exponential growth.
 
-<CodeExample py={`# Python - Recursive research with learning accumulation
-async def conduct_research(query: str, accumulated_knowledge: list, depth: int, context: AgentContext):
-    if depth >= MAX_DEPTH or sufficient_information(accumulated_knowledge):
-        return accumulated_knowledge
+<CodeExample py={`# Python - Recursive research with depth/breadth control
+async def deep_research(prompt, web_search_agent, accumulated, depth=2, breadth=3):
+    # Base cases: stop when depth exhausted or max results reached
+    if depth == 0 or len(accumulated["searchResults"]) >= 20:
+        return accumulated
 
-    # Conduct research iteration
-    new_findings = await search_and_analyze(query, context)
-    accumulated_knowledge.extend(new_findings)
+    # Generate multiple search queries (breadth-first)
+    queries = await generate_search_queries(prompt, breadth)
 
-    # Generate follow-up questions based on findings
-    follow_up_queries = await generate_follow_ups(accumulated_knowledge)
+    for query in queries:
+        # Execute web search via agent
+        results = await research_web(query, web_search_agent, accumulated)
+        accumulated["searchResults"].extend(results)
 
-    # Recursive calls for deeper research
-    for follow_up in follow_up_queries:
-        deeper_knowledge = await conduct_research(
-            follow_up, accumulated_knowledge, depth + 1, context
-        )
-        accumulated_knowledge.extend(deeper_knowledge)
+        # Extract learnings and generate follow-up questions
+        for result in results:
+            learnings = await generate_learnings(query, result)
+            accumulated["learnings"].append(learnings)
 
-    return accumulated_knowledge`} js={`// TypeScript - Recursive research with learning accumulation
-const conductResearch = async (
-  query: string,
-  accumulatedKnowledge: ResearchFinding[],
-  depth: number,
-  context: AgentContext
+            # Recurse with refined query and reduced breadth
+            refined_query = build_reflection_prompt(prompt, query, learnings)
+            await deep_research(
+                refined_query, web_search_agent, accumulated,
+                depth - 1, math.ceil(breadth / 2)
+            )
+
+    return accumulated`} js={`// TypeScript - Recursive research with depth/breadth control
+const deepResearch = async (
+  prompt: string,
+  webSearchAgent: RemoteAgent,
+  accumulated: Research,
+  depth = 2,
+  breadth = 3
 ) => {
-  if (depth >= MAX_DEPTH || sufficientInformation(accumulatedKnowledge)) {
-    return accumulatedKnowledge;
+  // Base cases: stop when depth exhausted or max results reached
+  if (depth === 0 || accumulated.searchResults.length >= 20) {
+    return accumulated;
   }
 
-  // Conduct research iteration
-  const newFindings = await searchAndAnalyze(query, context);
-  accumulatedKnowledge.push(...newFindings);
+  // Generate multiple search queries (breadth-first)
+  const queries = await generateSearchQueries(prompt, breadth);
 
-  // Generate follow-up questions based on findings
-  const followUpQueries = await generateFollowUps(accumulatedKnowledge);
+  for (const query of queries) {
+    // Execute web search via agent
+    const results = await researchWeb(query, webSearchAgent, accumulated);
+    accumulated.searchResults.push(...results);
 
-  // Recursive calls for deeper research
-  for (const followUp of followUpQueries) {
-    const deeperKnowledge = await conductResearch(
-      followUp, accumulatedKnowledge, depth + 1, context
-    );
-    accumulatedKnowledge.push(...deeperKnowledge);
+    // Extract learnings and generate follow-up questions
+    for (const result of results) {
+      const learnings = await generateLearnings(query, result);
+      accumulated.learnings.push(learnings);
+
+      // Recurse with refined query and reduced breadth
+      const refinedQuery = buildReflectionPrompt(prompt, query, learnings);
+      await deepResearch(
+        refinedQuery, webSearchAgent, accumulated,
+        depth - 1, Math.ceil(breadth / 2)
+      );
+    }
   }
 
-  return accumulatedKnowledge;
+  return accumulated;
 };`} />
 
-### Key Implementation: Smart Caching Strategies
+Notice how the base cases prevent runaway recursion (depth limit and max results), while the reflection prompt refines queries based on accumulated learnings for deeper investigation.
 
-Different caching approaches based on research depth and complexity:
+### Key Implementation: Web Search with Evaluation
 
-<CodeExample py={`# Python - Smart caching strategies for research data
-# Different TTL strategies based on research type
-if research_type == 'comprehensive':
-    # Complex research - longer cache (1 hour)
-    await context.kv.set('research', cache_key, results, {'ttl': 3600})
-else:
-    # Quick research - shorter cache (15 minutes) for responsiveness
-    await context.kv.set('research', cache_key, results, {'ttl': 900})`} js={`// TypeScript - Smart caching strategies for research data
-// Different TTL strategies based on research type
-if (researchType === 'comprehensive') {
-  // Complex research - longer cache (1 hour)
-  await context.kv.set('research', cacheKey, results, { ttl: 3600 });
-} else {
-  // Quick research - shorter cache (15 minutes) for responsiveness
-  await context.kv.set('research', cacheKey, results, { ttl: 900 });
-}`} />
+The web search agent integrates the [Exa API](https://docs.exa.ai/reference/getting-started) for web search, then uses AI to evaluate each result's relevance to the query. This filtering ensures only high-quality, non-duplicate sources accumulate across recursive research calls.
+
+<CodeExample py={`# Python - Web search with AI evaluation
+exa = Exa(os.getenv("EXA_API_KEY"))
+{ query, accumulatedSources } = SearchProcessParametersSchema.parse(await req.data.json())
+
+existing_urls = [s["url"] for s in accumulatedSources]
+relevant_results = []
+
+# Fetch raw search results
+raw_results = await exa.search_and_contents(query, num_results=5, livecrawl="always")
+
+# Filter and evaluate each result
+for result in raw_results:
+    # Skip duplicates and low-quality content
+    if result.url in existing_urls or len(result.content) < 50:
+        continue
+
+    # Use AI to evaluate relevance to query
+    if await ai_evaluate_relevance(query, result, existing_urls):
+        relevant_results.append(result)
+        existing_urls.append(result.url)
+
+        if len(relevant_results) >= 3:  # Limit per query
+            break
+
+return resp.json({"searchResults": relevant_results})`} js={`// TypeScript - Web search with AI evaluation
+const exa = new Exa(process.env.EXA_API_KEY!);
+const { query, accumulatedSources } = SearchProcessParametersSchema.parse(
+  await req.data.json()
+);
+
+const existingUrls = accumulatedSources.map(s => s.url);
+const relevantResults: SearchResult[] = [];
+
+// Fetch raw search results
+const { results } = await exa.searchAndContents(query, {
+  numResults: 5,
+  livecrawl: "always"
+});
+
+// Filter and evaluate each result
+for (const result of results) {
+  // Skip duplicates and low-quality content
+  if (existingUrls.includes(result.url) || result.content.length < 50) {
+    continue;
+  }
+
+  // Use AI to evaluate relevance to query
+  if (await aiEvaluateRelevance(query, result, existingUrls)) {
+    relevantResults.push(result);
+    existingUrls.push(result.url);
+
+    if (relevantResults.length >= 3) break; // Limit per query
+  }
+}
+
+return resp.json({ searchResults: relevantResults });`} />
+
+The combination of quick filters (duplicate URLs, content length) and AI evaluation balances quality with performance - only 3 relevant results per query prevents overwhelming the researcher with information.
 
 ### Build This Project Yourself
 
@@ -221,13 +307,14 @@ Ready to implement this project? Follow our complete examples:
 
 ### What This System Demonstrates
 
-- **Advanced multi-agent orchestration**: Coordinated workflow between specialized research agents
-- **Recursive algorithms**: Self-improving research with learning accumulation across iterations
-- **External API integration**: Real-world web search with intelligent filtering and relevance evaluation
-- **State accumulation**: Complex memory management and knowledge aggregation
-- **Production patterns**: Error handling, rate limiting, comprehensive observability
+- **Multi-agent orchestration**: Coordinated workflow between orchestrator, researcher, author, and web search agents
+- **Recursive algorithms**: Deep research with learning accumulation and follow-up question generation
+- **External API integration**: Exa web search API with AI-powered relevance evaluation
+- **State accumulation**: Research results, learnings, and queries accumulated across recursive calls
+- **Structured AI responses**: Zod schemas for search queries, learnings, and research data validation
+- **Production patterns**: Error handling, agent validation, comprehensive logging, and markdown report generation
 
-The complete examples show how to build sophisticated research systems that demonstrate mastery of advanced agent concepts.
+The complete example shows how to build sophisticated multi-agent research systems that demonstrate mastery of advanced agent concepts from Modules 1-6.
 
 ## Testing Your Deep Research System
 

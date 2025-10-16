@@ -1,9 +1,9 @@
 ---
 title: "Module 2: The Anatomy of an Agent"
-description: Understanding how agents work - planning, reasoning, tools, and memory
+description: Understanding the core components that make agents work - triggers, requests, logging, and storage
 ---
 
-Now that you've built your first agent, let's dive deeper to understand what makes agents tick. We'll explore the core components that transform a simple script into an autonomous, intelligent system.
+Now that you've built your first agent, let's dive deeper to understand what makes agents tick. In this module, you'll learn the fundamental building blocks every agent shares, then see them combined in a real-world weather agent.
 
 ## The Agent Lifecycle
 
@@ -19,9 +19,45 @@ graph TD
     F --> G[Return to Caller<br/>Client receives result]
 " />
 
-Let's explore each phase:
+Agents follow this lifecycle regardless of complexity—from simple greeting agents to more complex multi-step (or multi-agent) solutions. Let's explore each phase to understand what makes this lifecycle powerful.
 
-### 1. Trigger Events
+## Planning and Reasoning: The Agent's Brain
+
+What separates agents from simple scripts is their ability to plan and reason. While Agentuity provides the infrastructure (triggers, storage, logging), you implement the logic to make your agent(s) do something useful.
+
+### The Planning Phase
+
+Planning is how agents break down complex requests into actionable steps. According to [OpenAI's practical guide to building agents](https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf), providing smaller, clearer steps from dense resources helps minimize ambiguity and helps the model better follow instructions.
+
+Effective agent planning involves:
+
+1. **Intent Recognition**: Understanding what the user actually wants
+2. **Task Decomposition**: Breaking complex requests into smaller steps
+3. **Resource Assessment**: Determining what tools and data are needed
+4. **Execution Strategy**: Deciding the order and approach for each step
+
+As a result, agents use LLMs to adapt their approach based on context and available resources, rather than use hard-coded logic (i.e. decision trees).
+
+### The Reasoning Loop
+
+The reasoning loop is where agents continuously evaluate and adapt their approach. [Stanford's research on ReAct agents](https://arxiv.org/abs/2210.03629) shows that combining reasoning and acting in iterative loops significantly improves agent performance.
+
+The basic pattern follows:
+1. **Observe** - Analyze current state and available information
+2. **Think** - Reason about the best next action
+3. **Act** - Execute the chosen action
+4. **Reflect** - Evaluate the results and learn
+5. **Repeat** - Continue until goal is achieved or constraints are met
+
+This iterative approach allows agents to handle uncertainty and recover from errors—key capabilities that distinguish agents from simple scripts.
+
+You'll implement these patterns in a basic way, using the anatomy concepts you'll learn next: triggers to determine when to start, logging to track decisions, storage to maintain state, and responses to deliver results.
+
+## Core Components of Agent Anatomy
+
+Now that you understand the theory, let's dive into the practical components. Every agent is built from the same fundamental building blocks:
+
+### 1. Triggers
 
 Agents spring into action when triggered. Agentuity supports multiple trigger types:
 
@@ -29,602 +65,259 @@ Agents spring into action when triggered. Agentuity supports multiple trigger ty
 |-------------|-------------|----------|
 | **webhook** | HTTP endpoint call | REST APIs, external integrations |
 | **cron** | Scheduled execution | Batch processing, periodic tasks |
-| **manual** | Console/CLI invocation | Testing, one-off tasks |
+| **manual** | DevMode/CLI invocation | Testing, one-off tasks |
 | **agent** | Called by another agent | Multi-agent workflows |
 | **sms** | SMS message received | Text-based interactions |
 | **email** | Email received | Email automation |
 | **queue** | Message queue event | Async processing |
 
-Each trigger provides different metadata and context:
+But these triggers are not mutually exclusive. Agents on Agentuity can be triggered *by multiple triggers*, and can behave differently based on the trigger.
 
-<CodeExample py={`from datetime import datetime
-from agentuity import AgentRequest, AgentResponse, AgentContext
+For example, a weather agent might use the following triggers:
+- **Webhook**: Return weather for a user-requested location
+- **Cron**: Update cached weather data for monitoring dashboards
+- **Manual**: Test behavior (locally, via DevMode) during development
 
-async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    # Identify the trigger type
-    trigger = request.trigger
+### 2. Request and Response
 
-    if trigger == "webhook":
-        # Handle HTTP request
-        data = await request.data.json()
-        context.logger.info(f"Webhook triggered with data: {data}")
+Every agent receives a **request** containing data and metadata, and must return a **response**.
 
-    elif trigger == "cron":
-        # Handle scheduled execution
-        context.logger.info(f"Cron job running at {datetime.now()}")
-        # No input data for cron triggers
+**Request Data Formats:**
+- `request.data.json()` - Parse JSON data
+- `request.data.text()` - Get plain text
+- `request.data.binary()` - Get binary data
+- `request.data.email()`, `request.data.pdf()`, etc. - Specialized formats
+- *(and many more...)*
 
-    elif trigger == "agent":
-        # Handle agent-to-agent call
-        calling_agent = request.metadata.get("source_agent")
-        context.logger.info(f"Called by agent: {calling_agent}")
+**Request Metadata:**
+- `request.metadata` - Property returning the full metadata dict/object
+- `request.get(key, default)` - Convenience method for accessing metadata values
+- `request.trigger` - Property identifying how the agent was invoked
 
-    return response.json({
-        "trigger_type": trigger,
-        "processed_at": datetime.now().isoformat()
-    })`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
-
-export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
-  // Identify the trigger type
-  const trigger = request.trigger;
-
-  if (trigger === 'webhook') {
-    // Handle HTTP request
-    const data = await request.data.json();
-    context.logger.info(\`Webhook triggered with data: \${JSON.stringify(data)}\`);
-
-  } else if (trigger === 'cron') {
-    // Handle scheduled execution
-    context.logger.info(\`Cron job running at \${new Date().toISOString()}\`);
-    // No input data for cron triggers
-
-  } else if (trigger === 'agent') {
-    // Handle agent-to-agent call
-    const callingAgent = request.metadata.get('source_agent');
-    context.logger.info(\`Called by agent: \${callingAgent}\`);
-  }
-
-  return response.json({
-    trigger_type: trigger,
-    processed_at: new Date().toISOString()
-  });
-}`} />
-
-### 2. Request and Response Handling
-
-Every agent receives a request and must return a response. The request contains the trigger data and metadata, while the response can be in various formats:
-
-<CodeExample py={`from agentuity import AgentRequest, AgentResponse, AgentContext
-
-async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    # Access request data in different formats
-
-    # JSON data (most common)
-    json_data = await request.data.json()
-
-    # Plain text
-    text_data = await request.data.text()
-
-    # Binary data
-    binary_data = await request.data.binary()
-
-    # Response options
-
-    # JSON response (most common)
-    return response.json({"result": "success"})
-
-    # Text response
-    # return response.text("Hello, World!")
-
-    # HTML response
-    # return response.html("<h1>Hello</h1>")
-
-    # Binary response (for files)
-    # return response.binary(file_bytes)
-
-    # Redirect to another agent
-    # return response.handoff({"name": "other-agent"}, data, metadata={})`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
-
-export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
-  // Access request data in different formats
-
-  // JSON data (most common)
-  const jsonData = await request.data.json();
-
-  // Plain text
-  const textData = await request.data.text();
-
-  // Binary data
-  const binaryData = await request.data.binary();
-
-  // Response options
-
-  // JSON response (most common)
-  return response.json({ result: 'success' });
-
-  // Text response
-  // return response.text('Hello, World!');
-
-  // HTML response
-  // return response.html('<h1>Hello</h1>');
-
-  // Binary response (for files)
-  // return response.binary(fileBytes);
-
-  // Redirect to another agent
-  // return response.handoff({ name: 'other-agent' }, { data: jsonData, contentType: 'application/json' });
-}`} />
+**Response Formats:**
+- `response.json(data)` - Most common, structured data
+- `response.text(data)` - Plain text
+- `response.html(data)` - HTML content
+- `response.empty()` - No content (useful for webhooks or to handle cases where no "actual" response is needed)
+- `response.binary(data)` - Binary data
+- Media-specific: `pdf()`, `png()`, `jpeg()`, `mp3()`, etc.
 
 ### 3. The Agent Context
 
-The context object is your agent's gateway to Agentuity's services. It provides access to storage, logging, tracing, agent communication, and more:
-
-<CodeExample py={`from agentuity import AgentRequest, AgentResponse, AgentContext
-
-async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    # Logging at different levels
-    context.logger.debug("Debug information")
-    context.logger.info("General information")
-    context.logger.warn("Warning message")
-    context.logger.error("Error occurred")
-
-    # Access metadata
-    agent_id = context.agent.id
-    agent_name = context.agent.name
-    project_id = context.projectId
-    session_id = context.sessionId
-
-    # Key-Value storage
-    await context.kv.set("cache", "key", {"data": "value"})
-    result = await context.kv.get("cache", "key")
-
-    # Vector storage for semantic search
-    await context.vector.upsert("docs", [{
-        "key": "doc1",
-        "document": "AI agents are autonomous systems",
-        "metadata": {"category": "intro"}
-    }])
-
-    # Object storage for files
-    await context.objectstore.put("files", "report.pdf", pdf_bytes)
-
-    # Get reference to another agent for inter-agent communication
-    other_agent = context.get_agent("specialist-agent")
-    # agent_response = await other_agent.run({"data": "Hello from triage agent"})
-
-    return response.json({
-        "agent": agent_name,
-        "session": session_id
-    })`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
-
-export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
-  // Logging at different levels
-  context.logger.debug('Debug information');
-  context.logger.info('General information');
-  context.logger.warn('Warning message');
-  context.logger.error('Error occurred');
-
-  // Access metadata
-  const agentId = context.agent.id;
-  const agentName = context.agent.name;
-  const projectId = context.projectId;
-  const sessionId = context.sessionId;
-
-  // Key-Value storage
-  await context.kv.set('cache', 'key', { data: 'value' });
-  const result = await context.kv.get('cache', 'key');
-
-  // Vector storage for semantic search
-  await context.vector.upsert('docs', [{
-    key: 'doc1',
-    document: 'AI agents are autonomous systems',
-    metadata: { category: 'intro' }
-  }]);
-
-  // Object storage for files
-  await context.objectstore.put('files', 'report.pdf', pdfBytes);
-
-  // Get reference to another agent for inter-agent communication
-  const otherAgent = context.getAgent({ name: 'specialist-agent' });
-  // const agentResponse = await otherAgent.run({ data: 'Hello from triage agent' });
-
-  return response.json({
-    agent: agentName,
-    session: sessionId
-  });
-}`} />
-
-## Planning and Reasoning: The Agent's Brain
-
-What separates agents from simple scripts is their ability to plan and reason. While Agentuity provides the infrastructure, you implement the intelligence.
-
-### The Planning Phase
-
-Planning is how agents break down complex requests into actionable steps. According to [OpenAI's practical guide to building agents](https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf), providing smaller, clearer steps from dense resources helps minimize ambiguity and helps the model better follow instructions. Effective agent planning involves:
-
-1. **Intent Recognition**: Understanding what the user actually wants
-2. **Task Decomposition**: Breaking complex requests into smaller steps
-3. **Resource Assessment**: Determining what tools and data are needed
-4. **Execution Strategy**: Deciding the order and approach for each step
-
-Modern agents use LLMs for dynamic planning rather than hard-coded decision trees, allowing them to adapt their approach based on context and available resources.
-
-### The Reasoning Loop
-
-The reasoning loop is where agents continuously evaluate and adapt their approach. [Stanford's research on ReAct agents](https://arxiv.org/abs/2210.03629) shows that combining reasoning and acting in iterative loops significantly improves agent performance.
-
-The basic pattern follows:
-1. **Observe**: Analyze current state and available information
-2. **Think**: Reason about the best next action
-3. **Act**: Execute the chosen action
-4. **Reflect**: Evaluate the results and learn
-5. **Repeat**: Continue until goal is achieved or constraints are met
-
-This iterative approach allows agents to handle uncertainty and recover from errors - key capabilities that distinguish agents from simple scripts.
-
-## Tool Invocation: Extending Agent Capabilities
-
-Agents become powerful when they can use external tools and services:
-
-<CodeExample py={`import httpx
-import os
-from typing import Dict, Any
-from agentuity import AgentRequest, AgentResponse, AgentContext
-
-async def use_web_search(query: str, context: AgentContext) -> Dict[str, Any]:
-    """Search the web using a real API."""
-    try:
-        # Example using a hypothetical search API
-        api_key = os.getenv("SEARCH_API_KEY")
-        if not api_key:
-            context.logger.warn("No search API key found")
-            return {"error": "Search not available"}
-
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                "https://api.searxng.org/search",
-                params={"q": query, "format": "json"}
-            )
-            return response.json()
-    except Exception as e:
-        context.logger.error(f"Search failed: {str(e)}")
-        return {"error": "Search failed"}
-
-async def call_another_agent(agent_name: str, data: dict, context: AgentContext) -> Dict[str, Any]:
-    """Call another agent within the same project."""
-    try:
-        agent = context.get_agent(agent_name)
-        result = await agent.run({
-            "data": data,
-            "contentType": "application/json"
-        })
-        return await result.data.json()
-    except Exception as e:
-        context.logger.error(f"Agent call failed: {str(e)}")
-        return {"error": "Agent call failed"}
-
-async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    data = await request.data.json()
-    tool = data.get("tool")
-
-    if tool == "search":
-        result = await use_web_search(data["query"], context)
-    elif tool == "delegate":
-        result = await call_another_agent(data["agent"], data["task"], context)
-    else:
-        result = {"error": "Unknown tool"}
-
-    return response.json(result)`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
-
-async function useWebSearch(query: string, context: AgentContext): Promise<any> {
-  try {
-    // Example using a hypothetical search API
-    const apiKey = process.env.SEARCH_API_KEY;
-    if (!apiKey) {
-      context.logger.warn('No search API key found');
-      return { error: 'Search not available' };
-    }
-
-    const response = await fetch('https://api.searxng.org/search?' +
-      new URLSearchParams({ q: query, format: 'json' }));
-    return await response.json();
-  } catch (error) {
-    context.logger.error(\`Search failed: \${error}\`);
-    return { error: 'Search failed' };
-  }
-}
-
-async function callAnotherAgent(agentName: string, data: any, context: AgentContext): Promise<any> {
-  try {
-    const agent = context.getAgent({ name: agentName });
-    const result = await agent.run({
-      data,
-      contentType: 'application/json'
-    });
-    return await result.data.json();
-  } catch (error) {
-    context.logger.error(\`Agent call failed: \${error}\`);
-    return { error: 'Agent call failed' };
-  }
-}
-
-export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
-  const data = await request.data.json();
-  const tool = data.tool;
-
-  let result;
-  if (tool === 'search') {
-    result = await useWebSearch(data.query, context);
-  } else if (tool === 'delegate') {
-    result = await callAnotherAgent(data.agent, data.task, context);
-  } else {
-    result = { error: 'Unknown tool' };
-  }
-
-  return response.json(result);
-}`} />
-
-## Memory Patterns: How Agents Remember
-
-Memory enables agents to learn and maintain state across interactions. The duration and type of memory depends on your use case and TTL settings.
-
-### Session Memory
-For temporary data that should expire:
-
-<CodeExample py={`from datetime import datetime
-from agentuity import AgentRequest, AgentResponse, AgentContext
-
-async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    session_id = request.metadata.get("session_id")
-
-    # Store temporary session data with TTL
-    await context.kv.set(
-        "sessions",
-        session_id,
-        {
-            "messages": [],
-            "user_preferences": {},
-            "started_at": datetime.now().isoformat()
-        },
-        {"ttl": 3600}  # Expires in 1 hour
-    )
-
-    # Retrieve session data
-    session_data = await context.kv.get("sessions", session_id)
-    if session_data.exists:
-        data = await session_data.data.json()
-        context.logger.info(f"Session active for {len(data['messages'])} messages")`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
-
-export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
-  const sessionId = request.metadata.get('session_id');
-
-  // Store temporary session data with TTL
-  await context.kv.set(
-    'sessions',
-    sessionId,
-    {
-      messages: [],
-      user_preferences: {},
-      timestamp: new Date().toISOString()
-    },
-    { ttl: 3600 } // Expires in 1 hour
-  );
-}`} />
-
-### Persistent Memory
-For data that should survive restarts:
-
-<CodeExample py={`from datetime import datetime
-from agentuity import AgentRequest, AgentResponse, AgentContext
-
-async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    user_id = request.metadata.get("user_id")
-
-    # Store user preferences permanently (no TTL)
-    await context.kv.set(
-        "user_profiles",
-        user_id,
-        {
-            "name": "Alice",
-            "preferences": {"format": "concise"},
-            "created_at": datetime.now().isoformat()
-        }
-        # No TTL = permanent storage
-    )
-
-    # Store large files in object storage
-    await context.objectstore.put(
-        "user_documents",
-        f"{user_id}/resume.pdf",
-        pdf_bytes
-    )`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
-
-export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
-  const userId = request.metadata.get('user_id');
-
-  // Store user preferences permanently (no TTL)
-  await context.kv.set(
-    'user_profiles',
-    userId,
-    {
-      name: 'Alice',
-      preferences: { format: 'concise' },
-      created_at: new Date().toISOString()
-    }
-    // No TTL = permanent storage
-  );
-
-  // Store large files in object storage
-  await context.objectstore.put(
-    'user_documents',
-    \`\${userId}/resume.pdf\`,
-    pdfBytes
-  );
-}`} />
-
-### Searchable Memory
-For semantic search and knowledge retrieval:
-
-<CodeExample py={`from agentuity import AgentRequest, AgentResponse, AgentContext
-
-async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    # Store searchable knowledge
-    await context.vector.upsert("knowledge", [{
-        "key": "user_feedback_001",
-        "document": "Users prefer concise responses with examples",
-        "metadata": {
-            "learned_from": "user_feedback",
-            "confidence": 0.85,
-            "category": "response_style"
-        }
-    }])
-
-    # Search for relevant knowledge
-    results = await context.vector.search(
-        "knowledge",
-        "How should I format my responses?",
-        limit=5
-    )
-
-    # Use the knowledge to improve responses
-    if results:
-        context.logger.info(f"Found {len(results)} relevant insights")
-        for result in results:
-            context.logger.info(f"Insight: {result.document}")`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
-
-export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
-  // Store searchable knowledge
-  await context.vector.upsert('knowledge', [{
-    key: 'user_feedback_001',
-    document: 'Users prefer concise responses with examples',
-    metadata: {
-      learned_from: 'user_feedback',
-      confidence: 0.85,
-      category: 'response_style'
-    }
-  }]);
-
-  // Search for relevant knowledge
-  const results = await context.vector.search(
-    'knowledge',
-    'How should I format my responses?',
-    { limit: 5 }
-  );
-
-  // Use the knowledge to improve responses
-  if (results.length > 0) {
-    context.logger.info(\`Found \${results.length} relevant insights\`);
-    results.forEach(result => {
-      context.logger.info(\`Insight: \${result.document}\`);
-    });
-  }
-}`} />
-
-## Framework Awareness: Choosing the Right Tool
+The `context` object is your agent's way to access core Agentuity services, including:
+
+**Storage & Data:**
+- `context.kv` - Key-value storage for caching and state
+- `context.vector` - Vector storage for semantic search
+- `context.objectstore` - Object storage for files
+
+**Observability:**
+- `context.logger` - Structured logging with levels (info, warn, error, debug)
+- `context.tracer` - built-in OpenTelemetry tracing
+
+**Communication:**
+- `context.getAgent()` - Access other agents for multi-agent workflows
+
+**Metadata:**
+- `context.agent` - Current agent info (id, name)
+- `context.sessionId` - Current session identifier
+- `context.projectId` - Current project identifier
 
 <Callout type="info">
-Agentuity is framework-agnostic. You can use any AI framework or build custom agents from scratch.
+See the [JavaScript SDK API Reference](/SDKs/javascript/api-reference) or [Python SDK API Reference](/SDKs/python/api-reference) for complete details.
 </Callout>
 
-### Popular Agent Frameworks
+### 4. Storage for State and Memory
 
-Different frameworks excel at different tasks. Here's when to use each:
+Agentuity provides three storage APIs that enable different memory patterns:
 
-| Framework | Best For | Language Support | Agentuity Integration |
-|-----------|----------|------------------|----------------------|
-| **LangChain** | Complex chains, RAG applications | Python, TypeScript | Native SDK support |
-| **CrewAI** | Multi-agent teams, role-based systems | Python | Container deployment |
-| **AutoGen** | Research, conversational AI | Python | Direct deployment |
-| **Mastra** | TypeScript agents, workflows, modern DX | TypeScript | Full compatibility |
-| **Vercel AI SDK** | UI-integrated agents, streaming, web apps | TypeScript | Direct integration |
-| **Custom** | Specific requirements, full control | Python, TypeScript, Bun | Full platform features |
+- **Session memory (KV with TTL)** - Temporary data that expires (e.g., 5-minute cache)
+- **Persistent memory (KV without TTL)** - Data that survives restarts
+- **Searchable memory (Vector)** - Semantic search and knowledge retrieval
+- **File storage (Object)** - Binary files, documents, images, and media
 
-### Framework Comparison Example
+We'll explore memory patterns in depth in **Module 3: Agent Memory**.
 
-Here's the same agent built with different approaches:
+### 5. Framework Awareness
 
-<CodeExample py={`# Vanilla Python Agent
-from agentuity import AgentRequest, AgentResponse, AgentContext
+<Callout type="info">
+Agentuity is framework-agnostic. Use any AI framework (LangChain, CrewAI, Vercel AI SDK, etc.) or build custom agents from scratch. The anatomy concepts work with all of them. See [Templates](/Introduction/templates) for starter examples.
+</Callout>
 
-async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    data = await request.data.json()
-    # Direct implementation
-    result = process_data(data)
-    return response.json(result)
+Different frameworks excel at different tasks, but they all use the same Agentuity SDK anatomy:
+- All receive `request`, `response`, `context` parameters
+- All access triggers, data, logging, and storage the same way
+- All return responses in standard formats
 
-# LangChain Agent
-from langchain.agents import initialize_agent
-from langchain.llms import OpenAI
-from agentuity import AgentRequest, AgentResponse, AgentContext
+As a result, you can choose your framework *based on your use case*, not platform constraints. Plus, you can use multiple frameworks in the same project, or even run agents on different frameworks in the same project.
 
-async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    llm = OpenAI()
-    agent = initialize_agent(tools, llm, agent="zero-shot")
-    result = agent.run(await request.data.text())
-    return response.text(result)
+## Build Agent Anatomy Step-by-Step
 
-# CrewAI Agent
-from crewai import Agent, Task, Crew
-from agentuity import AgentRequest, AgentResponse, AgentContext
+Now let's get hands-on. Each step below focuses on one core concept, with simple code you can run immediately in DevMode.
 
-async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    researcher = Agent(role="Researcher", goal="Find information")
-    writer = Agent(role="Writer", goal="Create content")
+### Step 1: Understanding Triggers
 
-    crew = Crew(agents=[researcher, writer])
-    result = crew.kickoff(await request.data.json())
-    return response.json(result)`} js={`// Vanilla TypeScript Agent
-import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+<TutorialStep number={1} title="Understanding Triggers" estimatedTime="3 min">
 
-export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
-  const data = await request.data.json();
-  // Direct implementation
-  const result = processData(data);
-  return response.json(result);
-}
+Every agent needs to know *how* it was triggered. The same agent code can behave differently based on whether it was called via HTTP, scheduled by cron, invoked manually, and more.
 
-// LangChain Agent
-import { initializeAgentExecutor } from 'langchain/agents';
-import { OpenAI } from 'langchain/llms/openai';
-import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+<CodeFromFiles snippets={[
+  { path: "/examples/training/02-anatomy/step1-understanding-triggers.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/02-anatomy/step1-understanding-triggers.py", lang: "python", title: "Python" }
+]} />
 
-export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
-  const llm = new OpenAI();
-  const agent = await initializeAgentExecutor(tools, llm, 'zero-shot');
-  const result = await agent.call({ input: await request.data.text() });
-  return response.text(result.output);
-}
+**What this demonstrates:**
+- Accessing the trigger type via `request.trigger`
+- Conditional logic based on trigger
+- Different responses for different trigger types
 
-// Custom Multi-Agent System
-import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
+**Try it:**
+1. Run this agent in DevMode (creates a `manual` trigger)
+2. Send a webhook request to test `webhook` trigger
+3. Notice how `request.trigger` changes the response
 
-export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
-  const researcher = new Agent('Researcher', 'Find information');
-  const writer = new Agent('Writer', 'Create content');
+</TutorialStep>
 
-  const researchResult = await researcher.execute(data);
-  const writeResult = await writer.execute(researchResult);
-  return response.json(writeResult);
-}`} />
+### Step 2: Working with Request Data
 
-### When to Use Which Framework
+<TutorialStep number={2} title="Working with Request Data" estimatedTime="4 min">
 
-| Framework | Use When You Need | Avoid When You Need |
-|-----------|-------------------|-------------------|
-| **LangChain** | Complex reasoning chains, RAG applications, extensive data integrations | Simple agents, minimal dependencies, lightweight solutions |
-| **CrewAI** | Multi-agent teams, role-based collaboration, specialized workflows | Single-agent tasks, simple request-response patterns |
-| **AutoGen** | Conversational AI, research applications, experimental workflows | Production deployments, strict performance requirements |
-| **Custom** | Full control, specific requirements, optimized performance | Rapid prototyping, standard use cases, extensive tooling needs |
+Agents receive data in various formats—JSON, text, binary. The SDK provides methods to handle each format and access metadata about the request.
 
-## Lab: Building a Weather Agent with Multiple Triggers
+<CodeFromFiles snippets={[
+  { path: "/examples/training/02-anatomy/step2-request-data.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/02-anatomy/step2-request-data.py", lang: "python", title: "Python" }
+]} />
 
-Let's build an agent that demonstrates different behaviors based on how it's triggered - the same agent code serves different purposes depending on the trigger type.
+**What this demonstrates:**
+- Content type detection via `request.data.contentType` (TypeScript) or `request.data.content_type` (Python)
+- Parsing different data formats (JSON, text, binary)
+- Accessing metadata using multiple approaches:
+  - `request.get(key, default)` - SDK convenience method (recommended)
+  - `request.metadata` property - Returns the full metadata dict/object
+  - Direct property/dict access for specific use cases
+
+**Try it:**
+1. Send JSON data: `{"name": "Alice", "action": "greet"}`
+2. Send plain text: `"Hello, agent!"`
+3. Check the logs to see how content type detection works
+4. Notice the commented examples showing different ways to access metadata
+
+</TutorialStep>
+
+### Step 3: Structured Logging
+
+<TutorialStep number={3} title="Structured Logging" estimatedTime="4 min">
+
+Effective logging is crucial for debugging and monitoring. Use appropriate log levels and structured data to make your logs searchable and actionable.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/02-anatomy/step3-structured-logging.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/02-anatomy/step3-structured-logging.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- Using different log levels (`info`, `warn`, `error`, `debug`)
+- Including structured context in logs
+- Conditional logging based on task type
+
+**Try it:**
+1. Send `{"task": "normal"}` - see INFO logs
+2. Send `{"task": "risky"}` - see WARN logs
+3. Send `{"task": "error"}` - see ERROR logs
+4. Check the Console Logs tab to see structured data
+
+**Best Practice:** Include context in every log (agent ID, session ID, request details) to help with debugging later.
+
+</TutorialStep>
+
+### Step 4: Introduction to KV Storage
+
+<TutorialStep number={4} title="Introduction to KV Storage" estimatedTime="5 min">
+
+Key-value storage lets agents cache data, manage state, and avoid redundant work. This is a simple caching pattern—check cache first, compute if needed, then store with TTL.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/02-anatomy/step4-kv-caching.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/02-anatomy/step4-kv-caching.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- Checking cache with `context.kv.get()`
+- Cache hit vs. cache miss handling
+- Storing data with TTL using `context.kv.set()`
+
+**Try it:**
+1. Send `{"query": "hello"}` - first request computes and caches
+2. Send `{"query": "hello"}` again - returns from cache
+3. Send `{"query": "world"}` - different key, fresh computation
+4. Wait 5 minutes and retry - cache expired, recomputes
+
+**Key Concepts:**
+- **Bucket**: First parameter (`'demo-cache'`) - organizes related keys
+- **Key**: Second parameter (unique identifier for the data)
+- **TTL**: Time-to-live in seconds (data expires automatically)
+- **No TTL**: Omit TTL for permanent storage
+
+<Callout type="info">
+We'll explore advanced memory patterns (session, persistent, vector) in [**Module 3: Agent Memory**](/Training/developers/03-agent-memory).
+</Callout>
+
+</TutorialStep>
+
+### Step 5: Response Formats
+
+<TutorialStep number={5} title="Response Formats" estimatedTime="3 min">
+
+Agents can return responses in various formats depending on who's calling them—JSON for APIs, HTML for browsers, text for simple integrations, or empty for webhooks.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/02-anatomy/step5-response-formats.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/02-anatomy/step5-response-formats.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- Returning JSON with `response.json()`
+- Returning text with `response.text()`
+- Returning HTML with `response.html()`
+- Returning empty response with `response.empty()`
+
+**Try it:**
+1. Send `{"format": "json"}` - structured data response
+2. Send `{"format": "text"}` - plain text response
+3. Send `{"format": "html"}` - view in browser
+4. Send `{"format": "empty"}` - no response body (useful for webhooks or to handle cases where no "actual" response is needed)
+
+</TutorialStep>
+
+## Lab: Try It All Together
+
+You've learned the core anatomy concepts through focused steps. Now let's see them combined in a real-world agent that uses:
+- **Multiple triggers** (cron, manual, webhook, etc.) with different behaviors
+- **External API integration** (National Weather Service)
+- **Smart caching strategies** (different TTL based on trigger)
+- **Structured logging** throughout
+- **Best practices for error handling**
+
+### What the Weather Agent Does
+
+The weather agent demonstrates **trigger-based behavior**—the same agent code serves different purposes based on how it's triggered:
+
+**Cron Trigger (Monitoring Mode):**
+- Runs automatically on schedule
+- Fetches weather for multiple cities
+- Caches data with 1-hour TTL
+- Returns bulk report with all cities
+
+**Manual Trigger (On-Demand Mode):**
+- Responds to user requests
+- Fetches weather for specific location (based on user request)
+- Caches with 5-minute TTL (for quick repeat queries)
+- Returns single location result
 
 ### Key Implementation: Trigger-Based Routing
 
-The core pattern shows how agents can behave differently based on their trigger:
-
-<CodeExample py={`# Key pattern: Different behavior based on trigger type
+<CodeExample py={`# Different behavior based on trigger type
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     if request.trigger == "cron":
         # Bulk monitoring mode
@@ -634,7 +327,7 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         # On-demand single query
         data = await request.data.json()
         location = data.get("location", "San Francisco, CA")
-        return await get_single_weather(location, context)`} js={`// Key pattern: Different behavior based on trigger type
+        return await get_single_weather(location, context)`} js={`// Different behavior based on trigger type
 export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
   if (request.trigger === 'cron') {
     // Bulk monitoring mode
@@ -650,9 +343,7 @@ export default async function Agent(request: AgentRequest, response: AgentRespon
 
 ### Key Implementation: External API Integration
 
-Real-world agents integrate with external services using proper error handling:
-
-<CodeExample py={`# Key pattern: NWS API two-step process with proper error handling
+<CodeExample py={`# NWS API two-step process with proper error handling
 async def fetch_nws_weather(lat: float, lon: float, location_name: str, context: AgentContext):
     try:
         # Step 1: Get grid coordinates from lat/lon
@@ -681,8 +372,8 @@ async def fetch_nws_weather(lat: float, lon: float, location_name: str, context:
 
     except Exception as e:
         context.logger.error(f"Weather API failed for {location_name}: {e}")
-        raise`} js={`// Key pattern: NWS API two-step process with proper error handling
-async function fetchNWSWeather(lat: number, lon: number, locationName: string, context: AgentContext): Promise<WeatherResult | null> {
+        raise`} js={`// NWS API two-step process with proper error handling
+async function fetchNWSWeather(lat: number, lon: number, locationName: string, context: AgentContext): Promise<WeatherResult> {
   try {
     // Step 1: Get grid coordinates from lat/lon
     const pointsUrl = \`https://api.weather.gov/points/\${lat},\${lon}\`;
@@ -693,15 +384,15 @@ async function fetchNWSWeather(lat: number, lon: number, locationName: string, c
     });
 
     if (!pointsResponse.ok) {
-      throw new Error(\`NWS points API failed: \${pointsResponse.status} \${pointsResponse.statusText}\`);
+      throw new Error(\`NWS points API failed: \${pointsResponse.status}\`);
     }
 
     const pointsData = await pointsResponse.json() as NWSPointsResponse;
     const gridProps = pointsData.properties;
 
     // Validate and extract grid properties
-    if (!gridProps || gridProps.gridId === undefined || gridProps.gridX === undefined || gridProps.gridY === undefined) {
-      throw new Error('Could not extract grid information from NWS points API response.');
+    if (!gridProps || gridProps.gridId === undefined) {
+      throw new Error('Could not extract grid information from NWS API');
     }
 
     // Step 2: Get forecast using grid coordinates
@@ -716,9 +407,7 @@ async function fetchNWSWeather(lat: number, lon: number, locationName: string, c
 
 ### Key Implementation: Smart Caching Strategies
 
-Different caching approaches based on use case and trigger:
-
-<CodeExample py={`# Key pattern: Trigger-based caching with different TTL strategies
+<CodeExample py={`# Different caching strategies based on trigger
 async def handle_manual_trigger(request: AgentRequest, response: AgentResponse, context: AgentContext):
     # Parse location and create cache key
     location_query = await request.data.text() or "San Francisco"
@@ -731,11 +420,6 @@ async def handle_manual_trigger(request: AgentRequest, response: AgentResponse, 
         context.logger.info(f"Returning cached weather for {location_query}")
         return response.json(cached_weather)
 
-    # Resolve location to coordinates (geocoding step)
-    coordinates = await geocode_location(location_query)
-    if not coordinates:
-        return response.json({"error": "Unable to find location coordinates"})
-
     # Fetch fresh data and cache with shorter TTL
     weather = await fetch_nws_weather(coordinates["lat"], coordinates["lon"], location_query, context)
     await context.kv.set("weather", cache_key, weather, {"ttl": 300})  # 5 minutes
@@ -747,7 +431,7 @@ async def handle_cron_trigger(response: AgentResponse, context: AgentContext):
     for city in MONITORED_CITIES:
         weather = await fetch_nws_weather(city["lat"], city["lon"], city["name"], context)
         await context.kv.set("weather", f"city_{city['name'].lower()}", weather, {"ttl": 3600})
-        context.logger.info(f"Cached weather for {city['name']}: {weather['temperature']}°F")`} js={`// Key pattern: Trigger-based caching with different TTL strategies
+        context.logger.info(f"Cached weather for {city['name']}: {weather['temperature']}°F")`} js={`// Different caching strategies based on trigger
 async function handleManualTrigger(request: AgentRequest, response: AgentResponse, context: AgentContext) {
   // Parse location and create cache key
   const locationQuery = await request.data.text() || 'San Francisco';
@@ -759,12 +443,6 @@ async function handleManualTrigger(request: AgentRequest, response: AgentRespons
     const cachedWeather = await cached.data.json() as WeatherResult;
     context.logger.info(\`Returning cached weather for \${locationQuery}\`);
     return response.json(cachedWeather);
-  }
-
-  // Resolve location to coordinates (geocoding step)
-  const coordinates = await geocodeLocation(locationQuery);
-  if (!coordinates) {
-    return response.json({ error: 'Unable to find location coordinates' });
   }
 
   // Fetch fresh data and cache with shorter TTL
@@ -788,12 +466,12 @@ async function handleCronTrigger(response: AgentResponse, context: AgentContext)
 Ready to implement this agent? Follow our complete examples:
 
 <div className="flex flex-wrap gap-3 mb-6">
-  <a href="https://github.com/agentuity/examples/tree/add-tutorials/training/02-weather-agent-ts" target="_blank" rel="noopener noreferrer"
+  <a href="https://github.com/agentuity/examples/tree/main/training/02-weather-agent-ts" target="_blank" rel="noopener noreferrer"
      className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.30 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
     TypeScript
   </a>
-  <a href="https://github.com/agentuity/examples/tree/add-tutorials/training/02_weather_agent_py" target="_blank" rel="noopener noreferrer"
+  <a href="https://github.com/agentuity/examples/tree/main/training/02_weather_agent_py" target="_blank" rel="noopener noreferrer"
      className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.30 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
     Python
@@ -806,121 +484,55 @@ Ready to implement this agent? Follow our complete examples:
 - **External API integration**: Real National Weather Service API calls with proper error handling
 - **Smart caching strategies**: Different TTL based on use case (cron vs manual)
 - **Production patterns**: Timeouts, defensive typing, comprehensive logging
-- **AI enhancement**: Vercel AI SDK for weather interpretation
+- **AI enhancement**: Optional AI-powered weather interpretation
 
-The complete examples show you how to build real agents that integrate external APIs and use multiple triggers with caching and error handling.
+The complete examples show you how to build real agents that integrate external APIs and use multiple triggers with intelligent caching and error handling.
 
-## Testing Your Weather Agent
+### Testing Your Weather Agent
 
 1. **Start DevMode:**
 ```bash
 agentuity dev
 ```
 
-2. **Test the weather agent** with different city names and trigger types
-3. **Monitor the execution** in the Logs and Sessions tabs to see caching behavior
+2. **Test the weather agent** with different city names (San Francisco, New York, Los Angeles, Chicago)
+3. **Monitor the execution** in the *Logs* and *Sessions* tabs to see caching behavior
+4. **Try the same request twice** to see cache hits
 
-### Configuring Cron Triggers for Production
+#### Configuring Cron Triggers for Production
 
 For actual scheduled execution, configure cron triggers through the [Agentuity Console](https://app.agentuity.com):
 
 1. Navigate to your agent in the Console
 2. Click on **"Add Trigger"** and select **"Cron Job"**
 3. Configure the schedule using cron syntax (e.g., `0 * * * *` for hourly)
-4. Set the Content Type and optional Payload
+4. Set the *Content Type* and optional *Payload*
 5. Enable the trigger and save
 
 <Callout type="info">
 Learn more about configuring triggers in the [Agent Configuration Guide](/Cloud/agents).
 </Callout>
 
-## Performance Considerations
-
-Building efficient agents requires thinking about performance from the start:
-
-### Cost Optimization
-
-Effective cost optimization strategies include:
-
-- **Cache frequently used data** in KV storage to reduce repeated processing
-- **Batch operations** when possible to minimize API calls
-- **Use appropriate LLM models** - use reasoning models only when you need complex reasoning
-- **Consider fast inference providers** - Groq offers high-speed inference for many models
-- **Implement early exits** in reasoning loops to avoid unnecessary iterations
-
-### Latency vs. Capability Trade-offs
-
-Different approaches offer varying trade-offs between speed and intelligence:
-
-| Approach | Latency | Capability | Use Case |
-|----------|---------|------------|----------|
-| Simple rules | Fastest | Low | Basic routing, simple classification |
-| Small LLM | Fast | Medium | Text classification, simple reasoning |
-| Large LLM | Moderate | High | Complex reasoning, nuanced understanding |
-| Multi-agent | Slowest | Very High | Research, complex workflows |
-
-<CodeExample py={`from agentuity import AgentRequest, AgentResponse, AgentContext
-
-async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    data = await request.data.json()
-    complexity = assess_complexity(data)
-    
-    if complexity == "simple":
-        # Use rules-based approach
-        result = apply_rules(data)
-        return response.json(result)
-    
-    elif complexity == "medium":
-        # Use small, fast model
-        result = await small_model_process(data)
-        return response.json(result)
-    
-    else:
-        # Use full agent capabilities
-        result = await full_agent_process(data, context)
-        return response.json(result)`} js={`import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
-
-export default async function Agent(request: AgentRequest, response: AgentResponse, context: AgentContext) {
-  const data = await request.data.json();
-  const complexity = assessComplexity(data);
-
-  if (complexity === 'simple') {
-    // Use rules-based approach
-    const result = applyRules(data);
-    return response.json(result);
-
-  } else if (complexity === 'medium') {
-    // Use small, fast model
-    const result = await smallModelProcess(data);
-    return response.json(result);
-
-  } else {
-    // Use full agent capabilities
-    const result = await fullAgentProcess(data, context);
-    return response.json(result);
-  }
-}`} />
-
 ## Key Takeaways
 
-- **Agents follow a lifecycle**: Trigger → Plan → Reason → Execute → Remember → Respond
-- **Multiple trigger types**: Choose the right trigger for your use case
-- **Context is powerful**: It provides access to all Agentuity services
-- **Frameworks are tools**: Pick the right one for your needs, or go custom
-- **Memory patterns matter**: Session data (TTL), persistent data (no TTL), searchable knowledge (Vector)
-- **Performance matters**: Balance capability with cost and latency
+- **Triggers determine behavior**: Same agent, different responses based on how it's called (webhook, cron, manual)
+- **Request handling is flexible**: SDK provides `json()`, `text()`, `binary()` methods for all formats
+- **Logging is essential**: Structured logs with appropriate levels help debugging and monitoring
+- **KV storage enables caching**: Simple `get/set` with TTL prevents redundant work
+- **Responses adapt to context**: `json()` for APIs, `html()` for browsers, `empty()` for webhooks
+- **The weather agent shows it all**: See these concepts combined in production code
 
 ## What's Next?
 
-You now understand the core components that make agents work. In the next module, we'll dive deep into memory systems - how agents remember, learn, and improve over time.
+You now understand agent anatomy—the building blocks every agent shares. In **Module 3: Agent Memory**, we'll dive deep into how agents remember, learn, and maintain state across interactions.
 
-But first, experiment with the weather agent:
-- Test it with different cities
-- Try the caching behavior with repeated requests
-- Add new cities to the cron batch update
-- Modify the cache TTL and observe the difference
+**Before moving on:**
+1. Complete all 5 tutorial steps
+2. Build and test the weather agent
+3. Experiment with different triggers and cache TTLs
+4. Review the logs to see patterns emerge
 
-Remember: The anatomy you've learned here is the foundation. The intelligence you add on top is what makes your agents unique.
+Remember: Anatomy is the foundation. The logic you add on top is what makes your agents unique.
 
 ---
 

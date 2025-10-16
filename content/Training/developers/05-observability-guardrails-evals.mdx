@@ -1,9 +1,9 @@
 ---
 title: "Module 5: Observability, Guardrails, & Evals"
-description: Making agents reliable, safe, and production-ready
+description: Making agents reliable, safe, and ready for real-world use
 ---
 
-You've built agents that can think, remember, and collaborate. Now it's time to make them production-ready.
+You've built agents that can think, remember, and collaborate. Now it's time to make them reliable and safe.
 
 ## The Reality of Production Agents
 
@@ -17,29 +17,26 @@ According to [NIST's AI Risk Management framework](https://www.nist.gov/itl/ai-r
 
 ## The Three Pillars of Production Agents
 
-<Callout type="info">
-Agentuity provides built-in OpenTelemetry integration with automatic instrumentation, giving you comprehensive observability out of the box.
-</Callout>
-
 ### 1. Observability: Seeing Everything
 
-Agentuity's key advantage is automatic OpenTelemetry integration with zero configuration:
-
-- **What's Tracked**: LLM calls, tool invocations, storage operations, API calls
-- **Observability Triad**: Logs (events), Metrics (measurements), Traces (request flow)
-- **Console View**: Timeline visualization with color-coded spans
-- **Zero Setup**: Works out of the box - no instrumentation code required
+<Callout type="info">
+**Automatic Observability**: Agentuity provides built-in OpenTelemetry integration with zero configuration. All agent executions, LLM calls, storage operations, and API calls are tracked automatically and appear in the Sessions tab with color-coded timeline visualization.
+</Callout>
 
 ### 2. Guardrails: Setting Boundaries
 
 Guardrails prevent agents from harmful actions while preserving autonomy and ensuring they stay in line with what they're supposed to do:
 
-- **Input Validation**: Schema enforcement, content filtering, size limits
+- **Input Validation**: Schema enforcement with Zod (TypeScript) and Pydantic (Python) for runtime validation
 - **Rate Limiting**: Prevent abuse and control costs per user/session
 - **Security**: Prompt injection defense ([WASP](https://arxiv.org/abs/2407.01593)), tool permissions
 - **Domain Rules**: Compliance checks, output validation, custom constraints
 
 ### 3. Evaluation: Measuring Success
+
+<Callout type="info">
+Agentuity's upcoming *prompts and evaluations suite* will provide built-in prompt management and evaluation workflows.
+</Callout>
 
 Systematic evaluation is critical for non-deterministic agents:
 
@@ -48,139 +45,112 @@ Systematic evaluation is critical for non-deterministic agents:
 - **Production Metrics**: Success rates, latency, cost per request, goal completion rates
 - **A/B Testing**: Shadow deployments, gradual rollouts, real user feedback
 
-## Observability with OpenTelemetry
+## Build A Safe and Reliable Agent Step-by-Step
 
-Agentuity automatically tracks everything through OpenTelemetry:
+Let's implement the essential observability and validation patterns that make agents reliable at scale.
 
-### What's Tracked (No Code Required)
-- **Agent executions**: Full request/response lifecycle
-- **LLM calls**: Prompts, completions, token usage, latency
-- **Storage operations**: KV gets/sets, vector searches
-- **API calls**: External HTTP requests
+<TutorialStep number={1} title="Child Loggers" estimatedTime="4 min">
 
-View in the Agentuity console Sessions tab with color-coded timeline visualization.
+When debugging agents, you need context in every log entry. Child loggers let you attach metadata once, then all subsequent logs automatically include that context.
 
-### Using the Logger
+<CodeFromFiles snippets={[
+  { path: "/examples/training/05-observability-guardrails/step1-child-loggers.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/05-observability-guardrails/step1-child-loggers.py", lang: "python", title: "Python" }
+]} />
 
-<CodeExample py={`async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    # Extract data from request
-    data = await request.data.json()
-    user_id = request.metadata.get("user_id")
+**What this demonstrates:**
+- TypeScript: Creating child loggers with `context.logger.child({ key: value })`
+- Python: Manual context pattern (child() method coming soon)
+- How context appears in logs/metadata for easier debugging
+- Consistent tracking throughout request lifecycle
 
-    # Logs appear in Sessions view with trace context
-    context.logger.info("Processing", {"user_id": user_id})
+**Try it:**
+1. Send a request with `userId` and `query` fields
+2. Check logs in DevMode - notice how context appears in every log entry
+3. Python users: Observe the manual context pattern with structured logging
 
-    try:
-        result = await process(data)
-        context.logger.info("Success", {"count": len(result)})
-    except Exception as e:
-        context.logger.error("Failed", {"error": str(e)})
-        raise`} js={`const handler = async (request, response, context) => {
-  // Extract data from request
-  const data = await request.data.json();
-  const userId = request.metadata.get('user_id');
+</TutorialStep>
 
-  // Logs appear in Sessions view with trace context
-  context.logger.info('Processing', { userId });
+<TutorialStep number={2} title="Input Validation" estimatedTime="5 min">
 
-  try {
-    const result = await process(data);
-    context.logger.info('Success', { count: result.length });
-  } catch (error) {
-    context.logger.error('Failed', { error: error.message });
-    throw error;
-  }
-};`} />
+Runtime validation protects your agent from malformed requests. TypeScript types and Python type hints only exist at development time - at runtime, your data needs actual validation.
 
-### Custom Spans for Your Own Operations
+<CodeFromFiles snippets={[
+  { path: "/examples/training/05-observability-guardrails/step2-input-validation.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/05-observability-guardrails/step2-input-validation.py", lang: "python", title: "Python" }
+]} />
 
-Track important operations with custom spans to understand performance and debug issues:
+**What this demonstrates:**
+- Why runtime validation matters (types alone aren't enough)
+- Zod's `safeParse()` pattern for safe validation (TypeScript)
+- Pydantic's try/except ValidationError pattern (Python)
+- Clear error messages for invalid input
+- Type-safe data access after validation
 
-<CodeExample py={`from opentelemetry.trace import Status, StatusCode
+**Try it:**
+1. Send valid request: `{"query": "test", "userId": "123"}`
+2. Send invalid data (missing field): `{"query": "test"}`
+3. Send wrong type: `{"query": 123, "userId": "123"}`
+4. Check logs to see validation failures tracked
 
-async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    payload = await request.data.json()
-    query = payload.get("query", "")
+</TutorialStep>
 
-    # Create a span for the entire validation flow
-    async with context.tracer.start_as_current_span("validate-financial-query") as span:
-        # Add context about this operation
-        span.set_attribute("user.tier", "premium")
-        span.set_attribute("query.type", "retirement")
-        span.set_attribute("query.length", len(query))
+<TutorialStep number={3} title="AI Output Validation" estimatedTime="5 min">
 
-        try:
-            # Track validation steps
-            span.add_event("validation-started")
+AI models are non-deterministic, but your downstream code needs reliable structure. Validation schemas ensure AI responses always match your expected format.
 
-            if has_prohibited_terms(query):
-                span.add_event("validation-failed", {"reason": "prohibited-terms"})
-                span.set_status(Status(StatusCode.ERROR, "Prohibited terms detected"))
-                return response.json({"error": "Invalid query"})
+<CodeFromFiles snippets={[
+  { path: "/examples/training/05-observability-guardrails/step3-ai-output-validation.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/05-observability-guardrails/step3-ai-output-validation.py", lang: "python", title: "Python" }
+]} />
 
-            span.add_event("validation-passed")
+**What this demonstrates:**
+- Using schemas with `generateObject()` from Vercel AI SDK (TypeScript)
+- Using Pydantic with Anthropic structured output (Python)
+- Guaranteed type-safe AI responses
+- Graceful handling if AI returns invalid structure
+- Logging validated results
 
-            # Track LLM call separately
-            async with context.tracer.start_as_current_span("generate-advice") as llm_span:
-                llm_span.set_attribute("model", "gpt-4")
-                advice = await generate_advice(query)
-                llm_span.set_attribute("response.tokens", count_tokens(advice))
+**Try it:**
+1. Send a query: `{"query": "This is amazing!"}`
+2. See structured sentiment analysis guaranteed to match schema
+3. Try different queries (positive, negative, neutral)
+4. Notice how validation prevents downstream errors
 
-            span.set_status(Status(StatusCode.OK))
-            return response.json({"advice": advice})
+</TutorialStep>
 
-        except Exception as e:
-            span.record_exception(e)
-            span.set_status(Status(StatusCode.ERROR, str(e)))
-            raise`} js={`import { SpanStatusCode } from '@opentelemetry/api';
+<TutorialStep number={4} title="Custom Spans for Performance" estimatedTime="6 min">
 
-const handler = async (request, response, context) => {
-  const { query = '' } = await request.data.json();
+Agentuity automatically traces LLM calls and storage operations, but you can also track your own business logic with custom spans. This helps identify performance bottlenecks and debug complex workflows.
 
-  // Create a span for the entire validation flow
-  return context.tracer.startActiveSpan('validate-financial-query', async (span) => {
-    // Add context about this operation
-    span.setAttribute('user.tier', 'premium');
-    span.setAttribute('query.type', 'retirement');
-    span.setAttribute('query.length', query.length);
+<CodeFromFiles snippets={[
+  { path: "/examples/training/05-observability-guardrails/step4-custom-spans.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/05-observability-guardrails/step4-custom-spans.py", lang: "python", title: "Python" }
+]} />
 
-    try {
-      // Track validation steps
-      span.addEvent('validation-started');
+**What this demonstrates:**
+- Creating spans for operations with `context.tracer`
+- Setting attributes for filtering and analysis
+- Adding events to mark milestones
+- Error handling with `recordException()` and `setStatus()`
+- Viewing execution flow in Sessions timeline
 
-      if (hasProhibitedTerms(query)) {
-        span.addEvent('validation-failed', { reason: 'prohibited-terms' });
-        span.setStatus({ code: SpanStatusCode.ERROR, message: 'Prohibited terms detected' });
-        return response.json({ error: 'Invalid query' });
-      }
+**Try it:**
+1. Send plain text: `"Testing tracing"`
+2. Send JSON: `{"user": "alice", "action": "purchase"}`
+3. Open DevMode Sessions tab - see the span timeline
+4. Check span attributes and events
+5. Notice how different content types create different attributes
 
-      span.addEvent('validation-passed');
+</TutorialStep>
 
-      // Track LLM call separately
-      const advice = await context.tracer.startActiveSpan('generate-advice', async (llmSpan) => {
-        llmSpan.setAttribute('model', 'gpt-4');
-        const result = await generateAdvice(query);
-        llmSpan.setAttribute('response.tokens', countTokens(result));
-        llmSpan.end();
-        return result;
-      });
+## Advanced Patterns
 
-      span.setStatus({ code: SpanStatusCode.OK });
-      return response.json({ advice });
-
-    } catch (error) {
-      span.recordException(error);
-      span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
-      throw error;
-    } finally {
-      span.end();
-    }
-  });
-};`} />
+The tutorial steps covered the core observability and validation concepts. Here are some additional patterns for complex real-world scenarios.
 
 ### Performance Best Practices
 
-Follow these optimization patterns to ensure your agents run efficiently in production:
+Follow these optimization patterns to ensure your agents run efficiently:
 
 | Strategy | Implementation |
 |----------|---------------|
@@ -190,34 +160,11 @@ Follow these optimization patterns to ensure your agents run efficiently in prod
 | **Track token usage** | Add token counts as span attributes to monitor costs |
 | **Set meaningful attributes** | Include user tier, request type, and other context for filtering |
 
-### What You Get Out of the Box
+### Combining Validation with Content Moderation
 
-<Callout type="info">
-**Built-in Observability**: Agentuity provides automatic OpenTelemetry instrumentation with zero configuration required.
-</Callout>
+Sometimes you need both structural validation *and* content policy checks. This pattern combines schema validation (from Step 2) with an LLM-based content moderator - useful for applications like financial advisors, healthcare chatbots, or any domain with compliance requirements.
 
-Everything is tracked automatically:
-- **LLM calls**: Model, tokens, latency, and responses
-- **Storage operations**: Every KV get/set, vector search, object store operation
-- **API calls**: External service interactions and latencies
-- **Custom spans**: Your business logic with meaningful attributes
-- **Visual debugging**: Color-coded timeline in the console shows execution flow
-
-<Callout type="info">
-See the [Agent Telemetry Guide](/Guides/agent-telemetry) for advanced tracing and custom spans.
-</Callout>
-
-## Implementing Guardrails
-
-Let's implement essential guardrails for production agent systems, using patterns from our Conference Concierge system:
-
-### 1. Schema Validation with Zod & Pydantic
-
-Runtime validation is critical for agents. TypeScript and Python types only exist at development time - at runtime, your data needs validation.
-
-**Zod** (TypeScript) and **Pydantic** (Python) are popular validation libraries in their respective ecosystems. Zod provides TypeScript-first schema validation with static type inference, while Pydantic offers high-performance validation for Python with type hints integration. Both solve the same problem: ensuring runtime data matches your type expectations.
-
-For detailed API references, see the [Zod](https://zod.dev) and [Pydantic](https://docs.pydantic.dev/latest/) documentation.
+The key idea: validate structure first, then use an LLM to evaluate content appropriateness before processing:
 
 <CodeExample py={`from datetime import datetime
 from pydantic import BaseModel, Field, ValidationError
@@ -376,14 +323,11 @@ async function evaluateWithJury(query: string, context): Promise<ContentEvaluati
   return evaluation.object;
 };`} />
 
-<Callout type="info">
-**Key Pattern**: Separate validation from domain rules. Schemas validate structure, your specific rules come after.
-</Callout>
+### Validating External API Responses
 
+When working with external APIs, defensive validation prevents downstream errors from malformed or unexpected data. This pattern is demonstrated in the [AI News Digest cron demo](https://github.com/agentuity/examples/tree/add-tutorials/tutorials/03-cron-demo) - a scheduled agent that fetches tech news every 5 minutes.
 
-#### Real-World Example: Validating External API Responses
-
-Here's how the AI News Digest agent validates Hacker News API responses:
+Here's how it validates Hacker News API responses before processing:
 
 <CodeExample py={`from datetime import datetime
 from pydantic import BaseModel, ValidationError
@@ -415,7 +359,7 @@ async def fetch_top_stories(ctx, count=5):
             story = HNStory(**raw_data)
             stories.append(story.title)
         except ValidationError as e:
-            ctx.logger.warn(f"Invalid story data for ID {story_id}: {e}")
+            ctx.logger.warning(f"Invalid story data for ID {story_id}: {e}")
             continue  # Skip invalid stories
     
     return stories
@@ -507,282 +451,7 @@ const handler = async (request, response, context) => {
   return response.json(digestResult.data);
 };`} />
 
-#### Using Schemas with AI-Generated Output
-
-Schemas ensure structured output from AI models:
-
-<CodeExample py={`from pydantic import BaseModel
-from typing import Literal
-from ai import generate_object
-from anthropic import anthropic
-
-class AgentIntent(BaseModel):
-    agent_type: Literal['support', 'sales', 'technical']
-    confidence: float  # 0.0 to 1.0
-
-async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    user_message = await request.data.text()
-    
-    # AI generates structured, validated output
-    intent = await generate_object(
-        model=anthropic("claude-3-7-sonnet"),
-        schema=AgentIntent,  # Pydantic ensures structure
-        prompt=user_message
-    )
-    
-    # intent.object is validated and typed
-    if intent.object.confidence > 0.8:
-        agent = await context.get_agent(name=intent.object.agent_type)
-        return await agent.run(request)`} js={`import { z } from 'zod';
-import { generateObject } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
-
-const IntentSchema = z.object({
-  agentType: z.enum(['support', 'sales', 'technical']),
-  confidence: z.number().min(0).max(1)
-});
-
-const handler = async (request, response, context) => {
-  const userMessage = await request.data.text();
-  
-  // AI generates structured, validated output
-  const intent = await generateObject({
-    model: anthropic('claude-3-7-sonnet'),
-    schema: IntentSchema,  // Zod ensures structure
-    prompt: userMessage
-  });
-  
-  // intent.object is validated and typed
-  if (intent.object.confidence > 0.8) {
-    const agent = await context.getAgent({ name: intent.object.agentType });
-    return await agent.run(request);
-  }
-};`} />
-
-### 3. Orchestrators as Natural Guardrails
-
-Remember the orchestrator pattern from Module 4? Orchestrators are your first line of defense:
-
-<CodeExample py={`from pydantic import BaseModel
-from typing import Literal
-
-class ValidatedIntent(BaseModel):
-    category: Literal['technical', 'sales', 'support']
-    confidence: float
-    sensitive: bool = False
-    
-async def orchestrator_with_guardrails(request, response, context):
-    user_prompt = await request.data.text()
-    
-    # 1. Input validation
-    if len(user_prompt) > 1000:
-        return response.json({"error": "Request too long"})
-    
-    # 2. Analyze intent with validation
-    intent = await analyze_intent(user_prompt, schema=ValidatedIntent)
-    
-    # 3. Apply routing rules
-    if intent.sensitive:
-        # Route sensitive requests to specialized agent
-        return response.handoff(
-            {"name": "compliance-agent"},
-            user_prompt,
-            metadata={"flagged": True}
-        )
-    
-    if intent.confidence < 0.7:
-        # Low confidence = fallback to human
-        return response.json({
-            "message": "I'll connect you with a specialist",
-            "transfer": "human"
-        })
-    
-    # 4. Route to appropriate agent
-    agent_map = {
-        "technical": "tech-expert",
-        "sales": "sales-agent",
-        "support": "support-agent"
-    }
-    
-    return response.handoff(
-        {"name": agent_map[intent.category]},
-        user_prompt
-    )`} js={`import { z } from 'zod';
-
-const ValidatedIntentSchema = z.object({
-  category: z.enum(['technical', 'sales', 'support']),
-  confidence: z.number(),
-  sensitive: z.boolean().default(false)
-});
-
-const orchestratorWithGuardrails = async (request, response, context) => {
-  const userPrompt = await request.data.text();
-  
-  // 1. Input validation
-  if (userPrompt.length > 1000) {
-    return response.json({ error: 'Request too long' });
-  }
-  
-  // 2. Analyze intent with validation
-  const { object: intent } = await analyzeIntent(userPrompt, {
-    schema: ValidatedIntentSchema
-  });
-  
-  // 3. Apply routing rules
-  if (intent.sensitive) {
-    // Route sensitive requests to specialized agent
-    return response.handoff(
-      { name: 'compliance-agent' },
-      { 
-        data: JSON.stringify({ query: userPrompt, flagged: true }),
-        contentType: 'application/json'
-      }
-    );
-  }
-  
-  if (intent.confidence < 0.7) {
-    // Low confidence = fallback to human
-    return response.json({
-      message: "I'll connect you with a specialist",
-      transfer: 'human'
-    });
-  }
-  
-  // 4. Route to appropriate agent
-  const agentMap = {
-    technical: 'tech-expert',
-    sales: 'sales-agent',
-    support: 'support-agent'
-  };
-  
-  return response.handoff(
-    { name: agentMap[intent.category] },
-    { data: userPrompt, contentType: 'text/plain' }
-  );
-};`} />
-
-**Why Orchestrators Make Great Guardrails:**
-1. **Single validation point** - Check all inputs before routing
-2. **Access control** - Decide who can access which agents
-3. **Fallback handling** - Gracefully handle edge cases
-4. **Audit trail** - Log all routing decisions
-5. **Rate limiting** - Apply per-user limits before delegation
-
-<Callout type="info">
-See the complete [Conference Concierge implementation](https://github.com/agentuity/agent-AIEWF2025-concierge-template) for a production example of multi-agent routing with schema validation.
-</Callout>
-
-### 2. Rate Limiting
-
-Prevent abuse and control costs:
-
-<CodeExample py={`async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    from datetime import datetime
-
-    user_id = request.metadata.get("user_id")
-    hour_key = f"rate_{user_id}_{datetime.now().hour}"
-    
-    # Check current usage
-    usage = await context.kv.get("rate_limits", hour_key)
-    count = await usage.data.json() if usage.exists else 0
-    
-    if count >= 100:  # 100 requests per hour
-        return response.json({
-            "error": "Rate limit exceeded",
-            "retry_after": 3600
-        })
-    
-    # Increment counter with TTL
-    await context.kv.set("rate_limits", hour_key, count + 1, {"ttl": 3600})
-    
-    # Process request
-    return await handle_request(request)`} js={`const handler: AgentHandler = async (request, response, context) => {
-  const userId = request.metadata.get('user_id');
-  const hourKey = 'rate_' + userId + '_' + new Date().getHours();
-  
-  // Check current usage
-  const usage = await context.kv.get('rate_limits', hourKey);
-  const count = usage.exists ? await usage.data.json() : 0;
-  
-  if (count >= 100) {  // 100 requests per hour
-    return response.json({
-      error: 'Rate limit exceeded',
-      retry_after: 3600
-    });
-  }
-  
-  // Increment counter with TTL
-  await context.kv.set('rate_limits', hourKey, count + 1, { ttl: 3600 });
-  
-  // Process request
-  return await handleRequest(request);
-};`} />
-
-### 4. Domain-Specific Rules
-
-Enforce rules specific to your use case:
-
-<CodeExample py={`async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    query = (await request.data.json()).get("query", "")
-
-    # Domain-specific validation rules
-    inappropriate_requests = ["hack", "illegal", "private information"]
-    for term in inappropriate_requests:
-        if term in query.lower():
-            return response.json({
-                "error": "Cannot assist with inappropriate requests",
-                "reason": f"Request contains prohibited content: '{term}'"
-            })
-
-    # Length validation
-    if len(query) > 1000:
-        return response.json({
-            "error": "Query too long",
-            "max_length": 1000
-        })
-
-    # Process valid request
-    result = await process_query(query, context)
-
-    return response.json({
-        "response": result,
-        "processed_by": context.agent.name
-    })`} js={`const handler: AgentHandler = async (request, response, context) => {
-  const { query } = await request.data.json();
-
-  // Domain-specific validation rules
-  const inappropriateRequests = ['hack', 'illegal', 'private information'];
-  for (const term of inappropriateRequests) {
-    if (query.toLowerCase().includes(term)) {
-      return response.json({
-        error: 'Cannot assist with inappropriate requests',
-        reason: \`Request contains prohibited content: '\${term}'\`
-      });
-    }
-  }
-
-  // Length validation
-  if (query.length > 1000) {
-    return response.json({
-      error: 'Query too long',
-      maxLength: 1000
-    });
-  }
-
-  // Process valid request
-  const result = await processQuery(query, context);
-
-  return response.json({
-    response: result,
-    processedBy: context.agent.name
-  });
-};`} />
-
-## Evaluation Strategies
-
-<Callout type="info">
-**Coming Soon**: Agentuity's integrated prompt library and automated evaluation suite will provide built-in prompt management and continuous evaluation workflows.
-</Callout>
+The full cron demo agent combines this validation pattern with scheduled execution, AI-powered summarization, and KV storage. Check out the [complete implementation](https://github.com/agentuity/examples/tree/add-tutorials/tutorials/03-cron-demo) to see how all the concepts from this module work together.
 
 ### Define Success Metrics
 
@@ -797,305 +466,19 @@ Choose metrics that matter for your domain:
 
 ### Build a Golden Dataset
 
-Create test cases that cover your critical scenarios:
+A golden dataset is a collection of test cases covering your critical scenarios. Each test case includes:
 
-<CodeExample py={`# Golden dataset for concierge testing
-test_cases = [
-    {
-        "id": "sf_local_question",
-        "input": {"query": "Where's good coffee near Moscone Center?"},
-        "expected": {
-            "routed_to": "sf_local_guide",
-            "contains": ["coffee", "moscone", "san francisco"],
-            "confidence": 0.8
-        }
-    },
-    {
-        "id": "conference_question",
-        "input": {"query": "What time is the keynote session?"},
-        "expected": {
-            "routed_to": "conference_expert",
-            "contains": ["keynote", "session", "schedule"]
-        }
-    },
-    {
-        "id": "developer_question",
-        "input": {"query": "How do I implement agent handoffs?"},
-        "expected": {
-            "routed_to": "dev_experience",
-            "contains": ["handoff", "agent", "implementation"]
-        }
-    },
-    {
-        "id": "unclear_request",
-        "input": {"query": "Help me with stuff"},
-        "expected": {
-            "fallback": True,
-            "contains": ["clarify", "help with"]
-        }
-    }
-]
+- **Input**: The request data sent to your agent
+- **Expected behavior**: What the agent should do (routing decision, response content, error handling)
+- **Success criteria**: How to verify the agent behaved correctly
 
-async def evaluate_agent(agent_handler, test_cases):
-    """Run evaluation suite and track success rate."""
-    results = []
-    
-    for test in test_cases:
-        # Run the agent
-        response = await agent_handler(test["input"])
-        
-        # Check expectations
-        passed = True
-        if "fallback" in test["expected"]:
-            # Check for fallback response pattern
-            content = response.get("message", "").lower()
-            passed = any(term in content for term in test["expected"].get("contains", []))
-        elif "routed_to" in test["expected"]:
-            # Check correct routing decision
-            routed_agent = response.get("routed_to")
-            passed = routed_agent == test["expected"]["routed_to"]
+For example, a concierge agent might have test cases for:
+- Local questions (should route to SF guide)
+- Conference questions (should route to event expert)
+- Developer questions (should route to dev support)
+- Unclear requests (should ask for clarification)
 
-            # Also check response content
-            content = response.get("response", "").lower()
-            for term in test["expected"].get("contains", []):
-                if term not in content:
-                    passed = False
-                    break
-        
-        results.append({
-            "test_id": test["id"],
-            "passed": passed,
-            "response": response
-        })
-    
-    # Calculate success rate
-    success_rate = sum(1 for r in results if r["passed"]) / len(results)
-    return {"success_rate": success_rate, "results": results}`} js={`// Golden dataset for concierge testing
-const testCases = [
-  {
-    id: 'sf_local_question',
-    input: { query: "Where's good coffee near Moscone Center?" },
-    expected: {
-      routedTo: 'sf_local_guide',
-      contains: ['coffee', 'moscone', 'san francisco'],
-      confidence: 0.8
-    }
-  },
-  {
-    id: 'conference_question',
-    input: { query: 'What time is the keynote session?' },
-    expected: {
-      routedTo: 'conference_expert',
-      contains: ['keynote', 'session', 'schedule']
-    }
-  },
-  {
-    id: 'developer_question',
-    input: { query: 'How do I implement agent handoffs?' },
-    expected: {
-      routedTo: 'dev_experience',
-      contains: ['handoff', 'agent', 'implementation']
-    }
-  },
-  {
-    id: 'unclear_request',
-    input: { query: 'Help me with stuff' },
-    expected: {
-      fallback: true,
-      contains: ['clarify', 'help with']
-    }
-  }
-];
-
-async function evaluateAgent(agentHandler, testCases) {
-  const results = [];
-
-  for (const test of testCases) {
-    // Run the agent
-    const response = await agentHandler(test.input);
-
-    // Check expectations
-    let passed = true;
-    if (test.expected.fallback) {
-      // Check for fallback response pattern
-      const content = (response.message || '').toLowerCase();
-      passed = test.expected.contains.some(term => content.includes(term));
-    } else if (test.expected.routedTo) {
-      // Check correct routing decision
-      const routedAgent = response.routedTo;
-      passed = routedAgent === test.expected.routedTo;
-
-      // Also check response content
-      const content = (response.response || '').toLowerCase();
-      for (const term of test.expected.contains || []) {
-        if (!content.includes(term)) {
-          passed = false;
-          break;
-        }
-      }
-    }
-    
-    results.push({
-      testId: test.id,
-      passed,
-      response
-    });
-  }
-  
-  // Calculate success rate
-  const successRate = results.filter(r => r.passed).length / results.length;
-  return { successRate, results };
-}`} />
-
-
-## Validation Patterns from Working Agent Systems
-
-Instead of building a new agent from scratch, let's learn validation patterns from Module 4's Conference Concierge - a working system that shows useful validation techniques.
-
-### Key Pattern: Structured LLM Output Validation
-
-The concierge uses validation schemas to ensure AI generates reliable routing decisions:
-
-<CodeExample py={`# Python - Pydantic validation for AI-generated routing decisions
-from pydantic import BaseModel, ValidationError
-from typing import Literal
-
-class UserIntent(BaseModel):
-    agent_type: Literal['sf_local_guide', 'conference_expert', 'dev_experience']
-    confidence: float
-
-# Use AI to analyze intent with validation
-try:
-    ai_response = await generate_structured_intent(user_message)
-    intent = UserIntent(**ai_response)  # Pydantic validates structure
-except ValidationError:
-    # Safe fallback for invalid data
-    intent = UserIntent(agent_type='dev_experience', confidence=0.5)
-
-# Validated data enables confident decision making
-if intent.confidence < 0.8:
-    return response.json({
-        "message": "I'll connect you with a human specialist"
-    })`} js={`// TypeScript - Zod validation for AI-generated routing decisions
-import { z } from 'zod';
-import { generateObject } from 'ai';
-
-const UserIntentSchema = z.object({
-  agentType: z.enum(['sf_local_guide', 'conference_expert', 'dev_experience']),
-  confidence: z.number().min(0).max(1)
-});
-
-// Validation ensures reliable AI output structure
-const { object: userIntent } = await generateObject({
-  model: anthropic('claude-3-5-sonnet-20241022'),
-  schema: UserIntentSchema,  // Zod prevents invalid structures
-  prompt: \`Analyze this user message and determine routing: "\${userMessage}"\`
-});
-
-// Validated data enables confident decision making
-if (userIntent.confidence < 0.8) {
-  return response.json({
-    message: "I'll connect you with a human specialist"
-  });
-}`} />
-
-### Key Pattern: Input Validation
-
-Agents should validate all inputs before processing:
-
-```python
-# From Module 4: Pydantic validation patterns
-from pydantic import BaseModel, Field, ValidationError
-from typing import Literal
-
-class ConversationRequest(BaseModel):
-    message: str = Field(min_length=1, max_length=1000)
-    session_id: str = Field(pattern=r'^[a-zA-Z0-9_-]+$')
-    user_preferences: dict = Field(default_factory=dict)
-
-async def concierge_handler(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    # Validate input structure with clear error handling
-    try:
-        data = await request.data.json()
-        validated = ConversationRequest(**data)
-    except ValidationError as e:
-        context.logger.warning("Invalid input structure", {"errors": e.errors()})
-        return response.json({
-            "error": "Invalid request format",
-            "details": [{"field": err["loc"][-1], "issue": err["msg"]} for err in e.errors()]
-        })
-
-    # Proceed with validated, type-safe data
-    return await process_conversation(validated, context)
-```
-
-### Key Pattern: Domain-Specific Guardrails
-
-The concierge applies context-aware validation rules:
-
-```typescript
-// Context-aware validation based on agent routing
-async function validateAgentRouting(
-  userIntent: UserIntent,
-  conversationHistory: ConversationRecord,
-  ctx: AgentContext
-) {
-  // Apply routing-specific validation rules
-  if (userIntent.agentType === 'dev_experience') {
-    // Technical questions require minimum context
-    if (userIntent.context.length < 10) {
-      ctx.logger.info('Insufficient context for technical routing');
-      return { valid: false, reason: 'Please provide more detail about your question' };
-    }
-  }
-
-  // Location questions need geographic context
-  if (userIntent.agentType === 'sf_local_guide') {
-    const hasLocationContext = /\b(san francisco|sf|bay area|moscone)\b/i.test(userIntent.context);
-    if (!hasLocationContext) {
-      return { valid: false, reason: 'Please specify your San Francisco location or area of interest' };
-    }
-  }
-
-  return { valid: true };
-}
-```
-
-### Pattern: Error Recovery and Fallbacks
-
-Good validation includes graceful error recovery:
-
-```python
-# Defensive validation with multiple fallback strategies
-async def validate_with_fallbacks(request_data: dict, context: AgentContext):
-    # Strategy 1: Full validation
-    try:
-        validated = ConversationRequest(**request_data)
-        return {"status": "validated", "data": validated}
-    except ValidationError as primary_error:
-        context.logger.info("Primary validation failed, trying fallbacks")
-
-    # Strategy 2: Essential fields only
-    try:
-        essential_fields = {
-            "message": request_data.get("message", ""),
-            "session_id": request_data.get("session_id", f"fallback_{uuid.uuid4()}")
-        }
-        minimal = ConversationRequest(**essential_fields)
-        context.logger.info("Using minimal validation fallback")
-        return {"status": "fallback", "data": minimal}
-    except ValidationError:
-        context.logger.warning("All validation strategies failed")
-
-    # Strategy 3: Safe defaults
-    return {
-        "status": "default",
-        "data": ConversationRequest(
-            message="I need help",
-            session_id=f"emergency_{int(time.time())}"
-        )
-    }
-```
+You can build evaluation functions that run your agent against these test cases and track success rates over time. This helps you catch regressions and measure improvements as you refine your prompts and logic.
 
 ## 🚀 Coming Soon: Integrated Prompts & Evaluations
 
@@ -1108,26 +491,23 @@ Agentuity is working on prompt management and evaluation features:
 ### **Automated Evaluations**
 - Evals that run automatically after every agent session (configurable)
 - Custom evaluation criteria specific to your domain and use cases
-- Integration with your existing CI/CD pipeline
 
 ### **Experimentation Mode**
 - Multi-model comparisons (e.g., GPT-5, Claude, Gemini) on identical prompts
 
-<Callout type="info">
-These features will provide better visibility into agent behavior and systematic ways to improve agent performance over time.
-</Callout>
-
 ## Key Takeaways
 
-- **Guardrails prevent failures** - Input validation, rate limiting, and domain rules protect your agents
-- **Evaluation proves reliability** - Systematic testing with metrics that matter for your domain
-- **Observability is automatic** - Agentuity provides OpenTelemetry integration for comprehensive monitoring
-- **The console shows everything** - Sessions view with color-coded timeline visualization
-- **Production readiness** requires all three pillars working together
+- **Child loggers improve debugging** - Context flows through all log entries automatically
+- **Runtime validation is essential** - TypeScript types and Python type hints aren't enforced at runtime
+- **Validate inputs defensively** - Protect your agent from malformed requests with Zod/Pydantic
+- **Validate AI output structurally** - Ensure reliable, type-safe AI responses with schemas
+- **Custom spans reveal performance** - Track execution flow with attributes and events
+- **Observability is automatic** - Agentuity provides OpenTelemetry integration out of the box
+- **Guardrails preserve autonomy** - Set boundaries without restricting agent capability
 
 ## What's Next?
 
-Now that you understand the fundamentals of production-ready agents, it's time to explore deployment. In the next module, we'll cover Agentuity's deployment environments - from local development through staging to production.
+Now that you understand observability, guardrails, and evaluation strategies, it's time to explore deployment. In the next module, we'll cover Agentuity's deployment environments - from local development through staging to production.
 
 ---
 

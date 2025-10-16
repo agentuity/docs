@@ -43,7 +43,11 @@ You have access to various tools you can use -- use when appropriate!
         const toolUsagePrompt = `<TOOL_USAGE_RULES>
 - startTutorialById must only be used when user select a tutorial. If the user starts a new tutorial, the step number should be set to one. Valid step is between 1 and totalSteps of the specific tutorial.
 - getUserTutorialProgress should be called when you need to know what tutorials the user has completed or is working on. This helps provide personalized recommendations.
-- Treat askDocsAgentTool as a search helper; ignore results you judge irrelevant.
+- **askDocsAgentTool usage:**
+  - ALWAYS use askDocsAgentTool for questions about the Agentuity SDK, platform features, APIs, or CLI commands.
+  - Examples: AgentContext, AgentRequest, AgentResponse, ctx.logger, ctx.vector, resp.json, deployment, authentication, agent configuration.
+  - For non-Agentuity questions (general programming concepts), you may answer directly without the tool.
+  - Treat doc results as authoritative. If docs don't cover it, inform the user.
 
 CRITICAL - NO HALLUCINATION RULE:
 - You MUST NOT tell the user you are "setting them up", "starting", "loading", or "preparing" a tutorial step UNLESS you have actually called the startTutorialById tool in this turn.

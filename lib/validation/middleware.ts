@@ -61,9 +61,14 @@ export async function parseAndValidateJSON<T>(
   return { success: true, data: result.data };
 }
 
+/**
+ * Tutorial progress validation schema
+ * - Steps are 1-indexed (no step 0 concept)
+ * - Only tutorials with interactive steps are tracked
+ */
 export const TutorialProgressRequestSchema = z.object({
   tutorialId: z.string().min(1),
-  currentStep: z.number().int().min(0),
+  currentStep: z.number().int().min(1),
   totalSteps: z.number().int().min(1)
 });
 
