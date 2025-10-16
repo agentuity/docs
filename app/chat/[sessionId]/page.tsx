@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from "next/navigation";
 import { Allotment } from "allotment";
 import "allotment/dist/style.css";
@@ -19,6 +19,11 @@ export default function ChatSessionPage() {
   const [editorContent, setEditorContent] = useState<string>('');
   const { sessions, setSessions, revalidateSessions } = useSessions();
   const [creationError, setCreationError] = useState<string | null>(null);
+
+  // Refs for throttling text streaming updates
+  const textAccumulatorRef = useRef<string>('');
+  const streamingMessageIdRef = useRef<string | null>(null);
+  const updateTimerRef = useRef<NodeJS.Timeout | null>(null);
 
 
   const handleSendMessage = async (content: string, sessionId: string) => {
@@ -52,19 +57,36 @@ export default function ChatSessionPage() {
         newMessage,
         {
           onTextDelta: (textDelta) => {
-            setSession(prev => {
-              if (!prev) return prev;
-              const updatedMessages = prev.messages.map(msg => {
-                if (msg.id === assistantMessage.id) {
-                  return {
-                    ...msg,
-                    content: msg.content + textDelta
-                  };
-                }
-                return msg;
+            // Accumulate the text in the ref
+            textAccumulatorRef.current += textDelta;
+            streamingMessageIdRef.current = assistantMessage.id;
+            
+            // Clear any existing timer
+            if (updateTimerRef.current) {
+              clearTimeout(updateTimerRef.current);
+            }
+            
+            // Throttle updates to every 50ms
+            updateTimerRef.current = setTimeout(() => {
+              const accumulatedText = textAccumulatorRef.current;
+              
+              setSession(prev => {
+                if (!prev) return prev;
+                const updatedMessages = prev.messages.map(msg => {
+                  if (msg.id === assistantMessage.id) {
+                    return {
+                      ...msg,
+                      content: msg.content + accumulatedText
+                    };
+                  }
+                  return msg;
+                });
+                return { ...prev, messages: updatedMessages };
               });
-              return { ...prev, messages: updatedMessages };
-            });
+              
+              // Reset accumulator after updating
+              textAccumulatorRef.current = '';
+            }, 50);
           },
 
           onTutorialData: (tutorialData) => {
@@ -80,12 +102,51 @@ export default function ChatSessionPage() {
           },
 
           onFinish: (finalSession) => {
+            // Clear any pending updates and flush remaining text
+            if (updateTimerRef.current) {
+              clearTimeout(updateTimerRef.current);
+              updateTimerRef.current = null;
+            }
+            
+            // Flush any remaining accumulated text before setting final session
+            if (textAccumulatorRef.current) {
+              setSession(prev => {
+                if (!prev) return prev;
+                const updatedMessages = prev.messages.map(msg => {
+                  if (msg.id === streamingMessageIdRef.current) {
+                    return {
+                      ...msg,
+                      content: msg.content + textAccumulatorRef.current
+                    };
+                  }
+                  return msg;
+                });
+                return { ...prev, messages: updatedMessages };
+              });
+            }
+            
+            // Reset refs
+            textAccumulatorRef.current = '';
+            streamingMessageIdRef.current = null;
+            
+            // Set the final session
             setSession(finalSession);
             setSessions(prev => prev.map(s => s.sessionId === sessionId ? finalSession : s));
           },
 
           onError: (error) => {
             console.error('Error sending message:', error);
+            
+            // Clear any pending updates
+            if (updateTimerRef.current) {
+              clearTimeout(updateTimerRef.current);
+              updateTimerRef.current = null;
+            }
+            
+            // Reset refs
+            textAccumulatorRef.current = '';
+            streamingMessageIdRef.current = null;
+            
             setSession(prev => {
               if (!prev) return prev;
               const updatedMessages = prev.messages.map(msg =>
@@ -101,6 +162,17 @@ export default function ChatSessionPage() {
 
     } catch (error) {
       console.error('Error sending message:', error);
+      
+      // Clear any pending updates
+      if (updateTimerRef.current) {
+        clearTimeout(updateTimerRef.current);
+        updateTimerRef.current = null;
+      }
+      
+      // Reset refs
+      textAccumulatorRef.current = '';
+      streamingMessageIdRef.current = null;
+      
       setSession(prevSession => {
         if (!prevSession) return prevSession;
         const filteredMessages = prevSession.messages.filter(msg =>
@@ -163,6 +235,14 @@ export default function ChatSessionPage() {
       });
   }, [sessionId, sessions]);
 
+  // Cleanup effect to clear any pending timers on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimerRef.current) {
+        clearTimeout(updateTimerRef.current);
+      }
+    };
+  }, []);
 
   const toggleEditor = () => { setEditorOpen(false) };
   const stopServer = () => { };
