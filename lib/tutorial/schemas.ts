@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const TutorialMetadataSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
-  totalSteps: z.number().positive('Total steps must be a positive number'),
+  totalSteps: z.number().positive('Total steps must be a positive number').optional(),
   difficulty: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
   estimatedTime: z.string().optional()
 });
@@ -19,18 +19,25 @@ export const StepParamsSchema = z.object({
   stepNumber: z.coerce.number().positive('Step number must be a positive number')
 });
 
-// Response schemas for better type safety
+/**
+ * Response schemas for better type safety
+ * Enforces min(1) to filter out modules without interactive steps
+ */
 export const TutorialListItemSchema = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string(),
-  totalSteps: z.number(),
+  totalSteps: z.number().int().min(1, 'Tutorial must have at least one step'),
   difficulty: z.string().optional(),
   estimatedTime: z.string().optional()
 });
 
+/**
+ * Tutorial step data schema
+ * Enforces 1-indexed steps (prevents step 0)
+ */
 export const TutorialStepDataSchema = z.object({
-  stepNumber: z.number(),
+  stepNumber: z.number().int().min(1, 'Step number must be at least 1'),
   title: z.string(),
   estimatedTime: z.string().optional(),
   mdxContent: z.string(),

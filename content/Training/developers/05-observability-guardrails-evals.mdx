@@ -1,0 +1,514 @@
+---
+title: "Module 5: Observability, Guardrails, & Evals"
+description: Making agents reliable, safe, and ready for real-world use
+---
+
+You've built agents that can think, remember, and collaborate. Now it's time to make them reliable and safe.
+
+## The Reality of Production Agents
+
+When [Salesforce deployed their Agentforce AI agents](https://www.hr-brew.com/stories/2025/03/04/salesforce-ai-agents-reskilling), they discovered that success required more than just technology - it demanded a comprehensive reskilling strategy for their 72,000+ employees. As their EVP of talent growth noted: "This rise of digital labor powered by AI agents is truly reshaping the way our businesses operate." The gap between demo and production? Proper guardrails, systematic evaluation, and comprehensive observability.
+
+According to [NIST's AI Risk Management framework](https://www.nist.gov/itl/ai-risk-management-framework), the primary operational risks in AI systems include:
+- **Hallucination**: Agents generating plausible but incorrect information
+- **Prompt Injection**: Adversarial inputs manipulating agent behavior
+- **Resource Consumption**: Uncontrolled usage leading to excessive costs
+- **Compliance Drift**: Agents violating domain-specific regulations
+
+## The Three Pillars of Production Agents
+
+### 1. Observability: Seeing Everything
+
+<Callout type="info">
+**Automatic Observability**: Agentuity provides built-in OpenTelemetry integration with zero configuration. All agent executions, LLM calls, storage operations, and API calls are tracked automatically and appear in the Sessions tab with color-coded timeline visualization.
+</Callout>
+
+### 2. Guardrails: Setting Boundaries
+
+Guardrails prevent agents from harmful actions while preserving autonomy and ensuring they stay in line with what they're supposed to do:
+
+- **Input Validation**: Schema enforcement with Zod (TypeScript) and Pydantic (Python) for runtime validation
+- **Rate Limiting**: Prevent abuse and control costs per user/session
+- **Security**: Prompt injection defense ([WASP](https://arxiv.org/abs/2407.01593)), tool permissions
+- **Domain Rules**: Compliance checks, output validation, custom constraints
+
+### 3. Evaluation: Measuring Success
+
+<Callout type="info">
+Agentuity's upcoming *prompts and evaluations suite* will provide built-in prompt management and evaluation workflows.
+</Callout>
+
+Systematic evaluation is critical for non-deterministic agents:
+
+- **Real-World Benchmarks**: [τ-Bench](https://sierra.ai/blog/benchmarking-ai-agents) (dynamic agent interactions), [TheAgentCompany](https://metadesignsolutions.com/benchmarking-ai-agents-in-2025-top-tools-metrics-performance-testing-strategies/) (multi-step professional tasks)
+- **Golden Datasets**: Domain-specific test cases with expected outcomes
+- **Production Metrics**: Success rates, latency, cost per request, goal completion rates
+- **A/B Testing**: Shadow deployments, gradual rollouts, real user feedback
+
+## Build A Safe and Reliable Agent Step-by-Step
+
+Let's implement the essential observability and validation patterns that make agents reliable at scale.
+
+<TutorialStep number={1} title="Child Loggers" estimatedTime="4 min">
+
+When debugging agents, you need context in every log entry. Child loggers let you attach metadata once, then all subsequent logs automatically include that context.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/05-observability-guardrails/step1-child-loggers.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/05-observability-guardrails/step1-child-loggers.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- TypeScript: Creating child loggers with `context.logger.child({ key: value })`
+- Python: Manual context pattern (child() method coming soon)
+- How context appears in logs/metadata for easier debugging
+- Consistent tracking throughout request lifecycle
+
+**Try it:**
+1. Send a request with `userId` and `query` fields
+2. Check logs in DevMode - notice how context appears in every log entry
+3. Python users: Observe the manual context pattern with structured logging
+
+</TutorialStep>
+
+<TutorialStep number={2} title="Input Validation" estimatedTime="5 min">
+
+Runtime validation protects your agent from malformed requests. TypeScript types and Python type hints only exist at development time - at runtime, your data needs actual validation.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/05-observability-guardrails/step2-input-validation.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/05-observability-guardrails/step2-input-validation.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- Why runtime validation matters (types alone aren't enough)
+- Zod's `safeParse()` pattern for safe validation (TypeScript)
+- Pydantic's try/except ValidationError pattern (Python)
+- Clear error messages for invalid input
+- Type-safe data access after validation
+
+**Try it:**
+1. Send valid request: `{"query": "test", "userId": "123"}`
+2. Send invalid data (missing field): `{"query": "test"}`
+3. Send wrong type: `{"query": 123, "userId": "123"}`
+4. Check logs to see validation failures tracked
+
+</TutorialStep>
+
+<TutorialStep number={3} title="AI Output Validation" estimatedTime="5 min">
+
+AI models are non-deterministic, but your downstream code needs reliable structure. Validation schemas ensure AI responses always match your expected format.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/05-observability-guardrails/step3-ai-output-validation.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/05-observability-guardrails/step3-ai-output-validation.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- Using schemas with `generateObject()` from Vercel AI SDK (TypeScript)
+- Using Pydantic with Anthropic structured output (Python)
+- Guaranteed type-safe AI responses
+- Graceful handling if AI returns invalid structure
+- Logging validated results
+
+**Try it:**
+1. Send a query: `{"query": "This is amazing!"}`
+2. See structured sentiment analysis guaranteed to match schema
+3. Try different queries (positive, negative, neutral)
+4. Notice how validation prevents downstream errors
+
+</TutorialStep>
+
+<TutorialStep number={4} title="Custom Spans for Performance" estimatedTime="6 min">
+
+Agentuity automatically traces LLM calls and storage operations, but you can also track your own business logic with custom spans. This helps identify performance bottlenecks and debug complex workflows.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/05-observability-guardrails/step4-custom-spans.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/05-observability-guardrails/step4-custom-spans.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- Creating spans for operations with `context.tracer`
+- Setting attributes for filtering and analysis
+- Adding events to mark milestones
+- Error handling with `recordException()` and `setStatus()`
+- Viewing execution flow in Sessions timeline
+
+**Try it:**
+1. Send plain text: `"Testing tracing"`
+2. Send JSON: `{"user": "alice", "action": "purchase"}`
+3. Open DevMode Sessions tab - see the span timeline
+4. Check span attributes and events
+5. Notice how different content types create different attributes
+
+</TutorialStep>
+
+## Advanced Patterns
+
+The tutorial steps covered the core observability and validation concepts. Here are some additional patterns for complex real-world scenarios.
+
+### Performance Best Practices
+
+Follow these optimization patterns to ensure your agents run efficiently:
+
+| Strategy | Implementation |
+|----------|---------------|
+| **Cache expensive operations** | Store LLM responses in KV with TTL to avoid repeated calls |
+| **Use parallel operations** | `Promise.all()` (JS) or `asyncio.gather()` (Python) for concurrent tasks |
+| **Fail fast** | Validate inputs early to avoid unnecessary processing |
+| **Track token usage** | Add token counts as span attributes to monitor costs |
+| **Set meaningful attributes** | Include user tier, request type, and other context for filtering |
+
+### Combining Validation with Content Moderation
+
+Sometimes you need both structural validation *and* content policy checks. This pattern combines schema validation (from Step 2) with an LLM-based content moderator - useful for applications like financial advisors, healthcare chatbots, or any domain with compliance requirements.
+
+The key idea: validate structure first, then use an LLM to evaluate content appropriateness before processing:
+
+<CodeExample py={`from datetime import datetime
+from pydantic import BaseModel, Field, ValidationError
+from typing import Optional, Literal
+
+class UserQuery(BaseModel):
+    query: str = Field(min_length=1, max_length=1000)
+    user_id: str
+    portfolio_value: Optional[float] = Field(None, gt=0)  # Must be > 0 if provided
+
+class ContentEvaluation(BaseModel):
+    approved: bool
+    reason: str
+    category: Literal['safe', 'risky', 'prohibited']
+    confidence: float = Field(ge=0.0, le=1.0)
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    # 1. Validate structure
+    try:
+        raw_data = await request.data.json()
+        validated = UserQuery(**raw_data)
+    except ValidationError as e:
+        return response.json({
+            'error': 'Invalid request',
+            'details': e.errors()
+        })
+    
+    # 2. Use LLM jury for content evaluation
+    evaluation = await evaluate_with_jury(validated.query, context)
+    if not evaluation.approved:
+        return response.json({
+            'error': 'Content policy violation',
+            'reason': evaluation.reason
+        })
+
+    # 3. Process validated and approved data
+    return await process_query(validated.query, validated.user_id)
+
+async def evaluate_with_jury(query: str, context) -> ContentEvaluation:
+    """Use LLM jury to evaluate content appropriateness."""
+    jury_prompt = f'''
+    Evaluate this financial query for compliance and safety:
+    "{query}"
+
+    Check for:
+    - Prohibited financial advice (guaranteed returns, insider trading)
+    - Inappropriate requests (illegal activities)
+    - Scam indicators or harmful content
+
+    Respond with your evaluation as structured data.
+    '''
+
+    # Use structured generation with Python anthropic SDK
+    from anthropic import AsyncAnthropic
+    import json
+
+    client = AsyncAnthropic()
+    response = await client.messages.create(
+        model="claude-3-haiku-20240307",
+        max_tokens=1000,
+        messages=[{"role": "user", "content": jury_prompt}]
+    )
+
+    # Parse response and validate with Pydantic
+    try:
+        response_data = json.loads(response.content[0].text)
+        evaluation = ContentEvaluation(**response_data)
+    except (json.JSONDecodeError, ValidationError) as e:
+        # Fallback to safe evaluation
+        evaluation = ContentEvaluation(
+            approved=False,
+            reason="Failed to parse AI evaluation",
+            category="prohibited",
+            confidence=0.0
+        )
+
+    context.logger.info("Jury evaluation", {
+        "approved": evaluation.approved,
+        "category": evaluation.category,
+        "confidence": evaluation.confidence
+    })
+
+    return evaluation`} js={`import { z } from 'zod';
+import { generateObject } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
+
+// Define clean schema for structure
+const UserQuerySchema = z.object({
+  query: z.string().min(1).max(1000),
+  userId: z.string(),
+  portfolioValue: z.number().positive().optional()  // Must be > 0 if provided
+});
+
+// Content evaluation schema for LLM jury
+const ContentEvaluationSchema = z.object({
+  approved: z.boolean(),
+  reason: z.string(),
+  category: z.enum(['safe', 'risky', 'prohibited']),
+  confidence: z.number().min(0).max(1)
+});
+
+// TypeScript types from schemas
+type UserQuery = z.infer<typeof UserQuerySchema>;
+type ContentEvaluation = z.infer<typeof ContentEvaluationSchema>;
+
+const handler = async (request, response, context) => {
+  // 1. Validate structure
+  const result = UserQuerySchema.safeParse(await request.data.json());
+
+  if (!result.success) {
+    return response.json({
+      error: 'Invalid request',
+      details: result.error.issues
+    });
+  }
+
+  // 2. Use LLM jury for content evaluation
+  const evaluation = await evaluateWithJury(result.data.query, context);
+  if (!evaluation.approved) {
+    return response.json({
+      error: 'Content policy violation',
+      reason: evaluation.reason
+    });
+  }
+
+  // 3. Process validated and approved data
+  const { query, userId } = result.data;
+  return await processQuery(query, userId);
+};
+
+async function evaluateWithJury(query: string, context): Promise<ContentEvaluation> {
+  const juryPrompt = \`
+  Evaluate this financial query for compliance and safety:
+  "\${query}"
+
+  Check for:
+  - Prohibited financial advice (guaranteed returns, insider trading)
+  - Inappropriate requests (illegal activities)
+  - Scam indicators or harmful content
+
+  Respond with your evaluation as structured data.
+  \`;
+
+  const evaluation = await generateObject({
+    model: anthropic('claude-3-haiku'),
+    schema: ContentEvaluationSchema,
+    prompt: juryPrompt
+  });
+
+  context.logger.info('Jury evaluation', {
+    approved: evaluation.object.approved,
+    category: evaluation.object.category,
+    confidence: evaluation.object.confidence
+  });
+
+  return evaluation.object;
+};`} />
+
+### Validating External API Responses
+
+When working with external APIs, defensive validation prevents downstream errors from malformed or unexpected data. This pattern is demonstrated in the [AI News Digest cron demo](https://github.com/agentuity/examples/tree/add-tutorials/tutorials/03-cron-demo) - a scheduled agent that fetches tech news every 5 minutes.
+
+Here's how it validates Hacker News API responses before processing:
+
+<CodeExample py={`from datetime import datetime
+from pydantic import BaseModel, ValidationError
+from typing import Optional, List
+
+# Schema for Hacker News story
+class HNStory(BaseModel):
+    id: int                      # Required by HN API
+    title: str                   # What we display
+    url: Optional[str] = None    # Available if needed
+
+# Schema for our digest data
+class DigestData(BaseModel):
+    summary: str
+    sources: List[str]
+    article_count: int
+    timestamp: str
+    source: str
+
+async def fetch_top_stories(ctx, count=5):
+    stories = []
+    story_ids = await fetch_story_ids()  # Get from HN API
+    
+    for story_id in story_ids[:count]:
+        raw_data = await fetch_story_data(story_id)
+        
+        # Validate with Pydantic
+        try:
+            story = HNStory(**raw_data)
+            stories.append(story.title)
+        except ValidationError as e:
+            ctx.logger.warning(f"Invalid story data for ID {story_id}: {e}")
+            continue  # Skip invalid stories
+    
+    return stories
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    # Fetch and validate stories
+    articles = await fetch_top_stories(context, 5)
+    
+    # Generate AI summary
+    summary = await generate_summary(articles)
+    
+    # Create and validate digest
+    try:
+        digest = DigestData(
+            summary=summary,
+            sources=articles,
+            article_count=len(articles),
+            timestamp=datetime.now().isoformat(),
+            source="Hacker News API"
+        )
+    except ValidationError as e:
+        context.logger.error(f"Digest validation failed: {e}")
+        return response.json({"error": "Failed to create digest"})
+    
+    # Store validated digest
+    await context.kv.set("digest", "latest", digest.model_dump())
+    
+    return response.json(digest.model_dump())`} js={`import { z } from 'zod';
+
+// Zod schemas for type-safe API responses
+const HNStorySchema = z.object({
+  id: z.number(),             // Required by HN API
+  title: z.string(),          // What we display
+  url: z.string().optional(), // Available if needed
+});
+
+const DigestDataSchema = z.object({
+  summary: z.string(),
+  sources: z.array(z.string()),
+  articleCount: z.number(),
+  timestamp: z.string(),
+  source: z.string(),
+});
+
+async function fetchTopStories(ctx, count = 5) {
+  const stories = [];
+  const storyIds = await fetchStoryIds(); // Get from HN API
+  
+  for (const id of storyIds.slice(0, count)) {
+    const rawData = await fetchStoryData(id);
+    
+    // Validate with Zod
+    const parseResult = HNStorySchema.safeParse(rawData);
+    if (parseResult.success) {
+      stories.push(parseResult.data.title);
+    } else {
+      ctx.logger.warn('Invalid story data for ID ' + id);
+      continue; // Skip invalid stories
+    }
+  }
+  
+  return stories;
+}
+
+const handler = async (request, response, context) => {
+  // Fetch and validate stories
+  const articles = await fetchTopStories(context, 5);
+  
+  // Generate AI summary
+  const summary = await generateSummary(articles);
+  
+  // Create and validate digest with Zod
+  const digestResult = DigestDataSchema.safeParse({
+    summary,
+    sources: articles,
+    articleCount: articles.length,
+    timestamp: new Date().toISOString(),
+    source: 'Hacker News API'
+  });
+  
+  if (!digestResult.success) {
+    context.logger.error('Digest validation failed', digestResult.error);
+    return response.json({ error: 'Failed to create digest' });
+  }
+  
+  // Store validated digest
+  await context.kv.set('digest', 'latest', digestResult.data);
+  
+  return response.json(digestResult.data);
+};`} />
+
+The full cron demo agent combines this validation pattern with scheduled execution, AI-powered summarization, and KV storage. Check out the [complete implementation](https://github.com/agentuity/examples/tree/add-tutorials/tutorials/03-cron-demo) to see how all the concepts from this module work together.
+
+### Define Success Metrics
+
+Choose metrics that matter for your domain:
+
+| Metric | Example | How to Measure |
+|--------|---------|----------------|
+| **Accuracy** | Correct routing | Compare against test cases |
+| **Compliance** | Appropriate responses | Check output validation |
+| **Performance** | < 5s response | Track in telemetry |
+| **Cost** | < $0.10/request | Monitor token usage |
+
+### Build a Golden Dataset
+
+A golden dataset is a collection of test cases covering your critical scenarios. Each test case includes:
+
+- **Input**: The request data sent to your agent
+- **Expected behavior**: What the agent should do (routing decision, response content, error handling)
+- **Success criteria**: How to verify the agent behaved correctly
+
+For example, a concierge agent might have test cases for:
+- Local questions (should route to SF guide)
+- Conference questions (should route to event expert)
+- Developer questions (should route to dev support)
+- Unclear requests (should ask for clarification)
+
+You can build evaluation functions that run your agent against these test cases and track success rates over time. This helps you catch regressions and measure improvements as you refine your prompts and logic.
+
+## 🚀 Coming Soon: Integrated Prompts & Evaluations
+
+Agentuity is working on prompt management and evaluation features:
+
+### **Code-First Prompts**
+- Version-controlled prompts in your codebase alongside agent logic
+- Prompt templates with variable substitution
+
+### **Automated Evaluations**
+- Evals that run automatically after every agent session (configurable)
+- Custom evaluation criteria specific to your domain and use cases
+
+### **Experimentation Mode**
+- Multi-model comparisons (e.g., GPT-5, Claude, Gemini) on identical prompts
+
+## Key Takeaways
+
+- **Child loggers improve debugging** - Context flows through all log entries automatically
+- **Runtime validation is essential** - TypeScript types and Python type hints aren't enforced at runtime
+- **Validate inputs defensively** - Protect your agent from malformed requests with Zod/Pydantic
+- **Validate AI output structurally** - Ensure reliable, type-safe AI responses with schemas
+- **Custom spans reveal performance** - Track execution flow with attributes and events
+- **Observability is automatic** - Agentuity provides OpenTelemetry integration out of the box
+- **Guardrails preserve autonomy** - Set boundaries without restricting agent capability
+
+## What's Next?
+
+Now that you understand observability, guardrails, and evaluation strategies, it's time to explore deployment. In the next module, we'll cover Agentuity's deployment environments - from local development through staging to production.
+
+---
+
+**Ready for Module 6?** [Deployment Environments](./06-deployment-environments)

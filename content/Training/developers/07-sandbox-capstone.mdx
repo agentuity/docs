@@ -1,0 +1,356 @@
+---
+title: "Module 7: Advanced Multi-Agent Research System"
+description: Building sophisticated agent coordination with recursive research
+---
+
+Time to build an advanced multi-agent research system that combines everything you've learned.
+
+## Building Your Capstone
+
+As you work on your capstone project:
+
+1. **Review previous modules** - Each contains pieces you'll need
+2. **Start simple** - Get basic flow working first
+3. **Iterate** - Add features incrementally
+4. **Test thoroughly** - Each agent independently, then together
+5. **Monitor everything** - You can't fix what you can't see
+
+<Callout type="info">
+Pro Tip: Build your research system iteratively. Start with orchestrator + web search agents, get that working perfectly, then add recursive research and report generation.
+</Callout>
+
+## Coming Soon: Agentic Sandbox
+
+<Callout type="info">
+**Coming Q2 2025**: The Agentic Sandbox - an interactive environment where you can experiment with agents risk-free, test complex scenarios, and learn through hands-on exploration.
+</Callout>
+
+### What is the Agentic Sandbox?
+
+A safe, isolated environment for agent experimentation:
+- **Pre-configured scenarios**: Common agent patterns ready to explore
+- **Interactive debugging**: Step through agent decisions
+- **Instant reset**: Break things and start fresh
+- **Guided challenges**: Progressive exercises with hints
+
+### Sandbox Features (Coming Soon)
+
+- Mock data sources and APIs
+- Simulated user interactions
+- Time travel debugging
+- Performance profiling
+- Collaborative sessions
+
+## Coming Soon: Training Agent
+
+<Callout type="info">
+**Coming Q2 2025**: Your AI-powered learning companion that adapts to your progress, answers questions, and provides personalized guidance through the Agentuity platform.
+</Callout>
+
+### Your Personal Agent Instructor
+
+An intelligent assistant that helps you learn:
+- **Contextual help**: Understands what you're building
+- **Debugging assistance**: Helps identify and fix issues
+- **Learning paths**: Customized based on your experience
+- **Best practices**: Recommends patterns for your use case
+
+## Capstone Project: Deep Research System
+
+Build an advanced multi-agent research system that demonstrates mastery of sophisticated agent coordination, recursive algorithms, and real-world API integration.
+
+### Project Overview
+
+**Goal**: Create a research system that can:
+- Coordinate multiple specialized research agents
+- Conduct recursive deep-dive investigations
+- Accumulate knowledge across research iterations
+- Generate comprehensive structured reports
+- Handle complex multi-source information synthesis
+
+### System Architecture
+
+The research system coordinates four specialized agents working together:
+
+| Agent | Role |
+|-------|------|
+| **Orchestrator** | Workflow coordination and error handling |
+| **Researcher** | Recursive research with learning accumulation |
+| **Web Search** | Intelligent search with AI-powered relevance filtering |
+| **Author** | Report synthesis and markdown generation |
+
+<Mermaid chart="
+graph TD
+    User[Research Request] --> Orchestrator[Research Orchestrator]
+    Orchestrator --> Researcher[Deep Researcher]
+    Researcher -->|Recursive Calls| Researcher
+    Researcher --> WebSearch[Web Search Agent]
+    WebSearch --> Researcher
+    Researcher --> Author[Report Author]
+    Author --> User[Structured Report]
+    Memory[(Research State)] -.-> Orchestrator
+    Memory -.-> Researcher
+    Memory -.-> Author
+" />
+
+### Skills Progression
+
+This sophisticated system builds on concepts from every previous module:
+
+| Module | Skills Applied in Deep Research |
+|--------|--------------------------------|
+| **Module 1** | Request handling, error management → Complex orchestration |
+| **Module 2** | Trigger behaviors → Agent coordination patterns |
+| **Module 3** | Memory management → Research state accumulation |
+| **Module 4** | Multi-agent basics → Advanced orchestration |
+| **Module 5** | Validation → Research quality assurance |
+| **Module 6** | Deployment → Production research system |
+
+<Callout type="info">
+The code examples below demonstrate key patterns from the Deep Research system. They're simplified to highlight core concepts. For complete implementations with all helper functions, schemas, and error handling, see the [full GitHub example](#build-this-project-yourself).
+</Callout>
+
+### Key Implementation: Research Orchestration
+
+The orchestrator is the system's entry point. It receives research requests with configurable depth and breadth parameters, then coordinates the researcher and author agents sequentially using the run-and-wait pattern from Module 4.
+
+<CodeExample py={`# Python - Orchestrator coordinates multi-agent workflow
+request = DeepResearchSchema.parse(await req.data.json())
+query, depth, breadth = request["query"], request.get("depth", 2), request.get("breadth", 3)
+
+try:
+    # Step 1: Deep research via researcher agent
+    researcher = await ctx.get_agent({"name": "researcher"})
+    research_results = await researcher.run({
+        "data": {"query": query, "depth": depth, "breadth": breadth}
+    })
+    research = ResearchSchema.parse(await research_results.data.json())
+
+    # Step 2: Generate report via author agent
+    author = await ctx.get_agent({"name": "author"})
+    report = await (await author.run({"data": research})).data.text()
+
+    return resp.markdown(report)
+except Exception as error:
+    return resp.text(f"Failed to generate report: {error}", {"status": 500})`} js={`// TypeScript - Orchestrator coordinates multi-agent workflow
+const { query, depth = 2, breadth = 3, maxResults = 20 } =
+  DeepResearchSchema.parse(await req.data.json());
+
+try {
+  // Step 1: Deep research via researcher agent
+  const researcher = await ctx.getAgent({ name: "researcher" });
+  const researchResults = await researcher.run({
+    data: { query, depth, breadth, maxResults }
+  });
+  const research = ResearchSchema.parse(await researchResults.data.json());
+
+  // Step 2: Generate report via author agent
+  const author = await ctx.getAgent({ name: "author" });
+  const agentResult = await author.run({ data: research });
+  const report = await agentResult.data.text();
+
+  return resp.markdown(report);
+} catch (error) {
+  return resp.text(\`Failed to generate report: \${error}\`, { status: 500 });
+}`} />
+
+Notice that the orchestrator manages the workflow *without knowing implementation details* of the researcher or author agents.
+
+### Key Implementation: Recursive Research Pattern
+
+The researcher implements *recursive research* with controlled depth and breadth. It generates multiple search queries at each level, extracts learnings from results, and recursively explores follow-up questions - with breadth reducing by half each level to prevent exponential growth.
+
+<CodeExample py={`# Python - Recursive research with depth/breadth control
+async def deep_research(prompt, web_search_agent, accumulated, depth=2, breadth=3):
+    # Base cases: stop when depth exhausted or max results reached
+    if depth == 0 or len(accumulated["searchResults"]) >= 20:
+        return accumulated
+
+    # Generate multiple search queries (breadth-first)
+    queries = await generate_search_queries(prompt, breadth)
+
+    for query in queries:
+        # Execute web search via agent
+        results = await research_web(query, web_search_agent, accumulated)
+        accumulated["searchResults"].extend(results)
+
+        # Extract learnings and generate follow-up questions
+        for result in results:
+            learnings = await generate_learnings(query, result)
+            accumulated["learnings"].append(learnings)
+
+            # Recurse with refined query and reduced breadth
+            refined_query = build_reflection_prompt(prompt, query, learnings)
+            await deep_research(
+                refined_query, web_search_agent, accumulated,
+                depth - 1, math.ceil(breadth / 2)
+            )
+
+    return accumulated`} js={`// TypeScript - Recursive research with depth/breadth control
+const deepResearch = async (
+  prompt: string,
+  webSearchAgent: RemoteAgent,
+  accumulated: Research,
+  depth = 2,
+  breadth = 3
+) => {
+  // Base cases: stop when depth exhausted or max results reached
+  if (depth === 0 || accumulated.searchResults.length >= 20) {
+    return accumulated;
+  }
+
+  // Generate multiple search queries (breadth-first)
+  const queries = await generateSearchQueries(prompt, breadth);
+
+  for (const query of queries) {
+    // Execute web search via agent
+    const results = await researchWeb(query, webSearchAgent, accumulated);
+    accumulated.searchResults.push(...results);
+
+    // Extract learnings and generate follow-up questions
+    for (const result of results) {
+      const learnings = await generateLearnings(query, result);
+      accumulated.learnings.push(learnings);
+
+      // Recurse with refined query and reduced breadth
+      const refinedQuery = buildReflectionPrompt(prompt, query, learnings);
+      await deepResearch(
+        refinedQuery, webSearchAgent, accumulated,
+        depth - 1, Math.ceil(breadth / 2)
+      );
+    }
+  }
+
+  return accumulated;
+};`} />
+
+Notice how the base cases prevent runaway recursion (depth limit and max results), while the reflection prompt refines queries based on accumulated learnings for deeper investigation.
+
+### Key Implementation: Web Search with Evaluation
+
+The web search agent integrates the [Exa API](https://docs.exa.ai/reference/getting-started) for web search, then uses AI to evaluate each result's relevance to the query. This filtering ensures only high-quality, non-duplicate sources accumulate across recursive research calls.
+
+<CodeExample py={`# Python - Web search with AI evaluation
+exa = Exa(os.getenv("EXA_API_KEY"))
+{ query, accumulatedSources } = SearchProcessParametersSchema.parse(await req.data.json())
+
+existing_urls = [s["url"] for s in accumulatedSources]
+relevant_results = []
+
+# Fetch raw search results
+raw_results = await exa.search_and_contents(query, num_results=5, livecrawl="always")
+
+# Filter and evaluate each result
+for result in raw_results:
+    # Skip duplicates and low-quality content
+    if result.url in existing_urls or len(result.content) < 50:
+        continue
+
+    # Use AI to evaluate relevance to query
+    if await ai_evaluate_relevance(query, result, existing_urls):
+        relevant_results.append(result)
+        existing_urls.append(result.url)
+
+        if len(relevant_results) >= 3:  # Limit per query
+            break
+
+return resp.json({"searchResults": relevant_results})`} js={`// TypeScript - Web search with AI evaluation
+const exa = new Exa(process.env.EXA_API_KEY!);
+const { query, accumulatedSources } = SearchProcessParametersSchema.parse(
+  await req.data.json()
+);
+
+const existingUrls = accumulatedSources.map(s => s.url);
+const relevantResults: SearchResult[] = [];
+
+// Fetch raw search results
+const { results } = await exa.searchAndContents(query, {
+  numResults: 5,
+  livecrawl: "always"
+});
+
+// Filter and evaluate each result
+for (const result of results) {
+  // Skip duplicates and low-quality content
+  if (existingUrls.includes(result.url) || result.content.length < 50) {
+    continue;
+  }
+
+  // Use AI to evaluate relevance to query
+  if (await aiEvaluateRelevance(query, result, existingUrls)) {
+    relevantResults.push(result);
+    existingUrls.push(result.url);
+
+    if (relevantResults.length >= 3) break; // Limit per query
+  }
+}
+
+return resp.json({ searchResults: relevantResults });`} />
+
+The combination of quick filters (duplicate URLs, content length) and AI evaluation balances quality with performance - only 3 relevant results per query prevents overwhelming the researcher with information.
+
+### Build This Project Yourself
+
+Ready to implement this project? Follow our complete examples:
+
+<div className="flex flex-wrap gap-3 mb-6">
+  <a href="https://github.com/agentuity/examples/tree/add-tutorials/training/07-deep-research-ts" target="_blank" rel="noopener noreferrer"
+     className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.30 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    TypeScript
+  </a>
+  <div className="inline-flex items-center gap-2 px-4 py-3 bg-gray-400 text-white rounded-lg no-underline text-sm font-medium cursor-not-allowed opacity-75">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.30 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    Python (Coming Soon)
+  </div>
+</div>
+
+### What This System Demonstrates
+
+- **Multi-agent orchestration**: Coordinated workflow between orchestrator, researcher, author, and web search agents
+- **Recursive algorithms**: Deep research with learning accumulation and follow-up question generation
+- **External API integration**: Exa web search API with AI-powered relevance evaluation
+- **State accumulation**: Research results, learnings, and queries accumulated across recursive calls
+- **Structured AI responses**: Zod schemas for search queries, learnings, and research data validation
+- **Production patterns**: Error handling, agent validation, comprehensive logging, and markdown report generation
+
+The complete example shows how to build sophisticated multi-agent research systems that demonstrate mastery of advanced agent concepts from Modules 1-6.
+
+## Testing Your Deep Research System
+
+1. **Start DevMode:**
+```bash
+agentuity dev
+```
+
+2. **Test research requests:**
+   - **Simple topics**: "Benefits of renewable energy"
+   - **Complex topics**: "Impact of quantum computing on cryptography"
+   - **Technical subjects**: "Latest developments in machine learning architectures"
+
+3. **Monitor the orchestration:**
+   - Watch logs to see agent coordination and recursive research calls
+   - Observe how research accumulates across multiple iterations
+   - See report generation synthesis from accumulated findings
+## Key Takeaways
+
+By building this deep research system, you've mastered:
+
+- **Multi-agent orchestration**: Coordinating specialized agents for complex workflows
+- **Recursive algorithms**: Self-improving systems with learning accumulation
+- **Production integration**: Real-world APIs with intelligent filtering and caching
+- **Advanced memory management**: State accumulation across multiple agent interactions
+- **Sophisticated observability**: Comprehensive tracking of complex agent workflows
+
+You're now ready to build advanced production agent systems with Agentuity!
+
+## What's Next?
+
+- Deploy your research system to production
+- Experiment with different research domains
+- Build agents for your own complex use cases
+- Share your implementations with the community
+
+Welcome to advanced agent development! 🚀
+
+---

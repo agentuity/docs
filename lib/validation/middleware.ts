@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { MessageSchema } from '@/app/chat/types';
+import { PathIdentifierSchema } from '@/lib/utils/secure-path';
 
 export interface ValidationError {
   field: string;
@@ -60,9 +61,14 @@ export async function parseAndValidateJSON<T>(
   return { success: true, data: result.data };
 }
 
+/**
+ * Tutorial progress validation schema
+ * - Steps are 1-indexed (no step 0 concept)
+ * - Only tutorials with interactive steps are tracked
+ */
 export const TutorialProgressRequestSchema = z.object({
   tutorialId: z.string().min(1),
-  currentStep: z.number().int().min(0),
+  currentStep: z.number().int().min(1),
   totalSteps: z.number().int().min(1)
 });
 
@@ -101,10 +107,7 @@ export const StepNumberSchema = z.string().transform((val, ctx) => {
   return stepIndex;
 });
 
-export const TutorialIdSchema = z.string().min(1, 'must be a non-empty string').refine(
-  (id) => !id.includes('..') && !id.includes('/') && !id.includes('\\'),
-  'contains invalid characters (path traversal attempt)'
-);
+export const TutorialIdSchema = PathIdentifierSchema;
 
 export function validateStepNumber(stepNumber: string): ValidationResult<number> {
   const result = StepNumberSchema.safeParse(stepNumber);

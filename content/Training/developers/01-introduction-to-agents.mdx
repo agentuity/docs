@@ -1,0 +1,417 @@
+---
+title: "Module 1: Introduction to Agents"
+description: Understanding AI agents and the $47B opportunity
+---
+
+Welcome to the age of AI agents - autonomous systems that are fundamentally transforming how we build and think about software.
+
+## The $47B Agent Opportunity
+
+The AI agents market is exploding - projected to grow from [$5.1B in 2024 to $47.1B by 2030](https://www.marketsandmarkets.com/Market-Reports/ai-agents-market-15761548.html) at a staggering 44.8% CAGR. According to [IBM's latest research](https://www.ibm.com/think/insights/ai-agents-2025-expectations-vs-reality), many developers are already exploring or building AI agents. 
+
+But here's the problem: most developers are trying to build autonomous systems on infrastructure designed for websites, not agents.
+
+As [Goldman Sachs' infrastructure analysis](https://www.goldmansachs.com/insights/articles/a-generational-infrastructure-buildout-might-hinge-on-ai-agents) points out:
+
+> "We're trying to run autonomous systems on infrastructure built for click-and-response websites. It's like trying to run a Tesla on roads designed for horses."
+
+Traditional cloud platforms (AWS Lambda, Google Cloud Functions, Azure Functions) were optimized for:
+- **5ms response times** (agents need minutes or hours to think)
+- **Stateless execution** (agents need persistent memory)
+- **Edge distribution** (agents need GPU proximity)
+
+This makes them poorly suited for:
+- **Long-running reasoning** processes that require extended compute time
+- **Persistent state management** across multiple interactions
+- **Complex agent workflows** that span multiple reasoning cycles
+
+## What Exactly Is an AI Agent?
+
+<Callout type="info">
+For a comprehensive overview of agents and how they differ from traditional software, see our [What is an Agent?](/Guides/what-is-an-agent) guide.
+</Callout>
+
+An AI agent is not just another chatbot or API wrapper around an LLM. It's a fundamentally different type of software that combines a LLM with **memory, tools, and a reasoning loop**.
+
+### The Agent Formula
+```
+Agent = LLM + Memory + Tools + Reasoning Loop
+```
+
+Let's break this down:
+
+1. **LLM (Large Language Model)**: The "brain" that understands intent and generates responses
+2. **Memory**: Both short-term (conversation context) and long-term (persistent knowledge)
+3. **Tools**: Capabilities to interact with external systems, APIs, and data sources
+4. **Reasoning Loop**: The ability to plan, execute, observe results, and adapt
+
+### Agents vs. Everything Else
+
+| Traditional API | Chatbot | AI Agent |
+|----------------|---------|----------|
+| Waits for commands | Responds to messages | Acts autonomously |
+| Returns exactly what you ask | Follows scripted patterns | Figures out how to achieve goals |
+| Stateless between calls | Maintains conversation context | Remembers everything, learns over time |
+| Deterministic output | Limited variation | Adapts based on context |
+| Single request-response | Turn-based conversation | Continuous reasoning and action |
+
+Think of it this way:
+- **APIs** are like vending machines - push button, get result
+- **Chatbots** are like scripted receptionists - they can talk, but only follow a script
+- **Agents** are like smart assistants - they understand goals and figure out how to achieve them
+
+## The Paradigm Shift: From Deterministic to Non-Deterministic
+
+<Callout type="info">
+For deeper insights on this shift, read our [Agent Engineering](/Guides/agent-engineering) guide that covers thinking like an agent builder.
+</Callout>
+
+Traditional software engineering is built on determinism - given the same input, you always get the same output. We write explicit logic for every scenario:
+
+<CodeExample py={`# Traditional deterministic approach
+def process_customer_request(request_type, data):
+    if request_type == "refund":
+        if data["amount"] < 100:
+            return process_refund(data)
+        else:
+            return escalate_to_manager(data)
+    elif request_type == "complaint":
+        return create_ticket(data)
+    # ... hundreds more conditions`} js={`// Traditional deterministic approach
+function processCustomerRequest(requestType, data) {
+  if (requestType === 'refund') {
+    if (data.amount < 100) {
+      return processRefund(data);
+    } else {
+      return escalateToManager(data);
+    }
+  } else if (requestType === 'complaint') {
+    return createTicket(data);
+  }
+  // ... hundreds more conditions
+}`} />
+
+Agent engineering embraces non-determinism - the agent interprets intent and figures out the best approach:
+
+<CodeExample py={`# Agent-based approach
+async def handle_customer_request(request, context):
+    # Agent interprets the request
+    intent = await analyze_intent(request)
+
+    # Agent decides on approach
+    plan = await create_action_plan(intent, context.customer_history)
+
+    # Agent executes with available tools
+    result = await execute_plan(plan, context.available_tools)
+
+    # Agent learns from outcome
+    await update_knowledge(result, context.memory)
+
+    return result`} js={`// Agent-based approach
+const handleCustomerRequest = async (request, context) => {
+  // Agent interprets the request
+  const intent = await analyzeIntent(request);
+
+  // Agent decides on approach
+  const plan = await createActionPlan(intent, context.customerHistory);
+
+  // Agent executes with available tools
+  const result = await executePlan(plan, context.availableTools);
+
+  // Agent learns from outcome
+  await updateKnowledge(result, context.memory);
+
+  return result;
+};`} />
+
+This shift requires a new mindset:
+- **Design for intent**, not implementation
+- **Embrace variability** as a feature, not a bug
+- **Think in capabilities**, not functions
+- **Trust but verify** - use guardrails and observability
+
+## Why Agents Need Agent-Native Infrastructure
+
+[Microsoft's analysis](https://blogs.microsoft.com/blog/2025/05/19/microsoft-build-2025-the-age-of-ai-agents-and-building-the-open-agentic-web/) confirms that "most organizations aren't agent-ready" because their infrastructure wasn't built for autonomous systems.
+
+### The Infrastructure Mismatch
+
+Traditional cloud platforms face fundamental limitations when running agents:
+
+| Traditional Cloud | What Agents Need | The Gap |
+|-------------------|------------------|---------|
+| 15-second timeouts | Long-running processes | Agents timeout mid-thought |
+| Stateless by default | Persistent memory | Agents forget everything |
+| Distributed to edge | GPU proximity | High latency to AI models |
+| Pay per request | Continuous operation | Costs explode unexpectedly |
+| Human-centric monitoring | Agent observability | Can't debug agent decisions |
+
+Major cloud providers like AWS, Google, and Microsoft are working to adapt their platforms for agents.
+
+But retrofitting existing infrastructure is like turning a highway into an airport - technically possible, but not optimal.
+
+## Enter Agentuity: The Agent-Native Cloud
+
+<Callout type="info">
+Learn more about the Agent-Native Cloud paradigm in our [Agent-Native Cloud](/Guides/agent-native-cloud) guide.
+</Callout>
+
+While others retrofit, Agentuity was built from day one specifically for agents. Agentuity's agent-native platform puts AI agents at the center of everything.
+
+### The Agentuity Difference: Purpose-Built for Agents
+
+Instead of asking "How do we make Lambda work for agents?", we asked "What would infrastructure look like if agents were the only thing that mattered?"
+
+Agentuity provides what agents actually need:
+
+- **Long-running processes**: Agents can think for hours, not seconds
+- **Persistent memory**: Built-in [key-value](/Guides/key-value), [vector](/Guides/vector-db), and [object storage](/Guides/object-storage)
+- **Agent-to-agent communication**: Seamless and secure [channels between agents](/Guides/agent-communication)
+- **Native observability**: Track agent decisions with [built-in tracing](/Guides/agent-tracing)
+- **Automatic scaling**: Based on agent workload, not request count
+- **Framework agnostic**: Run agents on any framework (LangChain, CrewAI, custom, etc.), and combine them in multi-agent projects
+- **Easily integrate with popular tools**: Including the Vercel AI SDK for streamlined AI development, a personal favorite of ours for TypeScript projects
+
+The result is a platform where agents are first-class citizens, not adapted workloads; memory and state are built-in, not bolted on; long-running is the default, not an exception; and agent communication is native, not a hack.
+
+## Your First Agent: From Zero to Production
+
+### Environment Setup
+
+<Callout type="info">
+For detailed setup instructions, see our [Getting Started Guide](/Introduction/getting-started) and [CLI Installation Guide](/CLI/installation).
+</Callout>
+
+Before we start building, make sure you have:
+- Python 3.9+ or Node.js 18+
+- Basic command line knowledge
+- An Agentuity account (free tier is fine)
+
+Install the Agentuity CLI:
+
+```bash
+# NPM (if you have Node.js)
+npm install -g @agentuity/cli
+
+# Bun (if you have Bun)
+bun install -g @agentuity/cli
+
+# macOS (Homebrew)
+brew tap agentuity/tap && brew install agentuity
+
+# Universal installer (Windows/Linux/macOS)
+curl -fsS https://agentuity.sh | sh
+
+# Verify installation
+agentuity --version
+
+# Login to your account
+agentuity auth login
+```
+
+### Local Development with DevMode
+
+<Callout type="info">
+DevMode is Agentuity's local development environment that provides instant feedback, complete observability, and a web interface for testing agents. Learn more in our [DevMode Guide](/Guides/devmode).
+</Callout>
+
+Start DevMode to test your agents locally:
+
+```bash
+agentuity dev
+# Opens at http://localhost:3500 with a web interface
+```
+
+You'll use DevMode throughout the tutorial below to test each step as you build your agent.
+
+### Build Your First Agent Step-by-Step
+
+Work through these steps to build your first agent. Each step adds new capabilities - follow along by creating a project (`agentuity create`), or read through to understand the patterns.
+
+### Step 1: Create a Basic Agent
+
+<TutorialStep number={1} title="Create a Basic Agent" estimatedTime="3 minutes">
+
+Let's start with the simplest possible agent - it accepts a name and returns a greeting:
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/01-intro/step1-basic-agent.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/01-intro/step1-basic-agent.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- Basic request/response pattern
+- JSON input handling
+- Simple response generation
+- Core agent structure (AgentRequest, AgentResponse, AgentContext)
+
+**Try it yourself:** Create a new project with `agentuity create`, replace the default agent code with the code above, and run `agentuity dev` to test it.
+
+</TutorialStep>
+
+### Step 2: Add Observability
+
+<TutorialStep number={2} title="Add Observability" estimatedTime="3 minutes">
+
+Now let's add logging so we can see what's happening inside our agent:
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/01-intro/step2-with-logging.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/01-intro/step2-with-logging.py", lang: "python", title: "Python" }
+]} />
+
+**What changed:**
+- Added `context.logger.info()` calls to track agent behavior
+- Logs appear in DevMode and dashboard
+- Helps debug and monitor agent execution
+
+**Key insight:** In non-deterministic systems like agents, observability is critical. You need to see what the agent is doing and why.
+
+**Try it:** Run this version in DevMode and watch the logs appear in real-time.
+
+</TutorialStep>
+
+### Step 3: Add State Management
+
+<TutorialStep number={3} title="Add State Management" estimatedTime="5 minutes">
+
+Let's make the agent remember how many times it has greeted people using Agentuity's built-in key-value storage:
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/01-intro/step3-with-state.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/01-intro/step3-with-state.py", lang: "python", title: "Python" }
+]} />
+
+**What changed:**
+- Uses `context.kv.get()` to read state
+- Uses `context.kv.set()` to update state
+- Checks `result.exists` to handle first-time execution
+- State persists across invocations
+
+**Key insight:** Agents need memory to be truly useful. Agentuity provides built-in key-value storage so you don't need external databases for simple state.
+
+<Callout type="info">
+We cover all storage APIs later in [Module 3: Agent Memory](/Training/developers/03-agent-memory). You can also read more by checking out our guide on [Key-Value Storage](/Guides/key-value).
+</Callout>
+
+**Try it:** Call this agent multiple times. Watch the counter increment and persist across calls.
+
+</TutorialStep>
+
+### Step 4: Add Error Handling
+
+<TutorialStep number={4} title="Add Error Handling" estimatedTime="5 minutes">
+
+Agents need defensive error handling to gracefully handle invalid inputs:
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/01-intro/step4-with-errors.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/01-intro/step4-with-errors.py", lang: "python", title: "Python" }
+]} />
+
+**What changed:**
+- Try/catch blocks around JSON parsing
+- Input validation (checks for valid name)
+- Graceful error responses
+- Defensive storage handling (continues even if storage fails)
+
+**Key insight:** Agents interact with unpredictable inputs and external systems. Error handling ensures they fail gracefully and provide useful feedback.
+
+**Try it:** Send invalid JSON or missing data to see how the agent handles errors.
+
+</TutorialStep>
+
+### Deploy Your Tutorial Agent
+
+Now that you've built and tested your agent locally, deploy it to Agentuity's agent-native infrastructure:
+
+```bash
+agentuity deploy
+```
+
+Your agent will be:
+- Running in long-running infrastructure (no timeout worries)
+- Storing memory persistently (survives restarts)
+- Fully observable (logs and traces in the dashboard)
+- Auto-scaling based on load
+
+## Lab: Try It All Together
+
+Ready to see everything in action? Clone a complete example that combines all the concepts you've learned - error handling, state management, multiple input types, and more:
+
+<div className="flex flex-wrap gap-3 mb-6">
+  <a href="https://github.com/agentuity/examples/tree/add-tutorials/training/01-hello-world-ts" target="_blank" rel="noopener noreferrer"
+     className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.30 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    TypeScript
+  </a>
+  <a href="https://github.com/agentuity/examples/tree/add-tutorials/training/01_hello_world_py" target="_blank" rel="noopener noreferrer"
+     className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.30 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    Python
+  </a>
+</div>
+
+This lab project includes:
+- Error handling and input validation
+- Multiple input types (JSON and text)
+- Personal statistics tracking per user
+- Memory management with TTL-based expiration
+- DevMode test scenarios via `welcome()` function
+- Complete `agentuity.yaml` configuration
+
+After cloning the lab, try the following:
+1. Run `agentuity dev` to start DevMode
+2. Use the clickable prompts from the `welcome()` function
+3. Test with both JSON and text inputs
+4. Call the agent multiple times with the same name to see statistics
+5. Monitor the logs to see detailed operation tracking
+6. Check the key-value storage to see the personal greeting counts
+7. Check the Sessions tab for performance metrics
+
+<Callout type="info">
+This complete implementation shows patterns you'll use throughout the training modules. Notice how we handle errors gracefully, store data efficiently, and provide rich observability.
+</Callout>
+
+### Testing Your First Agent
+
+1. **Start DevMode:**
+```bash
+agentuity dev
+```
+
+2. **Test with the clickable prompts** from the `welcome()` function in the lab examples
+3. **Try different inputs:**
+   - Valid JSON: `{"name": "Alice"}`
+   - Plain text: `"Bob"`
+   - Invalid data to test error handling
+4. **Call multiple times** with the same name to see the greeting counter increment
+5. **Monitor observability:**
+   - Check the Logs tab to see structured logging
+   - View the Sessions tab for performance metrics
+   - Inspect key-value storage to see persisted counts
+
+## Key Takeaways
+
+- **Agents are different**: They're autonomous systems, not just API wrappers around LLMs
+- **The market is massive**: $47B by 2030, with many developers already building agents (you're now one of them!)
+- **Infrastructure matters**: Traditional cloud wasn't built for agents' unique needs
+- **Non-determinism is a feature**: Agents adapt and reason, they don't just execute
+- **Agentuity is agent-native**: Purpose-built infrastructure for agents, not retrofitted
+
+## What's Next?
+
+You've just built and deployed your first agent on infrastructure designed specifically for agents. In the next module, we'll dive deeper into the anatomy of an agent - understanding planning, reasoning loops, tool invocation, and how agents really work under the hood.
+
+But first, take a moment to experiment with your agent. Try:
+- Calling it with different names and at different times
+- Checking the logs in the DevMode interface
+- Calling it multiple times to see the counter increment
+- Testing error cases like missing names
+- Monitoring the key-value storage in the dashboard
+
+Remember: you're not just learning a new framework, you're learning a fundamentally new way to build software. Welcome to the age of agents!
+
+---
+
+**Ready for Module 2?** [The Anatomy of an Agent](./02-anatomy-of-an-agent)

@@ -11,10 +11,15 @@ export const TutorialSnippetSchema = z.object({
 
 export type TutorialSnippet = z.infer<typeof TutorialSnippetSchema>;
 
+/**
+ * Tutorial data schema for agent responses
+ * - Steps are 1-indexed (no step 0 concept)
+ * - Only tutorials with interactive steps are tracked
+ */
 export const TutorialDataSchema = z.object({
   tutorialId: z.string(),
   totalSteps: z.number().int().min(1),
-  currentStep: z.number().int().min(0),
+  currentStep: z.number().int().min(1),
   tutorialStep: z.object({
     title: z.string(),
     mdx: z.string(),

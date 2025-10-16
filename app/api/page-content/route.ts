@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import docsJson from '@/content/docs.json';
+import { validatePathString } from '@/lib/utils/secure-path';
 
 interface Doc {
 	file: string;
@@ -18,8 +19,15 @@ export async function GET(request: NextRequest) {
 			return new Response('Path parameter required', { status: 400 });
 		}
 
-		if (path.includes('..') || path.includes('\\') || path.startsWith('/')) {
-			return new Response('Invalid path parameter', { status: 400 });
+		// Validate path for security issues (but don't require leading slash for this API)
+		const validation = validatePathString(path);
+		if (!validation.valid) {
+			return new Response(`Invalid path parameter: ${validation.error}`, { status: 400 });
+		}
+
+		// Additional check: path shouldn't start with '/' for this specific API
+		if (path.startsWith('/')) {
+			return new Response('Invalid path parameter: path should not start with "/"', { status: 400 });
 		}
 
 		const doc = docs.find(

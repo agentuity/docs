@@ -1,0 +1,503 @@
+---
+title: "Module 3: Agent Memory"
+description: How agents remember, learn, and build context over time
+---
+
+Without memory, an agent is just a stateless function. With memory, it becomes a system that learns, adapts, and evolves over time.
+
+## The Memory Challenge
+
+LLMs can't remember things on their own—the memory component must be added separately. [One of the biggest challenges](https://www.ibm.com/think/topics/ai-agent-memory) in AI memory design is optimizing retrieval efficiency, since storing too much data can slow down response times.
+
+As highlighted in a recent [memory management blog post](https://medium.com/@nomannayeem/building-ai-agents-that-actually-remember-a-developers-guide-to-memory-management-in-2025-062fd0be80a1):
+
+> "The difference between a chatbot and an agent is memory. A chatbot responds to the current message. An agent remembers your entire relationship."
+
+This creates fundamental challenges:
+- **Context Loss**: Users repeatedly explain their situation
+- **No Learning**: Agents can't improve from past interactions
+- **Limited Personalization**: Every user gets the same generic experience
+- **Inefficient Operations**: Recomputing information that should be cached
+
+## Understanding Agent Memory Types
+
+<Callout type="info">
+For implementation details on Agentuity's storage systems, see our guides on [Key-Value Storage](/Guides/key-value), [Vector Database](/Guides/vector-db), and [Object Storage](/Guides/object-storage).
+</Callout>
+
+### Memory Types Overview
+
+Agent memory maps to three storage APIs, each serving different patterns:
+
+| Memory Pattern | Storage API | Duration | Common Use Cases |
+|----------------|-------------|----------|------------------|
+| **Working Memory** | In-memory variables | Single request | Temporary calculations, request context |
+| **Session State** | KV with TTL | Minutes-hours | Conversation context, temporary cache |
+| **Persistent Data** | KV (no TTL) | Permanent | User profiles, preferences, settings |
+| **Knowledge Base** | Vector storage | Permanent | Semantic search, RAG, learned insights |
+| **File Storage** | Object storage | Permanent | Documents, images, media, backups |
+
+### Storage API Quick Reference
+
+Agentuity provides three storage APIs, each optimized for different data types:
+
+- **Key-Value (KV)**: Fast exact-match lookups. Use TTL for auto-expiring data (sessions), omit TTL for permanent storage (preferences)
+- **Vector Storage**: Semantic similarity search using embeddings. Perfect for "find relevant information" use cases
+- **Object Storage**: Binary file storage with public URL generation. For media, documents, and large files
+
+### Structured vs. Unstructured Memory
+
+Choose your storage API based on how you need to query and retrieve data:
+
+**Structured Memory (Key-Value Storage)**
+
+Use when you need exact-match lookups with known keys:
+- User preferences and profiles
+- Session state and temporary cache
+- Configuration settings and feature flags
+- Counters, metrics, and structured data
+
+**Unstructured Memory (Vector Storage)**
+
+Use when you need semantic search across text content:
+- Conversation history you want to search by meaning
+- Knowledge bases and documentation
+- User feedback and learned insights
+- Any content requiring "find similar" functionality
+
+**Binary Memory (Object Storage)**
+
+Use for files and large binary content:
+- User uploads and generated documents
+- Images, videos, and media files
+- Backups and archives
+- Large datasets and exports
+
+## Build Agent Memory Step-by-Step
+
+Now let's get hands-on with memory patterns. Each step below focuses on one core concept, with simple code you can run immediately in DevMode. These tutorial steps teach platform-specific SDK patterns. The lab at the end shows all three storage types working together in a real docs Q&A agent.
+
+### Step 1: Session Memory
+
+<TutorialStep number={1} title="Session Memory with KV + TTL" estimatedTime="5 min">
+
+Short-term conversation context needs automatic cleanup. Key-value storage with TTL (time-to-live) makes sessions expire automatically, preventing storage bloat.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/03-memory/step1-session-memory.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/03-memory/step1-session-memory.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- Using `context.sessionId` for consistent session tracking
+- Checking `result.exists` to handle new vs returning sessions
+- Setting TTL (3600 seconds = 1 hour) for automatic expiration
+- Building conversation history by appending messages
+
+**Try it:**
+1. Send a message - creates a new session
+2. Send another message - retrieves and appends to history
+3. Check back later - session data expires automatically (after 1 hour in this example; adjust as needed)
+4. Check DevMode logs to see session operations
+
+**Key insight:** TTL-based memory is perfect for temporary data like chat sessions, preventing manual cleanup and storage costs.
+
+</TutorialStep>
+
+### Step 2: Persistent Preferences
+
+<TutorialStep number={2} title="Persistent Preferences with KV" estimatedTime="4 min">
+
+User profiles and preferences should survive restarts. Omitting the TTL parameter makes data permanent until explicitly deleted.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/03-memory/step2-persistent-preferences.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/03-memory/step2-persistent-preferences.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- Permanent storage by omitting TTL parameter
+- Handling first-time users (create profile) vs returning users (update profile)
+- Tracking interaction counts and timestamps
+- Updating nested preference objects
+
+**Try it:**
+1. Send `{"theme": "dark", "language": "en"}` - creates profile
+2. Send `{"theme": "light"}` - updates theme, keeps language
+3. Restart DevMode - profile persists
+4. Check interaction count incrementing
+
+**Key insight:** No TTL means data persists forever, perfect for user profiles, settings, and application state.
+
+</TutorialStep>
+
+### Step 3: Basic Search
+
+<TutorialStep number={3} title="Vector Upsert & Basic Search" estimatedTime="6 min">
+
+Vector storage enables semantic search—finding information by meaning rather than keywords. Documents are converted to embeddings automatically.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/03-memory/step3-vector-basics.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/03-memory/step3-vector-basics.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- **TypeScript:** Upsert single object `{ key, document, metadata }`
+- **Python:** Upsert array of objects `[{ key, document, metadata }]`
+- Searching with query text, limit, and similarity threshold
+- Handling empty results gracefully
+- Similarity scores (0-1, where 1 = perfect match)
+- Cleanup by deleting demo vectors
+
+**Try it:**
+1. Run the agent with query "What is Agentuity?"
+2. See semantic matches (finds "agent-native cloud platform")
+3. Try "How does storage work?" - finds storage-related facts
+4. Notice similarity scores in results
+
+**Key insight:** Vector search finds meaning, not keywords. "What is Agentuity?" matches "agent-native cloud platform" even without exact words.
+
+</TutorialStep>
+
+### Step 4: Metadata Filtering
+
+<TutorialStep number={4} title="Vector Metadata Filtering" estimatedTime="5 min">
+
+Combine semantic similarity with structured filters to narrow results by category, user, status, or any metadata field.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/03-memory/step4-vector-filtering.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/03-memory/step4-vector-filtering.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- Adding metadata to vectors (category, price, inStock, etc.)
+- Filtering search results with `metadata` parameter
+- Metadata filters use AND logic (all conditions must match)
+- Lower similarity threshold (0.3) when using strict filters
+- Post-processing results for additional filtering
+
+**Try it:**
+1. Send `{"query": "office furniture", "category": "furniture", "inStock": true}`
+2. See only furniture items that are in stock
+3. Try `{"query": "desk accessories", "category": "electronics"}`
+4. Notice results filtered by both meaning AND category
+
+**Key insight:** Metadata filtering is exact-match, not fuzzy. Use it to combine semantic search with business rules.
+
+<Callout type="info">
+**Metadata Filtering in Vector Search**: The `metadata` parameter in vector search is used to filter results, not just for returning metadata. When you specify `metadata={"user_id": user_id}` in Python or `metadata: { user_id: userId }` in JavaScript, the search will only return vectors that match those metadata criteria. This is useful for isolating user-specific memories or filtering by any other metadata field you've stored.
+</Callout>
+
+</TutorialStep>
+
+### Step 5: Object Storage Basics
+
+<TutorialStep number={5} title="Object Storage Basics" estimatedTime="5 min">
+
+Files and media need different storage than structured data. Object storage handles binary content and provides shareable public URLs.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/03-memory/step5-object-storage.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/03-memory/step5-object-storage.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- Storing files with auto-detected content type (simplest approach)
+- Retrieving stored objects and checking `result.exists`
+- Creating temporary public URLs (expires in 1 hour)
+- Cleanup by deleting demo files
+
+**Try it:**
+1. Send any text content
+2. See file stored, retrieved, and public URL created
+3. Access the URL in browser (works for 1 hour)
+4. Notice file is deleted after demo (cleanup pattern)
+
+**Key insight:** Public URLs expire automatically, perfect for temporary file sharing without permanent public access.
+
+</TutorialStep>
+
+## Lab: Try It All Together
+
+You've learned the core memory patterns through focused steps. Now let's see them combined in a real-world agent that uses **all three storage types together**:
+
+- **Vector storage** for semantic document search
+- **KV storage** for tracking query history and caching
+- **Object storage** for uploaded documentation files
+
+### Key Implementation: Upload & Index Pattern
+
+The core pattern shows how agents use all storage types together in a cohesive workflow:
+
+<CodeExample py={`# Key pattern: Upload, store, and index documents
+async def handle_upload(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    file_content = await request.data.text()
+    file_name = request.get("filename", "document.txt")
+
+    # 1. Store in object storage with proper UTF-8 encoding
+    binary_data = file_content.encode('utf-8')
+    await context.objectstore.put(OBJECT_STORAGE_BUCKET, file_name, binary_data)
+
+    # 2. Chunk and embed for search (batch upsert is more efficient)
+    chunks = chunk_document(file_content, chunk_size=500)
+
+    # Build all chunk documents for batch upsert
+    chunk_docs = []
+    for i, chunk in enumerate(chunks):
+        chunk_id = f"{file_name}_chunk_{i}"
+        chunk_docs.append({
+            "key": chunk_id,
+            "document": chunk,
+            "metadata": {
+                "source_file": file_name,
+                "chunk_index": i,
+                "uploaded_at": datetime.now().isoformat()
+            }
+        })
+
+    # Python vector storage uses array format - upsert all at once
+    await context.vector.upsert(VECTOR_STORAGE_NAME, chunk_docs)
+
+    return response.json({
+        "status": "indexed",
+        "chunks": len(chunks),
+        "file": file_name
+    })`} js={`// Key pattern: Upload, store, and index documents
+async function handleUpload(request: AgentRequest, response: AgentResponse, context: AgentContext) {
+  const fileContent = await request.data.text();
+  const fileName = request.get('filename', 'document.txt');
+
+  // 1. Store in object storage with proper UTF-8 encoding
+  const binaryData = new TextEncoder().encode(fileContent);
+  await context.objectstore.put(OBJECT_STORAGE_BUCKET, fileName, binaryData);
+
+  // 2. Chunk and embed for search
+  const chunks = chunkDocument(fileContent, 500);
+
+  // TypeScript vector storage uses rest parameters - pass all objects at once
+  await context.vector.upsert(
+    VECTOR_STORAGE_NAME,
+    ...chunks.map((chunk, i) => ({
+      key: \`\${fileName}_chunk_\${i}\`,
+      document: chunk,
+      metadata: {
+        sourceFile: fileName,
+        chunkIndex: i,
+        uploadedAt: new Date().toISOString()
+      }
+    }))
+  );
+
+  return response.json({
+    status: 'indexed',
+    chunks: chunks.length,
+    file: fileName
+  });
+}`} />
+
+### Key Implementation: Semantic Search with Context
+
+Agents combine search results with user history for intelligent responses:
+
+<CodeExample py={`# Key pattern: Semantic search with context and intelligent file detection
+async def search_documents(query: str, context: AgentContext, limit: int = 5):
+    # Detect if this is a file upload (llms.txt pattern)
+    is_file_upload = (query.startswith('# Agentuity') and
+                     ('## Features' in query or '## Product Features' in query) and
+                     '## About' in query)
+
+    if is_file_upload:
+        # Handle structured file indexing
+        return await handle_file_upload(query, context)
+
+    # 1. Vector search for relevant chunks
+    search_results = await context.vector.search(
+        VECTOR_STORAGE_NAME,
+        query,
+        limit=limit,
+        similarity=0.5  # Minimum similarity threshold
+    )
+
+    # 2. Track query history for learning
+    query_history = await context.kv.get(KV_STORAGE_NAME, "recent_queries")
+    if query_history.exists:
+        recent = await query_history.data.json()
+        recent.append({"query": query, "timestamp": datetime.now().isoformat()})
+    else:
+        recent = [{"query": query, "timestamp": datetime.now().isoformat()}]
+
+    # Store updated query history (keep last 10)
+    await context.kv.set(KV_STORAGE_NAME, "recent_queries", recent[-10:])
+
+    return search_results`} js={`// Key pattern: Semantic search with context and intelligent file detection
+async function searchDocuments(query: string, context: AgentContext, limit: number = 5) {
+  // Detect if this is a file upload (llms.txt pattern)
+  const isFileUpload = query.startsWith('# Agentuity') &&
+                      (query.includes('## Features') || query.includes('## Product Features')) &&
+                      query.includes('## About');
+
+  if (isFileUpload) {
+    // Handle structured file indexing
+    return await handleFileUpload(query, context);
+  }
+
+  // 1. Vector search for relevant chunks
+  const searchResults = await context.vector.search(VECTOR_STORAGE_NAME, {
+    query,
+    limit,
+    similarity: 0.5  // Minimum similarity threshold
+  });
+
+  // 2. Track query history for learning
+  const queryHistory = await context.kv.get(KV_STORAGE_NAME, 'recent_queries');
+  let recent;
+  if (queryHistory.exists) {
+    recent = await queryHistory.data.json();
+    recent.push({ query, timestamp: new Date().toISOString() });
+  } else {
+    recent = [{ query, timestamp: new Date().toISOString() }];
+  }
+
+  // Store updated query history (keep last 10)
+  await context.kv.set(KV_STORAGE_NAME, 'recent_queries', recent.slice(-10));
+
+  return searchResults;
+}`} />
+
+### Key Implementation: AI-Powered Documentation Q&A
+
+Combining search results with AI for intelligent documentation responses:
+
+<CodeExample py={`# Key pattern: AI-powered documentation Q&A with context building
+async def build_smart_response(query: str, search_results: list, context: AgentContext):
+    # Build context from top search results (metadata contains full content)
+    doc_context = '\n\n'.join([
+        result.metadata.get('content', '')
+        for result in search_results[:2]  # Use top 2 results
+        if result.metadata.get('content')
+    ])
+
+    # Generate AI response using OpenAI
+    response = await client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": "Answer questions about Agentuity based on the documentation provided. Be helpful and concise."
+            },
+            {
+                "role": "user",
+                "content": f"Documentation context:\n{doc_context or 'No relevant documentation found.'}\n\nQuestion: {query}\n\nProvide a helpful answer in 2-3 sentences."
+            }
+        ]
+    )
+
+    return response.choices[0].message.content.strip()`} js={`// Key pattern: AI-powered documentation Q&A with context building
+async function buildSmartResponse(query: string, searchResults: any[], context: AgentContext) {
+  // Build context from top search results (metadata contains full content)
+  const docContext = searchResults
+    .slice(0, 2)  // Use top 2 results for context
+    .map(result => result.metadata?.content || '')
+    .filter(content => content)  // Remove any empty results
+    .join('\\n\\n');
+
+  // Generate AI response using Vercel AI SDK
+  const { text: aiAnswer } = await generateText({
+    model: openai('gpt-4o-mini'),
+    prompt: \`Answer this question about Agentuity based on the documentation provided.
+
+Documentation context:
+\${docContext || 'No relevant documentation found.'}
+
+Question: \${query}
+
+Provide a helpful, concise answer in 2-3 sentences. If no context is available, politely indicate that.\`
+  });
+
+  return aiAnswer;
+}`} />
+
+### Build This Agent Yourself
+
+Ready to implement this agent? Follow our complete examples:
+
+<div className="flex flex-wrap gap-3 mb-6">
+  <a href="https://github.com/agentuity/examples/tree/add-tutorials/training/03-docs-qa-agent-ts" target="_blank" rel="noopener noreferrer"
+     className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    TypeScript
+  </a>
+  <a href="https://github.com/agentuity/examples/tree/add-tutorials/training/03_docs_qa_agent_py" target="_blank" rel="noopener noreferrer"
+     className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    Python
+  </a>
+</div>
+
+### What This Agent Demonstrates
+
+- **Semantic search**: Vector similarity for finding relevant documentation
+- **User learning**: Tracking search patterns and feedback to improve responses
+- **Context building**: Combining search results with conversation history
+- **Feedback loops**: Learning from user interactions to boost helpful content
+- **Personalization**: Adapting responses based on user's experience level
+
+The complete examples show you how to build intelligent documentation agents that get smarter over time through user interaction.
+
+### Testing Your Docs Q&A Agent
+
+1. **Start DevMode:**
+```bash
+agentuity dev
+```
+
+2. **Test the documentation search:**
+   - Ask questions about different documentation topics
+   - Notice how semantic search finds relevant content
+   - Test similar queries to see cached vs fresh results
+
+3. **Observe the memory in action:**
+   - Watch the logs to see vector search operations
+   - Try different user patterns to see personalized responses
+   - Test feedback loops by rating search results
+
+## Memory at Scale
+
+As your agents grow, consider these scaling strategies:
+
+### Memory Access Patterns
+- **Frequently accessed data**: KV storage (recent interactions, user profiles)
+- **Searchable data**: Vector storage (conversation history, knowledge base)
+- **Archived data**: Object storage (old files, backups)
+
+### Organizing Memory at Scale
+
+**Data Partitioning**: Use user IDs or tenant IDs to organize data in separate namespaces, keeping user data isolated.
+
+**Smart Caching**: Use KV storage with short TTL (5-15 minutes) for expensive computations that might be repeated.
+
+## Key Takeaways
+
+- **Memory transforms agents** from stateless functions to learning systems
+- **Choose the right storage**: KV for data, Vector for search, Object for files
+- **TTL is key**: Use appropriate expiration times for different data types
+- **Start simple**: Begin with basic patterns, add complexity as needed
+- **Organize by user**: Keep data properly partitioned and isolated
+
+## What's Next?
+
+Now that your agents can remember, it's time to help them collaborate. In the next module, we'll explore agent-to-agent communication - how multiple specialized agents can work together to solve complex problems.
+
+But first, experiment with memory patterns:
+- Build an agent that learns user preferences over time
+- Implement a knowledge base that grows from conversations
+- Create memory cleanup strategies
+- Test different TTL strategies for various use cases
+
+Remember: Memory is what transforms an agent from a simple tool into a useful, effective, and adaptive system.
+
+---
+
+**Ready for Module 4?** [Agent-to-Agent Collaboration](./04-agent-collaboration)

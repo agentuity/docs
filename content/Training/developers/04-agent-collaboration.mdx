@@ -1,0 +1,468 @@
+---
+title: "Module 4: Agent-to-Agent Communication"
+description: Building multi-agent systems that work together
+---
+
+So far, we've built single agents that can reason, act, and remember. But what if one agent can't do everything? What if you need specialized expertise, parallel processing, or simply want to break down complex problems into manageable pieces?
+
+Welcome to the world of multi-agent systems.
+
+## Why Multi-Agent Systems?
+
+According to industry research, multi-agent architectures are becoming the standard for production AI systems. As [Microsoft's Build 2025 announcement](https://blogs.microsoft.com/blog/2025/05/19/microsoft-build-2025-the-age-of-ai-agents-and-building-the-open-agentic-web/) highlighted, the future is about agents working together in an "open agentic web."
+
+Think about how human organizations work:
+- **Specialization**: Different people excel at different tasks
+- **Scalability**: Teams can handle more work than individuals
+- **Reliability**: If one person is unavailable, others can step in
+- **Modularity**: Easy to add new team members with specific skills
+
+The same principles apply to agent systems.
+
+## Communication Methods
+
+Agentuity provides two primary ways for agents to communicate, each suited for different scenarios:
+
+### 1. Delegation with `response.handoff()`
+
+Use handoff when you want to delegate control to another agent and exit. This is like forwarding a phone call - the current agent passes control to another agent, along with any necessary data.
+
+<CodeExample js={`export default async function Agent(req, resp, ctx) {
+  // Delegate to another agent
+  return resp.handoff({ name: 'gateway-provider' });
+}`} py={`async def run(request, response, context):
+    # Delegate to another agent
+    return response.handoff({"name": "gateway-provider"})
+`} />
+
+**Best for:** Sequential workflows, simple routing, task delegation
+
+### 2. Invocation with `context.getAgent()` and `agent.run()`
+
+When you need to call another agent and process its response, use a two-step pattern:
+
+1. **Get the agent reference**: `await ctx.getAgent({name: 'other-agent'})`
+2. **Run and wait for response**: `await agent.run({data: 'your message'})`
+
+<CodeExample js={`// Inside your agent's handler
+export default async function Agent(req, resp, ctx) {
+  const agent = await ctx.getAgent({ name: 'gateway-provider' });
+  const result = await agent.run({ data: 'Tell me a story' });
+  return resp.text(await result.data.text());
+}`} py={`# Inside your agent's handler
+async def run(request, response, context):
+    agent = await context.get_agent({"name": "gateway-provider"})
+    result = await agent.run("Tell me a story")
+    return response.text(await result.data.text())
+`} />
+
+**Best for:** Parallel execution, conditional logic, result aggregation, smart orchestration
+
+### When to Use Each Method
+
+| Method | Use When | Control Flow | Response Handling |
+|--------|----------|--------------|-------------------|
+| **`handoff()`** | Sequential workflows, simple routing | One-way, exit current agent | Target agent responds to client |
+| **`getAgent()` + `run()`** | Parallel execution, result aggregation | Stay in control | You process responses, then respond |
+
+## Build Multi-Agent Communication Step-by-Step
+
+You'll learn the essential patterns for agent communication through five progressive steps.
+
+### Step 1: Basic Handoff
+
+<TutorialStep number={1} title="Basic Handoff" estimatedTime="3 minutes">
+
+This demonstrates the **delegation pattern** - passing control to a specialist agent when you need expertise you don't have.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/04-agent-communication/step1-basic-handoff.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/04-agent-communication/step1-basic-handoff.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- Using `response.handoff()` to delegate to another agent
+- Agent resolution by name
+- Clean separation of concerns (routing vs. specialist work)
+
+**Try it:**
+1. Start DevMode and trigger this agent
+2. Check the logs - notice the current agent exits after handoff
+3. The specialist agent responds directly to the client
+
+**Key insight:** Handoff is one-way delegation. Once you hand off, your agent exits and the target agent owns the response.
+
+</TutorialStep>
+
+### Step 2: Passing Data
+
+<TutorialStep number={2} title="Passing Data" estimatedTime="4 minutes">
+
+When handing off to another agent, you'll often need to pass data along. This step shows how to work with different data formats.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/04-agent-communication/step2-data-formats.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/04-agent-communication/step2-data-formats.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- Passing plain text with optional explicit content type
+- Passing JSON objects for structured data
+- Forwarding the original request as-is
+- Content type inference: string → text/plain, object/dict → application/json
+
+**Try it:**
+1. Test each example by uncommenting different scenarios
+2. Send different data types and observe how target agents receive them
+3. Try with and without explicit `contentType` to see the inference in action
+
+**Key insight:** The SDK infers content types from your data type, but you can override with explicit `contentType` when needed.
+
+</TutorialStep>
+
+### Step 3: Run and Wait
+
+<TutorialStep number={3} title="Run and Wait" estimatedTime="5 minutes">
+
+This demonstrates the **coordinator pattern** - getting responses back from other agents so you can process results before responding.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/04-agent-communication/step3-run-and-wait.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/04-agent-communication/step3-run-and-wait.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- Using `context.getAgent()` to get a reference to another agent
+- Running the agent and waiting for its response with `agent.run()`
+- Processing the response before sending your own
+- Maintaining control throughout the invocation
+
+**Try it:**
+1. Send a request with a message in the JSON body
+2. Watch the logs - you'll see both the coordinator and specialist working
+3. Notice how the coordinator processes the specialist's response before replying
+
+**Key insight:** Unlike handoff, `getAgent()` lets you stay in control, process responses, and coordinate multiple agents.
+
+</TutorialStep>
+
+### Step 4: Parallel Execution
+
+<TutorialStep number={4} title="Parallel Execution" estimatedTime="5 minutes">
+
+This shows the **parallel execution pattern** - running multiple agents simultaneously and aggregating their results.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/04-agent-communication/step4-parallel-execution.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/04-agent-communication/step4-parallel-execution.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- Getting references to multiple agents
+- Executing agents in parallel with `Promise.all` (TypeScript) or `asyncio.gather` (Python)
+- Aggregating results from multiple sources
+- Efficient coordination when agents don't depend on each other
+
+**Try it:**
+1. Send a search query in your request
+2. Watch the logs - both agents execute simultaneously
+3. Notice how much faster parallel execution is compared to sequential
+
+**Key insight:** When agents don't depend on each other's results, run them in parallel for better performance and user experience.
+
+</TutorialStep>
+
+### Step 5: Structured Responses for Routing
+
+<TutorialStep number={5} title="Structured Responses for Routing" estimatedTime="6 minutes">
+
+The patterns above work great when you know exactly which agent to call. But what if you need AI to decide which agent should handle a request? This requires **structured AI responses** - validated outputs that your orchestrator can trust for routing decisions.
+
+**The Challenge:**
+
+Your orchestrator receives: "What's the best coffee near Moscone?"
+
+AI needs to determine: Should this go to the SF local guide or conference expert?
+
+**The Solution:**
+
+Schema validation libraries ensure AI outputs match expected structures:
+- **TypeScript**: Zod schemas define and validate response structure
+- **Python**: Pydantic models provide type-safe validation
+
+This transforms free-form AI responses into type-safe routing decisions. Instead of parsing unpredictable text, you get validated data structures that your code can reliably use.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/04-agent-communication/step5-structured-responses.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/04-agent-communication/step5-structured-responses.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- Defining schemas with Zod (TypeScript) or Pydantic (Python)
+- Generating structured AI responses that match your schema
+- Validating responses to ensure type safety
+- Using confidence thresholds for smart fallback handling
+- Building reliable routing logic on validated decisions
+
+**Try it:**
+1. Send different types of requests (support questions, sales inquiries, technical issues)
+2. Watch the logs to see routing decisions with confidence scores
+3. Try ambiguous requests to see fallback handling when confidence is low
+
+**Key insight:** Structured responses transform unreliable AI outputs into type-safe data structures, essential for production multi-agent systems. This pattern is the foundation for smart orchestration.
+
+</TutorialStep>
+
+## Lab: Conference Concierge System
+
+You've learned the core patterns for agent communication. Now let's see how they combine in a real-world system.
+
+Build a concierge system that routes user requests to different specialized agents based on AI-powered intent analysis. This demonstrates how the patterns you learned work together in production.
+
+### Advanced Pattern: Smart Orchestration
+
+The tutorial steps covered handoff, data passing, run-and-wait, parallel execution, and structured responses. The Conference Concierge combines these into **smart orchestration** - dynamic decision-making that adapts based on AI analysis.
+
+Unlike simple conditional routing, smart orchestrators:
+- Analyze request complexity before routing
+- Make multi-step decisions based on intermediate results
+- Adapt routing based on confidence scores
+- Maintain conversation context across interactions
+
+Here's how it works:
+
+<CodeExample py={`# Smart orchestration example
+async def run(request, response, context):
+    user_message = await request.data.text()
+
+    # Step 1: Use AI to analyze intent with structured output
+    result = await client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        system="Analyze user intent and return structured routing decision...",
+        messages=[{"role": "user", "content": user_message}]
+    )
+
+    # Step 2: Validate the decision with Pydantic
+    decision_data = json.loads(result.content[0].text)
+    decision = RoutingDecision(**decision_data)
+
+    # Step 3: Make smart routing choices based on confidence
+    if decision.confidence < 0.7:
+        # Low confidence: fallback to human
+        return response.json({"message": "Let me connect you with a human..."})
+
+    # Step 4: Route to validated specialist
+    agent = await context.get_agent({"name": decision.agent_type})
+    return await agent.run(user_message)`} js={`// Smart orchestration example
+const handler = async (request, response, context) => {
+  const userMessage = await request.data.text();
+
+  // Step 1: Use AI to analyze intent with structured output
+  const { object: decision } = await generateObject({
+    model: anthropic('claude-3-5-sonnet-20241022'),
+    schema: RoutingDecisionSchema,
+    system: 'Analyze user intent and return structured routing decision...',
+    prompt: userMessage
+  });
+
+  // Step 2: Decision is automatically validated by Zod
+
+  // Step 3: Make smart routing choices based on confidence
+  if (decision.confidence < 0.7) {
+    // Low confidence: fallback to human
+    return response.json({ message: "Let me connect you with a human..." });
+  }
+
+  // Step 4: Route to validated specialist
+  const agent = await context.getAgent({ name: decision.agentType });
+  const result = await agent.run({ data: userMessage });
+  return response.text(await result.data.text());
+};`} />
+
+### Key Implementation: Intent Analysis with Validation
+
+The concierge analyzes user messages to determine which specialist agent should handle them. This uses the structured response pattern from Step 5:
+
+<CodeExample py={`# Define routing schema with Pydantic
+class UserIntent(BaseModel):
+    agent_type: Literal['sf_local_guide', 'conference_expert', 'dev_experience']
+    tags: List[str]
+    likely_intent: str
+    confidence: float = Field(ge=0.0, le=1.0)
+
+# Generate and validate routing decision
+result = await client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    system="Analyze user intent and route to appropriate agent...",
+    messages=[{"role": "user", "content": user_message}]
+)
+
+intent_data = json.loads(result.content[0].text)
+intent = UserIntent(**intent_data)  # Pydantic validates structure
+
+# Route based on validated intent
+if intent.agent_type == "sf_local_guide":
+    agent = await context.get_agent("sf-local-guide")
+    return await agent.run(user_message)`} js={`// Define routing schema with Zod
+const UserIntentSchema = z.object({
+  agentType: z.enum(['sf_local_guide', 'conference_expert', 'dev_experience']),
+  tags: z.array(z.string()),
+  likelyIntent: z.string(),
+  confidence: z.number().min(0).max(1)
+});
+
+// Generate validated routing decision
+const { object: intent } = await generateObject({
+  model: anthropic('claude-3-5-sonnet-20241022'),
+  schema: UserIntentSchema,
+  system: 'Analyze user intent and route to appropriate agent...',
+  prompt: userMessage
+});
+
+// Route based on validated intent (type-safe!)
+if (intent.agentType === 'sf_local_guide') {
+  const agent = await context.getAgent({ name: 'sf-local-guide' });
+  const result = await agent.run({ data: userMessage });
+  return response.text(await result.data.text());
+}`} />
+
+### Key Implementation: Conversation Memory and Context
+
+The concierge maintains conversation state across agent interactions using KV storage:
+
+<CodeExample py={`# Retrieve existing conversation context
+existing_context = await context.kv.get('conversations', session_id)
+conversation_history = (
+    await existing_context.data.json() if existing_context.exists
+    else {'messages': [], 'preferences': {}}
+)
+
+# Update conversation record with new intent
+conversation_history['messages'].append({
+    'timestamp': datetime.now().isoformat(),
+    'intent': user_intent.agent_type,
+    'confidence': user_intent.confidence
+})
+
+# Track user preferences for better routing
+if user_intent.agent_type == 'sf_local_guide':
+    conversation_history['preferences']['location_interests'] = (
+        conversation_history['preferences'].get('location_interests', 0) + 1
+    )
+
+# Save updated context with TTL
+await context.kv.set('conversations', session_id, conversation_history, {'ttl': 3600})`} js={`// Retrieve existing conversation context
+const existingContext = await context.kv.get('conversations', sessionId);
+const conversationHistory = existingContext.exists
+  ? await existingContext.data.json()
+  : { messages: [], preferences: {} };
+
+// Update conversation record with new intent
+conversationHistory.messages.push({
+  timestamp: new Date().toISOString(),
+  intent: userIntent.agentType,
+  confidence: userIntent.confidence
+});
+
+// Track user preferences for better routing
+if (userIntent.agentType === 'sf_local_guide') {
+  conversationHistory.preferences.location_interests =
+    (conversationHistory.preferences.location_interests || 0) + 1;
+}
+
+// Save updated context with TTL
+await context.kv.set('conversations', sessionId, conversationHistory, { ttl: 3600 });`} />
+
+### Build This Project Yourself
+
+Ready to implement this project? You'll need multiple specialized agents for the concierge system.
+
+**Setting up your multi-agent project:**
+
+1. Create agents using the CLI:
+   ```bash
+   agentuity agent create
+   ```
+   Run this command once for each specialist agent (concierge, sf-local-guide, conference-expert, etc.).
+
+2. Follow the complete examples below:
+
+<div className="flex flex-wrap gap-3 mb-6">
+  <a href="https://github.com/agentuity/examples/tree/add-tutorials/training/04-concierge-ts" target="_blank" rel="noopener noreferrer"
+     className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.30 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    TypeScript
+  </a>
+  <div className="inline-flex items-center gap-2 px-4 py-3 bg-gray-400 text-white rounded-lg no-underline text-sm font-medium cursor-not-allowed opacity-75">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.30 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    Python (Coming Soon)
+  </div>
+</div>
+
+<Callout type="warning">
+Always use CLI commands to manage agents. Use `agentuity agent delete` to remove agents. Never manually edit agent directories to avoid potential issues.
+</Callout>
+
+### What This System Demonstrates
+
+- **Structured AI responses**: Zod and Pydantic schemas ensure reliable routing decisions
+- **Agent specialization**: Different agents handle SF questions, conference info, and developer support
+- **Conversation memory**: KV storage maintains context across agent interactions
+- **Practical patterns**: Confidence thresholds, fallback handling, and session management
+- **Intent-based routing**: AI analyzes user messages to determine which agent can help best
+
+The complete example shows how to build agent coordination systems that intelligently route users to the right specialists based on validated AI analysis.
+
+### Testing Your Multi-Agent System
+
+Testing multi-agent systems requires understanding the flow across multiple agents.
+
+**Start DevMode:**
+```bash
+agentuity dev
+```
+
+**Key testing scenarios:**
+1. **Test handoff flow** - Verify the correct specialist handles requests
+2. **Test parallel execution** - Check that multiple agents run concurrently
+3. **Test error scenarios** - Reference non-existent agents or send malformed data
+
+**Monitoring agent communication:**
+- Filter logs by agent ID to track individual agents
+- Filter by environment (Local/Cloud/Both) to see where requests are processed
+- Follow trace spans to see the full request flow across agents
+
+<Callout type="info">
+For detailed logging capabilities and advanced filtering options, see the [Agent Logging Guide](/Guides/agent-logging).
+</Callout>
+
+### Deploy Your Multi-Agent System
+
+Once your multi-agent system is built, deploy it to production:
+
+```bash
+agentuity deploy
+```
+
+The deploy process is identical to single-agent projects. All agents are deployed together and can immediately communicate with each other.
+
+## Key Takeaways
+
+- **Multi-agent systems** enable specialization, scalability, and modularity through coordinated agents
+- **Handoff** (`response.handoff()`) delegates control for sequential workflows and simple routing
+- **Invocation** (`context.getAgent()` + `agent.run()`) lets you call agents and process their responses
+- **Parallel execution** runs multiple agent invocations concurrently for better performance
+- **Structured responses** transform unreliable AI outputs into type-safe routing decisions
+- **Smart orchestration** combines these patterns with AI analysis for dynamic, adaptive workflows
+- **Agentuity simplifies** multi-agent coordination with built-in agent resolution, communication, and tracing
+
+## What's Next?
+
+Now that you can build multi-agent systems, Module 5 will cover **Observability, Guardrails, & Evals** - how to ensure your agent teams behave safely and predictably in production.
+
+Questions to consider:
+- How do you prevent agents from taking harmful actions?
+- How do you track what decisions agents are making?
+- How do you ensure compliance and other (general) requirements?
+
+Continue to [Module 5: Observability, Guardrails, & Evals →](./05-observability-guardrails-evals)
