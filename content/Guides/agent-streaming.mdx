@@ -401,6 +401,115 @@ export default async function Agent(
 - **Progress Monitoring**: Track bytes written in real-time with `stream.bytesWritten`
 - **Automatic Compression**: Enable optional compression to reduce bandwidth for compressible content
 
+## Managing Streams
+
+Beyond creating streams, you can list and delete streams to manage your stream lifecycle.
+
+### Listing Streams
+
+Use `context.stream.list()` to search and filter through your streams:
+
+```typescript
+const handler: AgentHandler = async (req, resp, ctx) => {
+  // List all streams
+  const allStreams = await ctx.stream.list();
+  console.log(`Total streams: ${allStreams.total}`);
+
+  // Filter by name
+  const llmStreams = await ctx.stream.list({
+    name: 'llm-response'
+  });
+
+  // Filter by metadata
+  const userStreams = await ctx.stream.list({
+    metadata: { userId: 'user-123', sessionId: 'session-456' }
+  });
+
+  // Paginate results
+  const page1 = await ctx.stream.list({ limit: 10, offset: 0 });
+  const page2 = await ctx.stream.list({ limit: 10, offset: 10 });
+
+  return resp.json({ streams: userStreams.streams });
+}
+```
+
+### Deleting Streams
+
+Clean up streams when they're no longer needed:
+
+```typescript
+const handler: AgentHandler = async (req, resp, ctx) => {
+  const { streamId } = await req.data.json();
+
+  try {
+    await ctx.stream.delete(streamId);
+    return resp.json({ success: true });
+  } catch (error) {
+    if (error.message.includes('not found')) {
+      return resp.json({ error: 'Stream not found' }, { status: 404 });
+    }
+    throw error;
+  }
+}
+```
+
+### Complete Stream Lifecycle
+
+Here's a complete example showing stream creation, listing, and cleanup:
+
+```typescript
+import { AgentHandler } from '@agentuity/sdk';
+import { openai } from '@ai-sdk/openai';
+import { streamText } from 'ai';
+
+const handler: AgentHandler = async (req, resp, ctx) => {
+  const { prompt, userId } = await req.data.json();
+
+  // Create a new stream with metadata
+  const stream = await ctx.stream.create('llm-response', {
+    contentType: 'text/plain',
+    metadata: {
+      userId,
+      sessionId: ctx.sessionId,
+      timestamp: Date.now(),
+      type: 'llm-generation'
+    }
+  });
+
+  // Stream LLM response in the background
+  ctx.waitUntil(async () => {
+    const { textStream } = streamText({
+      model: openai('gpt-4o'),
+      prompt
+    });
+    await textStream.pipeTo(stream);
+  });
+
+  // List all streams for this user
+  const userStreams = await ctx.stream.list({
+    metadata: { userId }
+  });
+
+  // Clean up old streams (older than 24 hours)
+  const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+  ctx.waitUntil(async () => {
+    for (const oldStream of userStreams.streams) {
+      const timestamp = Number(oldStream.metadata?.timestamp);
+      if (timestamp && timestamp < oneDayAgo) {
+        await ctx.stream.delete(oldStream.id);
+        ctx.logger.info(`Deleted old stream: ${oldStream.id}`);
+      }
+    }
+  });
+
+  return resp.json({
+    streamId: stream.id,
+    streamUrl: stream.url,
+    totalStreams: userStreams.total
+  });
+}
+```
+
 ---
 
 ## Further Reading

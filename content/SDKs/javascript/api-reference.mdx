@@ -788,6 +788,170 @@ context.waitUntil(async () => {
 });
 ```
 
+#### list
+
+`list(params?: ListStreamsParams): Promise<ListStreamsResponse>`
+
+Lists and searches through your streams with flexible filtering and pagination options.
+
+**Parameters**
+
+- `params` (optional): Configuration object with the following properties:
+  - `name` (optional): Filter streams by name
+  - `metadata` (optional): An object with key-value pairs to filter streams by their metadata
+  - `limit` (optional): Maximum number of streams to return (1-1000, defaults to 100)
+  - `offset` (optional): Number of streams to skip for pagination
+
+**Return Value**
+
+Returns a Promise that resolves to a `ListStreamsResponse` object:
+- `success`: Boolean indicating if the request succeeded
+- `streams`: Array of stream objects, each containing:
+  - `id`: The unique identifier of the stream
+  - `name`: The name of the stream
+  - `metadata`: The metadata associated with the stream
+  - `url`: The URL of the stream
+  - `sizeBytes`: The size of the stream in bytes
+- `total`: Total count of streams matching your filters (useful for pagination)
+- `message`: Optional error message if the request failed
+
+**Examples**
+
+```typescript
+import { AgentHandler } from '@agentuity/sdk';
+
+const handler: AgentHandler = async (request, response, context) => {
+  // List all streams
+  const result = await context.stream.list();
+  console.log(`Found ${result.total} streams`);
+  result.streams.forEach(stream => {
+    console.log(`${stream.name}: ${stream.url} (${stream.sizeBytes} bytes)`);
+  });
+
+  // Filter by name
+  const namedStreams = await context.stream.list({
+    name: 'llm-response'
+  });
+
+  // Filter by metadata
+  const userStreams = await context.stream.list({
+    metadata: { userId: 'user-123', type: 'llm-generation' }
+  });
+
+  // Paginate results
+  const page1 = await context.stream.list({ limit: 10, offset: 0 });
+  const page2 = await context.stream.list({ limit: 10, offset: 10 });
+
+  // Combine filters
+  const filtered = await context.stream.list({
+    name: 'analytics',
+    metadata: { department: 'sales' },
+    limit: 50
+  });
+
+  return response.json({ streams: filtered.streams });
+};
+
+export default handler;
+```
+
+#### delete
+
+`delete(id: string): Promise<void>`
+
+Deletes a stream by its ID when it's no longer needed.
+
+**Parameters**
+
+- `id` (required): The stream ID to delete. Must be a non-empty string.
+
+**Return Value**
+
+Returns a Promise that resolves to void on success.
+
+**Error Handling**
+
+- Throws an error if the stream ID is invalid or empty
+- Throws a "Stream not found" error if the stream with the given ID does not exist
+
+**Examples**
+
+```typescript
+import { AgentHandler } from '@agentuity/sdk';
+
+const handler: AgentHandler = async (request, response, context) => {
+  const { streamId } = await request.data.json();
+
+  // Delete a stream
+  await context.stream.delete(streamId);
+
+  // Handle deletion with error checking
+  try {
+    await context.stream.delete(streamId);
+    context.logger.info('Stream deleted successfully');
+    return response.json({ success: true });
+  } catch (error) {
+    if (error.message.includes('not found')) {
+      return response.json({ error: 'Stream does not exist' }, { status: 404 });
+    }
+    throw error;
+  }
+};
+
+export default handler;
+```
+
+**Complete Workflow Example**
+
+This example demonstrates creating streams, listing them by metadata, and cleaning up old streams:
+
+```typescript
+import { AgentHandler } from '@agentuity/sdk';
+import { openai } from '@ai-sdk/openai';
+import { streamText } from 'ai';
+
+const handler: AgentHandler = async (request, response, context) => {
+  const { prompt, userId } = await request.data.json();
+
+  // Create a stream with metadata
+  const stream = await context.stream.create('user-export', {
+    contentType: 'text/plain',
+    metadata: { userId, format: 'csv', timestamp: Date.now() }
+  });
+
+  context.waitUntil(async () => {
+    await stream.write('Name,Email\n');
+    await stream.write('John,john@example.com\n');
+    await stream.close();
+  });
+
+  // List streams by metadata
+  const userStreams = await context.stream.list({
+    metadata: { userId }
+  });
+
+  context.logger.info(`Found ${userStreams.total} streams for user ${userId}`);
+
+  // Clean up old streams (older than 1 day)
+  const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+  for (const oldStream of userStreams.streams) {
+    const timestamp = Number(oldStream.metadata?.timestamp);
+    if (timestamp && timestamp < oneDayAgo) {
+      await context.stream.delete(oldStream.id);
+      context.logger.info(`Deleted old stream: ${oldStream.name}`);
+    }
+  }
+
+  return response.json({
+    streamId: stream.id,
+    streamUrl: stream.url,
+    totalStreams: userStreams.total
+  });
+};
+
+export default handler;
+```
+
 #### Stream Interface
 
 The `Stream` interface extends `WritableStream` and provides additional properties:
