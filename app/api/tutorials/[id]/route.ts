@@ -31,11 +31,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     
     const parsed = await parseTutorialMDXCached(filePath);
     
+    // Calculate totalSteps if missing from frontmatter
+    const totalSteps = parsed.metadata.totalSteps ?? parsed.steps.length;
+    
     return NextResponse.json({
       success: true,
       data: {
         id,
-        metadata: parsed.metadata,
+        metadata: {
+          ...parsed.metadata,
+          totalSteps
+        },
         fullContent: parsed.fullContent,
         steps: parsed.steps.map(step => ({
           stepNumber: step.stepNumber,

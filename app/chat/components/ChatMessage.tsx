@@ -84,13 +84,13 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
     const tutorialSnippets = message.tutorialData?.tutorialStep.snippets as TutorialSnippet[] | undefined;
     const currentStep = message.tutorialData?.currentStep;
     const totalSteps = message.tutorialData?.totalSteps;
-    
+
     // Memoize tutorial content transformation to avoid Rules of Hooks violation
-    const memoizedTutorialContent = useMemo(() => 
-        tutorialMdx ? transformMdxWithSnippets(tutorialMdx, tutorialSnippets || []) : null, 
+    const memoizedTutorialContent = useMemo(() =>
+        tutorialMdx ? transformMdxWithSnippets(tutorialMdx, tutorialSnippets || []) : null,
         [tutorialMdx, tutorialSnippets]
     );
-    
+
     const handleOpenInEditor = (code: string) => {
         setEditorContent(code);
         setEditorOpen(true);
@@ -115,9 +115,9 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                             {message.content === '' ? (
                                 <div className="flex items-center gap-4 text-gray-300 mb-4">
                                     <div className="flex space-x-2">
-                                        <div className="w-3 h-3 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite]"/>
-                                        <div className="w-3 h-3 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite_0.2s]"/>
-                                        <div className="w-3 h-3 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite_0.4s]"/>
+                                        <div className="w-3 h-3 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite]" />
+                                        <div className="w-3 h-3 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite_0.2s]" />
+                                        <div className="w-3 h-3 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite_0.4s]" />
                                     </div>
                                     <span className="text-sm tracking-wide text-gray-200">Agent is processing...</span>
                                 </div>

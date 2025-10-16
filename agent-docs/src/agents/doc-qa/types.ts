@@ -13,16 +13,6 @@ export const AnswerSchema = z.object({
 	documents: z.array(z.string()),
 });
 
-export const PromptTypeSchema = z.enum(['Normal', 'Thinking']);
-
-export const PromptClassificationSchema = z.object({
-	type: PromptTypeSchema,
-	confidence: z.number().min(0).max(1),
-	reasoning: z.string(),
-});
-
 // Generated TypeScript types
 export type RelevantDoc = z.infer<typeof RelevantDocSchema>;
 export type Answer = z.infer<typeof AnswerSchema>;
-export type PromptType = z.infer<typeof PromptTypeSchema>;
-export type PromptClassification = z.infer<typeof PromptClassificationSchema>;

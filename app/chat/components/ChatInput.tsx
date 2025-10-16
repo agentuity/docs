@@ -52,7 +52,7 @@ export function ChatInput({
             onKeyDown={handleKeyDown}
             placeholder="Ask about Agentuity or request tutorials..."
             className="w-full px-3 py-2 text-sm text-gray-200 placeholder-gray-400
-          bg-transparent border-0 focus:outline-none agentuity-scrollbar
+          bg-transparent border-0 focus:outline-none scrollbar-thin
           min-h-[40px] max-h-[16rem] pr-10 overflow-y-auto resize-none"
             rows={2}
           />

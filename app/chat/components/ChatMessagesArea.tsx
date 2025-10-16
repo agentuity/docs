@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect,useState } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { ChatMessageComponent } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { Session } from '../types';
@@ -51,7 +51,7 @@ export function ChatMessagesArea({
         <div className="flex-1 flex flex-col min-w-0 h-full">
             <div
                 ref={messagesContainerRef}
-                className="flex-1 p-4 md:p-6 space-y-6 h-full  overflow-y-auto agentuity-scrollbar"
+                className="flex-1 p-4 md:p-6 space-y-6 h-full overflow-y-auto scrollbar-thin"
                 style={{ maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' }}
             >
                 {session.messages.map((message) => (
