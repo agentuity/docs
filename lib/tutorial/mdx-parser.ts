@@ -1,12 +1,12 @@
 import matter from 'gray-matter';
 import { readFile, stat } from 'fs/promises';
-import path from 'path';
 import {
   TutorialMetadataSchema,
   ParsedTutorialSchema,
   type TutorialStepData,
   type ParsedTutorial
 } from './schemas';
+import { readSecureFile } from '@/lib/utils/secure-path';
 
 export async function parseTutorialMDX(filePath: string): Promise<ParsedTutorial> {
   const fileContent = await readFile(filePath, 'utf-8');
@@ -29,7 +29,7 @@ export async function parseTutorialMDX(filePath: string): Promise<ParsedTutorial
     const [fullMatch, attributes, stepContent] = match;
 
     // Parse attributes
-    const stepNumber = parseInt(extractAttribute(attributes, 'number') || '0');
+    const stepNumber = parseInt(extractAttribute(attributes, 'number') || '1');
     const title = extractAttribute(attributes, 'title') || `Step ${stepNumber}`;
     const estimatedTime = extractAttribute(attributes, 'estimatedTime');
 
@@ -46,7 +46,10 @@ export async function parseTutorialMDX(filePath: string): Promise<ParsedTutorial
   }
 
   const result = {
-    metadata,
+    metadata: {
+      ...metadata,
+      totalSteps: steps.length  // Calculate from actual parsed steps
+    },
     fullContent: content,
     steps: steps.sort((a, b) => a.stepNumber - b.stepNumber)
   };
@@ -218,21 +221,11 @@ function parseSnippetObject(objectString: string): {
 
 async function loadSnippetContent(snippet: { path: string; from?: number; to?: number }): Promise<string> {
   try {
-    const repoRoot = process.cwd();
-    const absolutePath = path.resolve(repoRoot, `.${snippet.path}`);
-
-    // Security check
-    if (!absolutePath.startsWith(repoRoot)) {
-      throw new Error('Path escapes repository root');
-    }
-
-    const fileContent = await readFile(absolutePath, 'utf-8');
-    const lines = fileContent.split(/\r?\n/);
-
-    const startIdx = Math.max(0, (snippet.from ? snippet.from - 1 : 0));
-    const endIdx = Math.min(lines.length, snippet.to ? snippet.to : lines.length);
-
-    return lines.slice(startIdx, endIdx).join('\n');
+    return await readSecureFile(snippet.path, {
+      from: snippet.from,
+      to: snippet.to,
+      requireLeadingSlash: true
+    });
   } catch (error) {
     return `// Failed to load ${snippet.path}: ${error}`;
   }

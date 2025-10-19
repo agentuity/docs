@@ -1,16 +1,16 @@
- 'use client';
+'use client';
 
 import { usePathname, useRouter } from "next/navigation";
 import { Session } from "./types";
 import { sessionService } from "./services/sessionService";
 import { SessionSidebar } from "./components/SessionSidebar";
- import { SessionSidebarSkeleton } from './components/SessionSidebarSkeleton';
+import { SessionSidebarSkeleton } from './components/SessionSidebarSkeleton';
 import { SessionContext } from './SessionContext';
 import useSWRInfinite from 'swr/infinite';
 
 
 
- export default function ChatLayout({ children }: { children: React.ReactNode }) {
+export default function ChatLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
 
@@ -23,7 +23,7 @@ import useSWRInfinite from 'swr/infinite';
     };
 
     const fetchPage = async ([, cursor]: [string, number]) => {
-        const res = await sessionService.getSessionsPage({ cursor, limit: 10 });
+        const res = await sessionService.getSessionsPage({ cursor, limit: 20 });
         if (!res.success || !res.data) throw new Error(res.error || 'Failed to fetch sessions');
         return res.data;
     };
@@ -64,6 +64,62 @@ import useSWRInfinite from 'swr/infinite';
     const handleNewSession = () => router.push('/chat');
     const loadMore = () => setSize(size + 1);
 
+    const handleDeleteSession = async (sessionIdToDelete: string) => {
+        // Optimistically remove the session from the cache
+        const updatedPages = pages.map(page => ({
+            ...page,
+            sessions: page.sessions.filter(s => s.sessionId !== sessionIdToDelete),
+            pagination: {
+                ...page.pagination,
+                total: page.pagination.total - 1
+            }
+        }));
+
+        // Update cache optimistically without revalidating
+        await swrMutate(updatedPages, { revalidate: false });
+
+        // If we're deleting the current session, navigate to /chat
+        if (sessionIdToDelete === sessionId) {
+            router.push('/chat');
+        }
+
+        // Call the API to delete the session
+        const response = await sessionService.deleteSession(sessionIdToDelete);
+        if (!response.success) {
+            // If deletion failed, revalidate to restore the correct state
+            alert(`Failed to delete session: ${response.error}`);
+            await swrMutate(undefined, { revalidate: true });
+        }
+    };
+
+    const handleEditSession = async (sessionIdToEdit: string, newTitle: string) => {
+        const sessionToEdit = sessions.find(s => s.sessionId === sessionIdToEdit);
+        if (!sessionToEdit) {
+            alert('Session not found');
+            return;
+        }
+
+        const updatedSession: Session = {
+            ...sessionToEdit,
+            title: newTitle
+        };
+
+        // Optimistically update the session in the cache
+        const updatedPages = pages.map(page => ({
+            ...page,
+            sessions: page.sessions.map(s =>
+                s.sessionId === sessionIdToEdit ? updatedSession : s
+            )
+        }));
+
+        await swrMutate(updatedPages, { revalidate: false });
+        const response = await sessionService.updateSession(updatedSession);
+        if (!response.success) {
+            alert(`Failed to update session: ${response.error}`);
+            await swrMutate(undefined, { revalidate: true });
+        }
+    };
+
     return (
         <div className="agentuity-background flex h-screen text-white overflow-hidden">
             {/* Sidebar: show skeleton while loading, real sidebar when ready */}
@@ -75,6 +131,8 @@ import useSWRInfinite from 'swr/infinite';
                     sessions={sessions}
                     onSessionSelect={handleSessionSelect}
                     onNewSession={handleNewSession}
+                    onDeleteSession={handleDeleteSession}
+                    onEditSession={handleEditSession}
                     hasMore={hasMore}
                     onLoadMore={loadMore}
                     isLoadingMore={isLoadingMore}

@@ -31,14 +31,18 @@ async function buildContext(
 			tutorialState
 		);
 
-		return `===AVAILABLE TUTORIALS====
-
+		return `<CONTEXT>
+			
+	<AVAILABLE_TUTORIALS>
     ${tutorialContent}
+	</AVAILABLE_TUTORIALS>
 
+	<CURRENT_USER_TUTORIAL_INFO>
     ${currentTutorialInfo}
+	</CURRENT_USER_TUTORIAL_INFO>
 
     Note: You should not expose the details of the tutorial IDs to the user.
-`;
+</CONTEXT>`;
 	} catch (error) {
 		ctx.logger.error("Error building tutorial context: %s", error);
 		return defaultFallbackContext();
@@ -72,7 +76,7 @@ function buildCurrentTutorialInfo(
  * Returns fallback context when tutorial list can't be loaded
  */
 function defaultFallbackContext(): string {
-	return `===AVAILABLE TUTORIALS====
+	return `=== AVAILABLE TUTORIALS ====
 Unable to load tutorial list currently`;
 }
 
@@ -97,10 +101,11 @@ export default async function Agent(
 		let systemPrompt: string = "";
 		// Direct LLM access won't require any tools or system prompt
 		if (!parsedRequest.useDirectLLM) {
-			// Create tools with state context
+			// Create tools with state context and userId
 			tools = await createTools({
 				state,
 				agentContext: ctx,
+				userId: parsedRequest.userId,
 			});
 
 			// Build tutorial context and system prompt

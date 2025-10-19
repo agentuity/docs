@@ -1,0 +1,45 @@
+{
+    "_comment": "This file defines all available tutorials for the tutorial API endpoints. The tutorial API (/api/tutorials) reads from this file to determine which MDX files to process as tutorials, ensuring only intentionally marked files are included. Each tutorial entry must have a corresponding MDX file at the specified path.",
+    "tutorials": [
+        {
+            "id": "01-introduction-to-agents",
+            "title": "Module 1: Introduction to Agents",
+            "description": "Understanding AI agents and the $47B opportunity",
+            "path": "Training/developers/01-introduction-to-agents.mdx",
+            "difficulty": "beginner",
+            "estimatedTime": "15 minutes"
+        },
+        {
+            "id": "02-anatomy-of-an-agent",
+            "title": "Module 2: The Anatomy of an Agent",
+            "description": "Understanding how agents work - planning, reasoning, tools, and memory",
+            "path": "Training/developers/02-anatomy-of-an-agent.mdx",
+            "difficulty": "beginner",
+            "estimatedTime": "20 minutes"
+        },
+    {
+      "id": "03-agent-memory",
+      "title": "Module 3: Agent Memory", 
+      "description": "How agents remember, learn, and build context over time",
+      "path": "Training/developers/03-agent-memory.mdx",
+      "difficulty": "beginner",
+      "estimatedTime": "55 minutes"
+    },
+        {
+            "id": "04-agent-collaboration",
+            "title": "Module 4: Agent-to-Agent Collaboration",
+            "description": "Building multi-agent systems that work together",
+            "path": "Training/developers/04-agent-collaboration.mdx",
+            "difficulty": "intermediate",
+            "estimatedTime": "30 minutes"
+        },
+        {
+            "id": "05-observability-guardrails-evals",
+            "title": "Module 5: Observability, Guardrails, & Evals",
+            "description": "Making agents reliable, safe, and production-ready",
+            "path": "Training/developers/05-observability-guardrails-evals.mdx",
+            "difficulty": "intermediate",
+            "estimatedTime": "25 minutes"
+        }
+    ]
+}
