@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Play, Terminal, Square, Power, Code, X } from 'lucide-react';
+import { Play, Terminal as TerminalIcon, Square, Power, Code, X } from 'lucide-react';
+import { Terminal } from './Terminal';
 
 enum TabType {
   CODE = 'code',
-  OUTPUT = 'output'
+  OUTPUT = 'output',
+  TERMINAL = 'terminal'
 }
 
 interface CodeEditorProps {
@@ -61,8 +63,18 @@ export function CodeEditor({
                   : 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
                   }`}
               >
-                <Terminal className="w-3 h-3" />
+                <TerminalIcon className="w-3 h-3" />
                 Output
+              </button>
+              <button
+                onClick={() => setActiveTab(TabType.TERMINAL)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs md:text-sm font-medium transition-colors ${activeTab === TabType.TERMINAL
+                  ? 'bg-gray-700/50 text-gray-200'
+                  : 'text-gray-400 hover:text-gray-300 hover:bg-white/5'
+                  }`}
+              >
+                <TerminalIcon className="w-3 h-3" />
+                Terminal
               </button>
             </div>
           </div>
@@ -118,7 +130,7 @@ export function CodeEditor({
               spellCheck={false}
             />
           </div>
-        ) : (
+        ) : activeTab === TabType.OUTPUT ? (
           <div className="h-full p-4">
             <div className="w-full h-full bg-gray-900/50 border border-gray-700/50 rounded-lg p-3 text-sm font-mono text-gray-200 overflow-auto">
               {executionResult ? (
@@ -128,8 +140,12 @@ export function CodeEditor({
               )}
             </div>
           </div>
+        ) : (
+          <div className="h-full">
+            <Terminal />
+          </div>
         )}
       </div>
     </div>
   );
-} 
+}      
