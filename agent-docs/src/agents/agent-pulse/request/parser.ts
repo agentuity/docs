@@ -10,11 +10,13 @@ export function parseAgentRequest(
 		let conversationHistory: any[] = [];
 		let tutorialData: any = undefined;
 		let useDirectLLM = false;
+		let userId: string | undefined = undefined;
 
 		if (jsonData && typeof jsonData === "object" && !Array.isArray(jsonData)) {
 			const body = jsonData as any;
 			message = body.message || "";
 			useDirectLLM = body.use_direct_llm || false;
+			userId = body.userId || undefined;
 			if (Array.isArray(body.conversationHistory)) {
 				conversationHistory = body.conversationHistory.map((msg: any) => {
 					return {
@@ -34,6 +36,7 @@ export function parseAgentRequest(
 			conversationHistory,
 			tutorialData,
 			useDirectLLM,
+			userId,
 		};
 	} catch (error) {
 		ctx.logger.error(

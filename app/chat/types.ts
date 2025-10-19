@@ -63,6 +63,8 @@ export interface SessionSidebarProps {
   sessions: Session[];
   onSessionSelect: (sessionId: string) => void;
   onNewSession: () => void;
+  onDeleteSession?: (sessionId: string) => void;
+  onEditSession?: (sessionId: string, newTitle: string) => void;
   hasMore?: boolean;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
