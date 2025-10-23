@@ -5,12 +5,16 @@ import { Code } from 'lucide-react';
 interface SimpleCodeBlockProps {
   content: string;
   language: string;
-  onOpenInEditor?: (() => void) | null;
+  label?: string;
+  identifier?: string;
+  onOpenInEditor?: ((code: string, language: string, label?: string, identifier?: string) => void) | null;
 }
 
 export default function CodeBlock({
   content,
   language,
+  label,
+  identifier,
   onOpenInEditor
 }: SimpleCodeBlockProps) {
   return (
@@ -20,7 +24,7 @@ export default function CodeBlock({
         <span className="text-sm text-gray-200">{language}</span>
         {onOpenInEditor && (
           <button
-            onClick={onOpenInEditor}
+            onClick={() => onOpenInEditor(content, language, label, identifier)}
             className="p-1.5 text-gray-400 hover:text-white hover:bg-black/30 rounded-md transition-colors"
             title="Open in editor"
             aria-label="Open in editor"

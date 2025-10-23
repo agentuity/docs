@@ -71,13 +71,11 @@ interface ChatMessageProps {
         timestamp: string;
         tutorialData?: TutorialData
     };
-    setEditorContent?: (content: string) => void;
-    setEditorOpen?: (open: boolean) => void;
+    addCodeTab?: (code: string, language: string, label?: string, identifier?: string) => void;
 }
 export const ChatMessageComponent = React.memo(function ChatMessageComponent({
     message,
-    setEditorContent = () => { },
-    setEditorOpen = () => { }
+    addCodeTab
 }: ChatMessageProps) {
 
     const tutorialMdx = message.tutorialData?.tutorialStep.mdx;
@@ -91,9 +89,10 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
         [tutorialMdx, tutorialSnippets]
     );
 
-    const handleOpenInEditor = (code: string, language: string) => {
-        setEditorContent(code);
-        setEditorOpen(true);
+    const handleOpenInEditor = (code: string, language: string, label?: string, identifier?: string) => {
+        if (addCodeTab) {
+            addCodeTab(code, language, label, identifier);
+        }
     };
 
     return (
@@ -128,10 +127,13 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                             )}
                             {/* Render tutorial content if present */}
                             {tutorialMdx && memoizedTutorialContent && (
-                                <MarkdownRenderer 
-                                    content={memoizedTutorialContent} 
-                                    onOpenInEditor={handleOpenInEditor} 
-                                />
+                                <div className="mt-6">
+                                    <MarkdownRenderer 
+                                        content={memoizedTutorialContent}
+                                        snippets={tutorialSnippets}
+                                        onOpenInEditor={handleOpenInEditor} 
+                                    />
+                                </div>
                             )}
                         </div>
                     ) : (

@@ -12,11 +12,31 @@ import { useSessions } from '../SessionContext';
 import { sessionService } from '../services/sessionService';
 import { Skeleton } from '@/components/ui/skeleton';
 
+// Simple hash function to create identifiers for code snippets
+function hashCode(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return hash.toString(36);
+}
+
+interface CodeTab {
+  id: string;
+  content: string;
+  language: string;
+  label: string;
+  identifier?: string; // Used to prevent duplicates (e.g., file path or content hash)
+}
+
 export default function ChatSessionPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const [session, setSession] = useState<Session | undefined>();
   const [editorOpen, setEditorOpen] = useState(false);
-  const [editorContent, setEditorContent] = useState<string>('');
+  const [codeTabs, setCodeTabs] = useState<CodeTab[]>([]);
+  const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const { sessions, setSessions, revalidateSessions } = useSessions();
   const [creationError, setCreationError] = useState<string | null>(null);
 
@@ -247,6 +267,65 @@ export default function ChatSessionPage() {
   const toggleEditor = () => { setEditorOpen(false) };
   const stopServer = () => { };
 
+  const addCodeTab = (code: string, language: string, label?: string, identifier?: string) => {
+    // Generate identifier if not provided (hash of content + language)
+    const tabIdentifier = identifier || `${language}-${hashCode(code)}`;
+    
+    // Check if a tab with this identifier already exists
+    const existingTab = codeTabs.find(tab => tab.identifier === tabIdentifier);
+    if (existingTab) {
+      // Switch to the existing tab instead of creating a duplicate
+      setActiveTabId(existingTab.id);
+      setEditorOpen(true);
+      return;
+    }
+
+    // Create new tab
+    const newTabId = uuidv4();
+    
+    // Determine the best label to display
+    let tabLabel = label;
+    if (!tabLabel && identifier) {
+      // Extract filename from path if identifier looks like a path
+      const pathParts = identifier.split('/');
+      tabLabel = pathParts[pathParts.length - 1];
+    }
+    if (!tabLabel) {
+      tabLabel = `${language} snippet`;
+    }
+    
+    const newTab: CodeTab = {
+      id: newTabId,
+      content: code,
+      language: language,
+      label: tabLabel,
+      identifier: tabIdentifier
+    };
+    
+    setCodeTabs(prev => [...prev, newTab]);
+    setActiveTabId(newTabId);
+    setEditorOpen(true);
+  };
+
+  const closeCodeTab = (tabId: string) => {
+    setCodeTabs(prev => {
+      const filtered = prev.filter(tab => tab.id !== tabId);
+      if (filtered.length === 0) {
+        setEditorOpen(false);
+        setActiveTabId(null);
+      } else if (activeTabId === tabId) {
+        setActiveTabId(filtered[filtered.length - 1].id);
+      }
+      return filtered;
+    });
+  };
+
+  const updateTabContent = (tabId: string, content: string) => {
+    setCodeTabs(prev => prev.map(tab => 
+      tab.id === tabId ? { ...tab, content } : tab
+    ));
+  };
+
   return (
     <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden overflow-y-auto uity-scrollbar relative">
       {/* Non-blocking error banner */}
@@ -272,8 +351,7 @@ export default function ChatSessionPage() {
                 <ChatMessagesArea
                   session={session}
                   handleSendMessage={handleSendMessage}
-                  setEditorContent={setEditorContent}
-                  setEditorOpen={() => { setEditorOpen(true) }}
+                  addCodeTab={addCodeTab}
                 />
               ) : (
                 <div className="p-6 space-y-4">
@@ -292,7 +370,7 @@ export default function ChatSessionPage() {
           </div>
         </Allotment.Pane>
         {editorOpen && (
-          <Allotment.Pane>
+          <Allotment.Pane minSize={450}>
             <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
               <CodeEditor
                 executionResult={''}
@@ -300,8 +378,11 @@ export default function ChatSessionPage() {
                 executingFiles={[]}
                 runCode={() => { }}
                 stopServer={stopServer}
-                editorContent={editorContent}
-                setEditorContent={setEditorContent}
+                codeTabs={codeTabs}
+                activeTabId={activeTabId}
+                setActiveTabId={setActiveTabId}
+                updateTabContent={updateTabContent}
+                closeCodeTab={closeCodeTab}
                 toggleEditor={toggleEditor}
               />
             </div>

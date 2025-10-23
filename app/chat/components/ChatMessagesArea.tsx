@@ -8,15 +8,13 @@ import { Session } from '../types';
 export interface ChatMessagesAreaProps {
     session: Session
     handleSendMessage: (content: string, sessionId: string) => void;
-    setEditorContent?: (content: string) => void;
-    setEditorOpen?: (isOpen: boolean) => void;
+    addCodeTab?: (code: string, language: string, label?: string, identifier?: string) => void;
 }
 
 export function ChatMessagesArea({
     session,
     handleSendMessage,
-    setEditorContent = () => { },
-    setEditorOpen = () => { }
+    addCodeTab
 }: ChatMessagesAreaProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -58,8 +56,7 @@ export function ChatMessagesArea({
                     <ChatMessageComponent
                         key={message.id}
                         message={message}
-                        setEditorContent={setEditorContent}
-                        setEditorOpen={setEditorOpen}
+                        addCodeTab={addCodeTab}
                     />
                 ))}
                 <div ref={messagesEndRef} />
