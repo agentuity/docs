@@ -91,7 +91,7 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
         [tutorialMdx, tutorialSnippets]
     );
 
-    const handleOpenInEditor = (code: string) => {
+    const handleOpenInEditor = (code: string, language: string) => {
         setEditorContent(code);
         setEditorOpen(true);
     };
@@ -128,10 +128,10 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                             )}
                             {/* Render tutorial content if present */}
                             {tutorialMdx && memoizedTutorialContent && (
-                                <div className="mt-4 p-3 bg-gray-700/30 rounded-lg">
-                                    <h4 className="text-sm font-semibold mb-2 text-gray-100">Step {currentStep} of {totalSteps}</h4>
-                                    <MarkdownRenderer content={memoizedTutorialContent} />
-                                </div>
+                                <MarkdownRenderer 
+                                    content={memoizedTutorialContent} 
+                                    onOpenInEditor={handleOpenInEditor} 
+                                />
                             )}
                         </div>
                     ) : (

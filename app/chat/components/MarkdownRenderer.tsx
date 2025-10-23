@@ -25,20 +25,12 @@ const isExecutableLanguage = (language: string) => {
     return executableExtensions.includes(language);
 };
 
-const getFilenameForLanguage = (language: string) => {
-    switch (language) {
-        case 'py':
-        case 'python':
-            return 'index.py';
-        case 'ts':
-        case 'typescript':
-            return 'agent.ts';
-        default:
-            return 'index.js';
-    }
-};
+interface MarkdownRendererProps {
+    content: string;
+    onOpenInEditor?: ((code: string, language: string) => void) | null;
+}
 
-export function MarkdownRenderer({ content }: { content: string }) {
+export function MarkdownRenderer({ content, onOpenInEditor }: MarkdownRendererProps) {
     return (
         <div className="prose prose-sm max-w-none prose-invert text-sm text-gray-200">
             <ReactMarkdown
@@ -46,18 +38,15 @@ export function MarkdownRenderer({ content }: { content: string }) {
                 components={{
                     pre: ({ children }) => {
                         const { code, language } = extractCodeFromChildren(children);
-
                         if (isExecutableLanguage(language)) {
-                            const filename = getFilenameForLanguage(language);
-
                             return (
                                 <CodeBlock
                                     content={code}
                                     language={language}
+                                    onOpenInEditor={onOpenInEditor ? () => onOpenInEditor(code, language) : null}
                                 />
                             );
                         }
-
                         return (
                             <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg overflow-x-auto">
                                 <code className={`text-sm language-${language}`}>

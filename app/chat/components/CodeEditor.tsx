@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import { Play, Terminal, Square, Power, Code, X } from 'lucide-react';
+import CodeMirror from '@uiw/react-codemirror';
+import { javascript } from '@codemirror/lang-javascript';
+import { python } from '@codemirror/lang-python';
+import { oneDark } from '@codemirror/theme-one-dark';
 
 enum TabType {
   CODE = 'code',
@@ -27,10 +31,6 @@ export function CodeEditor({
   toggleEditor
 }: CodeEditorProps) {
   const [activeTab, setActiveTab] = useState<TabType>(TabType.CODE);
-
-  const handleEditorContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setEditorContent(e.target.value);
-  };
 
   const handleRunCode = () => {
     runCode(editorContent);
@@ -110,13 +110,25 @@ export function CodeEditor({
       <div className="flex-1 overflow-hidden">
         {activeTab === TabType.CODE ? (
           <div className="h-full p-4">
-            <textarea
-              value={editorContent}
-              onChange={handleEditorContentChange}
-              className="w-full h-full bg-gray-900/50 border border-gray-700/50 rounded-lg p-3 text-sm font-mono text-gray-200 resize-none focus:outline-none focus:border-cyan-500/50"
-              placeholder="Enter your code here..."
-              spellCheck={false}
-            />
+            <div className="w-full h-full border border-gray-700/50 rounded-lg overflow-hidden">
+              <CodeMirror
+                value={editorContent}
+                height="100%"
+                theme={oneDark}
+                extensions={[javascript({ jsx: true, typescript: true }), python()]}
+                onChange={(value) => setEditorContent(value)}
+                basicSetup={{
+                  lineNumbers: true,
+                  highlightActiveLineGutter: true,
+                  highlightActiveLine: true,
+                  foldGutter: true,
+                  bracketMatching: true,
+                  closeBrackets: true,
+                  autocompletion: true,
+                  indentOnInput: true,
+                }}
+              />
+            </div>
           </div>
         ) : (
           <div className="h-full p-4">
