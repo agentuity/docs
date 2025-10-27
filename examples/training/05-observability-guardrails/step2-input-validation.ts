@@ -29,10 +29,13 @@ export default async function Agent(
       errors: result.error.issues
     });
 
-    return response.json({
-      error: 'Invalid request',
-      details: result.error.issues
-    }, { status: 400 });
+    return new Response(
+      JSON.stringify({
+        error: 'Invalid request',
+        details: result.error.issues
+      }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 
   // Use validated data (type-safe)

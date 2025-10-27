@@ -5,15 +5,35 @@ export default async function Agent(
   response: AgentResponse,
   context: AgentContext
 ) {
-  // Log the incoming request
-  context.logger.info('Hello agent received a request');
+  context.logger.info('Agent invoked', { contentType: request.data.contentType });
 
-  // Get the name from request data
-  const data = await request.data.json();
-  const name = data.name || 'World';
+  let receivedData: unknown = null;
 
-  context.logger.info(`Greeting ${name}`);
+  switch (request.data.contentType) {
+    case 'application/json':
+      receivedData = await request.data.json();
+      break;
+    case 'text/plain':
+      receivedData = await request.data.text();
+      break;
+    default:
+      receivedData = await request.data.text();
+  }
 
-  // Return a simple greeting
-  return response.json({ message: `Hello, ${name}!` });
+  context.logger.info('Request received', { data: receivedData });
+
+  return response.json({
+    message: 'Request received and logged',
+    contentType: request.data.contentType,
+    received: receivedData,
+    timestamp: new Date().toISOString()
+  });
 }
+
+export const welcome = () => ({
+  welcome: 'Send data and watch the logs appear in DevMode.',
+  prompts: [
+    { data: JSON.stringify({ action: 'test', value: 123 }), contentType: 'application/json' },
+    { data: 'Testing logs', contentType: 'text/plain' }
+  ]
+});

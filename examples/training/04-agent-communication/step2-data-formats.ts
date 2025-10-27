@@ -32,3 +32,11 @@ export default async function Agent(
   // context.logger.info('Example: Forwarding original request');
   // return response.handoff({ name: 'passthrough-agent' });
 }
+
+export const welcome = () => ({
+  welcome: 'Pass different data formats (text, JSON) when handing off to other agents.',
+  prompts: [
+    { data: JSON.stringify({ message: 'First request' }), contentType: 'application/json' },
+    { data: JSON.stringify({ message: 'Second request', priority: 'high' }), contentType: 'application/json' }
+  ]
+});

@@ -27,3 +27,13 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     # Uncomment to use:
     # context.logger.info('Example: Forwarding original request')
     # return response.handoff({"name": "passthrough-agent"})
+
+def welcome():
+    import json
+    return {
+        'welcome': 'Pass different data formats (text, JSON) when handing off to other agents.',
+        'prompts': [
+            {'data': json.dumps({'message': 'First request'}), 'contentType': 'application/json'},
+            {'data': json.dumps({'message': 'Second request', 'priority': 'high'}), 'contentType': 'application/json'}
+        ]
+    }

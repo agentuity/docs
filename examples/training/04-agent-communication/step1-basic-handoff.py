@@ -6,3 +6,13 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     context.logger.info('Delegating to specialist agent')
 
     return response.handoff({"name": "specialist-agent"})
+
+def welcome():
+    import json
+    return {
+        'welcome': 'Learn basic agent delegation using response.handoff() to transfer control.',
+        'prompts': [
+            {'data': 'Delegate this task', 'contentType': 'text/plain'},
+            {'data': json.dumps({'task': 'process'}), 'contentType': 'application/json'}
+        ]
+    }

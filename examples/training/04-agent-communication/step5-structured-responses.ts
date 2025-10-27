@@ -52,3 +52,12 @@ routing decision.`,
 
   return response.text(await result.data.text());
 }
+
+export const welcome = () => ({
+  welcome: 'Use AI SDK with Zod schemas to make intelligent routing decisions with structured output.',
+  prompts: [
+    { data: 'I need help with my account password', contentType: 'text/plain' },
+    { data: 'Can you tell me about pricing plans?', contentType: 'text/plain' },
+    { data: 'The API is returning 500 errors', contentType: 'text/plain' }
+  ]
+});

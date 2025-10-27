@@ -1,14 +1,33 @@
 from agentuity import AgentRequest, AgentResponse, AgentContext
+import json
+from datetime import datetime
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    # Log the incoming request
-    context.logger.info("Hello agent received a request")
+    context.logger.info('Agent invoked', {'contentType': request.data.content_type})
 
-    # Get the name from request data
-    data = await request.data.json()
-    name = data.get("name", "World")
+    received_data = None
 
-    context.logger.info(f"Greeting {name}")
+    if request.data.content_type == 'application/json':
+        received_data = await request.data.json()
+    elif request.data.content_type == 'text/plain':
+        received_data = await request.data.text()
+    else:
+        received_data = await request.data.text()
 
-    # Return a simple greeting
-    return response.json({"message": f"Hello, {name}!"})
+    context.logger.info('Request received', {'data': received_data})
+
+    return response.json({
+        'message': 'Request received and logged',
+        'contentType': request.data.content_type,
+        'received': received_data,
+        'timestamp': datetime.utcnow().isoformat() + 'Z'
+    })
+
+def welcome():
+    return {
+        'welcome': 'Send data and watch the logs appear in DevMode.',
+        'prompts': [
+            {'data': json.dumps({'action': 'test', 'value': 123}), 'contentType': 'application/json'},
+            {'data': 'Testing logs', 'contentType': 'text/plain'}
+        ]
+    }

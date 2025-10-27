@@ -66,3 +66,13 @@ Only respond with the JSON, no other text.""",
     result = await target_agent.run(user_message)
 
     return response.text(await result.data.text())
+
+def welcome():
+    return {
+        'welcome': 'Use Pydantic schemas with AI to make intelligent routing decisions with structured output.',
+        'prompts': [
+            {'data': 'I need help with my account password', 'contentType': 'text/plain'},
+            {'data': 'Can you tell me about pricing plans?', 'contentType': 'text/plain'},
+            {'data': 'The API is returning 500 errors', 'contentType': 'text/plain'}
+        ]
+    }

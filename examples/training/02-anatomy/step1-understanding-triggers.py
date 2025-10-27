@@ -1,4 +1,5 @@
 from agentuity import AgentRequest, AgentResponse, AgentContext
+import json
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
     # Get the trigger type
@@ -27,3 +28,12 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
             "message": f"Triggered via: {trigger}",
             "availableTriggers": ["webhook", "cron", "manual", "agent", "sms", "email"]
         })
+
+def welcome():
+    return {
+        'welcome': 'Learn how agents respond to different trigger types (webhook, cron, manual).',
+        'prompts': [
+            {'data': 'Test manual trigger', 'contentType': 'text/plain'},
+            {'data': json.dumps({'test': 'data'}), 'contentType': 'application/json'}
+        ]
+    }

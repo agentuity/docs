@@ -55,3 +55,11 @@ export default async function Agent(
     return new Response('Internal Server Error', { status: 500 });
   }
 }
+
+export const welcome = () => ({
+  welcome: 'Store files in object storage and generate temporary public URLs.',
+  prompts: [
+    { data: 'This is a sample document content', contentType: 'text/plain' },
+    { data: 'Another test file with different content', contentType: 'text/plain' }
+  ]
+});

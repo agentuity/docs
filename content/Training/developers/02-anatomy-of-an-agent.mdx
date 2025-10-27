@@ -180,9 +180,9 @@ Every agent needs to know *how* it was triggered. The same agent code can behave
 
 ### Step 2: Working with Request Data
 
-<TutorialStep number={2} title="Working with Request Data" estimatedTime="4 min">
+<TutorialStep number={2} title="Working with Request Data" estimatedTime="3 min">
 
-Agents receive data in various formats—JSON, text, binary. The SDK provides methods to handle each format and access metadata about the request.
+Agents receive data in various formats and need to parse it correctly. This step shows you how to handle different content types and access request properties.
 
 <CodeFromFiles snippets={[
   { path: "/examples/training/02-anatomy/step2-request-data.ts", lang: "ts", title: "TypeScript" },
@@ -190,103 +190,121 @@ Agents receive data in various formats—JSON, text, binary. The SDK provides me
 ]} />
 
 **What this demonstrates:**
-- Content type detection via `request.data.contentType` (TypeScript) or `request.data.content_type` (Python)
-- Parsing different data formats (JSON, text, binary)
-- Accessing metadata using multiple approaches:
-  - `request.get(key, default)` - SDK convenience method (recommended)
-  - `request.metadata` property - Returns the full metadata dict/object
-  - Direct property/dict access for specific use cases
+- **Content type detection**: Check `request.data.contentType` (TypeScript) or `request.data.content_type` (Python)
+- **Parsing different formats**: Use `json()`, `text()`, or `binary()` based on content type
+- **Request properties**: Access `request.trigger` and `request.metadata`
 
 **Try it:**
-1. Send JSON data: `{"name": "Alice", "action": "greet"}`
-2. Send plain text: `"Hello, agent!"`
-3. Check the logs to see how content type detection works
-4. Notice the commented examples showing different ways to access metadata
+1. Send JSON: `{"message": "Hello", "count": 42}` - see JSON parsing
+2. Send plain text: `"Plain text message"` - see text parsing
+3. Check the logs to see content type detection in action
 
 </TutorialStep>
 
-### Step 3: Structured Logging
+### Step 3: Response Formats
 
-<TutorialStep number={3} title="Structured Logging" estimatedTime="4 min">
+<TutorialStep number={3} title="Response Formats" estimatedTime="3 min">
+
+Agents can return responses in various formats depending on your use case - including text for simple integrations, markdown for formatted content, and streaming for progressive responses. JSON (which you've seen in previous steps) is most common for APIs, while `response.empty()` is useful for webhooks that don't need data back.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/02-anatomy/step3-response-formats.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/02-anatomy/step3-response-formats.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- Returning plain text with `response.text()`
+- Returning formatted markdown with `response.markdown()`
+- Streaming progressive responses with `response.stream()`
+- Using the Vercel AI SDK (for TypeScript) or OpenAI Chat Completions (for Python) for streaming
+
+**Try it:**
+1. Click `"Show text response"` - see simple plain text
+2. Click `"Show markdown response"` - see rich formatted content with headings, lists, and code blocks
+3. Click `"Show streaming response"` - watch content appear progressively as it's generated
+
+</TutorialStep>
+
+### Step 4: Exploring Agent Context
+
+<TutorialStep number={4} title="Exploring Agent Context" estimatedTime="3 min">
+
+The `context` object gives your agent access to platform services and runtime information. Let's explore what's available.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/02-anatomy/step4-context-agent-info.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/02-anatomy/step4-context-agent-info.py", lang: "python", title: "Python" }
+]} />
+
+**What this demonstrates:**
+- **Agent information**: Access `context.agent.id`, `context.agent.name`, and description
+- **Runtime details**: Check SDK version, DevMode status, project/deployment IDs
+- **Platform services**: Preview available services (storage, logging, communication)
+
+**Try it:**
+1. Send `"Agent Info"` - see current agent details
+2. Send `"Runtime Info"` - see SDK version, DevMode status, and IDs
+3. Send `"Platform Services"` - see available context services
+4. Note these services (like `context.kv`) that you'll use in later steps
+
+</TutorialStep>
+
+### Step 5: Structured Logging
+
+<TutorialStep number={5} title="Structured Logging" estimatedTime="3 min">
 
 Effective logging is crucial for debugging and monitoring. Use appropriate log levels and structured data to make your logs searchable and actionable.
 
 <CodeFromFiles snippets={[
-  { path: "/examples/training/02-anatomy/step3-structured-logging.ts", lang: "ts", title: "TypeScript" },
-  { path: "/examples/training/02-anatomy/step3-structured-logging.py", lang: "python", title: "Python" }
+  { path: "/examples/training/02-anatomy/step5-context-logging.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/02-anatomy/step5-context-logging.py", lang: "python", title: "Python" }
 ]} />
 
 **What this demonstrates:**
-- Using different log levels (`info`, `warn`, `error`, `debug`)
-- Including structured context in logs
-- Conditional logging based on task type
+- Using different log levels: `info`, `debug`, `warn`, `error`
+- Including structured context in logs (objects in TypeScript, key=value in Python)
+- Logging throughout the request lifecycle
 
 **Try it:**
-1. Send `{"task": "normal"}` - see INFO logs
-2. Send `{"task": "risky"}` - see WARN logs
-3. Send `{"task": "error"}` - see ERROR logs
-4. Check the Console Logs tab to see structured data
+1. Send plain text: `"Testing structured logging"` - see logs at all levels
+2. Send JSON: `{"user": "testuser", "action": "checkout"}` - see logged data
+3. Check the Logs tab to see all log levels with structured metadata
 
-**Best Practice:** Include context in every log (agent ID, session ID, request details) to help with debugging later.
+**Best Practice:** Include context in every log (agent ID, trigger, timestamps) to make debugging easier.
 
 </TutorialStep>
 
-### Step 4: Introduction to KV Storage
+### Step 6: Introduction to KV Storage
 
-<TutorialStep number={4} title="Introduction to KV Storage" estimatedTime="5 min">
+<TutorialStep number={6} title="Introduction to KV Storage" estimatedTime="4 min">
 
-Key-value storage lets agents cache data, manage state, and avoid redundant work. This is a simple caching pattern—check cache first, compute if needed, then store with TTL.
+Key-value storage lets agents store and retrieve data quickly. This step demonstrates the fundamental pattern: check if data exists, retrieve it if found, or generate and store it if not.
 
 <CodeFromFiles snippets={[
-  { path: "/examples/training/02-anatomy/step4-kv-caching.ts", lang: "ts", title: "TypeScript" },
-  { path: "/examples/training/02-anatomy/step4-kv-caching.py", lang: "python", title: "Python" }
+  { path: "/examples/training/02-anatomy/step6-context-storage.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/02-anatomy/step6-context-storage.py", lang: "python", title: "Python" }
 ]} />
 
 **What this demonstrates:**
-- Checking cache with `context.kv.get()`
-- Cache hit vs. cache miss handling
-- Storing data with TTL using `context.kv.set()`
+- Retrieving data with `context.kv.get()`
+- Checking if data exists with `.exists` property
+- Storing data with `context.kv.set()` and optional TTL
 
 **Try it:**
-1. Send `{"query": "hello"}` - first request computes and caches
-2. Send `{"query": "hello"}` again - returns from cache
-3. Send `{"query": "world"}` - different key, fresh computation
-4. Wait 5 minutes and retry - cache expired, recomputes
+1. Send `"hello"` - generates a unique result code and stores it
+2. Send `"hello"` again - retrieves the same result code from storage
+3. Send `"world"` - different storage key, generates new result
+4. Wait 5 minutes and retry `"hello"` - TTL expired, generates new result
 
 **Key Concepts:**
-- **Bucket**: First parameter (`'demo-cache'`) - organizes related keys
-- **Key**: Second parameter (unique identifier for the data)
+- **Bucket**: First parameter (`'demo-storage'`) - organizes related data
+- **Key**: Second parameter (unique identifier for the stored data)
 - **TTL**: Time-to-live in seconds (data expires automatically)
-- **No TTL**: Omit TTL for permanent storage
+- **Use Cases**: Session state, caching API responses, temporary configuration
 
 <Callout type="info">
-We'll explore advanced memory patterns (session, persistent, vector) in [**Module 3: Agent Memory**](/Training/developers/03-agent-memory).
+This storage pattern powers many use cases: caching (like the Weather Agent lab you'll build at the end of this module), session management, and more. We'll explore advanced memory patterns in [**Module 3: Agent Memory**](/Training/developers/03-agent-memory).
 </Callout>
-
-</TutorialStep>
-
-### Step 5: Response Formats
-
-<TutorialStep number={5} title="Response Formats" estimatedTime="3 min">
-
-Agents can return responses in various formats depending on who's calling them—JSON for APIs, HTML for browsers, text for simple integrations, or empty for webhooks.
-
-<CodeFromFiles snippets={[
-  { path: "/examples/training/02-anatomy/step5-response-formats.ts", lang: "ts", title: "TypeScript" },
-  { path: "/examples/training/02-anatomy/step5-response-formats.py", lang: "python", title: "Python" }
-]} />
-
-**What this demonstrates:**
-- Returning JSON with `response.json()`
-- Returning text with `response.text()`
-- Returning HTML with `response.html()`
-- Returning empty response with `response.empty()`
-
-**Try it:**
-1. Send `{"format": "json"}` - structured data response
-2. Send `{"format": "text"}` - plain text response
-3. Send `{"format": "html"}` - view in browser
-4. Send `{"format": "empty"}` - no response body (useful for webhooks or to handle cases where no "actual" response is needed)
 
 </TutorialStep>
 
@@ -527,7 +545,7 @@ Learn more about configuring triggers in the [Agent Configuration Guide](/Cloud/
 You now understand agent anatomy—the building blocks every agent shares. In **Module 3: Agent Memory**, we'll dive deep into how agents remember, learn, and maintain state across interactions.
 
 **Before moving on:**
-1. Complete all 5 tutorial steps
+1. Complete all 6 tutorial steps
 2. Build and test the weather agent
 3. Experiment with different triggers and cache TTLs
 4. Review the logs to see patterns emerge

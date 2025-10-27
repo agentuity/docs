@@ -16,14 +16,9 @@ export default async function Agent(
       message: 'Received webhook trigger',
       tip: 'Webhooks are great for REST APIs and integrations'
     });
-  } else if (trigger === 'cron') {
-    return response.json({
-      message: 'Scheduled task executed',
-      tip: 'Cron triggers run automatically on schedule'
-    });
   } else if (trigger === 'manual') {
     return response.json({
-      message: 'Manual trigger from DevMode or Console',
+      message: 'Manual trigger from DevMode/Console',
       tip: 'Manual triggers are perfect for testing'
     });
   } else {
@@ -33,3 +28,11 @@ export default async function Agent(
     });
   }
 }
+
+export const welcome = () => ({
+  welcome: 'Learn how agents respond to different trigger types (webhook, cron, manual).',
+  prompts: [
+    { data: 'Test manual trigger', contentType: 'text/plain' },
+    { data: JSON.stringify({ test: 'data' }), contentType: 'application/json' }
+  ]
+});

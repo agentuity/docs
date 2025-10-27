@@ -31,3 +31,11 @@ export default async function Agent(
     handledBy: context.agent.name
   });
 }
+
+export const welcome = () => ({
+  welcome: 'Use getAgent() and run() to call another agent and wait for its response.',
+  prompts: [
+    { data: JSON.stringify({ message: 'Hello from coordinator' }), contentType: 'application/json' },
+    { data: JSON.stringify({ message: 'Process this data' }), contentType: 'application/json' }
+  ]
+});

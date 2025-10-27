@@ -2,6 +2,7 @@ from agentuity import AgentRequest, AgentResponse, AgentContext
 from pydantic import BaseModel, Field, ValidationError
 from typing import Literal
 from datetime import datetime
+from aiohttp.web import Response
 import json
 
 # Define Pydantic model for AI-generated sentiment analysis
@@ -55,12 +56,16 @@ Only respond with the JSON, no other text.""",
 
         except (json.JSONDecodeError, ValidationError) as e:
             context.logger.error(f"AI returned invalid data: {str(e)}")
-            return response.json({
-                "error": "AI generated invalid response format"
-            }, status=500)
+            return Response(
+                text=json.dumps({"error": "AI response validation failed"}),
+                status=500,
+                content_type='application/json'
+            )
 
     except Exception as error:
         context.logger.error(f"AI generation failed: {str(error)}")
-        return response.json({
-            "error": "Failed to generate analysis"
-        }, status=500)
+        return Response(
+            text=json.dumps({"error": "AI generation failed"}),
+            status=500,
+            content_type='application/json'
+        )

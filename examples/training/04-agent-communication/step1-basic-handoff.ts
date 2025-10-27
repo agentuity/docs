@@ -11,3 +11,11 @@ export default async function Agent(
 
   return response.handoff({ name: 'specialist-agent' });
 }
+
+export const welcome = () => ({
+  welcome: 'Learn basic agent delegation using response.handoff() to transfer control.',
+  prompts: [
+    { data: 'Delegate this task', contentType: 'text/plain' },
+    { data: JSON.stringify({ task: 'process' }), contentType: 'application/json' }
+  ]
+});

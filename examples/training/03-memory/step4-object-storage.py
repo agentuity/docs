@@ -50,3 +50,12 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     except Exception as error:
         context.logger.error(f"Error with object storage: {error}")
         return Response(text="Internal Server Error", status=500)
+
+def welcome():
+    return {
+        'welcome': 'Store files in object storage and generate temporary public URLs.',
+        'prompts': [
+            {'data': 'This is a sample document content', 'contentType': 'text/plain'},
+            {'data': 'Another test file with different content', 'contentType': 'text/plain'}
+        ]
+    }

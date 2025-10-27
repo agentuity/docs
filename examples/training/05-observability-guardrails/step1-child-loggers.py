@@ -37,5 +37,5 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
 
     except Exception as error:
         # Error logs also include the context
-        context.logger.error(f"Processing failed request_id={request_id} user_id={user_id} error={str(error)}")
-        return response.json({"error": "Processing failed"}, status=500)
+        context.logger.error(f"Error processing request request_id={request_id} user_id={user_id} error={str(error)}")
+        raise  # SDK returns 500 automatically

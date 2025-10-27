@@ -1,41 +1,53 @@
-from datetime import datetime
 from agentuity import AgentRequest, AgentResponse, AgentContext
+import json
+from datetime import datetime
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    context.logger.info("Hello agent received a request")
+    context.logger.info('Agent invoked')
 
-    # Safe input handling with error checking
-    name = "World"
+    received_data = None
+
+    # Parse with error handling
     try:
-        data = await request.data.json()
+        if request.data.content_type == 'application/json':
+            received_data = await request.data.json()
+        elif request.data.content_type == 'text/plain':
+            received_data = await request.data.text()
+        else:
+            received_data = await request.data.text()
+    except Exception as error:
+        context.logger.error('Failed to parse request data', {'error': str(error)})
+        return response.json(
+            {'error': 'Invalid request data'},
+            status=400
+        )
 
-        if not data.get("name") or not isinstance(data.get("name"), str):
-            context.logger.warning("No valid name provided in request")
-            return response.json({"error": "Name is required and must be a string"})
-
-        name = data["name"]
-    except Exception as e:
-        context.logger.error(f"Error parsing request: {e}")
-        return response.json({"error": "Invalid JSON in request body"})
-
-    # Get current greeting count with error handling
+    # Track total requests with error handling
     count = 1
     try:
-        counter_result = await context.kv.get("stats", "greeting_count")
+        result = await context.kv.get('request-stats', 'total-requests')
+        if result.exists:
+            count = int(await result.data.text()) + 1
+        await context.kv.set('request-stats', 'total-requests', str(count))
+    except Exception as error:
+        context.logger.error('KV storage error', {'error': str(error)})
+        # Continue with default count - graceful degradation
 
-        if counter_result.exists:
-            count = await counter_result.data.json()
-            count += 1
-
-        await context.kv.set("stats", "greeting_count", count)
-    except Exception as e:
-        context.logger.error(f"Error accessing storage: {e}")
-        # Continue with default count rather than failing
-
-    context.logger.info(f"Greeting #{count} for {name}")
+    context.logger.info('Request processed', {'requestNumber': count})
 
     return response.json({
-        "message": f"Hello, {name}!",
-        "greeting_number": count,
-        "timestamp": datetime.now().isoformat()
+        'message': 'Request received',
+        'contentType': request.data.content_type,
+        'received': received_data,
+        'stats': {'totalRequests': count},
+        'timestamp': datetime.utcnow().isoformat() + 'Z'
     })
+
+def welcome():
+    return {
+        'welcome': 'Test error handling by sending valid and invalid data.',
+        'prompts': [
+            {'data': json.dumps({'valid': 'data'}), 'contentType': 'application/json'},
+            {'data': 'Valid text', 'contentType': 'text/plain'}
+        ]
+    }

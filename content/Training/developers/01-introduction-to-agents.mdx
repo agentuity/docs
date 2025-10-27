@@ -224,7 +224,7 @@ agentuity dev
 
 You'll use DevMode throughout the tutorial below to test each step as you build your agent.
 
-### Build Your First Agent Step-by-Step
+## Build Your First Agent Step-by-Step
 
 Work through these steps to build your first agent. Each step adds new capabilities - follow along by creating a project (`agentuity create`), or read through to understand the patterns.
 
@@ -232,7 +232,7 @@ Work through these steps to build your first agent. Each step adds new capabilit
 
 <TutorialStep number={1} title="Create a Basic Agent" estimatedTime="3 minutes">
 
-Let's start with the simplest possible agent - it accepts a name and returns a greeting:
+Let's start with a simple agent that echoes back any data you send it. Notice how it checks `contentType` first to determine the correct parsing method:
 
 <CodeFromFiles snippets={[
   { path: "/examples/training/01-intro/step1-basic-agent.ts", lang: "ts", title: "TypeScript" },
@@ -241,9 +241,12 @@ Let's start with the simplest possible agent - it accepts a name and returns a g
 
 **What this demonstrates:**
 - Basic request/response pattern
-- JSON input handling
-- Simple response generation
+- ContentType-first parsing (check type before parsing)
+- Handling multiple data formats (JSON and text)
+- Structured response with timestamp
 - Core agent structure (AgentRequest, AgentResponse, AgentContext)
+
+**Key insight:** Real-world agents handle multiple input formats gracefully. Check `contentType` to determine the correct parsing method and handle different data formats.
 
 **Try it yourself:** Create a new project with `agentuity create`, replace the default agent code with the code above, and run `agentuity dev` to test it.
 
@@ -275,7 +278,7 @@ Now let's add logging so we can see what's happening inside our agent:
 
 <TutorialStep number={3} title="Add State Management" estimatedTime="5 minutes">
 
-Let's make the agent remember how many times it has greeted people using Agentuity's built-in key-value storage:
+Let's make the agent track total requests using Agentuity's built-in key-value storage:
 
 <CodeFromFiles snippets={[
   { path: "/examples/training/01-intro/step3-with-state.ts", lang: "ts", title: "TypeScript" },
@@ -283,18 +286,19 @@ Let's make the agent remember how many times it has greeted people using Agentui
 ]} />
 
 **What changed:**
-- Uses `context.kv.get()` to read state
-- Uses `context.kv.set()` to update state
+- Tracks total requests globally
+- Uses simple KV key (`total-requests`)
+- Uses `context.kv.get()` to read state and `context.kv.set()` to update
 - Checks `result.exists` to handle first-time execution
-- State persists across invocations
+- Returns request count in response statistics
 
-**Key insight:** Agents need memory to be truly useful. Agentuity provides built-in key-value storage so you don't need external databases for simple state.
+**Key insight:** Agents need memory to be truly useful. Agentuity provides built-in key-value storage so you don't need external databases for simple state. State management is a common pattern you'll see throughout the platform.
 
 <Callout type="info">
 We cover all storage APIs later in [Module 3: Agent Memory](/Training/developers/03-agent-memory). You can also read more by checking out our guide on [Key-Value Storage](/Guides/key-value).
 </Callout>
 
-**Try it:** Call this agent multiple times. Watch the counter increment and persist across calls.
+**Try it:** Call this agent multiple times with any data. Watch the global request counter increment with each call.
 
 </TutorialStep>
 
@@ -302,7 +306,7 @@ We cover all storage APIs later in [Module 3: Agent Memory](/Training/developers
 
 <TutorialStep number={4} title="Add Error Handling" estimatedTime="5 minutes">
 
-Agents need defensive error handling to gracefully handle invalid inputs:
+Agents need defensive error handling with proper status codes to gracefully handle invalid inputs and system failures:
 
 <CodeFromFiles snippets={[
   { path: "/examples/training/01-intro/step4-with-errors.ts", lang: "ts", title: "TypeScript" },
@@ -310,17 +314,17 @@ Agents need defensive error handling to gracefully handle invalid inputs:
 ]} />
 
 **What changed:**
-- Try/catch blocks around JSON parsing
-- Input validation (checks for valid name)
-- Graceful error responses
-- Defensive storage handling (continues even if storage fails)
+- Try/catch blocks around data parsing
+- Proper HTTP status codes (400 for bad requests)
+- Graceful error responses with clear messages
+- Defensive storage handling with graceful degradation (continues even if storage fails)
+- Clear error logging for debugging
 
-**Key insight:** Agents interact with unpredictable inputs and external systems. Error handling ensures they fail gracefully and provide useful feedback.
+**Key insight:** Agents interact with unpredictable inputs and external systems. Error handling with proper status codes ensures they fail gracefully and provide useful feedback to users.
 
-**Try it:** Send invalid JSON or missing data to see how the agent handles errors.
+**Try it:** Test with malformed data to see error handling. Notice how storage failures don't crash the agent - it continues with default values.
 
 </TutorialStep>
-
 ### Deploy Your Tutorial Agent
 
 Now that you've built and tested your agent locally, deploy it to Agentuity's agent-native infrastructure:
@@ -353,10 +357,9 @@ Ready to see everything in action? Clone a complete example that combines all th
 </div>
 
 This lab project includes:
-- Error handling and input validation
+- Error handling with graceful degradation
 - Multiple input types (JSON and text)
-- Personal statistics tracking per user
-- Memory management with TTL-based expiration
+- Global request tracking with KV storage
 - DevMode test scenarios via `welcome()` function
 - Complete `agentuity.yaml` configuration
 
@@ -364,9 +367,9 @@ After cloning the lab, try the following:
 1. Run `agentuity dev` to start DevMode
 2. Use the clickable prompts from the `welcome()` function
 3. Test with both JSON and text inputs
-4. Call the agent multiple times with the same name to see statistics
+4. Call the agent multiple times to see the global request counter increment
 5. Monitor the logs to see detailed operation tracking
-6. Check the key-value storage to see the personal greeting counts
+6. Check the key-value storage to see the total request count
 7. Check the Sessions tab for performance metrics
 
 <Callout type="info">
@@ -380,16 +383,16 @@ This complete implementation shows patterns you'll use throughout the training m
 agentuity dev
 ```
 
-2. **Test with the clickable prompts** from the `welcome()` function in the lab examples
+2. **Test with the clickable prompts** from the `welcome()` function in the examples
 3. **Try different inputs:**
-   - Valid JSON: `{"name": "Alice"}`
-   - Plain text: `"Bob"`
+   - Valid JSON: `{"user": "Alice", "action": "login"}`
+   - Plain text: `"Hello, world!"`
    - Invalid data to test error handling
-4. **Call multiple times** with the same name to see the greeting counter increment
+4. **Call multiple times** to see the global request counter increment
 5. **Monitor observability:**
    - Check the Logs tab to see structured logging
    - View the Sessions tab for performance metrics
-   - Inspect key-value storage to see persisted counts
+   - Inspect key-value storage to see the total request count
 
 ## Key Takeaways
 
@@ -404,10 +407,10 @@ agentuity dev
 You've just built and deployed your first agent on infrastructure designed specifically for agents. In the next module, we'll dive deeper into the anatomy of an agent - understanding planning, reasoning loops, tool invocation, and how agents really work under the hood.
 
 But first, take a moment to experiment with your agent. Try:
-- Calling it with different names and at different times
+- Sending different JSON objects and text data
 - Checking the logs in the DevMode interface
-- Calling it multiple times to see the counter increment
-- Testing error cases like missing names
+- Calling it multiple times to see the request counter increment
+- Testing error cases with malformed data
 - Monitoring the key-value storage in the dashboard
 
 Remember: you're not just learning a new framework, you're learning a fundamentally new way to build software. Welcome to the age of agents!

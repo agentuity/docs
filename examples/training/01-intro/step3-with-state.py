@@ -1,28 +1,42 @@
-from datetime import datetime
 from agentuity import AgentRequest, AgentResponse, AgentContext
+import json
+from datetime import datetime
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    context.logger.info("Hello agent received a request")
+    context.logger.info('Agent invoked')
 
-    data = await request.data.json()
-    name = data.get("name", "World")
+    received_data = None
 
-    # Get current greeting count from KV storage
-    counter_result = await context.kv.get("stats", "greeting_count")
-
-    if counter_result.exists:
-        count = await counter_result.data.json()
-        count += 1
+    if request.data.content_type == 'application/json':
+        received_data = await request.data.json()
+    elif request.data.content_type == 'text/plain':
+        received_data = await request.data.text()
     else:
-        count = 1
+        received_data = await request.data.text()
 
-    # Update the counter
-    await context.kv.set("stats", "greeting_count", count)
+    # Track total requests using KV storage
+    result = await context.kv.get('request-stats', 'total-requests')
+    count = 1
+    if result.exists:
+        count = int(await result.data.text()) + 1
+    await context.kv.set('request-stats', 'total-requests', str(count))
 
-    context.logger.info(f"Greeting #{count} for {name}")
+    context.logger.info('Request processed', {'requestNumber': count})
 
     return response.json({
-        "message": f"Hello, {name}!",
-        "greeting_number": count,
-        "timestamp": datetime.now().isoformat()
+        'message': 'Request received',
+        'contentType': request.data.content_type,
+        'received': received_data,
+        'stats': {'totalRequests': count},
+        'timestamp': datetime.utcnow().isoformat() + 'Z'
     })
+
+def welcome():
+    return {
+        'welcome': 'Send multiple requests and watch the counter increment!',
+        'prompts': [
+            {'data': json.dumps({'test': 'request 1'}), 'contentType': 'application/json'},
+            {'data': json.dumps({'test': 'request 2'}), 'contentType': 'application/json'},
+            {'data': 'Request 3', 'contentType': 'text/plain'}
+        ]
+    }

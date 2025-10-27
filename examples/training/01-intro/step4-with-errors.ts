@@ -5,49 +5,58 @@ export default async function Agent(
   response: AgentResponse,
   context: AgentContext
 ) {
-  context.logger.info('Hello agent received a request');
+  context.logger.info('Agent invoked');
 
-  // Safe input handling with error checking
-  let name = 'World';
+  let receivedData: unknown = null;
+
+  // Parse with error handling
   try {
-    const data = await request.data.json();
-
-    if (!data.name || typeof data.name !== 'string') {
-      context.logger.warn('No valid name provided in request');
-      return response.json({
-        error: 'Name is required and must be a string'
-      });
+    switch (request.data.contentType) {
+      case 'application/json':
+        receivedData = await request.data.json();
+        break;
+      case 'text/plain':
+        receivedData = await request.data.text();
+        break;
+      default:
+        receivedData = await request.data.text();
     }
-
-    name = data.name;
   } catch (error) {
-    context.logger.error(`Error parsing request: ${error}`);
-    return response.json({
-      error: 'Invalid JSON in request body'
-    });
+    context.logger.error('Failed to parse request data', { error });
+    return response.json(
+      { error: 'Invalid request data' },
+      { status: 400 }
+    );
   }
 
-  // Get current greeting count with error handling
+  // Track total requests with error handling
   let count = 1;
   try {
-    const counterResult = await context.kv.get('stats', 'greeting_count');
-
-    if (counterResult.exists) {
-      count = await counterResult.data.json();
-      count++;
+    const result = await context.kv.get('request-stats', 'total-requests');
+    if (result.exists) {
+      count = Number(await result.data.text()) + 1;
     }
-
-    await context.kv.set('stats', 'greeting_count', count);
+    await context.kv.set('request-stats', 'total-requests', String(count));
   } catch (error) {
-    context.logger.error(`Error accessing storage: ${error}`);
-    // Continue with default count rather than failing
+    context.logger.error('KV storage error', { error });
+    // Continue with default count - graceful degradation
   }
 
-  context.logger.info(`Greeting #${count} for ${name}`);
+  context.logger.info('Request processed', { requestNumber: count });
 
   return response.json({
-    message: `Hello, ${name}!`,
-    greeting_number: count,
+    message: 'Request received',
+    contentType: request.data.contentType,
+    received: receivedData,
+    stats: { totalRequests: count },
     timestamp: new Date().toISOString()
   });
 }
+
+export const welcome = () => ({
+  welcome: 'Test error handling by sending valid and invalid data.',
+  prompts: [
+    { data: JSON.stringify({ valid: 'data' }), contentType: 'application/json' },
+    { data: 'Valid text', contentType: 'text/plain' }
+  ]
+});

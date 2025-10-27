@@ -48,8 +48,9 @@ export default async function Agent(
 
   } catch (error) {
     context.logger.error('AI generation failed', error);
-    return response.json({
-      error: 'Failed to generate analysis'
-    }, { status: 500 });
+    return new Response(
+      JSON.stringify({ error: 'AI generation failed' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 }

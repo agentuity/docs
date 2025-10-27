@@ -31,3 +31,13 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         "newsResults": news_data,
         "totalSources": 2
     })
+
+def welcome():
+    import json
+    return {
+        'welcome': 'Execute multiple agents in parallel using asyncio.gather() for faster results.',
+        'prompts': [
+            {'data': json.dumps({'query': 'artificial intelligence'}), 'contentType': 'application/json'},
+            {'data': json.dumps({'query': 'cloud computing'}), 'contentType': 'application/json'}
+        ]
+    }

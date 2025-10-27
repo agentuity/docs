@@ -24,3 +24,13 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
         "processed": result,
         "handledBy": context.agent.name
     })
+
+def welcome():
+    import json
+    return {
+        'welcome': 'Use getAgent() and run() to call another agent and wait for its response.',
+        'prompts': [
+            {'data': json.dumps({'message': 'Hello from coordinator'}), 'contentType': 'application/json'},
+            {'data': json.dumps({'message': 'Process this data'}), 'contentType': 'application/json'}
+        ]
+    }

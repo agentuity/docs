@@ -1,44 +1,43 @@
 from agentuity import AgentRequest, AgentResponse, AgentContext
+import json
 
 async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
-    # Check content type to determine how to parse data
+    # Get the content type and trigger information
     content_type = request.data.content_type
+    trigger = request.trigger
 
-    context.logger.info(f"Request content type: {content_type}")
+    context.logger.info(f"Processing {content_type} request via {trigger} trigger")
 
-    request_data = None
+    # Parse data based on content type
+    parsed_data = None
 
-    # Handle different data formats
     if "application/json" in content_type:
-        request_data = await request.data.json()
-        context.logger.info(f"Parsed as JSON data={request_data}")
+        parsed_data = await request.data.json()
+        context.logger.info(f"Parsed as JSON keys={list(parsed_data.keys())}")
     elif "text/plain" in content_type:
-        request_data = await request.data.text()
-        context.logger.info(f"Parsed as text length={len(request_data)}")
+        parsed_data = await request.data.text()
+        context.logger.info(f"Parsed as text length={len(parsed_data)}")
     else:
-        request_data = await request.data.binary()
-        context.logger.info(f"Parsed as binary size={len(request_data)}")
+        parsed_data = await request.data.binary()
+        context.logger.info(f"Parsed as binary size={len(parsed_data)}")
 
-    # Access metadata - multiple approaches:
-
-    # Approach 1: Using request.get() - SDK convenience method (recommended)
-    session_id = request.get("session_id", "no-session")
-    user_id = request.get("user_id", "anonymous")
-
-    # Approach 2: Using metadata property (returns dict) with dict.get()
-    # session_id = request.metadata.get("session_id", "no-session")
-    # user_id = request.metadata.get("user_id", "anonymous")
-
-    # Approach 3: Direct dictionary access (raises KeyError if missing)
-    # session_id = request.metadata.get("session_id", "no-session")  # Same as approach 2
-    # Or without default: session_id = request.metadata["session_id"]
-
+    # Return parsed data with request metadata
     return response.json({
-        "received": {
+        "received": parsed_data,
+        "request": {
             "contentType": content_type,
-            "dataType": type(request_data).__name__,
-            "sessionId": session_id,
-            "userId": user_id
+            "trigger": trigger,
+            "metadata": request.metadata or {}
         },
         "message": "Successfully parsed request data"
     })
+
+def welcome():
+    return {
+        'welcome': 'Learn how to parse different data formats and access request properties.',
+        'prompts': [
+            {'data': json.dumps({'message': 'Hello', 'count': 42}), 'contentType': 'application/json'},
+            {'data': 'Plain text message', 'contentType': 'text/plain'},
+            {'data': 'Another message', 'contentType': 'text/plain'}
+        ]
+    }

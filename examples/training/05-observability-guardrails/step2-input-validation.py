@@ -2,6 +2,8 @@ from agentuity import AgentRequest, AgentResponse, AgentContext
 from pydantic import BaseModel, Field, ValidationError
 from typing import Optional, Literal
 from datetime import datetime
+from aiohttp.web import Response
+import json
 
 # Define Pydantic model for user preferences
 class UserPreferences(BaseModel):
@@ -24,11 +26,15 @@ async def run(request: AgentRequest, response: AgentResponse, context: AgentCont
     except ValidationError as e:
         context.logger.warning(f"Request validation failed errors={e.error_count()}")
 
-        return response.json({
-            "error": "Invalid request",
-            "details": [{"field": err["loc"][-1], "message": err["msg"]}
-                        for err in e.errors()]
-        }, status=400)
+        return Response(
+            text=json.dumps({
+                "error": "Invalid request",
+                "details": [{"field": err["loc"][-1], "message": err["msg"]}
+                            for err in e.errors()]
+            }),
+            status=400,
+            content_type='application/json'
+        )
 
     # Use validated data (type-safe)
     query = validated.query

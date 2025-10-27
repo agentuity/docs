@@ -34,3 +34,11 @@ export default async function Agent(
     totalSources: 2
   });
 }
+
+export const welcome = () => ({
+  welcome: 'Execute multiple agents in parallel using Promise.all() for faster results.',
+  prompts: [
+    { data: JSON.stringify({ query: 'artificial intelligence' }), contentType: 'application/json' },
+    { data: JSON.stringify({ query: 'cloud computing' }), contentType: 'application/json' }
+  ]
+});

@@ -44,7 +44,7 @@ export default async function Agent(
 
   } catch (error) {
     // Error logs also include the child logger context
-    requestLogger.error('Processing failed', error);
-    return response.json({ error: 'Processing failed' }, { status: 500 });
+    requestLogger.error('Error processing request:', error);
+    throw error; // SDK returns 500 automatically
   }
 }

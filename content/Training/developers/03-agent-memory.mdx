@@ -89,57 +89,35 @@ Short-term conversation context needs automatic cleanup. Key-value storage with 
 ]} />
 
 **What this demonstrates:**
-- Using `context.sessionId` for consistent session tracking
+- Storing an array of messages in KV storage with a simple key
 - Checking `result.exists` to handle new vs returning sessions
 - Setting TTL (3600 seconds = 1 hour) for automatic expiration
-- Building conversation history by appending messages
+- Building conversation history by appending messages to an array
 
 **Try it:**
-1. Send a message - creates a new session
-2. Send another message - retrieves and appends to history
-3. Check back later - session data expires automatically (after 1 hour in this example; adjust as needed)
-4. Check DevMode logs to see session operations
+1. Send "Hello, this is my first message" - creates new chat history
+2. Send "Here is my second message" - retrieves and appends to history
+3. Send "And a third message" - see all 3 messages stored
+4. Wait 1 hour (or check back later) - session data expires automatically
+5. Check DevMode KV viewer to see the `chat-history` key and stored messages
 
 **Key insight:** TTL-based memory is perfect for temporary data like chat sessions, preventing manual cleanup and storage costs.
 
-</TutorialStep>
-
-### Step 2: Persistent Preferences
-
-<TutorialStep number={2} title="Persistent Preferences with KV" estimatedTime="4 min">
-
-User profiles and preferences should survive restarts. Omitting the TTL parameter makes data permanent until explicitly deleted.
-
-<CodeFromFiles snippets={[
-  { path: "/examples/training/03-memory/step2-persistent-preferences.ts", lang: "ts", title: "TypeScript" },
-  { path: "/examples/training/03-memory/step2-persistent-preferences.py", lang: "python", title: "Python" }
-]} />
-
-**What this demonstrates:**
-- Permanent storage by omitting TTL parameter
-- Handling first-time users (create profile) vs returning users (update profile)
-- Tracking interaction counts and timestamps
-- Updating nested preference objects
-
-**Try it:**
-1. Send `{"theme": "dark", "language": "en"}` - creates profile
-2. Send `{"theme": "light"}` - updates theme, keeps language
-3. Restart DevMode - profile persists
-4. Check interaction count incrementing
-
-**Key insight:** No TTL means data persists forever, perfect for user profiles, settings, and application state.
+<Callout type="info">
+**TTL vs Permanent Storage**: Include a `ttl` parameter (in seconds) for automatic expiration (e.g., `3600` = 1 hour), or omit it for permanent storage.
+</Callout>
 
 </TutorialStep>
 
-### Step 3: Basic Search
+### Step 2: Vector Storage Basics
 
-<TutorialStep number={3} title="Vector Upsert & Basic Search" estimatedTime="6 min">
+<TutorialStep number={2} title="Vector Upsert & Basic Search" estimatedTime="6 min">
 
 Vector storage enables semantic search—finding information by meaning rather than keywords. Documents are converted to embeddings automatically.
 
 <CodeFromFiles snippets={[
-  { path: "/examples/training/03-memory/step3-vector-basics.ts", lang: "ts", title: "TypeScript" },
-  { path: "/examples/training/03-memory/step3-vector-basics.py", lang: "python", title: "Python" }
+  { path: "/examples/training/03-memory/step2-vector-basics.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/03-memory/step2-vector-basics.py", lang: "python", title: "Python" }
 ]} />
 
 **What this demonstrates:**
@@ -160,15 +138,15 @@ Vector storage enables semantic search—finding information by meaning rather t
 
 </TutorialStep>
 
-### Step 4: Metadata Filtering
+### Step 3: Vector Metadata Filtering
 
-<TutorialStep number={4} title="Vector Metadata Filtering" estimatedTime="5 min">
+<TutorialStep number={3} title="Vector Metadata Filtering" estimatedTime="5 min">
 
 Combine semantic similarity with structured filters to narrow results by category, user, status, or any metadata field.
 
 <CodeFromFiles snippets={[
-  { path: "/examples/training/03-memory/step4-vector-filtering.ts", lang: "ts", title: "TypeScript" },
-  { path: "/examples/training/03-memory/step4-vector-filtering.py", lang: "python", title: "Python" }
+  { path: "/examples/training/03-memory/step3-vector-filtering.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/03-memory/step3-vector-filtering.py", lang: "python", title: "Python" }
 ]} />
 
 **What this demonstrates:**
@@ -192,15 +170,15 @@ Combine semantic similarity with structured filters to narrow results by categor
 
 </TutorialStep>
 
-### Step 5: Object Storage Basics
+### Step 4: Object Storage Basics
 
-<TutorialStep number={5} title="Object Storage Basics" estimatedTime="5 min">
+<TutorialStep number={4} title="Object Storage Basics" estimatedTime="5 min">
 
 Files and media need different storage than structured data. Object storage handles binary content and provides shareable public URLs.
 
 <CodeFromFiles snippets={[
-  { path: "/examples/training/03-memory/step5-object-storage.ts", lang: "ts", title: "TypeScript" },
-  { path: "/examples/training/03-memory/step5-object-storage.py", lang: "python", title: "Python" }
+  { path: "/examples/training/03-memory/step4-object-storage.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/03-memory/step4-object-storage.py", lang: "python", title: "Python" }
 ]} />
 
 **What this demonstrates:**
