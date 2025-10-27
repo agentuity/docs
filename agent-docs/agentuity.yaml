@@ -54,7 +54,7 @@ deployment:
     # The CPU requirements
     cpu: 500M
     # The disk size requirements
-    disk: 250Mi
+    disk: 350Mi
 # You should not need to change these value
 bundler:
   enabled: true

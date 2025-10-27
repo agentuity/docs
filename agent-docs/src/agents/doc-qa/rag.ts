@@ -96,7 +96,7 @@ ${JSON.stringify(relevantDocs, null, 2)}
 
 	try {
 		const result = await generateObject({
-			model: openai('gpt-4o'),
+			model: openai('gpt-4.1'),
 			system: systemPrompt,
 			prompt: 'The user is mostly a software engineer. Your answer should be concise, straightforward and in most cases, supplying the answer with examples code snipped is ideal.',
 			schema: AnswerSchema,
