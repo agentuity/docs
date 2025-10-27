@@ -1,7 +1,6 @@
-export interface ConversationMessage {
-  author: "USER" | "ASSISTANT";
-  content: string;
-}
+import type { ConversationMessage } from '../../doc-qa/types';
+
+export type { ConversationMessage };
 
 export interface TutorialState {
   tutorialId: string;
