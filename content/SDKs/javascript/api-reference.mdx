@@ -664,9 +664,9 @@ The Stream Storage API provides first-class support for creating and managing se
 
 #### create
 
-`create(name: string, props?: StreamCreateProps): Stream`
+`create(name: string, props?: StreamCreateProps): Promise<Stream>`
 
-Creates a new, named, writable stream that returns immediately for non-blocking operation.
+Creates a new, named, writable stream.
 
 **Parameters**
 
@@ -674,10 +674,11 @@ Creates a new, named, writable stream that returns immediately for non-blocking 
 - `props` (optional): Configuration object with the following properties:
   - `metadata`: An optional object containing key-value pairs to help identify, search, or tag specific information about the stream (e.g., `customerId`, `type`, `requestId`, `userId`)
   - `contentType`: Specifies the content type of the stream (defaults to `application/octet-stream`)
+  - `compress`: Enable automatic gzip compression (defaults to `false`)
 
 **Return Value**
 
-Returns a `Stream` object immediately with the following properties:
+Returns a Promise that resolves to a `Stream` object with the following properties:
 - `id`: The unique identifier of the stream
 - `url`: The URL to consume the stream
 - Extends `WritableStream` for standard stream operations
@@ -701,16 +702,16 @@ const handler: AgentHandler = async (request, response, context) => {
   const { prompt, userId, sessionId } = await request.data.json();
 
   // Create a stream with metadata for identification and searching
-  const stream = context.stream.create('llm-response', {
+  const stream = await context.stream.create('llm-response', {
     contentType: 'text/plain',
     metadata: {
       userId,
       sessionId,
-      requestId: request.id,
+      requestId: context.sessionId,
       type: 'llm-generation',
       model: 'gpt-4o',
       category: 'chat-completion',
-      promptLength: prompt.length
+      promptLength: String(prompt?.length ?? 0)
     }
   });
 
@@ -736,47 +737,219 @@ const handler: AgentHandler = async (request, response, context) => {
 export default handler;
 ```
 
-**Manual Writing Example**
+**Writing to Streams**
 
 ```typescript
-const handler: AgentHandler = async (request, response, context) => {
-  const { taskId, steps } = await request.data.json();
-  
-  const stream = context.stream.create('progress-updates', {
-    contentType: 'application/json',
-    metadata: { 
-      type: 'progress-tracking',
-      taskId,
-      totalSteps: steps.length,
-      environment: 'production'
+// Direct write() method (recommended)
+const stream = await context.stream.create('progress-updates', {
+  contentType: 'application/json'
+});
+
+context.waitUntil(async () => {
+  try {
+    await stream.write(JSON.stringify({ status: 'starting' }) + '\n');
+    await stream.write(JSON.stringify({ status: 'processing' }) + '\n');
+    context.logger.info(`Bytes written: ${stream.bytesWritten}`);
+  } finally {
+    await stream.close();
+  }
+});
+
+// Manual writer management (advanced use)
+const writer = stream.getWriter();
+try {
+  // SDK auto-converts strings (standard streams require TextEncoder)
+  await writer.write('data');
+} finally {
+  await writer.releaseLock();
+  await stream.close();
+}
+```
+
+**Stream Compression**
+
+```typescript
+// Enable compression for large text or JSON data
+const stream = await context.stream.create('large-dataset', {
+  contentType: 'application/json',
+  compress: true,
+  metadata: { type: 'export' }
+});
+
+context.waitUntil(async () => {
+  try {
+    for (const record of dataset) {
+      await stream.write(JSON.stringify(record) + '\n');
     }
+    context.logger.info(`Written: ${stream.bytesWritten} bytes, Compressed: ${stream.compressed}`);
+  } finally {
+    await stream.close();
+  }
+});
+```
+
+#### list
+
+`list(params?: ListStreamsParams): Promise<ListStreamsResponse>`
+
+Lists and searches through your streams with flexible filtering and pagination options.
+
+**Parameters**
+
+- `params` (optional): Configuration object with the following properties:
+  - `name` (optional): Filter streams by name
+  - `metadata` (optional): An object with key-value pairs to filter streams by their metadata
+  - `limit` (optional): Maximum number of streams to return (1-1000, defaults to 100)
+  - `offset` (optional): Number of streams to skip for pagination
+
+**Return Value**
+
+Returns a Promise that resolves to a `ListStreamsResponse` object:
+- `success`: Boolean indicating if the request succeeded
+- `streams`: Array of stream objects, each containing:
+  - `id`: The unique identifier of the stream
+  - `name`: The name of the stream
+  - `metadata`: The metadata associated with the stream
+  - `url`: The URL of the stream
+  - `sizeBytes`: The size of the stream in bytes
+- `total`: Total count of streams matching your filters (useful for pagination)
+- `message`: Optional error message if the request failed
+
+**Examples**
+
+```typescript
+import { AgentHandler } from '@agentuity/sdk';
+
+const handler: AgentHandler = async (request, response, context) => {
+  // List all streams
+  const result = await context.stream.list();
+  console.log(`Found ${result.total} streams`);
+  result.streams.forEach(stream => {
+    console.log(`${stream.name}: ${stream.url} (${stream.sizeBytes} bytes)`);
+  });
+
+  // Filter by name
+  const namedStreams = await context.stream.list({
+    name: 'llm-response'
+  });
+
+  // Filter by metadata
+  const userStreams = await context.stream.list({
+    metadata: { userId: 'user-123', type: 'llm-generation' }
+  });
+
+  // Paginate results
+  const page1 = await context.stream.list({ limit: 10, offset: 0 });
+  const page2 = await context.stream.list({ limit: 10, offset: 10 });
+
+  // Combine filters
+  const filtered = await context.stream.list({
+    name: 'analytics',
+    metadata: { department: 'sales' },
+    limit: 50
+  });
+
+  return response.json({ streams: filtered.streams });
+};
+
+export default handler;
+```
+
+#### delete
+
+`delete(id: string): Promise<void>`
+
+Deletes a stream by its ID when it's no longer needed.
+
+**Parameters**
+
+- `id` (required): The stream ID to delete. Must be a non-empty string.
+
+**Return Value**
+
+Returns a Promise that resolves to void on success.
+
+**Error Handling**
+
+- Throws an error if the stream ID is invalid or empty
+- Throws a "Stream not found" error if the stream with the given ID does not exist
+
+**Examples**
+
+```typescript
+import { AgentHandler } from '@agentuity/sdk';
+
+const handler: AgentHandler = async (request, response, context) => {
+  const { streamId } = await request.data.json();
+
+  // Delete a stream
+  await context.stream.delete(streamId);
+
+  // Handle deletion with error checking
+  try {
+    await context.stream.delete(streamId);
+    context.logger.info('Stream deleted successfully');
+    return response.json({ success: true });
+  } catch (error) {
+    if (error.message.includes('not found')) {
+      return response.json({ error: 'Stream does not exist' }, { status: 404 });
+    }
+    throw error;
+  }
+};
+
+export default handler;
+```
+
+**Complete Workflow Example**
+
+This example demonstrates creating streams, listing them by metadata, and cleaning up old streams:
+
+```typescript
+import { AgentHandler } from '@agentuity/sdk';
+import { openai } from '@ai-sdk/openai';
+import { streamText } from 'ai';
+
+const handler: AgentHandler = async (request, response, context) => {
+  const { prompt, userId } = await request.data.json();
+
+  // Create a stream with metadata
+  const stream = await context.stream.create('user-export', {
+    contentType: 'text/plain',
+    metadata: { userId, format: 'csv', timestamp: Date.now() }
   });
 
   context.waitUntil(async () => {
-    // Stream implements WritableStream, so we can write directly to it
-    try {
-      for (let i = 0; i < steps.length; i++) {
-        await stream.write(JSON.stringify({
-          step: i + 1,
-          total: steps.length,
-          message: steps[i],
-          progress: ((i + 1) / steps.length) * 100,
-          timestamp: new Date().toISOString()
-        }) + '\n');
-        
-        // Simulate processing time
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    } finally {
-      await stream.close();
-    }
+    await stream.write('Name,Email\n');
+    await stream.write('John,john@example.com\n');
+    await stream.close();
   });
+
+  // List streams by metadata
+  const userStreams = await context.stream.list({
+    metadata: { userId }
+  });
+
+  context.logger.info(`Found ${userStreams.total} streams for user ${userId}`);
+
+  // Clean up old streams (older than 1 day)
+  const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+  for (const oldStream of userStreams.streams) {
+    const timestamp = Number(oldStream.metadata?.timestamp);
+    if (timestamp && timestamp < oneDayAgo) {
+      await context.stream.delete(oldStream.id);
+      context.logger.info(`Deleted old stream: ${oldStream.name}`);
+    }
+  }
 
   return response.json({
     streamId: stream.id,
-    streamUrl: stream.url
+    streamUrl: stream.url,
+    totalStreams: userStreams.total
   });
 };
+
+export default handler;
 ```
 
 #### Stream Interface
@@ -789,12 +962,33 @@ interface Stream extends WritableStream {
    * The unique identifier of the stream
    */
   id: string;
-  
+
   /**
    * The URL to consume the stream
    */
   url: string;
-  
+
+  /**
+   * Total bytes written to the stream (readonly)
+   */
+  bytesWritten: number;
+
+  /**
+   * Whether compression is enabled for this stream (readonly)
+   */
+  compressed: boolean;
+
+  /**
+   * Write data directly to the stream
+   * @param chunk - Data to write (string, Uint8Array, ArrayBuffer, Buffer, or object)
+   */
+  write(chunk: string | Uint8Array | ArrayBuffer | Buffer | object): Promise<void>;
+
+  /**
+   * Close the stream gracefully
+   */
+  close(): Promise<void>;
+
   /**
    * Get a reader for consuming the stream
    */
@@ -807,6 +1001,7 @@ interface Stream extends WritableStream {
 Streams can be consumed in two ways:
 
 **1. Complete Stream Reads**
+
 Each request to the stream URL starts from the beginning and reads the entire stream:
 
 ```bash
@@ -819,6 +1014,7 @@ curl "https://streams.agentuity.cloud/stream_abc1234567890" &
 ```
 
 **2. Range-Based Reads (Resumable/Partial)**
+
 Use HTTP Range requests for resuming from specific positions or accessing partial content:
 
 ```bash
@@ -840,7 +1036,7 @@ const handler: AgentHandler = async (request, response, context) => {
   
   if (action === 'read-direct') {
     // Create or get an existing stream
-    const stream = context.stream.create('data-source', {
+    const stream = await context.stream.create('data-source', {
       contentType: 'text/plain',
       metadata: { type: 'data-processing', sourceId: streamId }
     });
@@ -873,9 +1069,9 @@ const handler: AgentHandler = async (request, response, context) => {
   
   if (action === 'stream-reader-response') {
     // Create a stream with some data
-    const sourceStream = context.stream.create('source-data', {
+    const sourceStream = await context.stream.create('source-data', {
       contentType: 'application/json',
-      metadata: { type: 'generated-data', requestId: request.id }
+      metadata: { type: 'generated-data', requestId: context.sessionId }
     });
     
     // Populate the stream with data in the background
@@ -911,13 +1107,13 @@ const handler: AgentHandler = async (request, response, context) => {
   const { sourceData } = await request.data.json();
   
   // Create a source stream with input data
-  const sourceStream = context.stream.create('input-stream', {
+  const sourceStream = await context.stream.create('input-stream', {
     contentType: 'text/plain',
     metadata: { type: 'input-processing' }
   });
   
   // Create a processing stream for transformed output
-  const processedStream = context.stream.create('processed-output', {
+  const processedStream = await context.stream.create('processed-output', {
     contentType: 'text/plain',
     metadata: { type: 'processed-data', transformation: 'uppercase' }
   });
@@ -965,7 +1161,7 @@ Agent handlers can return a `Stream` object directly, which will cause the route
 const handler: AgentHandler = async (request, response, context) => {
   const { prompt } = await request.data.json();
 
-  const stream = context.stream.create('direct-stream', {
+  const stream = await context.stream.create('direct-stream', {
     contentType: 'text/plain',
     metadata: {
       type: 'direct-response',
