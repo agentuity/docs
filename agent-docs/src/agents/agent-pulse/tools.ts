@@ -90,6 +90,7 @@ This tool provides authoritative, up-to-date documentation specific to the Agent
             })
             // TODO: handle the docs referencing and inject it to the frontend response
             const responseData = await response.data.json();
+            agentContext.logger.info("Response from docs agent: %s", responseData);
             return responseData;
         },
     });
@@ -149,7 +150,7 @@ This tool provides authoritative, up-to-date documentation specific to the Agent
     // Return tools object
     return {
         startTutorialById: startTutorialAtStep,
-        queryOtherAgent: askDocsAgentTool,
+        queryDocsAgent: askDocsAgentTool,
         getUserTutorialProgress: getUserTutorialProgressTool,
     };
 }
