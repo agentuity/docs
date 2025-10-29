@@ -128,10 +128,20 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                             {/* Render tutorial content if present */}
                             {tutorialMdx && memoizedTutorialContent && (
                                 <div className="mt-6">
-                                    <MarkdownRenderer 
+                                    {/* Subtle tutorial progress indicator */}
+                                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-3 pb-2 border-b border-gray-700/30">
+                                        <span className="font-mono">
+                                            {message.tutorialData?.tutorialStep.title}
+                                        </span>
+                                        <span className="text-gray-600">•</span>
+                                        <span>
+                                            Step {currentStep} of {totalSteps}
+                                        </span>
+                                    </div>
+                                    <MarkdownRenderer
                                         content={memoizedTutorialContent}
                                         snippets={tutorialSnippets}
-                                        onOpenInEditor={handleOpenInEditor} 
+                                        onOpenInEditor={handleOpenInEditor}
                                     />
                                 </div>
                             )}

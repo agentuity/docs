@@ -20,6 +20,9 @@ Use getUserTutorialProgress when:
 - They ask about their learning progress or what to learn next
 
 Let the user know that you have observed their tutorial progress and can help them with that specific tutorial.
+
+**NOTE:** When the user has multiple tutorials in progress, and they ask you to continue the tutorial without
+specifying which tutorial to continue, ask the user to pick one by telling them the title of the tutorials they have in progress.
 </TUTORIAL_DIRECTION_ROLE>`;
                 // Personality traits
                 const personalityPrompt = `<PERSONALITY>
