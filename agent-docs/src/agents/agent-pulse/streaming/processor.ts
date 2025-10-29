@@ -79,6 +79,11 @@ async function processChunk(
 				category: "tool",
 			});
 			ctx.logger.debug("Tool called: %s", toolName);
+		} else if (chunk.type === "reasoning") {
+			ctx.logger.debug("REASONING: %s", chunk);
+		} else {
+			ctx.logger.debug("Skipping chunk type: %s", chunk.type);
+			ctx.logger.debug(chunk);
 		}
 	} catch (error) {
 		ctx.logger.error(
