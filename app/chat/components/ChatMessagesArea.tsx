@@ -61,7 +61,9 @@ export function ChatMessagesArea({
                 ))}
                 <div ref={messagesEndRef} />
             </div>
-            <ChatInput loading={false} onSendMessage={(content) => handleSendMessage(content, session.sessionId)} />
+            <div className="px-4 md:px-6 pb-4 md:pb-6">
+                <ChatInput loading={false} onSendMessage={(content) => handleSendMessage(content, session.sessionId)} />
+            </div>
         </div>
     );
 } 
