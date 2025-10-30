@@ -36,6 +36,16 @@ export function createStreamingProcessor(
 					});
 				}
 
+				// Send documentation references if available
+				const documentationReferences = state.getDocumentationReferences();
+				if (documentationReferences.length > 0) {
+					sendChunk(controller, encoder, {
+						type: "documentation-references",
+						documents: documentationReferences,
+					});
+					ctx.logger.info("Sent %d documentation references to client", documentationReferences.length);
+				}
+
 				// Send finish signal
 				sendChunk(controller, encoder, { type: "finish" });
 
@@ -109,6 +119,8 @@ function getToolStatusMessage(toolName: string): string {
 			return "Starting tutorial...";
 		case "queryOtherAgent":
 			return "Searching documentation...";
+		case "showDocumentationReferences":
+			return "Adding references...";
 		default:
 			return "Processing your request...";
 	}

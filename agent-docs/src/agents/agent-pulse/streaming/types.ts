@@ -41,8 +41,13 @@ export interface ErrorChunk {
   details?: string;
 }
 
+export interface DocumentationReferencesChunk {
+  type: 'documentation-references';
+  documents: string[];
+}
+
 export interface FinishChunk {
   type: 'finish';
 }
 
-export type StreamingChunk = TextDeltaChunk | StatusChunk | TutorialDataChunk | ErrorChunk | FinishChunk; 
+export type StreamingChunk = TextDeltaChunk | StatusChunk | TutorialDataChunk | DocumentationReferencesChunk | ErrorChunk | FinishChunk; 

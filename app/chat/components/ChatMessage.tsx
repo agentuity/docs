@@ -69,7 +69,8 @@ interface ChatMessageProps {
         author: 'USER' | 'ASSISTANT';
         content: string;
         timestamp: string;
-        tutorialData?: TutorialData
+        tutorialData?: TutorialData;
+        documentationReferences?: string[];
     };
     addCodeTab?: (code: string, language: string, label?: string, identifier?: string) => void;
 }
@@ -93,6 +94,40 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
         if (addCodeTab) {
             addCodeTab(code, language, label, identifier);
         }
+    };
+
+    const documentPathToUrl = (docPath: string): string => {
+        // Remove the .md or .mdx extension before any # symbol
+        const path = docPath.replace(/\.mdx?(?=#|$)/, '');
+
+        // Split path and hash (if any)
+        const [basePath, hash] = path.split('#');
+
+        // Split the base path into segments
+        const segments = basePath.split('/').filter(Boolean);
+
+        // If the last segment is 'index', remove it
+        if (segments.length > 0 && segments[segments.length - 1].toLowerCase() === 'index') {
+            segments.pop();
+        }
+
+        // Reconstruct the path
+        let url = '/' + segments.join('/');
+        if (url === '/') {
+            url = '/';
+        }
+        if (hash) {
+            url += '#' + hash;
+        }
+        return url;
+    };
+
+    const handleDocumentationClick = (docPath: string) => {
+        if (!docPath) return;
+
+        const url = documentPathToUrl(docPath);
+        console.log('Navigating to documentation:', docPath, '->', url);
+        window.open(url, '_blank');
     };
 
     return (
@@ -150,6 +185,38 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                         <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
                     )}
                 </div>
+
+                {/* Documentation References for ASSISTANT messages */}
+                {message.author === 'ASSISTANT' && message.documentationReferences && message.documentationReferences.length > 0 && (
+                    <div className="mt-3 px-2">
+                        <p className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-2">
+                            📚 Related docs:
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {message.documentationReferences.map((docPath, index) => {
+                                // Extract title from path (e.g., "/docs/guide#getting-started" -> "getting-started")
+                                const pathParts = docPath.split('#');
+                                const basePath = pathParts[0];
+                                const anchor = pathParts[1];
+                                const title = anchor
+                                    ? anchor.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+                                    : basePath.split('/').pop() || basePath;
+
+                                return (
+                                    <button
+                                        key={index}
+                                        type="button"
+                                        onClick={() => handleDocumentationClick(docPath)}
+                                        title={docPath}
+                                        className="inline-flex items-center px-2.5 py-1.5 text-xs bg-gray-800/50 hover:bg-gray-700/50 dark:bg-gray-800/70 dark:hover:bg-gray-700/70 rounded-md border border-gray-700/50 dark:border-gray-600/50 transition-colors text-gray-300 hover:text-gray-200"
+                                    >
+                                        {title}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 {/* Timestamp */}
                 <div className="text-xs text-gray-300 mt-2 px-2">

@@ -11,15 +11,19 @@ interface Action {
 
 interface AgentState {
   action: Action | null;
+  documentationReferences: string[];
 
   setAction(action: Action): void;
   getAction(): Action | null;
   clearAction(): void;
   hasAction(): boolean;
+  setDocumentationReferences(docs: string[]): void;
+  getDocumentationReferences(): string[];
 }
 
 class SimpleAgentState implements AgentState {
   public action: Action | null = null;
+  public documentationReferences: string[] = [];
 
   setAction(action: Action): void {
     this.action = action;
@@ -35,6 +39,14 @@ class SimpleAgentState implements AgentState {
 
   hasAction(): boolean {
     return this.action !== null;
+  }
+
+  setDocumentationReferences(docs: string[]): void {
+    this.documentationReferences = docs;
+  }
+
+  getDocumentationReferences(): string[] {
+    return this.documentationReferences;
   }
 }
 

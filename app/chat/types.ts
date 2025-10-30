@@ -36,7 +36,8 @@ export const MessageSchema = z.object({
   author: z.enum(['USER', 'ASSISTANT']),
   content: z.string(),
   timestamp: z.string(),
-  tutorialData: TutorialDataSchema.optional()
+  tutorialData: TutorialDataSchema.optional(),
+  documentationReferences: z.array(z.string()).optional()
 });
 
 export type Message = z.infer<typeof MessageSchema>;
@@ -79,11 +80,12 @@ export const ExecuteRequestSchema = z.object({
 export type ExecuteRequest = z.infer<typeof ExecuteRequestSchema>;
 
 export const StreamingChunkSchema = z.object({
-  type: z.enum(['text-delta', 'status', 'tutorial-data', 'error', 'finish']),
+  type: z.enum(['text-delta', 'status', 'tutorial-data', 'documentation-references', 'error', 'finish']),
   textDelta: z.string().optional(),
   message: z.string().optional(),
   category: z.string().optional(),
   tutorialData: TutorialDataSchema.optional(),
+  documents: z.array(z.string()).optional(),
   error: z.string().optional(),
   details: z.string().optional()
 });

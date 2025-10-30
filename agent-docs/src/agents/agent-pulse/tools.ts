@@ -94,15 +94,36 @@ This tool provides authoritative, up-to-date documentation specific to the Agent
             agentContext.logger.info("Querying agent %s with: %s", DOC_QA_AGENT_NAME, query);
             const agentPayload = {
                 message: query,
-
             }
+
             const response = await docQaAgent.run({
                 data: agentPayload,
                 contentType: 'application/json'
             })
-            // TODO: handle the docs referencing and inject it to the frontend response
             const responseData = await response.data.json();
             return responseData;
+        },
+    });
+
+    /**
+     * Tool to display documentation references to the user
+     * This should be called when the agent uses documentation content and wants to cite sources
+     */
+    const showDocumentationReferencesTool = tool({
+        description: `Display documentation references to the user. 
+        Call this tool when you've used information from the documentation agent and want to show the user 
+        which documentation pages were referenced. Only call this if you actually incorporated the 
+        documentation content into your answer.`,
+        parameters: z.object({
+            documents: z.array(z.string()).describe("Array of documentation paths to display as references (e.g., ['/docs/guide#getting-started', '/api/reference#agent-context'])")
+        }),
+        execute: async ({ documents }) => {
+            if (documents && documents.length > 0) {
+                state.setDocumentationReferences(documents);
+                agentContext.logger.info("Added %d documentation references to display", documents.length);
+                return `Documentation references set successfully. ${documents.length} reference(s) will be displayed to the user.`;
+            }
+            return "No references to display.";
         },
     });
 
@@ -163,6 +184,7 @@ This tool provides authoritative, up-to-date documentation specific to the Agent
         startTutorialById: startTutorialAtStep,
         queryOtherAgent: askDocsAgentTool,
         getUserTutorialProgress: getUserTutorialProgressTool,
+        showDocumentationReferences: showDocumentationReferencesTool,
     };
 }
 

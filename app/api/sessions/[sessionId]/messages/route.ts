@@ -256,6 +256,7 @@ export async function POST(
     // Process streaming response
     let accumulatedContent = "";
     let finalTutorialData: TutorialData | undefined = undefined;
+    let documentationReferences: string[] = [];
 
     const transformStream = new TransformStream({
       async transform(chunk, controller) {
@@ -283,6 +284,8 @@ export async function POST(
                   finalTutorialData.currentStep,
                   finalTutorialData.totalSteps
                 );
+              } else if (data.type === "documentation-references" && data.documents) {
+                documentationReferences = data.documents;
               } else if (data.type === "finish") {
                 // When the stream is finished, save the assistant message
                 const assistantMessage: Message = {
@@ -291,6 +294,7 @@ export async function POST(
                   content: accumulatedContent,
                   timestamp: getCurrentTimestamp(),
                   tutorialData: finalTutorialData,
+                  documentationReferences: documentationReferences.length > 0 ? documentationReferences : undefined,
                 };
 
                 const finalSession = {
