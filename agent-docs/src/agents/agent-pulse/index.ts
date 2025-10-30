@@ -118,7 +118,7 @@ export default async function Agent(
 
 		// Generate streaming response
 		const result = await streamText({
-			model: openai("gpt-4o"),
+			model: openai("gpt-4.1"),
 			messages: messages.map((msg) => ({
 				role: msg.author === "USER" ? "user" : "assistant",
 				content: msg.content,
