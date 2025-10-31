@@ -80,7 +80,29 @@ async function processChunk(
 				type: "text-delta",
 				textDelta: chunk.textDelta,
 			});
-		} else if (chunk.type === "tool-call") {
+		}
+		else if (chunk.type === "tool-result") {
+			if (chunk.toolName === "askDocsAgentTool" && chunk.result) {
+				const { answer, documents } = chunk.result;
+				// Send the answer as text-delta with proper markdown spacing
+				if (answer) {
+					sendChunk(controller, encoder, {
+						type: "text-delta",
+						textDelta: answer + "\n\n", // Add double newline for proper markdown separation
+					});
+					ctx.logger.info("Sent documentation answer to client");
+				}
+
+				if (documents && Array.isArray(documents) && documents.length > 0) {
+					sendChunk(controller, encoder, {
+						type: "documentation-references",
+						documents: documents,
+					});
+					ctx.logger.info("Sent %d documentation references to client", documents.length);
+				}
+			}
+		}
+		else if (chunk.type === "tool-call") {
 			const toolName = chunk.toolName || "tool";
 			const userFriendlyMessage = getToolStatusMessage(toolName);
 			sendChunk(controller, encoder, {
@@ -90,6 +112,11 @@ async function processChunk(
 			});
 			ctx.logger.debug("Tool called: %s", toolName);
 		} else if (chunk.type === "reasoning") {
+			sendChunk(controller, encoder, {
+				type: "status",
+				message: "🤔 Thinking hard...",
+				category: "thinking" as const,
+			});
 			ctx.logger.debug("REASONING: %s", chunk);
 		} else {
 			ctx.logger.debug("Skipping chunk type: %s", chunk.type);
@@ -117,10 +144,8 @@ function getToolStatusMessage(toolName: string): string {
 	switch (toolName) {
 		case "startTutorialById":
 			return "Starting tutorial...";
-		case "queryOtherAgent":
+		case "askDocsAgentTool":
 			return "Searching documentation...";
-		case "showDocumentationReferences":
-			return "Adding references...";
 		default:
 			return "Processing your request...";
 	}

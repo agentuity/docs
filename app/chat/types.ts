@@ -37,7 +37,8 @@ export const MessageSchema = z.object({
   content: z.string(),
   timestamp: z.string(),
   tutorialData: TutorialDataSchema.optional(),
-  documentationReferences: z.array(z.string()).optional()
+  documentationReferences: z.array(z.string()).optional(),
+  statusMessage: z.string().optional()
 });
 
 export type Message = z.infer<typeof MessageSchema>;

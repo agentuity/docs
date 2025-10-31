@@ -74,7 +74,7 @@ export async function createTools(context: ToolContext) {
 
     /**
      * Tool that talks to docs agent.
-     * This tool doesn't use state - it returns data directly
+     * This tool automatically sends the documentation answer directly to the user - no need to repeat it
      */
     const askDocsAgentTool = tool({
         description: `Query the Agentuity Development Documentation agent using RAG (Retrieval Augmented Generation).
@@ -85,6 +85,10 @@ USE THIS TOOL when users ask about:
 - Platform features (deployment, authentication, agent configuration, etc.)
 - CLI commands (agentuity agent create, deploy, etc.)
 - Agentuity APIs and development workflows (e.g. agent.run, agent.create, etc.)
+
+IMPORTANT: The documentation answer and references are automatically sent directly to the user (similar to how tutorials work). 
+You do NOT need to repeat or paraphrase the documentation content. Just call this tool and let the system handle delivery.
+After calling this tool, you can optionally add brief context or follow-up questions, but do not repeat the documentation answer itself.
 
 This tool provides authoritative, up-to-date documentation specific to the Agentuity platform.`,
         parameters: z.object({
@@ -102,28 +106,6 @@ This tool provides authoritative, up-to-date documentation specific to the Agent
             })
             const responseData = await response.data.json();
             return responseData;
-        },
-    });
-
-    /**
-     * Tool to display documentation references to the user
-     * This should be called when the agent uses documentation content and wants to cite sources
-     */
-    const showDocumentationReferencesTool = tool({
-        description: `Display documentation references to the user. 
-        Call this tool when you've used information from the documentation agent and want to show the user 
-        which documentation pages were referenced. Only call this if you actually incorporated the 
-        documentation content into your answer.`,
-        parameters: z.object({
-            documents: z.array(z.string()).describe("Array of documentation paths to display as references (e.g., ['/docs/guide#getting-started', '/api/reference#agent-context'])")
-        }),
-        execute: async ({ documents }) => {
-            if (documents && documents.length > 0) {
-                state.setDocumentationReferences(documents);
-                agentContext.logger.info("Added %d documentation references to display", documents.length);
-                return `Documentation references set successfully. ${documents.length} reference(s) will be displayed to the user.`;
-            }
-            return "No references to display.";
         },
     });
 
@@ -182,9 +164,8 @@ This tool provides authoritative, up-to-date documentation specific to the Agent
     // Return tools object
     return {
         startTutorialById: startTutorialAtStep,
-        queryOtherAgent: askDocsAgentTool,
+        askDocsAgentTool: askDocsAgentTool,
         getUserTutorialProgress: getUserTutorialProgressTool,
-        showDocumentationReferences: showDocumentationReferencesTool,
     };
 }
 

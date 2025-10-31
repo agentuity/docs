@@ -209,8 +209,10 @@ export class SessionService {
     callbacks: {
       onTextDelta?: (text: string) => void,
       onTutorialData?: (tutorialData: TutorialData) => void,
+      onDocumentationReferences?: (documents: string[]) => void,
+      onStatus?: (message: string, category?: string) => void,
       onFinish?: (session: Session) => void,
-      onError?: (error: string) => void
+      onError?: (error: string, details?: string) => void
     }
   ): Promise<void> {
     try {
@@ -256,6 +258,12 @@ export class SessionService {
                 callbacks.onTextDelta?.(data.textDelta);
               } else if (data.type === 'tutorial-data' && data.tutorialData) {
                 callbacks.onTutorialData?.(data.tutorialData);
+              } else if (data.type === 'documentation-references' && data.documents) {
+                callbacks.onDocumentationReferences?.(data.documents);
+              } else if (data.type === 'status' && data.message) {
+                callbacks.onStatus?.(data.message, data.category);
+              } else if (data.type === 'error') {
+                callbacks.onError?.(data.error || 'Unknown error', data.details);
               } else if (data.type === 'finish' && data.session) {
                 callbacks.onFinish?.(data.session);
               }
@@ -277,6 +285,12 @@ export class SessionService {
                 callbacks.onTextDelta?.(data.textDelta);
               } else if (data.type === 'tutorial-data' && data.tutorialData) {
                 callbacks.onTutorialData?.(data.tutorialData);
+              } else if (data.type === 'documentation-references' && data.documents) {
+                callbacks.onDocumentationReferences?.(data.documents);
+              } else if (data.type === 'status' && data.message) {
+                callbacks.onStatus?.(data.message, data.category);
+              } else if (data.type === 'error') {
+                callbacks.onError?.(data.error || 'Unknown error', data.details);
               } else if (data.type === 'finish' && data.session) {
                 callbacks.onFinish?.(data.session);
               }

@@ -11,10 +11,11 @@ export default async function answerQuestion(
 	prompt: string
 ) {
 	// First, rephrase the prompt for better vector search
-	const rephrasedPrompt = await rephraseVaguePrompt(ctx, prompt);
+	// const rephrasedPrompt = await rephraseVaguePrompt(ctx, prompt);
+	const rephrasedPrompt = prompt;
 
 	// Use the rephrased prompt for document retrieval
-	const relevantDocs = await retrieveRelevantDocs(ctx, rephrasedPrompt);
+	const relevantDocs = await retrieveRelevantDocs(ctx, prompt);
 
 	const systemPrompt = `
 You are Agentuity's developer-documentation assistant.
@@ -98,7 +99,7 @@ ${JSON.stringify(relevantDocs, null, 2)}
 		const result = await generateObject({
 			model: openai('gpt-4.1'),
 			system: systemPrompt,
-			prompt: 'The user is mostly a software engineer. Your answer should be concise, straightforward and in most cases, supplying the answer with examples code snipped is ideal.',
+			prompt: 'The user is mostly a software engineer. Your answer should be concise, straightforward and in most cases, supplying the answer with examples code snippets is ideal.',
 			schema: AnswerSchema,
 			maxTokens: 2048,
 		});

@@ -96,7 +96,8 @@ export default function ChatSessionPage() {
                   if (msg.id === assistantMessage.id) {
                     return {
                       ...msg,
-                      content: msg.content + accumulatedText
+                      content: msg.content + accumulatedText,
+                      statusMessage: undefined
                     };
                   }
                   return msg;
@@ -115,6 +116,32 @@ export default function ChatSessionPage() {
               const updatedMessages = prev.messages.map(msg =>
                 msg.id === assistantMessage.id
                   ? { ...msg, tutorialData: tutorialData }
+                  : msg
+              );
+              return { ...prev, messages: updatedMessages };
+            });
+          },
+
+          onDocumentationReferences: (documents) => {
+            setSession(prev => {
+              if (!prev) return prev;
+              const updatedMessages = prev.messages.map(msg =>
+                msg.id === assistantMessage.id
+                  ? { ...msg, documentationReferences: documents }
+                  : msg
+              );
+              return { ...prev, messages: updatedMessages };
+            });
+          },
+
+          onStatus: (message, category) => {
+            // Update the assistant message's status
+            console.log(`[Status${category ? ` - ${category}` : ''}]:`, message);
+            setSession(prev => {
+              if (!prev) return prev;
+              const updatedMessages = prev.messages.map(msg =>
+                msg.id === assistantMessage.id
+                  ? { ...msg, statusMessage: message }
                   : msg
               );
               return { ...prev, messages: updatedMessages };
@@ -154,8 +181,8 @@ export default function ChatSessionPage() {
             setSessions(prev => prev.map(s => s.sessionId === sessionId ? finalSession : s));
           },
 
-          onError: (error) => {
-            console.error('Error sending message:', error);
+          onError: (error, details) => {
+            console.error('Error sending message:', error, details ? `Details: ${details}` : '');
             
             // Clear any pending updates
             if (updateTimerRef.current) {
@@ -171,7 +198,7 @@ export default function ChatSessionPage() {
               if (!prev) return prev;
               const updatedMessages = prev.messages.map(msg =>
                 msg.id === assistantMessage.id
-                  ? { ...msg, content: 'Sorry, I encountered an error. Please try again.' }
+                  ? { ...msg, content: `Sorry, I encountered an error: ${error}${details ? `\n\n${details}` : ''}` }
                   : msg
               );
               return { ...prev, messages: updatedMessages };

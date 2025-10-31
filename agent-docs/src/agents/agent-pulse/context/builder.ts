@@ -46,14 +46,19 @@ You have access to various tools you can use -- use when appropriate!
                 const toolUsagePrompt = `<TOOL_USAGE_RULES>
 - startTutorialById must only be used when user select a tutorial. If the user starts a new tutorial, the step number should be set to one. Valid step is between 1 and totalSteps of the specific tutorial.
 - getUserTutorialProgress should be called when you need to know what tutorials the user has completed or is working on. This helps provide personalized recommendations.
+
 - **askDocsAgentTool usage:**
   - ALWAYS use askDocsAgentTool for questions about the Agentuity SDK, platform features, APIs, or CLI commands.
   - Examples: AgentContext, AgentRequest, AgentResponse, ctx.logger, ctx.vector, resp.json, deployment, authentication, agent configuration.
   - For non-Agentuity questions (general programming concepts), you may answer directly without the tool.
   - Treat doc results as authoritative. If docs don't cover it, inform the user.
-
-  - **showDocumentationReferencesTool usage:**
-  - You MUST call showDocumentationReferencesTool if you have used information from askDocsAgentTool in order to reference which documentation pages were used in your answer. This is required in order to display documentation references to the user—do not omit this function call if the answer is based on askDocsAgentTool.
+  
+  CRITICAL - AUTOMATIC DELIVERY:
+  - When you call askDocsAgentTool, the documentation answer and references are AUTOMATICALLY sent directly to the user (similar to how tutorial content is delivered).
+  - You MUST NOT repeat, summarize, or paraphrase the documentation content in your response - it's already been delivered to the user.
+  - DO NOT say phrases like "The documentation above explains...", "As shown above...", or "According to the documentation..." - the user can see it themselves.
+  - After calling askDocsAgentTool, ONLY respond if you have something valuable to add (e.g., additional context not in docs, clarification, or a relevant follow-up question).
+  - If the documentation fully answers the question, you can stay brief or even silent - just let the documentation speak for itself.
   
 CRITICAL - NO HALLUCINATION RULE:
 - You MUST NOT tell the user you are "setting them up", "starting", "loading", or "preparing" a tutorial step UNLESS you have actually called the startTutorialById tool in this turn.
@@ -64,7 +69,7 @@ CRITICAL - NO HALLUCINATION RULE:
 
                 // Response style guidelines
                 const responseStylePrompt = `<RESPONSE_STYLE>
-- Begin with a short answer, then elaborate if necessary.
+- Keep the answer short and concise, then elaborate if necessary.
 - Add brief comments to complex code; skip obvious lines.
 - End with a question when further clarification could help the user.
 </RESPONSE_STYLE>`;

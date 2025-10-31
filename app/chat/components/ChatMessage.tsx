@@ -71,6 +71,7 @@ interface ChatMessageProps {
         timestamp: string;
         tutorialData?: TutorialData;
         documentationReferences?: string[];
+        statusMessage?: string;
     };
     addCodeTab?: (code: string, language: string, label?: string, identifier?: string) => void;
 }
@@ -153,7 +154,9 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                                         <div className="w-3 h-3 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite_0.2s]" />
                                         <div className="w-3 h-3 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite_0.4s]" />
                                     </div>
-                                    <span className="text-sm tracking-wide text-gray-200">Agent is processing...</span>
+                                    <span className="text-sm tracking-wide text-gray-200">
+                                        {message.statusMessage || 'Agent is processing...'}
+                                    </span>
                                 </div>
                             ) : (
                                 <MarkdownRenderer
