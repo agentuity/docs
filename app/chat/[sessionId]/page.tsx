@@ -40,11 +40,74 @@ export default function ChatSessionPage() {
   const { sessions, setSessions, revalidateSessions } = useSessions();
   const [creationError, setCreationError] = useState<string | null>(null);
 
-  // Refs for throttling text streaming updates
-  const textAccumulatorRef = useRef<string>('');
+  // Refs for character-by-character streaming
+  const charQueueRef = useRef<string>('');
   const streamingMessageIdRef = useRef<string | null>(null);
-  const updateTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const lastTypeTimeRef = useRef<number>(0);
+  const typewriterLoopRef = useRef<((timestamp: number) => void) | null>(null);
 
+  // Typewriter effect: adds characters from queue at controlled rate
+  useEffect(() => {
+    const typewriterLoop = (timestamp: number) => {
+      const messageId = streamingMessageIdRef.current;
+      if (!messageId) {
+        animationFrameRef.current = null;
+        return;
+      }
+
+      const timeSinceLastType = timestamp - lastTypeTimeRef.current;
+      const queueLength = charQueueRef.current.length;
+
+      // Dynamic typing speed based on queue size
+      // Small queue (< 50 chars): 3 chars every 20ms (~150 chars/sec) - smooth, visible typing
+      // Medium queue (50-200 chars): 5 chars every 16ms (~312 chars/sec) - faster
+      // Large queue (> 200 chars): 10 chars every 16ms (~625 chars/sec) - catch up quickly
+      let charsPerUpdate = 3;
+      let updateInterval = 20;
+
+      if (queueLength > 200) {
+        charsPerUpdate = 10;
+        updateInterval = 16;
+      } else if (queueLength > 50) {
+        charsPerUpdate = 5;
+        updateInterval = 16;
+      }
+
+      if (queueLength > 0 && timeSinceLastType >= updateInterval) {
+        const charsToAdd = charQueueRef.current.slice(0, charsPerUpdate);
+        charQueueRef.current = charQueueRef.current.slice(charsPerUpdate);
+        lastTypeTimeRef.current = timestamp;
+
+        console.log('[Typewriter] Speed:', charsPerUpdate, 'chars, Queue:', queueLength);
+
+        setSession(prev => {
+          if (!prev) return prev;
+          const updatedMessages = prev.messages.map(msg => {
+            if (msg.id === messageId) {
+              return {
+                ...msg,
+                content: msg.content + charsToAdd,
+                isStreaming: true,
+                statusMessage: undefined
+              };
+            }
+            return msg;
+          });
+          return { ...prev, messages: updatedMessages };
+        });
+      }
+
+      // Continue animation loop while streaming
+      if (streamingMessageIdRef.current) {
+        animationFrameRef.current = requestAnimationFrame(typewriterLoop);
+      } else {
+        animationFrameRef.current = null;
+      }
+    };
+
+    typewriterLoopRef.current = typewriterLoop;
+  }, []);
 
   const handleSendMessage = async (content: string, sessionId: string) => {
     if (!content || !sessionId) return;
@@ -60,7 +123,8 @@ export default function ChatSessionPage() {
       id: uuidv4(),
       author: 'ASSISTANT',
       content: '',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      isStreaming: true
     };
 
     try {
@@ -77,37 +141,17 @@ export default function ChatSessionPage() {
         newMessage,
         {
           onTextDelta: (textDelta) => {
-            // Accumulate the text in the ref
-            textAccumulatorRef.current += textDelta;
+            // Add incoming text to the character queue
+            console.log('[Stream] Received chunk:', textDelta.length, 'chars. Queue now:', charQueueRef.current.length + textDelta.length);
+            charQueueRef.current += textDelta;
             streamingMessageIdRef.current = assistantMessage.id;
-            
-            // Clear any existing timer
-            if (updateTimerRef.current) {
-              clearTimeout(updateTimerRef.current);
+
+            // Start the typewriter animation if not already running
+            if (!animationFrameRef.current && typewriterLoopRef.current) {
+              console.log('[Stream] Starting typewriter animation');
+              lastTypeTimeRef.current = performance.now();
+              animationFrameRef.current = requestAnimationFrame(typewriterLoopRef.current);
             }
-            
-            // Throttle updates to every 50ms
-            updateTimerRef.current = setTimeout(() => {
-              const accumulatedText = textAccumulatorRef.current;
-              
-              setSession(prev => {
-                if (!prev) return prev;
-                const updatedMessages = prev.messages.map(msg => {
-                  if (msg.id === assistantMessage.id) {
-                    return {
-                      ...msg,
-                      content: msg.content + accumulatedText,
-                      statusMessage: undefined
-                    };
-                  }
-                  return msg;
-                });
-                return { ...prev, messages: updatedMessages };
-              });
-              
-              // Reset accumulator after updating
-              textAccumulatorRef.current = '';
-            }, 50);
           },
 
           onTutorialData: (tutorialData) => {
@@ -149,21 +193,22 @@ export default function ChatSessionPage() {
           },
 
           onFinish: (finalSession) => {
-            // Clear any pending updates and flush remaining text
-            if (updateTimerRef.current) {
-              clearTimeout(updateTimerRef.current);
-              updateTimerRef.current = null;
+            // Stop the animation loop
+            if (animationFrameRef.current) {
+              cancelAnimationFrame(animationFrameRef.current);
+              animationFrameRef.current = null;
             }
-            
-            // Flush any remaining accumulated text before setting final session
-            if (textAccumulatorRef.current) {
+
+            // Flush any remaining characters from queue immediately
+            if (charQueueRef.current) {
               setSession(prev => {
                 if (!prev) return prev;
                 const updatedMessages = prev.messages.map(msg => {
                   if (msg.id === streamingMessageIdRef.current) {
                     return {
                       ...msg,
-                      content: msg.content + textAccumulatorRef.current
+                      content: msg.content + charQueueRef.current,
+                      isStreaming: false
                     };
                   }
                   return msg;
@@ -171,35 +216,41 @@ export default function ChatSessionPage() {
                 return { ...prev, messages: updatedMessages };
               });
             }
-            
+
             // Reset refs
-            textAccumulatorRef.current = '';
+            charQueueRef.current = '';
             streamingMessageIdRef.current = null;
-            
-            // Set the final session
-            setSession(finalSession);
-            setSessions(prev => prev.map(s => s.sessionId === sessionId ? finalSession : s));
+
+            // Set the final session with isStreaming: false
+            const updatedFinalSession = {
+              ...finalSession,
+              messages: finalSession.messages.map(msg => ({
+                ...msg,
+                isStreaming: false
+              }))
+            };
+            setSession(updatedFinalSession);
+            setSessions(prev => prev.map(s => s.sessionId === sessionId ? updatedFinalSession : s));
           },
 
           onError: (error, details) => {
             console.error('Error sending message:', error, details ? `Details: ${details}` : '');
-            
-            // Clear any pending updates
-            if (updateTimerRef.current) {
-              clearTimeout(updateTimerRef.current);
-              updateTimerRef.current = null;
+
+            // Stop the animation loop
+            if (animationFrameRef.current) {
+              cancelAnimationFrame(animationFrameRef.current);
+              animationFrameRef.current = null;
             }
-            
+
             // Reset refs
-            textAccumulatorRef.current = '';
+            charQueueRef.current = '';
             streamingMessageIdRef.current = null;
-            
+
+            // Remove both user and assistant messages since we didn't get a response
             setSession(prev => {
               if (!prev) return prev;
-              const updatedMessages = prev.messages.map(msg =>
-                msg.id === assistantMessage.id
-                  ? { ...msg, content: `Sorry, I encountered an error: ${error}${details ? `\n\n${details}` : ''}` }
-                  : msg
+              const updatedMessages = prev.messages.filter(msg =>
+                msg.id !== newMessage.id && msg.id !== assistantMessage.id
               );
               return { ...prev, messages: updatedMessages };
             });
@@ -209,17 +260,17 @@ export default function ChatSessionPage() {
 
     } catch (error) {
       console.error('Error sending message:', error);
-      
-      // Clear any pending updates
-      if (updateTimerRef.current) {
-        clearTimeout(updateTimerRef.current);
-        updateTimerRef.current = null;
+
+      // Stop the animation loop
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
-      
+
       // Reset refs
-      textAccumulatorRef.current = '';
+      charQueueRef.current = '';
       streamingMessageIdRef.current = null;
-      
+
       setSession(prevSession => {
         if (!prevSession) return prevSession;
         const filteredMessages = prevSession.messages.filter(msg =>
@@ -282,11 +333,11 @@ export default function ChatSessionPage() {
       });
   }, [sessionId, sessions]);
 
-  // Cleanup effect to clear any pending timers on unmount
+  // Cleanup effect to clear animation frames on unmount
   useEffect(() => {
     return () => {
-      if (updateTimerRef.current) {
-        clearTimeout(updateTimerRef.current);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
     };
   }, []);
@@ -297,7 +348,7 @@ export default function ChatSessionPage() {
   const addCodeTab = (code: string, language: string, label?: string, identifier?: string) => {
     // Generate identifier if not provided (hash of content + language)
     const tabIdentifier = identifier || `${language}-${hashCode(code)}`;
-    
+
     // Check if a tab with this identifier already exists
     const existingTab = codeTabs.find(tab => tab.identifier === tabIdentifier);
     if (existingTab) {
@@ -309,7 +360,7 @@ export default function ChatSessionPage() {
 
     // Create new tab
     const newTabId = uuidv4();
-    
+
     // Determine the best label to display
     let tabLabel = label;
     if (!tabLabel && identifier) {
@@ -320,7 +371,7 @@ export default function ChatSessionPage() {
     if (!tabLabel) {
       tabLabel = `${language} snippet`;
     }
-    
+
     const newTab: CodeTab = {
       id: newTabId,
       content: code,
@@ -328,7 +379,7 @@ export default function ChatSessionPage() {
       label: tabLabel,
       identifier: tabIdentifier
     };
-    
+
     setCodeTabs(prev => [...prev, newTab]);
     setActiveTabId(newTabId);
     setEditorOpen(true);
@@ -348,7 +399,7 @@ export default function ChatSessionPage() {
   };
 
   const updateTabContent = (tabId: string, content: string) => {
-    setCodeTabs(prev => prev.map(tab => 
+    setCodeTabs(prev => prev.map(tab =>
       tab.id === tabId ? { ...tab, content } : tab
     ));
   };

@@ -187,26 +187,26 @@ export async function POST(
       messages: [...session.messages, message],
     };
 
-    try {
-      await setKVValue(sessionKey, updatedSession, {
-        storeName: config.defaultStoreName,
-      });
-    } catch (error) {
-      console.error(
-        `Failed to save session after adding message. SessionId: ${sessionId}, Error details:`,
-        error instanceof Error ? error.message : String(error),
-        error instanceof Error && error.stack ? `Stack: ${error.stack}` : ''
-      );
-      return NextResponse.json(
-        {
-          error: "Failed to save message to session",
-          details: "Unable to persist the message. Please try again."
-        },
-        { status: 500 }
-      );
-    }
-
     if (!processWithAgent || message.author !== "USER") {
+      try {
+        await setKVValue(sessionKey, updatedSession, {
+          storeName: config.defaultStoreName,
+        });
+      } catch (error) {
+        console.error(
+          `Failed to save session after adding message. SessionId: ${sessionId}, Error details:`,
+          error instanceof Error ? error.message : String(error),
+          error instanceof Error && error.stack ? `Stack: ${error.stack}` : ''
+        );
+        return NextResponse.json(
+          {
+            error: "Failed to save message to session",
+            details: "Unable to persist the message. Please try again."
+          },
+          { status: 500 }
+        );
+      }
+
       return NextResponse.json(
         { success: true, session: updatedSession },
         { status: 200 }
@@ -370,8 +370,7 @@ export async function POST(
     }
     return new Response(
       JSON.stringify({
-        error: "Internal server error",
-        details: error instanceof Error ? error.message : String(error),
+        error: "Unable to process your message at this time. Please try again.",
       }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );

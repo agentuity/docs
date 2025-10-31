@@ -72,6 +72,7 @@ interface ChatMessageProps {
         tutorialData?: TutorialData;
         documentationReferences?: string[];
         statusMessage?: string;
+        isStreaming?: boolean;
     };
     addCodeTab?: (code: string, language: string, label?: string, identifier?: string) => void;
 }
@@ -159,9 +160,14 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                                     </span>
                                 </div>
                             ) : (
-                                <MarkdownRenderer
-                                    content={message.content}
-                                />
+                                <div className="relative">
+                                    <MarkdownRenderer
+                                        content={message.content}
+                                    />
+                                    {message.isStreaming && (
+                                        <span className="inline-block w-2 h-4 bg-cyan-400 ml-0.5 streaming-cursor" />
+                                    )}
+                                </div>
                             )}
                             {/* Render tutorial content if present */}
                             {tutorialMdx && memoizedTutorialContent && (
