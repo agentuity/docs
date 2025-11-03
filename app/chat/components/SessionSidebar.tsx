@@ -176,7 +176,7 @@ export function SessionSidebar({
           {/* Desktop Toggle Button */}
           <button
             onClick={toggleCollapsed}
-            className="hidden lg:flex items-center justify-center w-6 h-6 rounded-md text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors flex-shrink-0"
+            className="hidden lg:flex items-center justify-center w-6 h-6 rounded-md text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors flex-shrink-0 cursor-ew-resize"
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {isCollapsed ? (

@@ -32,6 +32,8 @@ interface CodeTab {
 }
 
 export default function ChatSessionPage() {
+  console.log('[ChatSessionPage] Component rendered/refreshed', new Date().toISOString());
+
   const { sessionId } = useParams<{ sessionId: string }>();
   const [session, setSession] = useState<Session | undefined>();
   const [editorOpen, setEditorOpen] = useState(false);
@@ -39,6 +41,7 @@ export default function ChatSessionPage() {
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const { sessions, setSessions, revalidateSessions } = useSessions();
   const [creationError, setCreationError] = useState<string | null>(null);
+  const [minimizedCodeBlocks, setMinimizedCodeBlocks] = useState<Set<string>>(new Set());
 
   // Refs for character-by-character streaming
   const charQueueRef = useRef<string>('');
@@ -47,7 +50,6 @@ export default function ChatSessionPage() {
   const lastTypeTimeRef = useRef<number>(0);
   const typewriterLoopRef = useRef<((timestamp: number) => void) | null>(null);
 
-  // Typewriter effect: adds characters from queue at controlled rate
   useEffect(() => {
     const typewriterLoop = (timestamp: number) => {
       const messageId = streamingMessageIdRef.current;
@@ -59,10 +61,6 @@ export default function ChatSessionPage() {
       const timeSinceLastType = timestamp - lastTypeTimeRef.current;
       const queueLength = charQueueRef.current.length;
 
-      // Dynamic typing speed based on queue size
-      // Small queue (< 50 chars): 3 chars every 20ms (~150 chars/sec) - smooth, visible typing
-      // Medium queue (50-200 chars): 5 chars every 16ms (~312 chars/sec) - faster
-      // Large queue (> 200 chars): 10 chars every 16ms (~625 chars/sec) - catch up quickly
       let charsPerUpdate = 3;
       let updateInterval = 20;
 
@@ -78,8 +76,6 @@ export default function ChatSessionPage() {
         const charsToAdd = charQueueRef.current.slice(0, charsPerUpdate);
         charQueueRef.current = charQueueRef.current.slice(charsPerUpdate);
         lastTypeTimeRef.current = timestamp;
-
-        console.log('[Typewriter] Speed:', charsPerUpdate, 'chars, Queue:', queueLength);
 
         setSession(prev => {
           if (!prev) return prev;
@@ -141,14 +137,11 @@ export default function ChatSessionPage() {
         newMessage,
         {
           onTextDelta: (textDelta) => {
-            // Add incoming text to the character queue
-            console.log('[Stream] Received chunk:', textDelta.length, 'chars. Queue now:', charQueueRef.current.length + textDelta.length);
             charQueueRef.current += textDelta;
             streamingMessageIdRef.current = assistantMessage.id;
 
             // Start the typewriter animation if not already running
             if (!animationFrameRef.current && typewriterLoopRef.current) {
-              console.log('[Stream] Starting typewriter animation');
               lastTypeTimeRef.current = performance.now();
               animationFrameRef.current = requestAnimationFrame(typewriterLoopRef.current);
             }
@@ -180,7 +173,6 @@ export default function ChatSessionPage() {
 
           onStatus: (message, category) => {
             // Update the assistant message's status
-            console.log(`[Status${category ? ` - ${category}` : ''}]:`, message);
             setSession(prev => {
               if (!prev) return prev;
               const updatedMessages = prev.messages.map(msg =>
@@ -355,6 +347,8 @@ export default function ChatSessionPage() {
       // Switch to the existing tab instead of creating a duplicate
       setActiveTabId(existingTab.id);
       setEditorOpen(true);
+      // Minimize the code block in chat when opened in editor
+      setMinimizedCodeBlocks(prev => new Set(prev).add(tabIdentifier));
       return;
     }
 
@@ -383,11 +377,24 @@ export default function ChatSessionPage() {
     setCodeTabs(prev => [...prev, newTab]);
     setActiveTabId(newTabId);
     setEditorOpen(true);
+    // Minimize the code block in chat when opened in editor
+    setMinimizedCodeBlocks(prev => new Set(prev).add(tabIdentifier));
   };
 
   const closeCodeTab = (tabId: string) => {
     setCodeTabs(prev => {
+      const tabToClose = prev.find(tab => tab.id === tabId);
       const filtered = prev.filter(tab => tab.id !== tabId);
+
+      // Remove from minimized set when tab is closed
+      if (tabToClose?.identifier) {
+        setMinimizedCodeBlocks(prevMinimized => {
+          const newSet = new Set(prevMinimized);
+          newSet.delete(tabToClose.identifier!);
+          return newSet;
+        });
+      }
+
       if (filtered.length === 0) {
         setEditorOpen(false);
         setActiveTabId(null);
@@ -395,6 +402,18 @@ export default function ChatSessionPage() {
         setActiveTabId(filtered[filtered.length - 1].id);
       }
       return filtered;
+    });
+  };
+
+  const toggleCodeBlockMinimized = (identifier: string) => {
+    setMinimizedCodeBlocks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(identifier)) {
+        newSet.delete(identifier);
+      } else {
+        newSet.add(identifier);
+      }
+      return newSet;
     });
   };
 
@@ -430,6 +449,8 @@ export default function ChatSessionPage() {
                   session={session}
                   handleSendMessage={handleSendMessage}
                   addCodeTab={addCodeTab}
+                  minimizedCodeBlocks={minimizedCodeBlocks}
+                  toggleCodeBlockMinimized={toggleCodeBlockMinimized}
                 />
               ) : (
                 <div className="p-6 space-y-4">
@@ -448,7 +469,7 @@ export default function ChatSessionPage() {
           </div>
         </Allotment.Pane>
         {editorOpen && (
-          <Allotment.Pane minSize={450}>
+          <Allotment.Pane minSize={450} preferredSize="60%">
             <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
               <CodeEditor
                 executionResult={''}
