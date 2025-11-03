@@ -9,12 +9,16 @@ export interface ChatMessagesAreaProps {
     session: Session
     handleSendMessage: (content: string, sessionId: string) => void;
     addCodeTab?: (code: string, language: string, label?: string, identifier?: string) => void;
+    minimizedCodeBlocks?: Set<string>;
+    toggleCodeBlockMinimized?: (identifier: string) => void;
 }
 
 export function ChatMessagesArea({
     session,
     handleSendMessage,
-    addCodeTab
+    addCodeTab,
+    minimizedCodeBlocks,
+    toggleCodeBlockMinimized
 }: ChatMessagesAreaProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -57,6 +61,8 @@ export function ChatMessagesArea({
                         key={message.id}
                         message={message}
                         addCodeTab={addCodeTab}
+                        minimizedCodeBlocks={minimizedCodeBlocks}
+                        toggleCodeBlockMinimized={toggleCodeBlockMinimized}
                     />
                 ))}
                 <div ref={messagesEndRef} />

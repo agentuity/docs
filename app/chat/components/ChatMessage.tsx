@@ -75,10 +75,14 @@ interface ChatMessageProps {
         isStreaming?: boolean;
     };
     addCodeTab?: (code: string, language: string, label?: string, identifier?: string) => void;
+    minimizedCodeBlocks?: Set<string>;
+    toggleCodeBlockMinimized?: (identifier: string) => void;
 }
 export const ChatMessageComponent = React.memo(function ChatMessageComponent({
     message,
-    addCodeTab
+    addCodeTab,
+    minimizedCodeBlocks,
+    toggleCodeBlockMinimized
 }: ChatMessageProps) {
 
     const tutorialMdx = message.tutorialData?.tutorialStep.mdx;
@@ -163,6 +167,9 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                                 <div className="relative">
                                     <MarkdownRenderer
                                         content={message.content}
+                                        minimizedCodeBlocks={minimizedCodeBlocks}
+                                        toggleCodeBlockMinimized={toggleCodeBlockMinimized}
+                                        onOpenInEditor={handleOpenInEditor}
                                     />
                                     {message.isStreaming && (
                                         <span className="inline-block w-2 h-4 bg-cyan-400 ml-0.5 streaming-cursor" />
@@ -186,6 +193,8 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                                         content={memoizedTutorialContent}
                                         snippets={tutorialSnippets}
                                         onOpenInEditor={handleOpenInEditor}
+                                        minimizedCodeBlocks={minimizedCodeBlocks}
+                                        toggleCodeBlockMinimized={toggleCodeBlockMinimized}
                                     />
                                 </div>
                             )}

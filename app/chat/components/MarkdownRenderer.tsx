@@ -30,9 +30,11 @@ interface MarkdownRendererProps {
     content: string;
     snippets?: TutorialSnippet[];
     onOpenInEditor?: ((code: string, language: string, label?: string, identifier?: string) => void) | null;
+    minimizedCodeBlocks?: Set<string>;
+    toggleCodeBlockMinimized?: (identifier: string) => void;
 }
 
-export function MarkdownRenderer({ content, snippets, onOpenInEditor }: MarkdownRendererProps) {
+export function MarkdownRenderer({ content, snippets, onOpenInEditor, minimizedCodeBlocks, toggleCodeBlockMinimized }: MarkdownRendererProps) {
     return (
         <div className="prose prose-sm max-w-none prose-invert text-sm text-gray-200">
             <ReactMarkdown
@@ -42,17 +44,17 @@ export function MarkdownRenderer({ content, snippets, onOpenInEditor }: Markdown
                         const { code, language } = extractCodeFromChildren(children);
                         if (isExecutableLanguage(language)) {
                             // Try to find matching snippet by content
-                            const matchingSnippet = snippets?.find(s => 
+                            const matchingSnippet = snippets?.find(s =>
                                 s.content.trim() === code.trim()
                             );
-                            
+
                             // Extract filename from path for label
                             let label: string | undefined;
                             if (matchingSnippet?.path) {
                                 const pathParts = matchingSnippet.path.split('/');
                                 label = pathParts[pathParts.length - 1];
                             }
-                            
+
                             return (
                                 <CodeBlock
                                     content={code}
@@ -60,6 +62,8 @@ export function MarkdownRenderer({ content, snippets, onOpenInEditor }: Markdown
                                     label={label}
                                     identifier={matchingSnippet?.path}
                                     onOpenInEditor={onOpenInEditor}
+                                    minimizedCodeBlocks={minimizedCodeBlocks}
+                                    toggleCodeBlockMinimized={toggleCodeBlockMinimized}
                                 />
                             );
                         }

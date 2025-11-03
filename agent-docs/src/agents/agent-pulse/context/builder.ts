@@ -107,7 +107,6 @@ ${contextPrompt}
 
 Stream your reasoning steps clearly.`;
 
-                ctx.logger.debug("Built system prompt with tutorial context");
                 return systemPrompt;
         } catch (error) {
                 ctx.logger.error("Failed to build system prompt: %s", error instanceof Error ? error.message : String(error));
