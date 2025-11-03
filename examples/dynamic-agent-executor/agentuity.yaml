@@ -1,0 +1,3 @@
+name: dynamic-agent-executor
+agents:
+  - dynamic-executor

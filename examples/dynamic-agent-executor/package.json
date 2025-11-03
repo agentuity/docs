@@ -1,0 +1,17 @@
+{
+  "name": "dynamic-agent-executor",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "agentuity dev",
+    "build": "agentuity build",
+    "deploy": "agentuity deploy"
+  },
+  "dependencies": {
+    "@agentuity/sdk": "latest"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "latest"
+  }
+}
