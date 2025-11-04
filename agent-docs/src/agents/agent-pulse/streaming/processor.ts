@@ -145,7 +145,7 @@ function getToolStatusMessage(toolName: string): string {
 		case "startTutorialById":
 			return "Starting tutorial...";
 		case "askDocsAgentTool":
-			return "Searching documentation...";
+			return "🔍 Searching documentation...";
 		default:
 			return "Processing your request...";
 	}
