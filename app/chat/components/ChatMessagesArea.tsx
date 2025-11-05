@@ -11,6 +11,14 @@ export interface ChatMessagesAreaProps {
     addCodeTab?: (code: string, language: string, label?: string, identifier?: string) => void;
     minimizedCodeBlocks?: Set<string>;
     toggleCodeBlockMinimized?: (identifier: string) => void;
+    onRunCode?: (code: string, language: string, blockId: string) => void;
+    isRunningCode?: boolean;
+    codeOutput?: {
+        blockId: string;
+        success: boolean;
+        output: string[];
+        error?: string;
+    } | null;
 }
 
 export function ChatMessagesArea({
@@ -18,7 +26,10 @@ export function ChatMessagesArea({
     handleSendMessage,
     addCodeTab,
     minimizedCodeBlocks,
-    toggleCodeBlockMinimized
+    toggleCodeBlockMinimized,
+    onRunCode,
+    isRunningCode,
+    codeOutput
 }: ChatMessagesAreaProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -63,6 +74,9 @@ export function ChatMessagesArea({
                         addCodeTab={addCodeTab}
                         minimizedCodeBlocks={minimizedCodeBlocks}
                         toggleCodeBlockMinimized={toggleCodeBlockMinimized}
+                        onRunCode={onRunCode}
+                        isRunningCode={isRunningCode}
+                        codeOutput={codeOutput}
                     />
                 ))}
                 <div ref={messagesEndRef} />

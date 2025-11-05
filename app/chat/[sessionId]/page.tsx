@@ -43,6 +43,20 @@ export default function ChatSessionPage() {
   const [creationError, setCreationError] = useState<string | null>(null);
   const [minimizedCodeBlocks, setMinimizedCodeBlocks] = useState<Set<string>>(new Set());
 
+  // State for Run Code feature
+  const [isRunningCode, setIsRunningCode] = useState(false);
+  const [codeOutput, setCodeOutput] = useState<{
+    blockId: string;
+    success: boolean;
+    output: string[];
+    error?: string;
+  } | null>(null);
+
+  // Convert codeOutput to string format for editor Output tab
+  const executionResult = codeOutput
+    ? codeOutput.output.join('\n') + (codeOutput.error ? `\n\nError: ${codeOutput.error}` : '')
+    : '';
+
   // Refs for character-by-character streaming
   const charQueueRef = useRef<string>('');
   const streamingMessageIdRef = useRef<string | null>(null);
@@ -417,6 +431,38 @@ export default function ChatSessionPage() {
     });
   };
 
+  const handleRunCode = async (code: string, language: string) => {
+    setIsRunningCode(true);
+    setCodeOutput(null);
+
+    try {
+      const response = await fetch('/api/sandbox/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, language }),
+      });
+
+      const result = await response.json();
+
+      setCodeOutput({
+        blockId: 'editor-output',
+        success: result.success,
+        output: result.output || [],
+        error: result.error,
+      });
+    } catch (error) {
+      console.error('Failed to run code:', error);
+      setCodeOutput({
+        blockId: 'editor-output',
+        success: false,
+        output: [],
+        error: 'Failed to connect to sandbox',
+      });
+    } finally {
+      setIsRunningCode(false);
+    }
+  };
+
   const updateTabContent = (tabId: string, content: string) => {
     setCodeTabs(prev => prev.map(tab =>
       tab.id === tabId ? { ...tab, content } : tab
@@ -451,6 +497,9 @@ export default function ChatSessionPage() {
                   addCodeTab={addCodeTab}
                   minimizedCodeBlocks={minimizedCodeBlocks}
                   toggleCodeBlockMinimized={toggleCodeBlockMinimized}
+                  onRunCode={handleRunCode}
+                  isRunningCode={isRunningCode}
+                  codeOutput={codeOutput}
                 />
               ) : (
                 <div className="p-6 space-y-4">
@@ -472,10 +521,10 @@ export default function ChatSessionPage() {
           <Allotment.Pane minSize={450} preferredSize="60%">
             <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
               <CodeEditor
-                executionResult={''}
-                serverRunning={false}
+                executionResult={executionResult}
+                serverRunning={isRunningCode}
                 executingFiles={[]}
-                runCode={() => { }}
+                runCode={handleRunCode}
                 stopServer={stopServer}
                 codeTabs={codeTabs}
                 activeTabId={activeTabId}

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Terminal, Square, Power, Code, X } from 'lucide-react';
+import { Play, Terminal, Square, Power, Code, X, Copy, Check } from 'lucide-react';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { python } from '@codemirror/lang-python';
@@ -21,7 +21,7 @@ interface CodeEditorProps {
   executionResult: string | null;
   serverRunning: boolean;
   executingFiles: string[];
-  runCode: (code: string) => void;
+  runCode: (code: string, language: string) => void;
   stopServer: () => void;
   codeTabs: CodeTab[];
   activeTabId: string | null;
@@ -45,12 +45,33 @@ export function CodeEditor({
 }: CodeEditorProps) {
   const [activeTab, setActiveTab] = useState<TabType>(TabType.CODE);
   const tabsContainerRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
 
   const activeCodeTab = codeTabs.find(tab => tab.id === activeTabId);
 
+  // Auto-switch to Output tab when code execution completes
+  useEffect(() => {
+    if (executionResult) {
+      setActiveTab(TabType.OUTPUT);
+    }
+  }, [executionResult]);
+
+  // Handle copying code to clipboard
+  const handleCopyCode = async () => {
+    if (!activeCodeTab) return;
+
+    try {
+      await navigator.clipboard.writeText(activeCodeTab.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy code:', error);
+    }
+  };
+
   const handleRunCode = () => {
     if (activeCodeTab) {
-      runCode(activeCodeTab.content);
+      runCode(activeCodeTab.content, activeCodeTab.language);
     }
   };
 
@@ -185,7 +206,24 @@ export function CodeEditor({
         {activeTab === TabType.CODE ? (
           <div className="h-full p-4">
             {activeCodeTab ? (
-              <div className="w-full h-full border border-gray-700/50 rounded-lg overflow-auto scrollbar-thin">
+              <div className="relative w-full h-full border border-gray-700/50 rounded-lg overflow-auto scrollbar-thin">
+                {/* Copy button positioned over code editor */}
+                <button
+                  onClick={handleCopyCode}
+                  className={`absolute top-2 right-2 z-10 p-2 rounded-md transition-colors ${
+                    copied
+                      ? 'bg-green-500/20 text-green-400'
+                      : 'bg-gray-800/80 text-gray-400 hover:bg-gray-700/80 hover:text-gray-300'
+                  }`}
+                  aria-label={copied ? 'Copied!' : 'Copy code'}
+                  title={copied ? 'Copied!' : 'Copy Code'}
+                >
+                  {copied ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
                 <CodeMirror
                   value={activeCodeTab.content}
                   height="100%"

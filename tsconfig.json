@@ -3,6 +3,7 @@
 		"baseUrl": ".",
 		"target": "ESNext",
 		"lib": ["dom", "dom.iterable", "esnext"],
+		"types": ["@types/bun"],
 		"allowJs": true,
 		"skipLibCheck": true,
 		"strict": true,

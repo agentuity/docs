@@ -32,9 +32,28 @@ interface MarkdownRendererProps {
     onOpenInEditor?: ((code: string, language: string, label?: string, identifier?: string) => void) | null;
     minimizedCodeBlocks?: Set<string>;
     toggleCodeBlockMinimized?: (identifier: string) => void;
+    onRunCode?: ((code: string, language: string, blockId: string) => void) | null;
+    isRunningCode?: boolean;
+    codeOutput?: {
+        blockId: string;
+        success: boolean;
+        output: string[];
+        error?: string;
+    } | null;
 }
 
-export function MarkdownRenderer({ content, snippets, onOpenInEditor, minimizedCodeBlocks, toggleCodeBlockMinimized }: MarkdownRendererProps) {
+// Helper function to generate block ID
+function hashCode(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    return hash.toString(36);
+}
+
+export function MarkdownRenderer({ content, snippets, onOpenInEditor, minimizedCodeBlocks, toggleCodeBlockMinimized, onRunCode, isRunningCode, codeOutput }: MarkdownRendererProps) {
     return (
         <div className="prose prose-sm max-w-none prose-invert text-sm text-gray-200">
             <ReactMarkdown
@@ -55,16 +74,37 @@ export function MarkdownRenderer({ content, snippets, onOpenInEditor, minimizedC
                                 label = pathParts[pathParts.length - 1];
                             }
 
+                            // Generate block ID for output matching
+                            const blockId = `${language}-${hashCode(code)}`;
+
                             return (
-                                <CodeBlock
-                                    content={code}
-                                    language={language}
-                                    label={label}
-                                    identifier={matchingSnippet?.path}
-                                    onOpenInEditor={onOpenInEditor}
-                                    minimizedCodeBlocks={minimizedCodeBlocks}
-                                    toggleCodeBlockMinimized={toggleCodeBlockMinimized}
-                                />
+                                <div>
+                                    <CodeBlock
+                                        content={code}
+                                        language={language}
+                                        label={label}
+                                        identifier={matchingSnippet?.path}
+                                        onOpenInEditor={onOpenInEditor}
+                                        minimizedCodeBlocks={minimizedCodeBlocks}
+                                        toggleCodeBlockMinimized={toggleCodeBlockMinimized}
+                                        onRunCode={onRunCode ? (code, lang) => onRunCode(code, lang, blockId) : undefined}
+                                        isRunning={isRunningCode}
+                                    />
+                                    {/* Show output if this block was executed */}
+                                    {codeOutput && codeOutput.blockId === blockId && (
+                                        <div className="mt-2 p-3 bg-black/20 rounded-lg border border-green-500/20">
+                                            <div className="text-xs text-gray-400 mb-1 font-semibold">Output:</div>
+                                            <pre className="text-sm text-green-400 font-mono whitespace-pre-wrap">
+                                                {codeOutput.output.join('\n')}
+                                            </pre>
+                                            {codeOutput.error && (
+                                                <div className="mt-2 text-sm text-red-400">
+                                                    ❌ Error: {codeOutput.error}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             );
                         }
                         return (

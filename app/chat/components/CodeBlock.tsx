@@ -11,6 +11,8 @@ interface SimpleCodeBlockProps {
   onOpenInEditor?: ((code: string, language: string, label?: string, identifier?: string) => void) | null;
   minimizedCodeBlocks?: Set<string>;
   toggleCodeBlockMinimized?: (identifier: string) => void;
+  onRunCode?: ((code: string, language: string) => void) | null;
+  isRunning?: boolean;
 }
 
 export default function CodeBlock({
@@ -20,7 +22,9 @@ export default function CodeBlock({
   identifier,
   onOpenInEditor,
   minimizedCodeBlocks,
-  toggleCodeBlockMinimized
+  toggleCodeBlockMinimized,
+  onRunCode,
+  isRunning
 }: SimpleCodeBlockProps) {
   // Generate identifier if not provided (same logic as in page.tsx)
   const blockIdentifier = identifier || `${language}-${hashCode(content)}`;
@@ -31,6 +35,23 @@ export default function CodeBlock({
     if (toggleCodeBlockMinimized) {
       toggleCodeBlockMinimized(blockIdentifier);
     }
+  };
+
+  // Check if code is executable
+  const isExecutable = () => {
+    const executableLangs = ['typescript', 'javascript', 'ts', 'js'];
+
+    // Don't show for full agent templates
+    if (content.includes('export default async function Agent')) {
+      return false;
+    }
+
+    // Don't show for very short snippets
+    if (content.trim().length < 10) {
+      return false;
+    }
+
+    return executableLangs.includes(language.toLowerCase());
   };
 
   // If minimized, show compact view
@@ -62,8 +83,21 @@ export default function CodeBlock({
       {/* Custom header with language label and action buttons */}
       <div className="flex items-center justify-between p-2 bg-black/5 dark:bg-black/20 border-b border-black/2 dark:border-white/8">
         <span className="text-sm text-gray-200">{language}</span>
-        {onOpenInEditor && (
-          <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
+          {/* Run button (only for executable code) */}
+          {onRunCode && isExecutable() && (
+            <button
+              onClick={() => onRunCode(content, language)}
+              disabled={isRunning}
+              className="text-sm text-green-400 hover:text-green-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Run this code"
+              aria-label="Run code"
+            >
+              {isRunning ? 'Running...' : 'Run ▶'}
+            </button>
+          )}
+          {/* Edit button */}
+          {onOpenInEditor && (
             <button
               onClick={() => onOpenInEditor(content, language, label, identifier)}
               className="text-sm text-gray-400 hover:text-white transition-colors"
@@ -72,8 +106,8 @@ export default function CodeBlock({
             >
               Edit
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Syntax-highlighted code block with built-in copy button */}
