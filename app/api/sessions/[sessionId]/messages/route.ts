@@ -43,7 +43,99 @@ function sentenceCase(str: string): string {
   const lower = str.toLowerCase();
   return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
+// Helper: background title generation and persistence
+async function generateAndPersistTitle(sessionKey: string, finalSession: Session) {
+  try {
+    if ((finalSession as any).title) {
+      return; // Title already set
+    }
+    // Build compact conversation history (last 10 messages, truncate content)
+    const HISTORY_LIMIT = 10;
+    const MAX_CONTENT_LEN = 400;
+    const history = finalSession.messages
+      .slice(-HISTORY_LIMIT)
+      .map(m => ({
+        author: m.author,
+        content: (m.content || '').slice(0, MAX_CONTENT_LEN),
+      }));
 
+    const prompt = `Generate a very short session title summarizing the conversation topic.\n\nRequirements:\n- sentence case\n- no emojis\n- <= 60 characters\n- no quotes or markdown\n- output the title only, no extra text`;
+
+    const agentConfig = getAgentPulseConfig();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (agentConfig.bearerToken) headers['Authorization'] = `Bearer ${agentConfig.bearerToken}`;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    let agentResponse: Response | null = null;
+    try {
+      agentResponse = await fetch(agentConfig.url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          message: prompt,
+          conversationHistory: history,
+          use_direct_llm: true,
+        }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (!agentResponse || !agentResponse.ok) {
+      console.error(`[title-gen] failed: bad response ${agentResponse ? agentResponse.status : 'no-response'}`);
+      return;
+    }
+
+    const reader = agentResponse.body?.getReader();
+    if (!reader) {
+      console.error('[title-gen] failed: no response body');
+      return;
+    }
+
+    let accumulated = '';
+    const textDecoder = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) {
+        const text = textDecoder.decode(value);
+        for (const line of text.split('\n')) {
+          if (line.startsWith('data: ')) {
+            try {
+              const ev = JSON.parse(line.slice(6));
+              if (ev.type === 'text-delta' && ev.textDelta) accumulated += ev.textDelta;
+              if (ev.type === 'finish') {
+                try { await reader.cancel(); } catch { }
+                break;
+              }
+            } catch { }
+          }
+        }
+      }
+    }
+
+    const candidate = sanitizeTitle(accumulated);
+    const title = candidate || 'New chat';
+
+    // Re-fetch and set title only if still empty
+    const latest = await getKVValue<Session>(sessionKey, { storeName: config.defaultStoreName });
+    if (!latest.success || !latest.data) return;
+    const current = latest.data as any;
+    if (current.title) return;
+    current.title = title;
+    await setKVValue(sessionKey, current, { storeName: config.defaultStoreName });
+
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('The operation was aborted') || msg.includes('aborted')) {
+      console.error('[title-gen] timeout after 3000ms');
+    } else {
+      console.error(`[title-gen] failed: ${msg}`);
+    }
+  }
+}
 /**
  * POST /api/sessions/[sessionId]/messages - Add a message to a session and process with streaming
  *
@@ -83,99 +175,7 @@ export async function POST(
       storeName: config.defaultStoreName,
     });
 
-    // Helper: background title generation and persistence
-    async function generateAndPersistTitle(sessionId: string, sessionKey: string, finalSession: Session) {
-      try {
-        if ((finalSession as any).title) {
-          return; // Title already set
-        }
-        // Build compact conversation history (last 10 messages, truncate content)
-        const HISTORY_LIMIT = 10;
-        const MAX_CONTENT_LEN = 400;
-        const history = finalSession.messages
-          .slice(-HISTORY_LIMIT)
-          .map(m => ({
-            author: m.author,
-            content: (m.content || '').slice(0, MAX_CONTENT_LEN),
-          }));
 
-        const prompt = `Generate a very short session title summarizing the conversation topic.\n\nRequirements:\n- sentence case\n- no emojis\n- <= 60 characters\n- no quotes or markdown\n- output the title only, no extra text`;
-
-        const agentConfig = getAgentPulseConfig();
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (agentConfig.bearerToken) headers['Authorization'] = `Bearer ${agentConfig.bearerToken}`;
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-        let agentResponse: Response | null = null;
-        try {
-          agentResponse = await fetch(agentConfig.url, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              message: prompt,
-              conversationHistory: history,
-              use_direct_llm: true,
-            }),
-            signal: controller.signal,
-          });
-        } finally {
-          clearTimeout(timeoutId);
-        }
-
-        if (!agentResponse || !agentResponse.ok) {
-          console.error(`[title-gen] failed: bad response ${agentResponse ? agentResponse.status : 'no-response'}`);
-          return;
-        }
-
-        const reader = agentResponse.body?.getReader();
-        if (!reader) {
-          console.error('[title-gen] failed: no response body');
-          return;
-        }
-
-        let accumulated = '';
-        const textDecoder = new TextDecoder();
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          if (value) {
-            const text = textDecoder.decode(value);
-            for (const line of text.split('\n')) {
-              if (line.startsWith('data: ')) {
-                try {
-                  const ev = JSON.parse(line.slice(6));
-                  if (ev.type === 'text-delta' && ev.textDelta) accumulated += ev.textDelta;
-                  if (ev.type === 'finish') {
-                    try { await reader.cancel(); } catch { }
-                    break;
-                  }
-                } catch { }
-              }
-            }
-          }
-        }
-
-        const candidate = sanitizeTitle(accumulated);
-        const title = candidate || 'New chat';
-
-        // Re-fetch and set title only if still empty
-        const latest = await getKVValue<Session>(sessionKey, { storeName: config.defaultStoreName });
-        if (!latest.success || !latest.data) return;
-        const current = latest.data as any;
-        if (current.title) return;
-        current.title = title;
-        await setKVValue(sessionKey, current, { storeName: config.defaultStoreName });
-
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes('The operation was aborted') || msg.includes('aborted')) {
-          console.error('[title-gen] timeout after 3000ms');
-        } else {
-          console.error(`[title-gen] failed: ${msg}`);
-        }
-      }
-    }
     if (!sessionResponse.success || !sessionResponse.data) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
@@ -306,9 +306,8 @@ export async function POST(
                   storeName: config.defaultStoreName,
                 });
 
-                // Trigger background title generation if missing
                 // Do not await to avoid delaying the client stream completion
-                void generateAndPersistTitle(sessionId, sessionKey, finalSession);
+                void generateAndPersistTitle(sessionKey, finalSession);
 
                 // Send the final session in the finish event
                 controller.enqueue(

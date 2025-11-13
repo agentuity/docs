@@ -32,7 +32,6 @@ interface CodeTab {
 }
 
 export default function ChatSessionPage() {
-  console.log('[ChatSessionPage] Component rendered/refreshed', new Date().toISOString());
 
   const { sessionId } = useParams<{ sessionId: string }>();
   const [session, setSession] = useState<Session | undefined>();
