@@ -1,0 +1,416 @@
+---
+title: Agent Logging
+description: Structured, real-time insights into agent execution for debugging and monitoring
+---
+
+# Agent Logging
+
+Agent logging provides structured, real-time insights into your agent's execution. Effective logging helps you debug issues, monitor behavior, and understand agent decision-making.
+
+## Logging Interface
+
+The Agentuity platform provides persistent, searchable logs with real-time streaming for all deployed agents.
+
+TODO: Update screenshot for v1 Logs Overview
+
+### Log Overview
+
+The Logs dashboard displays:
+
+- **Timestamps**: Precise timing for each log entry
+- **Severity levels**: TRACE, DEBUG, INFO, WARN, ERROR, FATAL for categorization
+- **Source identification**: Which component generated the log
+- **Detailed messages**: Context about agent actions
+
+### Search and Filtering
+
+**AI-Powered Search:**
+Use natural language queries to find log entries. Click the purple sparkle icon and enter your search:
+
+TODO: Update screenshot for v1 AI-Powered Log Search
+
+**Filtering Options:**
+- **Severity**: Filter by log level (TRACE, DEBUG, INFO, WARN, ERROR, FATAL)
+- **Project**: Scope logs to specific projects
+- **Agent**: View logs from specific agents
+- **Session ID**: Filter logs for a particular session
+- **Deployment ID**: View logs from specific deployments
+- **Time Range**: Focus on specific time periods
+
+### Detailed Log Analysis
+
+Each log entry provides comprehensive context and can be expanded for full details:
+
+TODO: Update screenshot for v1 Detailed Log Entry View
+
+## Logging Best Practices
+
+### 1. Use Appropriate Log Levels
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const agent = createAgent({
+  handler: async (c, input) => {
+    // TRACE: Very detailed step-by-step execution (hidden in production)
+    c.logger.trace('RAG retrieval step 1: Embedding query');
+    c.logger.trace('RAG retrieval step 2: Searching vector store', { query: input.question });
+    c.logger.trace('RAG retrieval step 3: Ranking results', { count: results.length });
+
+    // DEBUG: Detailed information for debugging
+    c.logger.debug('Cache lookup', { key: cacheKey, hit: true });
+
+    // INFO: Normal flow and state changes
+    c.logger.info('Processing user request', { userId: input.userId, action: 'search' });
+
+    // WARN: Potential issues that don't stop execution
+    c.logger.warn('Rate limit approaching', { remaining: 5, limit: 100 });
+
+    // ERROR: Failures requiring attention but execution continues
+    c.logger.error('Failed to fetch data', { error: error.message, retrying: true });
+
+    // FATAL: Critical errors that terminate execution
+    // c.logger.fatal('Application cannot continue: Critical initialization failure');
+
+    return { result: 'success' };
+  }
+});
+```
+
+**When to use TRACE:**
+- Multi-step algorithms showing each calculation
+- RAG systems showing retrieval, ranking, generation steps
+- Complex data transformations showing each stage
+- Multi-agent workflows showing each agent call
+
+**When to use DEBUG:**
+- Cache hits/misses
+- Variable values during execution
+- Conditional branch decisions
+- Database query details
+
+**When to use INFO:**
+- Request processing started/completed
+- State changes
+- Successful operations
+- Normal workflow milestones
+
+**When to use WARN:**
+- Approaching resource limits
+- Deprecated feature usage
+- Fallback behavior triggered
+- Recoverable errors
+
+**When to use ERROR:**
+- Failed operations with retry
+- External service failures
+- Validation errors
+- Caught exceptions
+
+**When to use FATAL:**
+- Critical errors that require immediate termination
+- Unrecoverable initialization failures
+- System-level failures that prevent operation
+- Note: FATAL terminates the process immediately
+
+### 2. Use Structured Data
+
+Use structured data to provide context and make logs easier to parse and analyze:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const agent = createAgent({
+  handler: async (c, input) => {
+    // Good: Use objects for structured context
+    c.logger.info('API call completed', {
+      endpoint: '/api/users',
+      method: 'GET',
+      duration: 234,
+      status: 200,
+      contentType: 'application/json'
+    });
+
+    // Extract variables for dynamic values
+    const orderId = input.order.id;
+    const itemCount = input.order.items.length;
+
+    c.logger.info('Order processed', {
+      orderId,
+      itemCount,
+      total: input.order.total
+    });
+
+    return { success: true };
+  }
+});
+```
+
+### 3. Include Relevant Context
+
+Log enough information to understand what happened without re-running:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const agent = createAgent({
+  handler: async (c, input) => {
+    // Good - includes context
+    c.logger.info('Order processed', {
+      orderId: input.order.id,
+      customerId: input.customer.id,
+      total: input.order.total,
+      itemCount: input.order.items.length
+    });
+
+    // Less helpful - missing context
+    // c.logger.info('Order done');
+
+    return { success: true };
+  }
+});
+```
+
+### 4. Include Agentuity-Specific Information
+
+Add Agentuity-specific information to help with debugging and monitoring:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const agent = createAgent({
+  handler: async (c, input) => {
+    // Include available Agentuity context
+    c.logger.info('Agent processing request', {
+      agentName: c.agentName,
+      sessionId: c.sessionId
+      // Note: c.agent.id and req.trigger not available in v1
+    });
+
+    // For errors, include additional context
+    try {
+      const result = await processData(input);
+      return result;
+    } catch (error) {
+      c.logger.error('Agent execution failed', {
+        agentName: c.agentName,
+        sessionId: c.sessionId,
+        error: error.message
+      });
+      throw error;
+    }
+  }
+});
+```
+
+**Note:** v1 does not provide `c.agent.id` or `req.trigger` properties. Use `c.agentName` for agent identification and `c.sessionId` for request tracking.
+
+### 5. Log Decision Points
+
+Help future debugging by logging key decisions:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const agent = createAgent({
+  handler: async (c, input) => {
+    const cacheKey = `user:${input.userId}:profile`;
+    const cached = await c.kv.get('cache', cacheKey);
+
+    if (cached.exists) {
+      const cacheAge = Date.now() - cached.data.timestamp;
+      c.logger.info('Using cached response', {
+        cacheKey,
+        age: cacheAge
+      });
+      return cached.data.value;
+    } else {
+      c.logger.info('Cache miss, fetching fresh data', {
+        cacheKey,
+        reason: 'not found'
+      });
+      const freshData = await fetchUserProfile(input.userId);
+      await c.kv.set('cache', cacheKey, { value: freshData, timestamp: Date.now() });
+      return freshData;
+    }
+  }
+});
+```
+
+### 6. Use Child Loggers for Different Tasks
+
+Create child loggers to organize logging for different parts of your workflow:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const agent = createAgent({
+  handler: async (c, input) => {
+    // Create child loggers for different tasks
+    const orderLogger = c.logger.child({ component: 'order-processing' });
+    const paymentLogger = c.logger.child({ component: 'payment' });
+    const inventoryLogger = c.logger.child({ component: 'inventory' });
+
+    // Use specific loggers for their respective operations
+    orderLogger.info('Starting order validation');
+
+    const orderId = input.order.id;
+    const itemCount = input.order.items.length;
+    const paymentAmount = input.order.total;
+
+    orderLogger.info('Order validated', {
+      orderId,
+      itemCount,
+      total: paymentAmount
+    });
+
+    paymentLogger.info('Processing payment', {
+      orderId,
+      amount: paymentAmount
+    });
+
+    inventoryLogger.info('Checking inventory', {
+      orderId,
+      items: itemCount
+    });
+
+    return { success: true, orderId };
+  }
+});
+```
+
+**Benefits of child loggers:**
+- Automatic context propagation (component name)
+- Easier filtering and searching in logs
+- Clear separation of concerns
+- Consistent formatting across related operations
+
+## Common Logging Patterns
+
+### Pattern 1: RAG System with Detailed Tracing
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const ragAgent = createAgent({
+  schema: {
+    input: z.object({ question: z.string() }),
+    output: z.object({ answer: z.string(), sources: z.array(z.string()) })
+  },
+  handler: async (c, input) => {
+    c.logger.trace('RAG pipeline started');
+
+    // Step 1: Embedding
+    c.logger.trace('Generating query embedding');
+    const embedding = await generateEmbedding(input.question);
+    c.logger.debug('Query embedding generated', { dimensions: embedding.length });
+
+    // Step 2: Retrieval
+    c.logger.trace('Searching vector store');
+    const results = await c.vector.search('knowledge-base', {
+      query: input.question,
+      limit: 5,
+      similarity: 0.7
+    });
+    c.logger.info('Retrieved documents', { count: results.length });
+
+    // Step 3: Generation
+    c.logger.trace('Generating answer from context');
+    const answer = await generateAnswer(input.question, results);
+    c.logger.info('Answer generated', { length: answer.length });
+
+    return {
+      answer,
+      sources: results.map(r => r.key)
+    };
+  }
+});
+```
+
+### Pattern 2: Multi-Agent Workflow
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const coordinatorAgent = createAgent({
+  handler: async (c, input) => {
+    const workflowLogger = c.logger.child({ workflow: 'data-processing' });
+
+    workflowLogger.info('Workflow started', { inputSize: input.data.length });
+
+    // Step 1: Validation
+    workflowLogger.debug('Calling validation agent');
+    const validated = await c.agent.validator.run(input);
+    workflowLogger.info('Validation complete', { valid: validated.isValid });
+
+    // Step 2: Processing
+    workflowLogger.debug('Calling processing agent');
+    const processed = await c.agent.processor.run(validated);
+    workflowLogger.info('Processing complete', { recordsProcessed: processed.count });
+
+    // Step 3: Storage
+    workflowLogger.debug('Calling storage agent');
+    const stored = await c.agent.storage.run(processed);
+    workflowLogger.info('Storage complete', { stored: stored.success });
+
+    workflowLogger.info('Workflow completed successfully');
+
+    return {
+      success: true,
+      processedCount: processed.count
+    };
+  }
+});
+```
+
+### Pattern 3: Error Handling with Context
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const agent = createAgent({
+  handler: async (c, input) => {
+    const startTime = Date.now();
+
+    try {
+      c.logger.info('Processing request', {
+        agentName: c.agentName,
+        sessionId: c.sessionId,
+        userId: input.userId
+      });
+
+      const result = await performComplexOperation(input);
+
+      const duration = Date.now() - startTime;
+      c.logger.info('Request completed successfully', {
+        duration,
+        resultSize: JSON.stringify(result).length
+      });
+
+      return result;
+
+    } catch (error) {
+      const duration = Date.now() - startTime;
+
+      c.logger.error('Request failed', {
+        agentName: c.agentName,
+        sessionId: c.sessionId,
+        userId: input.userId,
+        duration,
+        error: error.message,
+        stack: error.stack
+      });
+
+      // Re-throw or handle as appropriate
+      throw error;
+    }
+  }
+});
+```
+
+## Next Steps
+
+- [Agent Communication](/Guides/agent-communication): Share state between agents
+- [Sessions and Threads](/Guides/sessions-threads): Manage conversation state
+- [API Reference](/SDK/api-reference): Complete logging API documentation

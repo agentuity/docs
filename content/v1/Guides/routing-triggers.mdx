@@ -352,7 +352,7 @@ const agent = createAgent({
     input: z.object({ message: z.string() }),
     output: z.string()
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     return `Received: ${input.message}`;
   }
 });

@@ -3,7 +3,7 @@ title: Subagents
 description: Organize related agents into parent-child hierarchies
 ---
 
-Subagents organize related agents into parent-child hierarchies with one level of nesting. Use subagents to group related functionality under a common parent, share validation logic, and create hierarchical API structures. Each subagent maintains its own handler and routes while accessing the parent agent via `ctx.parent`.
+Subagents organize related agents into parent-child hierarchies with one level of nesting. Use subagents to group related functionality under a common parent, share validation logic, and create hierarchical API structures. Each subagent maintains its own handler and routes while accessing the parent agent via `c.parent`.
 
 For routing patterns and middleware configuration, see the [Routing & Triggers Guide](/Guides/routing-triggers). For general agent patterns, see [Core Concepts](/Introduction/core-concepts).
 
@@ -53,10 +53,10 @@ Use separate agents when you have:
 | Feature | Subagents | Separate Agents |
 |---------|-----------|-----------------|
 | **File structure** | Nested directories | Flat structure |
-| **Access pattern** | `ctx.agent.parent.child.run()` | `ctx.agent.agentName.run()` |
+| **Access pattern** | `c.agent.parent.child.run()` | `c.agent.agentName.run()` |
 | **Routes** | Inherit parent path | Independent paths |
 | **Shared logic** | Parent provides context | Shared via middleware |
-| **Parent access** | `ctx.parent` available | N/A |
+| **Parent access** | `c.parent` available | N/A |
 | **Coupling** | Moderate (shares parent) | Low (independent) |
 | **Use case** | Related operations | Independent operations |
 
@@ -80,15 +80,15 @@ const agent = createAgent({
       taskCount: z.number().optional()
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     if (input.action === 'info') {
       return { message: 'Team management system' };
     }
 
     // Coordinate between subagents
     const [members, tasks] = await Promise.all([
-      ctx.agent.team.members.run({ action: 'count' }),
-      ctx.agent.team.tasks.run({ action: 'count' })
+      c.agent.team.members.run({ action: 'count' }),
+      c.agent.team.tasks.run({ action: 'count' })
     ]);
 
     return {
@@ -108,7 +108,7 @@ export default agent;
 
 **Key Points:**
 - Parent is a standard agent created with `createAgent()`
-- Can call subagents via `ctx.agent.parent.child.run()`
+- Can call subagents via `c.agent.parent.child.run()`
 - Provides high-level coordination between subagents
 - Routes follow standard patterns (see [Routing & Triggers Guide](/Guides/routing-triggers))
 
@@ -124,8 +124,8 @@ Subagents are created by placing agent.ts and route.ts files in a subdirectory o
 
 **Naming Convention:**
 - Agent name: `parent.child` (e.g., `team.members`)
-- Property access: `ctx.agent.team.members` (nested object)
-- Current agent name: `ctx.agentName` returns `"team.members"`
+- Property access: `c.agent.team.members` (nested object)
+- Current agent name: `c.agentName` returns `"team.members"`
 
 ### Basic Subagent
 
@@ -147,16 +147,16 @@ const agent = createAgent({
       count: z.number().optional()
     })
   },
-  handler: async (ctx, input) => {
-    const result = await ctx.kv.get<string[]>('team-data', 'members');
+  handler: async (c, input) => {
+    const result = await c.kv.get<string[]>('team-data', 'members');
     let members: string[] = result.exists && result.data ? result.data : [];
 
     if (input.action === 'add' && input.name) {
       members.push(input.name);
-      await ctx.kv.set('team-data', 'members', members);
+      await c.kv.set('team-data', 'members', members);
     } else if (input.action === 'remove' && input.name) {
       members = members.filter(m => m !== input.name);
-      await ctx.kv.set('team-data', 'members', members);
+      await c.kv.set('team-data', 'members', members);
     } else if (input.action === 'count') {
       return { members, count: members.length };
     }
@@ -171,7 +171,7 @@ export default agent;
 **Key Points:**
 - Same `createAgent()` syntax as regular agents
 - Agent name automatically becomes `team.members`
-- Access via `ctx.agentName` returns `"team.members"`
+- Access via `c.agentName` returns `"team.members"`
 - Full schema validation and type inference
 
 <Callout type="warning">
@@ -214,7 +214,7 @@ export default router;
 
 ## Accessing Subagents
 
-Subagents are accessed via nested properties on `ctx.agent` or `c.agent`. Type inference provides autocomplete and compile-time validation when schemas are defined.
+Subagents are accessed via nested properties on `c.agent` or `c.agent`. Type inference provides autocomplete and compile-time validation when schemas are defined.
 
 ```typescript
 // From routes or other agents
@@ -235,15 +235,15 @@ router.get('/summary', async (c) => {
 
 // From another agent
 const agent = createAgent({
-  handler: async (ctx, input) => {
-    const members = await ctx.agent.team.members.run({ action: 'count' });
+  handler: async (c, input) => {
+    const members = await c.agent.team.members.run({ action: 'count' });
     return { count: members.count };
   }
 });
 ```
 
 **Key Points:**
-- Nested property access: `ctx.agent.parent.child.run()`
+- Nested property access: `c.agent.parent.child.run()`
 - Works from routes and other agents
 - Supports parallel execution with `Promise.all()`
 - Type-safe when both agents have schemas
@@ -254,7 +254,7 @@ From within a subagent, access siblings via the full path (not via `ctx.sibling`
 
 ```typescript
 // From team/members/agent.ts
-const tasksData = await ctx.agent.team.tasks.run({ action: 'list' });  // ✓
+const tasksData = await c.agent.team.tasks.run({ action: 'list' });  // ✓
 ```
 
 <Callout type="info">
@@ -263,26 +263,26 @@ const tasksData = await ctx.agent.team.tasks.run({ action: 'list' });  // ✓
 
 ## Parent Context Access
 
-Subagents access their parent agent via `ctx.parent`. This enables validation, shared configuration, and coordination patterns while maintaining separation of concerns.
+Subagents access their parent agent via `c.parent`. This enables validation, shared configuration, and coordination patterns while maintaining separation of concerns.
 
 ### Basic Usage
 
-The `ctx.parent` property is available only in subagent handlers:
+The `c.parent` property is available only in subagent handlers:
 
 ```typescript
 // team/members/agent.ts
 const agent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     let parentInfo: string | undefined;
 
     // Check if parent is available
-    if (ctx.parent) {
-      const parentData = await ctx.parent.run({ action: 'info' });
+    if (c.parent) {
+      const parentData = await c.parent.run({ action: 'info' });
       parentInfo = parentData.message;
 
-      ctx.logger.info('Retrieved parent context', {
+      c.logger.info('Retrieved parent context', {
         parentMessage: parentInfo,
-        currentAgent: ctx.agentName  // "team.members"
+        currentAgent: c.agentName  // "team.members"
       });
     }
 
@@ -292,10 +292,10 @@ const agent = createAgent({
 ```
 
 **Key Points:**
-- `ctx.parent` available only in subagents (undefined in parent)
-- Call parent via `ctx.parent.run(input)`
+- `c.parent` available only in subagents (undefined in parent)
+- Call parent via `c.parent.run(input)`
 - Parent execution is synchronous (blocks subagent)
-- Always check `if (ctx.parent)` for type safety
+- Always check `if (c.parent)` for type safety
 
 ### Shared Validation Pattern
 
@@ -315,8 +315,8 @@ const teamAgent = createAgent({
       userRole: z.string()
     })
   },
-  handler: async (ctx, input) => {
-    const result = await ctx.kv.get('team-memberships', `${input.teamId}:${input.userId}`);
+  handler: async (c, input) => {
+    const result = await c.kv.get('team-memberships', `${input.teamId}:${input.userId}`);
 
     if (!result.exists) {
       throw new Error('User is not a member of this team');
@@ -341,10 +341,10 @@ const teamAgent = createAgent({
 
 // team/members/agent.ts - Uses parent validation
 const membersAgent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Validate with admin role requirement
-    if (ctx.parent) {
-      await ctx.parent.run({
+    if (c.parent) {
+      await c.parent.run({
         userId: input.userId,
         teamId: input.teamId,
         requiredRole: 'admin'
@@ -352,7 +352,7 @@ const membersAgent = createAgent({
     }
 
     // Admin-only operation
-    const members = await ctx.kv.get<string[]>('team-members', input.teamId);
+    const members = await c.kv.get<string[]>('team-members', input.teamId);
     return { members: members.data || [] };
   }
 });
@@ -366,12 +366,12 @@ const membersAgent = createAgent({
 
 ### When to Use Parent Access
 
-Use `ctx.parent` for:
+Use `c.parent` for:
 - **Validation** - Check permissions before executing subagent logic
 - **Shared configuration** - Retrieve settings managed by parent
 - **Logging context** - Include parent information in logs
 
-Avoid `ctx.parent` for:
+Avoid `c.parent` for:
 - **Core business logic** - Subagent should be mostly independent
 - **Data operations** - Use storage directly, not via parent
 - **Frequent calls** - Each call is synchronous and blocks execution
@@ -462,8 +462,8 @@ const userAgent = createAgent({
       valid: z.boolean().optional()
     })
   },
-  handler: async (ctx, input) => {
-    const result = await ctx.kv.get('users', input.userId);
+  handler: async (c, input) => {
+    const result = await c.kv.get('users', input.userId);
     if (!result.exists) throw new Error('User not found');
 
     const user = result.data;
@@ -499,10 +499,10 @@ const profileAgent = createAgent({
       })
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Validate user via parent
-    if (ctx.parent) {
-      const validation = await ctx.parent.run({
+    if (c.parent) {
+      const validation = await c.parent.run({
         userId: input.userId,
         action: 'validate'
       });
@@ -511,7 +511,7 @@ const profileAgent = createAgent({
       }
     }
 
-    const result = await ctx.kv.get(`profile-${input.userId}`, 'user-profiles');
+    const result = await c.kv.get(`profile-${input.userId}`, 'user-profiles');
     let profile = result.exists ? result.data : {
       displayName: 'New User',
       bio: ''
@@ -519,7 +519,7 @@ const profileAgent = createAgent({
 
     if (input.action === 'update' && input.profile) {
       profile = { ...profile, ...input.profile };
-      await ctx.kv.set('user-profiles', `profile-${input.userId}`, profile);
+      await c.kv.set('user-profiles', `profile-${input.userId}`, profile);
     }
 
     return { profile };
@@ -567,10 +567,10 @@ For complete working examples of these patterns, see the [Examples](/Examples) p
 ```typescript
 // Good: Parent coordinates
 const teamAgent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     const [members, tasks] = await Promise.all([
-      ctx.agent.team.members.run({ action: 'count' }),
-      ctx.agent.team.tasks.run({ action: 'count' })
+      c.agent.team.members.run({ action: 'count' }),
+      c.agent.team.tasks.run({ action: 'count' })
     ]);
     return { memberCount: members.count, taskCount: tasks.count };
   }
@@ -578,8 +578,8 @@ const teamAgent = createAgent({
 
 // Bad: Parent implements domain logic
 const teamAgent = createAgent({
-  handler: async (ctx, input) => {
-    const members = await ctx.kv.get('members', 'list');
+  handler: async (c, input) => {
+    const members = await c.kv.get('members', 'list');
     return { members: members.data.length }; // Should delegate to subagent
   }
 });
@@ -608,8 +608,8 @@ team/memberAdmins/agent.ts    // Separate subagent
 **Cache parent context if calling multiple times:**
 ```typescript
 const membersAgent = createAgent({
-  handler: async (ctx, input) => {
-    const parentData = ctx.parent ? await ctx.parent.run({ teamId: input.teamId }) : null;
+  handler: async (c, input) => {
+    const parentData = c.parent ? await c.parent.run({ teamId: input.teamId }) : null;
     // Use parentData multiple times without re-calling
     return { processed: true };
   }
@@ -620,13 +620,13 @@ const membersAgent = createAgent({
 ```typescript
 // Good
 const [members, tasks] = await Promise.all([
-  ctx.agent.team.members.run({ action: 'count' }),
-  ctx.agent.team.tasks.run({ action: 'count' })
+  c.agent.team.members.run({ action: 'count' }),
+  c.agent.team.tasks.run({ action: 'count' })
 ]);
 
 // Bad - slower when independent
-const members = await ctx.agent.team.members.run({ action: 'count' });
-const tasks = await ctx.agent.team.tasks.run({ action: 'count' });
+const members = await c.agent.team.members.run({ action: 'count' });
+const tasks = await c.agent.team.tasks.run({ action: 'count' });
 ```
 
 ### Testing
@@ -668,9 +668,9 @@ describe('Members Subagent', () => {
 **Let validation errors propagate:**
 ```typescript
 const membersAgent = createAgent({
-  handler: async (ctx, input) => {
-    if (ctx.parent) {
-      await ctx.parent.run({ userId: input.userId, teamId: input.teamId });
+  handler: async (c, input) => {
+    if (c.parent) {
+      await c.parent.run({ userId: input.userId, teamId: input.teamId });
       // Parent throws on validation failure - error propagates to caller
     }
     return { members: [] };
@@ -681,12 +681,12 @@ const membersAgent = createAgent({
 **Graceful degradation for optional parent calls:**
 ```typescript
 const membersAgent = createAgent({
-  handler: async (ctx, input) => {
-    if (ctx.parent) {
+  handler: async (c, input) => {
+    if (c.parent) {
       try {
-        await ctx.parent.run({ userId: input.userId });
+        await c.parent.run({ userId: input.userId });
       } catch (error) {
-        ctx.logger.warn('Parent validation unavailable', { error });
+        c.logger.warn('Parent validation unavailable', { error });
         // Continue with degraded functionality
       }
     }
@@ -733,15 +733,15 @@ export function TeamDashboard() {
 ## Next Steps
 
 **Explore Related Guides:**
-- [Routing & Triggers](/Guides/routing-triggers) - HTTP methods, WebSocket, SSE, and specialized routes
-- [Schema Validation](/Guides/schema-validation) - Type-safe schemas with Zod/Valibot/ArkType
-- [Events](/Guides/events) - Monitor agent execution with lifecycle hooks
-- [Sessions & Threads](/Guides/sessions-threads) - Stateful context management
+- [Routing](/Guides/routing): Complete routing patterns and middleware
+- [Schema Validation](/Guides/schema-validation): Type-safe schemas with Zod/Valibot/ArkType
+- [Events](/Guides/events): Monitor agent execution with lifecycle hooks
+- [Sessions & Threads](/Guides/sessions-threads): Stateful context management
 
 **API Reference:**
-- [AgentContext](/api-reference#agentcontext) - Complete context API including `ctx.parent`
-- [createAgent](/api-reference#createagent) - Agent creation and configuration
-- [createRouter](/api-reference#createrouter) - Route definition and middleware
+- [AgentContext](/api-reference#agentcontext): Complete context API including `c.parent`
+- [createAgent](/api-reference#createagent): Agent creation and configuration
+- [createRouter](/api-reference#createrouter): Route definition and middleware
 
 **Examples:**
-- [Examples](/Examples) - Additional patterns and complete working examples
+- [Examples](/Examples): Additional patterns and complete working examples

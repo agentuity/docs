@@ -15,8 +15,8 @@ Here's a basic agent that processes requests and returns responses:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (ctx, input) => {
-    ctx.logger.info('Received request');
+  handler: async (c, input) => {
+    c.logger.info('Received request');
 
     return {
       message: 'Hello, World!',
@@ -31,7 +31,7 @@ export default agent;
 **Key Points:**
 - Direct return values (no response object needed)
 - Input is automatically available
-- Logger accessed via `ctx.logger`
+- Logger accessed via `c.logger`
 - Returns plain JavaScript objects
 
 ### Type-Safe Agent with Validation
@@ -53,7 +53,7 @@ const agent = createAgent({
       status: z.enum(['active', 'pending'])
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // input.email and input.age are fully typed and validated
     return {
       userId: crypto.randomUUID(),
@@ -83,25 +83,25 @@ This example demonstrates structured logging for monitoring and debugging:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Different log levels
-    ctx.logger.info('Processing request', {
-      sessionId: ctx.sessionId,
+    c.logger.info('Processing request', {
+      sessionId: c.sessionId,
       inputSize: JSON.stringify(input).length
     });
 
-    ctx.logger.debug('Detailed processing info', { data: input });
+    c.logger.debug('Detailed processing info', { data: input });
 
     try {
       const result = await processData(input);
 
-      ctx.logger.info('Processing successful', {
+      c.logger.info('Processing successful', {
         resultSize: JSON.stringify(result).length
       });
 
       return result;
     } catch (error) {
-      ctx.logger.error('Processing failed', {
+      c.logger.error('Processing failed', {
         error: error.message,
         stack: error.stack
       });
@@ -155,11 +155,11 @@ const agent = createAgent({
       success: v.boolean()
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     const { action, userId, preferences } = input;
 
     if (action === 'get') {
-      const result = await ctx.kv.get('user-preferences', userId);
+      const result = await c.kv.get('user-preferences', userId);
 
       if (!result.exists) {
         return { success: false, message: 'No preferences found' };
@@ -170,7 +170,7 @@ const agent = createAgent({
     }
 
     if (action === 'set') {
-      await ctx.kv.set(
+      await c.kv.set(
         'user-preferences',
         userId,
         preferences,
@@ -181,7 +181,7 @@ const agent = createAgent({
     }
 
     // Delete
-    await ctx.kv.delete('user-preferences', userId);
+    await c.kv.delete('user-preferences', userId);
     return { success: true, message: 'Preferences deleted' };
   }
 });
@@ -190,8 +190,8 @@ export default agent;
 ```
 
 **Key Points:**
-- `ctx.kv.get()` returns a result with `exists` flag
-- `ctx.kv.set()` supports optional TTL for expiring data
+- `c.kv.get()` returns a result with `exists` flag
+- `c.kv.set()` supports optional TTL for expiring data
 - Data can be stored as JSON objects or strings
 - Storage is namespaced by the first parameter
 
@@ -226,7 +226,7 @@ const agent = createAgent({
       deletedCount: 'number?'
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     const { action, query, products } = input;
 
     if (action === 'index') {
@@ -245,7 +245,7 @@ const agent = createAgent({
         }
       }));
 
-      const ids = await ctx.vector.upsert('products', ...documents);
+      const ids = await c.vector.upsert('products', ...documents);
 
       return {
         message: `Indexed ${ids.length} products`,
@@ -258,7 +258,7 @@ const agent = createAgent({
         throw new Error('Query is required');
       }
 
-      const results = await ctx.vector.search('products', {
+      const results = await c.vector.search('products', {
         query,
         limit: 5,
         similarity: 0.7
@@ -283,7 +283,7 @@ const agent = createAgent({
     }
 
     const productIds = products.map(p => p.id);
-    const deletedCount = await ctx.vector.delete('products', ...productIds);
+    const deletedCount = await c.vector.delete('products', ...productIds);
 
     return {
       message: `Deleted ${deletedCount} product(s)`,
@@ -329,14 +329,14 @@ const agent = createAgent({
       message: v.optional(v.string())
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     const { action, filename, data, expiresIn } = input;
 
     if (action === 'upload') {
-      await ctx.objectstore.put('documents', filename, data, {
+      await c.objectstore.put('documents', filename, data, {
         contentType: 'application/pdf',
         metadata: {
-          uploadedBy: ctx.sessionId,
+          uploadedBy: c.sessionId,
           uploadedAt: new Date().toISOString()
         }
       });
@@ -348,7 +348,7 @@ const agent = createAgent({
     }
 
     if (action === 'download') {
-      const result = await ctx.objectstore.get('documents', filename);
+      const result = await c.objectstore.get('documents', filename);
 
       if (!result.exists) {
         return {
@@ -364,7 +364,7 @@ const agent = createAgent({
     }
 
     if (action === 'share') {
-      const url = await ctx.objectstore.createPublicURL(
+      const url = await c.objectstore.createPublicURL(
         'documents',
         filename,
         expiresIn || 3600000 // Default 1 hour
@@ -378,7 +378,7 @@ const agent = createAgent({
     }
 
     // Delete
-    const deleted = await ctx.objectstore.delete('documents', filename);
+    const deleted = await c.objectstore.delete('documents', filename);
 
     return {
       success: deleted,
@@ -404,22 +404,22 @@ Calling other agents to build workflows:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (ctx, input) => {
-    ctx.logger.info('Starting multi-agent workflow');
+  handler: async (c, input) => {
+    c.logger.info('Starting multi-agent workflow');
 
     // Call enrichment agent
-    const enriched = await ctx.agent.enrichmentAgent.run({
+    const enriched = await c.agent.enrichmentAgent.run({
       text: input.text
     });
 
     // Call multiple agents in parallel
     const [analyzed, categorized] = await Promise.all([
-      ctx.agent.analyzerAgent.run({ data: enriched }),
-      ctx.agent.categorizerAgent.run({ data: enriched })
+      c.agent.analyzerAgent.run({ data: enriched }),
+      c.agent.categorizerAgent.run({ data: enriched })
     ]);
 
     // Call final processing agent with combined results
-    const final = await ctx.agent.processorAgent.run({
+    const final = await c.agent.processorAgent.run({
       analyzed,
       categorized,
       original: input
@@ -436,7 +436,7 @@ export default agent;
 ```
 
 **Key Points:**
-- Access agents via `ctx.agent.agentName.run()`
+- Access agents via `c.agent.agentName.run()`
 - Type-safe when agents have schemas
 - Supports parallel execution with `Promise.all()`
 - Results automatically validated against output schemas
@@ -462,9 +462,9 @@ const agent = createAgent({
       confidence: z.number()
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Search vector database for relevant context
-    const results = await ctx.vector.search('knowledge-base', {
+    const results = await c.vector.search('knowledge-base', {
       query: input.question,
       limit: 3,
       similarity: 0.7
@@ -550,9 +550,9 @@ const agent = createAgent({
       error: z.string().optional()
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     try {
-      ctx.logger.info(`Processing resource: ${input.resourceId}`);
+      c.logger.info(`Processing resource: ${input.resourceId}`);
 
       // Simulate resource lookup
       const resource = await lookupResource(input.resourceId, ctx);
@@ -567,7 +567,7 @@ const agent = createAgent({
     } catch (error) {
       // Handle different error types
       if (error instanceof ValidationError) {
-        ctx.logger.warn(`Validation error: ${error.message}`);
+        c.logger.warn(`Validation error: ${error.message}`);
         return {
           error: 'Validation error',
           message: error.message
@@ -575,7 +575,7 @@ const agent = createAgent({
       }
 
       if (error instanceof ResourceNotFoundError) {
-        ctx.logger.warn(`Resource not found: ${error.message}`);
+        c.logger.warn(`Resource not found: ${error.message}`);
         return {
           error: 'Resource not found',
           message: error.message
@@ -583,7 +583,7 @@ const agent = createAgent({
       }
 
       // Handle unexpected errors
-      ctx.logger.error('Unexpected error', error);
+      c.logger.error('Unexpected error', error);
       return {
         error: 'Internal server error',
         message: 'An unexpected error occurred'
@@ -594,7 +594,7 @@ const agent = createAgent({
 
 // Helper functions
 async function lookupResource(resourceId: string, ctx: any) {
-  const result = await ctx.kv.get('resources', resourceId);
+  const result = await c.kv.get('resources', resourceId);
 
   if (!result.exists) {
     throw new ResourceNotFoundError(resourceId);
@@ -604,7 +604,7 @@ async function lookupResource(resourceId: string, ctx: any) {
 }
 
 async function processResource(resource: any, ctx: any) {
-  ctx.logger.debug('Processing resource', resource);
+  c.logger.debug('Processing resource', resource);
 
   return {
     id: resource.id,
@@ -647,31 +647,31 @@ const agent = createAgent({
       })
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Request-scoped state (cleared after request)
-    ctx.state.set('startTime', Date.now());
+    c.state.set('startTime', Date.now());
 
     // Thread-scoped state (conversation context)
     if (input.resetThread) {
-      await ctx.thread.destroy();
+      await c.thread.destroy();
     }
 
-    const threadMessages = (ctx.thread.state.get('messageCount') as number) || 0;
-    ctx.thread.state.set('messageCount', threadMessages + 1);
+    const threadMessages = (c.thread.state.get('messageCount') as number) || 0;
+    c.thread.state.set('messageCount', threadMessages + 1);
 
-    const messages = (ctx.thread.state.get('messages') as string[]) || [];
+    const messages = (c.thread.state.get('messages') as string[]) || [];
     messages.push(input.message);
-    ctx.thread.state.set('messages', messages);
+    c.thread.state.set('messages', messages);
 
     // Session-scoped state (user-level, spans threads)
-    const sessionTotal = (ctx.session.state.get('totalRequests') as number) || 0;
-    ctx.session.state.set('totalRequests', sessionTotal + 1);
-    ctx.session.state.set('lastActive', Date.now());
+    const sessionTotal = (c.session.state.get('totalRequests') as number) || 0;
+    c.session.state.set('totalRequests', sessionTotal + 1);
+    c.session.state.set('lastActive', Date.now());
 
     return {
       response: `Processed message ${threadMessages + 1} in this conversation`,
       stats: {
-        requestDuration: Date.now() - (ctx.state.get('startTime') as number),
+        requestDuration: Date.now() - (c.state.get('startTime') as number),
         threadMessages: threadMessages + 1,
         sessionTotal: sessionTotal + 1
       }
@@ -701,8 +701,8 @@ const agent = createAgent({
     input: z.object({ task: z.string() }),
     output: z.object({ result: z.string() })
   },
-  handler: async (ctx, input) => {
-    ctx.logger.info('Processing task', { task: input.task });
+  handler: async (c, input) => {
+    c.logger.info('Processing task', { task: input.task });
 
     // Simulate processing
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -713,23 +713,23 @@ const agent = createAgent({
 
 // Agent lifecycle events
 agent.addEventListener('started', (eventName, agent, ctx) => {
-  ctx.logger.info('Agent started', {
+  c.logger.info('Agent started', {
     agentName: agent.metadata.name,
-    sessionId: ctx.sessionId
+    sessionId: c.sessionId
   });
 });
 
 agent.addEventListener('completed', (eventName, agent, ctx) => {
-  ctx.logger.info('Agent completed successfully', {
+  c.logger.info('Agent completed successfully', {
     agentName: agent.metadata.name,
-    sessionId: ctx.sessionId
+    sessionId: c.sessionId
   });
 });
 
 agent.addEventListener('errored', (eventName, agent, ctx, error) => {
-  ctx.logger.error('Agent failed', {
+  c.logger.error('Agent failed', {
     agentName: agent.metadata.name,
-    sessionId: ctx.sessionId,
+    sessionId: c.sessionId,
     error: error.message
   });
 });
@@ -748,14 +748,14 @@ const app = createApp();
 app.addEventListener('agent.started', (eventName, agent, ctx) => {
   app.logger.info('Agent execution started', {
     agent: agent.metadata.name,
-    session: ctx.sessionId
+    session: c.sessionId
   });
 });
 
 app.addEventListener('agent.completed', (eventName, agent, ctx) => {
   app.logger.info('Agent execution completed', {
     agent: agent.metadata.name,
-    session: ctx.sessionId
+    session: c.sessionId
   });
 });
 
@@ -790,29 +790,29 @@ const agent = createAgent({
       summary: z.string()
     })
   },
-  handler: async (ctx, input) => {
-    ctx.logger.info(`Starting workflow: ${input.query}`);
+  handler: async (c, input) => {
+    c.logger.info(`Starting workflow: ${input.query}`);
 
     // Step 1: Search for relevant information
-    const searchResults = await ctx.agent.searchAgent.run({
+    const searchResults = await c.agent.searchAgent.run({
       query: input.query,
       limit: 10
     });
 
     // Step 2: Analyze results (conditional based on depth)
     const analysis = input.analysisDepth === 'deep'
-      ? await ctx.agent.deepAnalyzer.run({
+      ? await c.agent.deepAnalyzer.run({
           data: searchResults,
           includeDetails: true
         })
-      : await ctx.agent.basicAnalyzer.run({
+      : await c.agent.basicAnalyzer.run({
           data: searchResults
         });
 
     // Step 3: Generate recommendations (optional)
     let recommendations;
     if (input.includeRecommendations) {
-      const recResponse = await ctx.agent.recommendationEngine.run({
+      const recResponse = await c.agent.recommendationEngine.run({
         analysis,
         context: input.query
       });
@@ -825,7 +825,7 @@ const agent = createAgent({
       recommendations ? `, generated ${recommendations.length} recommendations` : ''
     }`;
 
-    ctx.logger.info('Workflow completed successfully');
+    c.logger.info('Workflow completed successfully');
 
     return {
       searchResults,
@@ -874,22 +874,22 @@ const agent = createAgent({
       estimatedDuration: z.string().optional()
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     const { action, prompt, userId, includeAnalytics = true } = input;
 
     if (action === 'stream-with-background') {
       // Create a stream for the LLM response
-      const stream = await ctx.stream.create('llm-response', {
+      const stream = await c.stream.create('llm-response', {
         contentType: 'text/plain',
         metadata: {
-          userId: userId || ctx.sessionId,
+          userId: userId || c.sessionId,
           model: 'gpt-5-nano',
           type: 'llm-generation'
         }
       });
 
       // Background task for streaming LLM response
-      ctx.waitUntil(async () => {
+      c.waitUntil(async () => {
         const { textStream } = streamText({
           model: openai('gpt-5-nano'),
           prompt: prompt || 'Tell me a short story'
@@ -900,7 +900,7 @@ const agent = createAgent({
 
       // Background task for analytics
       if (includeAnalytics && userId) {
-        ctx.waitUntil(async () => {
+        c.waitUntil(async () => {
           await logRequestAnalytics(userId, {
             action: 'stream_created',
             streamId: stream.id,
@@ -911,7 +911,7 @@ const agent = createAgent({
 
       // Background task for user activity tracking
       if (userId) {
-        ctx.waitUntil(async () => {
+        c.waitUntil(async () => {
           await updateUserActivity(userId, 'llm_stream_request');
         });
       }
@@ -925,15 +925,15 @@ const agent = createAgent({
     }
 
     if (action === 'multi-step-stream') {
-      const progressStream = await ctx.stream.create('progress', {
+      const progressStream = await c.stream.create('progress', {
         contentType: 'application/json',
         metadata: {
           type: 'multi-step-progress',
-          userId: userId || ctx.sessionId
+          userId: userId || c.sessionId
         }
       });
 
-      ctx.waitUntil(async () => {
+      c.waitUntil(async () => {
         try {
           const steps = [
             { name: 'Analyzing input', duration: 1000 },
@@ -1195,7 +1195,7 @@ const agent = createAgent({
       confidence: z.number()
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Process query and generate result
     const result = await processQuery(input.query);
 
@@ -1212,7 +1212,7 @@ agent.createEval({
     name: 'confidence-check',
     description: 'Ensures confidence score meets minimum threshold'
   },
-  handler: async (ctx, input, output) => {
+  handler: async (c, input, output) => {
     const passed = output.confidence >= 0.8;
 
     return {
@@ -1254,15 +1254,15 @@ import { createAgent } from '@agentuity/runtime';
 import { SpanStatusCode } from '@opentelemetry/api';
 
 const agent = createAgent({
-  handler: async (ctx, input) => {
-    return ctx.tracer.startActiveSpan('process-request', async (span) => {
+  handler: async (c, input) => {
+    return c.tracer.startActiveSpan('process-request', async (span) => {
       try {
         // Add attributes to the span
         span.setAttribute('data.type', typeof input);
-        span.setAttribute('agent.name', ctx.agentName || 'unknown');
+        span.setAttribute('agent.name', c.agentName || 'unknown');
 
         // Create a child span for data processing
-        return await ctx.tracer.startActiveSpan('process-data', async (childSpan) => {
+        return await c.tracer.startActiveSpan('process-data', async (childSpan) => {
           try {
             // Add event to the span
             childSpan.addEvent('processing-started', {
@@ -1303,7 +1303,7 @@ const agent = createAgent({
           message: (error as Error).message
         });
 
-        ctx.logger.error('Error processing request', error);
+        c.logger.error('Error processing request', error);
         throw error;
       } finally {
         span.end();
@@ -1351,7 +1351,7 @@ const agent = createAgent({
     }),
     stream: true
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     const { textStream } = streamText({
       model: openai('gpt-5-nano'),
       prompt: input.prompt
@@ -1389,9 +1389,9 @@ const agent = createAgent({
     }),
     stream: true
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Call the expert agent and stream its response
-    const response = await ctx.agent.historyExpert.run({
+    const response = await c.agent.historyExpert.run({
       question: input.question
     });
 

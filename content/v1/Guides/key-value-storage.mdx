@@ -19,14 +19,14 @@ Choose the right storage for your use case:
 
 ## Common Use Cases
 
-- **Persistent User Data**: Store user profiles, "remember me" tokens, and preferences that persist beyond active session lifetimes (use `ctx.session.state` for active session data - see [Sessions and Threads](/Guides/sessions-threads))
+- **Persistent User Data**: Store user profiles, "remember me" tokens, and preferences that persist beyond active session lifetimes (use `c.session.state` for active session data - see [Sessions and Threads](/Guides/sessions-threads))
 - **Configuration Storage**: Keep agent-specific settings, feature flags, and runtime configuration that can be updated without redeployment
 - **Caching**: Cache expensive computation results, API responses, or frequently accessed data to improve agent performance
 - **Inter-Agent Communication**: Share state between agents working together on complex workflows
 - **Rate Limiting**: Track API usage, request counts, and implement throttling mechanisms
 
 <Callout type="info" title="KV vs Built-in State">
-v1 provides built-in state management (`ctx.state`, `ctx.thread.state`, `ctx.session.state`) for data tied to active requests, conversations, and sessions. Use KV when you need:
+v1 provides built-in state management (`c.state`, `ctx.thread.state`, `c.session.state`) for data tied to active requests, conversations, and sessions. Use KV when you need:
 
 - **Custom TTL** longer than session/thread lifetimes
 - **Persistent data** across sessions (user profiles, settings)
@@ -53,9 +53,9 @@ The SDK automatically creates key-value storage when you first access it:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Buckets are auto-created if they don't exist
-    await ctx.kv.set('user-sessions', 'user-123', {
+    await c.kv.set('user-sessions', 'user-123', {
       lastSeen: new Date().toISOString(),
       preferences: { theme: 'dark' }
     });
@@ -77,23 +77,23 @@ Store strings, objects, or binary data. Keys persist indefinitely by default, or
 
 ```typescript
 const agent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Simple store
-    await ctx.kv.set('cache', 'api-response', responseData);
+    await c.kv.set('cache', 'api-response', responseData);
 
     // Store an object
-    await ctx.kv.set('user-prefs', input.userId, {
+    await c.kv.set('user-prefs', input.userId, {
       language: 'en',
       timezone: 'UTC'
     });
 
     // Store with TTL (expires after 1 hour)
-    await ctx.kv.set('sessions', input.sessionId, userData, {
+    await c.kv.set('sessions', input.sessionId, userData, {
       ttl: 3600  // seconds
     });
 
     // Store feature flags (no TTL - persistent config)
-    await ctx.kv.set('feature-flags', 'beta-features', {
+    await c.kv.set('feature-flags', 'beta-features', {
       darkMode: true,
       aiAssistant: false,
       newDashboard: true
@@ -110,20 +110,20 @@ Retrieve stored values with automatic deserialization:
 
 ```typescript
 const agent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Get a value
-    const result = await ctx.kv.get('user-prefs', input.userId);
+    const result = await c.kv.get('user-prefs', input.userId);
 
     if (result.exists) {
       // Data is already deserialized
       const preferences = result.data;
-      ctx.logger.info('User preferences:', preferences);
+      c.logger.info('User preferences:', preferences);
     } else {
-      ctx.logger.info('No preferences found for user');
+      c.logger.info('No preferences found for user');
     }
 
     // Handle missing keys gracefully
-    const configResult = await ctx.kv.get('config', 'app-settings');
+    const configResult = await c.kv.get('config', 'app-settings');
     const config = configResult.exists ? configResult.data : defaultConfig;
 
     return { config };
@@ -143,9 +143,9 @@ interface UserPreferences {
 }
 
 const agent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Specify type for type-safe access
-    const result = await ctx.kv.get<UserPreferences>('user-prefs', input.userId);
+    const result = await c.kv.get<UserPreferences>('user-prefs', input.userId);
 
     if (result.exists) {
       // TypeScript knows the shape of result.data
@@ -164,11 +164,11 @@ Remove keys when they're no longer needed:
 
 ```typescript
 const agent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Delete a single key
-    await ctx.kv.delete('sessions', input.sessionId);
+    await c.kv.delete('sessions', input.sessionId);
 
-    ctx.logger.info('Session deleted successfully');
+    c.logger.info('Session deleted successfully');
 
     return { success: true };
   }
@@ -190,18 +190,18 @@ Always handle potential storage errors gracefully:
 
 ```typescript
 const agent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     try {
-      const result = await ctx.kv.get('config', 'settings');
+      const result = await c.kv.get('config', 'settings');
 
       if (!result.exists) {
         // Initialize with defaults
-        await ctx.kv.set('config', 'settings', defaultSettings);
+        await c.kv.set('config', 'settings', defaultSettings);
       }
 
       return { config: result.exists ? result.data : defaultSettings };
     } catch (error) {
-      ctx.logger.error('Storage error:', error);
+      c.logger.error('Storage error:', error);
 
       // Fall back to in-memory defaults
       return { config: defaultSettings };
@@ -224,25 +224,25 @@ Example with appropriate TTLs:
 
 ```typescript
 const agent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Session data - expires after 24 hours
-    await ctx.kv.set('sessions', input.sessionId, sessionData, {
+    await c.kv.set('sessions', input.sessionId, sessionData, {
       ttl: 86400
     });
 
     // API cache - expires after 5 minutes
-    await ctx.kv.set('cache', cacheKey, apiResponse, {
+    await c.kv.set('cache', cacheKey, apiResponse, {
       ttl: 300
     });
 
     // Rate limit counter - expires at end of hour
     const secondsUntilHourEnd = 3600 - (Date.now() / 1000 % 3600);
-    await ctx.kv.set('rate-limits', input.userId, requestCount, {
+    await c.kv.set('rate-limits', input.userId, requestCount, {
       ttl: Math.ceil(secondsUntilHourEnd)
     });
 
     // Feature flags - no TTL (persistent)
-    await ctx.kv.set('feature-flags', 'global', featureFlags);
+    await c.kv.set('feature-flags', 'global', featureFlags);
 
     return { success: true };
   }
@@ -272,6 +272,6 @@ TODO: Add video for v1 storage overview
 
 ## Next Steps
 
-- [Agent Communication](/Guides/agent-communication) - Share state between agents
-- [Sessions and Threads](/Guides/sessions-threads) - Manage conversation state
-- [API Reference](/SDK/api-reference) - Complete storage API documentation
+- [Agent Communication](/Guides/agent-communication): Share state between agents
+- [Sessions and Threads](/Guides/sessions-threads): Manage conversation state
+- [API Reference](/SDK/api-reference): Complete storage API documentation

@@ -76,10 +76,10 @@ const agent = createAgent({
       }).optional(),
     }),
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // input is validated before this runs
     // TypeScript knows the exact shape of input
-    ctx.logger.info(`User email: ${input.email}`);
+    c.logger.info(`User email: ${input.email}`);
     return { success: true };
   },
 });
@@ -98,7 +98,7 @@ const agent = createAgent({
       status: z.enum(['active', 'pending']),
     }),
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     return {
       userId: crypto.randomUUID(),
       created: new Date(),
@@ -125,7 +125,7 @@ const agent = createAgent({
       total: z.number(),
     }),
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Both input and output are validated
     return {
       results: ['item1', 'item2'],
@@ -142,7 +142,7 @@ Schemas are optional. If not provided, no validation occurs:
 ```typescript
 const agent = createAgent({
   // No schema defined
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // input is unknown type
     // No runtime validation
     return { message: 'Done' };
@@ -169,7 +169,7 @@ const agent = createAgent({
       }),
     }),
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // TypeScript knows:
     // - input.query is string
     // - input.filters.category is 'tech' | 'business' | 'sports'
@@ -195,7 +195,7 @@ const agent = createAgent({
       total: z.number(),
     }),
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Return type is validated and type-checked
     return {
       results: [
@@ -216,7 +216,7 @@ When calling agents, TypeScript knows the input and output types:
 
 ```typescript
 // When calling the agent from another agent:
-const result = await ctx.agent.searchAgent.run({
+const result = await c.agent.searchAgent.run({
   query: 'agentic AI',
   filters: { category: 'tech', limit: 5 },
 });
@@ -406,9 +406,9 @@ const agent = createAgent({
       count: z.number(),
     }),
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Input validated before handler runs
-    ctx.logger.info('Processing query', { query: input.query });
+    c.logger.info('Processing query', { query: input.query });
 
     // Process the query...
     const results = [
@@ -486,7 +486,7 @@ When validation fails, an error is thrown with detailed information:
 
 ```typescript
 try {
-  await ctx.agent.userAgent.run({
+  await c.agent.userAgent.run({
     email: 'invalid-email',  // Invalid format
     age: -5,                 // Invalid range
   });
@@ -508,14 +508,14 @@ const agent = createAgent({
   schema: {
     input: z.object({ age: z.number().min(0) }),
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // This never runs if age is negative
     return { processed: true };
   },
 });
 
 // This throws a validation error:
-await ctx.agent.myAgent.run({ age: -1 });
+await c.agent.myAgent.run({ age: -1 });
 ```
 
 ### Output Validation Errors
@@ -527,7 +527,7 @@ const agent = createAgent({
   schema: {
     output: z.object({ status: z.enum(['ok', 'error']) }),
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     return { status: 'invalid' }; // Validation error!
   },
 });
@@ -634,7 +634,7 @@ const agent = createAgent({
       age: z.number().min(0)
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // input is guaranteed valid
   },
 });

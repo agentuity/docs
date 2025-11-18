@@ -222,8 +222,8 @@ export default createAgent({
     name: 'My Agent',
     description: 'A simple agent'
   },
-  handler: async (ctx, input) => {
-    ctx.logger.info('Processing request', { input });
+  handler: async (c, input) => {
+    c.logger.info('Processing request', { input });
 
     return {
       response: `Received: ${input.message}`
@@ -374,7 +374,7 @@ agent.createEval({
     name: 'quality-check',
     description: 'Validates output quality'
   },
-  handler: async (ctx, input, output) => {
+  handler: async (c, input, output) => {
     // Evaluate the output
     const score = calculateQuality(output);
 
@@ -404,7 +404,7 @@ const agent = createAgent({
       greeting: z.string()
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // input is fully typed and validated
     return {
       greeting: `Hello ${input.name}!`
@@ -417,10 +417,10 @@ const agent = createAgent({
 
 These conventions enable several key capabilities:
 
-1. **Consistent Development Experience** - Standardized structure makes it easier to work across projects
-2. **Automated Deployment** - The CLI can package and deploy your project without additional configuration
-3. **Framework Flexibility** - Use any agent framework while maintaining compatibility with the platform
-4. **Type Safety** - Full TypeScript support throughout the stack
-5. **Scalability** - Clear separation of concerns makes it easy to organize complex agent systems
+1. **Consistent Development Experience**: Standardized structure makes it easier to work across projects
+2. **Automated Deployment**: The CLI can package and deploy your project without additional configuration
+3. **Framework Flexibility**: Use any agent framework while maintaining compatibility with the platform
+4. **Type Safety**: Full TypeScript support throughout the stack
+5. **Scalability**: Clear separation of concerns makes it easy to organize complex agent systems
 
 TODO: Add examples showing integration with frontend frameworks (Next.js, Svelte, vanilla JS, etc.) for building UIs that call agents

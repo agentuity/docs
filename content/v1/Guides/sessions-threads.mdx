@@ -3,7 +3,7 @@ title: Sessions & Threads
 description: Stateful context management for conversational agents
 ---
 
-Sessions and threads provide stateful context management at three different scopes: request-level for temporary data, thread-level for conversation context lasting up to 1 hour, and session-level for user data spanning multiple conversations. Use request state (`ctx.state`) for timing and calculations, thread state (`ctx.thread.state`) for chatbot memory, and session state (`ctx.session.state`) for user preferences and cross-conversation tracking.
+Sessions and threads provide stateful context management at three different scopes: request-level for temporary data, thread-level for conversation context lasting up to 1 hour, and session-level for user data spanning multiple conversations. Use request state (`c.state`) for timing and calculations, thread state (`c.thread.state`) for chatbot memory, and session state (`c.session.state`) for user preferences and cross-conversation tracking.
 
 For event-based lifecycle management of sessions and threads, see the [Events Guide](/Guides/events).
 
@@ -11,9 +11,9 @@ For event-based lifecycle management of sessions and threads, see the [Events Gu
 
 The SDK provides three distinct state scopes, each with different lifetimes and use cases:
 
-- **Request state** (`ctx.state`) - Temporary data within a single request, cleared after response
-- **Thread state** (`ctx.thread.state`) - Conversation context across multiple requests, expires after 1 hour
-- **Session state** (`ctx.session.state`) - User-level data spanning multiple threads and conversations
+- **Request state** (`c.state`) - Temporary data within a single request, cleared after response
+- **Thread state** (`c.thread.state`) - Conversation context across multiple requests, expires after 1 hour
+- **Session state** (`c.session.state`) - User-level data spanning multiple threads and conversations
 
 ### Three State Scopes in Action
 
@@ -33,22 +33,22 @@ const agent = createAgent({
       totalUserRequests: z.number()
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // REQUEST STATE: Temporary data for this request only
-    ctx.state.set('requestStart', Date.now());
+    c.state.set('requestStart', Date.now());
 
     // THREAD STATE: Conversation history (persists up to 1 hour)
-    const messages = (ctx.thread.state.get('messages') as string[]) || [];
+    const messages = (c.thread.state.get('messages') as string[]) || [];
     messages.push(input.message);
-    ctx.thread.state.set('messages', messages);
+    c.thread.state.set('messages', messages);
 
     // SESSION STATE: User-level data (persists across threads)
-    const totalRequests = (ctx.session.state.get('totalRequests') as number) || 0;
-    ctx.session.state.set('totalRequests', totalRequests + 1);
-    ctx.session.state.set('lastMessage', input.message);
+    const totalRequests = (c.session.state.get('totalRequests') as number) || 0;
+    c.session.state.set('totalRequests', totalRequests + 1);
+    c.session.state.set('lastMessage', input.message);
 
     // Request state is used for response calculation
-    const requestTime = Date.now() - (ctx.state.get('requestStart') as number);
+    const requestTime = Date.now() - (c.state.get('requestStart') as number);
 
     return {
       response: `Received: ${input.message}`,
@@ -74,9 +74,9 @@ export default agent;
 
 | Scope | Lifetime | Cleared When | Use Case | Access |
 |-------|----------|--------------|----------|--------|
-| Request | Single request | After response sent | Timing, temp calculations | `ctx.state` |
-| Thread | Up to 1 hour | Thread expiration or destroy | Conversation history | `ctx.thread.state` |
-| Session | Spans threads | In-memory (provider dependent) | User preferences | `ctx.session.state` |
+| Request | Single request | After response sent | Timing, temp calculations | `c.state` |
+| Thread | Up to 1 hour | Thread expiration or destroy | Conversation history | `c.thread.state` |
+| Session | Spans threads | In-memory (provider dependent) | User preferences | `c.session.state` |
 
 ## Thread Management
 
@@ -99,7 +99,7 @@ Threads represent conversation contexts with a 1-hour lifetime. Each thread is i
 - `destroyed` event fires when thread expires
 
 **Manual Destroy:**
-- Call `await ctx.thread.destroy()` to reset the conversation
+- Call `await c.thread.destroy()` to reset the conversation
 - Useful for starting new conversations or clearing context
 
 ### Conversation Context with Threads
@@ -122,37 +122,37 @@ const agent = createAgent({
       source: z.enum(['kv', 'thread-state', 'new'])
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Reset conversation if requested
     if (input.reset) {
-      await ctx.thread.destroy();
+      await c.thread.destroy();
     }
 
-    const conversationKey = `conversation_${ctx.thread.id}`;
+    const conversationKey = `conversation_${c.thread.id}`;
     let source: 'kv' | 'thread-state' | 'new' = 'new';
 
     // Load conversation from KV on first access
-    if (!ctx.thread.state.has('messages')) {
-      const result = await ctx.kv.get('conversations', conversationKey);
+    if (!c.thread.state.has('messages')) {
+      const result = await c.kv.get('conversations', conversationKey);
 
       if (result.exists) {
         const saved = await result.data.json();
-        ctx.thread.state.set('messages', saved.messages);
+        c.thread.state.set('messages', saved.messages);
         source = 'kv';
-        ctx.logger.info('Loaded conversation from KV', {
-          threadId: ctx.thread.id,
+        c.logger.info('Loaded conversation from KV', {
+          threadId: c.thread.id,
           messageCount: saved.messages.length
         });
       } else {
-        ctx.thread.state.set('messages', []);
+        c.thread.state.set('messages', []);
       }
 
       // Register save handler when thread is destroyed
-      ctx.thread.addEventListener('destroyed', async (eventName, thread) => {
+      c.thread.addEventListener('destroyed', async (eventName, thread) => {
         const messages = thread.state.get('messages') as string[];
 
         if (messages && messages.length > 0) {
-          await ctx.kv.set('conversations', conversationKey, {
+          await c.kv.set('conversations', conversationKey, {
             threadId: thread.id,
             messages,
             savedAt: new Date().toISOString()
@@ -160,7 +160,7 @@ const agent = createAgent({
             ttl: 86400 // Keep for 24 hours
           });
 
-          ctx.logger.info('Saved conversation to KV', {
+          c.logger.info('Saved conversation to KV', {
             threadId: thread.id,
             messageCount: messages.length
           });
@@ -171,9 +171,9 @@ const agent = createAgent({
     }
 
     // Add message to thread state (fast access)
-    const messages = ctx.thread.state.get('messages') as string[];
+    const messages = c.thread.state.get('messages') as string[];
     messages.push(input.message);
-    ctx.thread.state.set('messages', messages);
+    c.thread.state.set('messages', messages);
 
     return {
       response: `Stored message ${messages.length}`,
@@ -200,11 +200,11 @@ Sessions represent individual request executions with unique session IDs. While 
 
 **Creation:**
 - A new session is created for each request
-- Each session has a unique `sessionId` accessible via `ctx.sessionId`
-- Sessions belong to a thread: `ctx.session.thread`
+- Each session has a unique `sessionId` accessible via `c.sessionId`
+- Sessions belong to a thread: `c.session.thread`
 
 **State:**
-- `ctx.session.state` persists across threads for the same user
+- `c.session.state` persists across threads for the same user
 - Use for user preferences, settings, cross-conversation data
 - State stored in memory (persistence depends on SessionProvider)
 
@@ -225,11 +225,11 @@ Clean up resources when threads are destroyed (either by expiration or manual de
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Register cleanup handler once per thread
-    if (!ctx.thread.state.has('cleanupRegistered')) {
-      ctx.thread.addEventListener('destroyed', async (eventName, thread) => {
-        ctx.logger.info('Thread destroyed - cleaning up', {
+    if (!c.thread.state.has('cleanupRegistered')) {
+      c.thread.addEventListener('destroyed', async (eventName, thread) => {
+        c.logger.info('Thread destroyed - cleaning up', {
           threadId: thread.id,
           messageCount: thread.state.get('messageCount') || 0,
           conversationDuration: Date.now() - (thread.state.get('startTime') as number || Date.now())
@@ -238,7 +238,7 @@ const agent = createAgent({
         // Save conversation summary to KV before cleanup
         const messages = thread.state.get('messages') as string[] || [];
         if (messages.length > 0) {
-          await ctx.kv.set('conversation-summaries', thread.id, {
+          await c.kv.set('conversation-summaries', thread.id, {
             messageCount: messages.length,
             lastMessages: messages.slice(-5),
             endedAt: new Date().toISOString()
@@ -251,17 +251,17 @@ const agent = createAgent({
         thread.state.clear();
       });
 
-      ctx.thread.state.set('cleanupRegistered', true);
-      ctx.thread.state.set('startTime', Date.now());
+      c.thread.state.set('cleanupRegistered', true);
+      c.thread.state.set('startTime', Date.now());
     }
 
     // Track messages
-    const messageCount = (ctx.thread.state.get('messageCount') as number) || 0;
-    ctx.thread.state.set('messageCount', messageCount + 1);
+    const messageCount = (c.thread.state.get('messageCount') as number) || 0;
+    c.thread.state.set('messageCount', messageCount + 1);
 
-    const messages = (ctx.thread.state.get('messages') as string[]) || [];
+    const messages = (c.thread.state.get('messages') as string[]) || [];
     messages.push(JSON.stringify(input));
-    ctx.thread.state.set('messages', messages);
+    c.thread.state.set('messages', messages);
 
     return { processed: true, messageCount: messageCount + 1 };
   }
@@ -303,24 +303,24 @@ const agent = createAgent({
     }),
     stream: true
   },
-  handler: async (ctx, input) => {
-    const conversationKey = `chat_${ctx.thread.id}`;
+  handler: async (c, input) => {
+    const conversationKey = `chat_${c.thread.id}`;
 
     // Load conversation history from KV
     let messages: CoreMessage[] = [];
 
     try {
-      const result = await ctx.kv.get('conversations', conversationKey);
+      const result = await c.kv.get('conversations', conversationKey);
 
       if (result.exists) {
         messages = await result.data.json() as CoreMessage[];
-        ctx.logger.info('Loaded conversation from KV', {
-          threadId: ctx.thread.id,
+        c.logger.info('Loaded conversation from KV', {
+          threadId: c.thread.id,
           messageCount: messages.length
         });
       }
     } catch (error) {
-      ctx.logger.error('Error loading conversation history', { error });
+      c.logger.error('Error loading conversation history', { error });
     }
 
     // Add user message to conversation
@@ -337,7 +337,7 @@ const agent = createAgent({
     });
 
     // Save conversation after stream completes (non-blocking)
-    ctx.waitUntil(async () => {
+    c.waitUntil(async () => {
       try {
         const fullText = await result.text;
 
@@ -351,16 +351,16 @@ const agent = createAgent({
         const recentMessages = messages.slice(-20);
 
         // Save to KV storage
-        await ctx.kv.set('conversations', conversationKey, recentMessages, {
+        await c.kv.set('conversations', conversationKey, recentMessages, {
           ttl: 86400 // 24 hours
         });
 
-        ctx.logger.info('Saved conversation to KV', {
-          threadId: ctx.thread.id,
+        c.logger.info('Saved conversation to KV', {
+          threadId: c.thread.id,
           messageCount: recentMessages.length
         });
       } catch (error) {
-        ctx.logger.error('Error saving conversation history', { error });
+        c.logger.error('Error saving conversation history', { error });
       }
     });
 
@@ -406,18 +406,18 @@ const agent = createAgent({
       source: z.enum(['cache', 'storage', 'default'])
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     const userId = input.userId;
     let source: 'cache' | 'storage' | 'default' = 'default';
 
     // Check session state cache first
-    let preferences = ctx.session.state.get(`preferences_${userId}`) as z.infer<typeof PreferencesSchema> | undefined;
+    let preferences = c.session.state.get(`preferences_${userId}`) as z.infer<typeof PreferencesSchema> | undefined;
 
     if (preferences) {
       source = 'cache';
     } else {
       // Load from KV storage
-      const result = await ctx.kv.get('user-preferences', userId);
+      const result = await c.kv.get('user-preferences', userId);
 
       if (result.exists) {
         preferences = await result.data.json();
@@ -433,16 +433,16 @@ const agent = createAgent({
       }
 
       // Cache in session state
-      ctx.session.state.set(`preferences_${userId}`, preferences);
+      c.session.state.set(`preferences_${userId}`, preferences);
     }
 
     // Update if requested
     if (input.updatePreferences) {
       preferences = { ...preferences, ...input.updatePreferences };
-      ctx.session.state.set(`preferences_${userId}`, preferences);
+      c.session.state.set(`preferences_${userId}`, preferences);
 
       // Persist to KV storage
-      await ctx.kv.set('user-preferences', userId, preferences, {
+      await c.kv.set('user-preferences', userId, preferences, {
         ttl: 2592000 // 30 days
       });
     }
@@ -488,14 +488,14 @@ const agent = createAgent({
       complete: z.boolean()
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Reset workflow if requested
     if (input.reset) {
-      ctx.thread.state.delete('workflowState');
+      c.thread.state.delete('workflowState');
     }
 
     // Initialize workflow
-    let workflowState = ctx.thread.state.get('workflowState') as z.infer<typeof WorkflowStateSchema> | undefined;
+    let workflowState = c.thread.state.get('workflowState') as z.infer<typeof WorkflowStateSchema> | undefined;
 
     if (!workflowState) {
       workflowState = {
@@ -541,7 +541,7 @@ const agent = createAgent({
           complete = true;
 
           // Save to storage
-          await ctx.kv.set('registrations', workflowState.data.email!, workflowState.data, {
+          await c.kv.set('registrations', workflowState.data.email!, workflowState.data, {
             ttl: 86400
           });
         } else {
@@ -556,7 +556,7 @@ const agent = createAgent({
     }
 
     // Save workflow state
-    ctx.thread.state.set('workflowState', workflowState);
+    c.thread.state.set('workflowState', workflowState);
 
     return {
       message,
@@ -577,12 +577,12 @@ Implement rate limiting per session:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     const requestLimit = 10;
     const windowMs = 60000; // 1 minute
 
     // Track requests in session state
-    const requestLog = (ctx.session.state.get('requestLog') as Array<number>) || [];
+    const requestLog = (c.session.state.get('requestLog') as Array<number>) || [];
     const now = Date.now();
 
     // Remove requests outside the time window
@@ -593,8 +593,8 @@ const agent = createAgent({
       const oldestRequest = Math.min(...recentRequests);
       const resetIn = windowMs - (now - oldestRequest);
 
-      ctx.logger.warn('Rate limit exceeded', {
-        sessionId: ctx.sessionId,
+      c.logger.warn('Rate limit exceeded', {
+        sessionId: c.sessionId,
         requestCount: recentRequests.length,
         resetInMs: resetIn
       });
@@ -609,7 +609,7 @@ const agent = createAgent({
 
     // Add current request
     recentRequests.push(now);
-    ctx.session.state.set('requestLog', recentRequests);
+    c.session.state.set('requestLog', recentRequests);
 
     return {
       processed: true,
@@ -660,15 +660,15 @@ const agent = createAgent({
       profile: UserProfileSchema
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     const userId = input.userId;
 
     // Load profile from session state cache
-    let profile = ctx.session.state.get(`profile_${userId}`) as z.infer<typeof UserProfileSchema> | undefined;
+    let profile = c.session.state.get(`profile_${userId}`) as z.infer<typeof UserProfileSchema> | undefined;
 
     // If not in cache, load from KV
     if (!profile) {
-      const result = await ctx.kv.get('user-profiles', userId);
+      const result = await c.kv.get('user-profiles', userId);
 
       if (result.exists) {
         profile = await result.data.json();
@@ -686,23 +686,23 @@ const agent = createAgent({
       }
 
       // Cache in session state
-      ctx.session.state.set(`profile_${userId}`, profile);
+      c.session.state.set(`profile_${userId}`, profile);
 
       // Register session completion handler to save on exit
-      if (!ctx.session.state.has('saveHandlerRegistered')) {
-        ctx.session.addEventListener('completed', async (eventName, session) => {
+      if (!c.session.state.has('saveHandlerRegistered')) {
+        c.session.addEventListener('completed', async (eventName, session) => {
           const profileToSave = session.state.get(`profile_${userId}`) as typeof profile;
 
           if (profileToSave) {
-            await ctx.kv.set('user-profiles', userId, profileToSave, {
+            await c.kv.set('user-profiles', userId, profileToSave, {
               ttl: 2592000 // 30 days
             });
 
-            ctx.logger.info('Saved user profile', { userId });
+            c.logger.info('Saved user profile', { userId });
           }
         });
 
-        ctx.session.state.set('saveHandlerRegistered', true);
+        c.session.state.set('saveHandlerRegistered', true);
       }
     }
 
@@ -710,7 +710,7 @@ const agent = createAgent({
     if (input.updateProfile) {
       profile = { ...profile, ...input.updateProfile };
       profile.lastActive = new Date().toISOString();
-      ctx.session.state.set(`profile_${userId}`, profile);
+      c.session.state.set(`profile_${userId}`, profile);
     }
 
     return { profile };
@@ -744,12 +744,12 @@ Keep conversation history bounded to avoid memory issues:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     const maxMessages = 50; // Keep last 50 messages in memory
     const archiveThreshold = 40; // Archive when reaching 40 messages
 
     // Get current messages from thread state
-    const messages = (ctx.thread.state.get('messages') as string[]) || [];
+    const messages = (c.thread.state.get('messages') as string[]) || [];
 
     // Add new message
     messages.push(JSON.stringify(input));
@@ -760,26 +760,26 @@ const agent = createAgent({
 
       if (toArchive.length > 0) {
         // Archive to KV storage
-        const archiveKey = `archive_${ctx.thread.id}_${Date.now()}`;
-        await ctx.kv.set('message-archives', archiveKey, {
-          threadId: ctx.thread.id,
+        const archiveKey = `archive_${c.thread.id}_${Date.now()}`;
+        await c.kv.set('message-archives', archiveKey, {
+          threadId: c.thread.id,
           messages: toArchive,
           archivedAt: new Date().toISOString()
         }, {
           ttl: 604800 // Keep for 7 days
         });
 
-        ctx.logger.info('Archived old messages', {
-          threadId: ctx.thread.id,
+        c.logger.info('Archived old messages', {
+          threadId: c.thread.id,
           archivedCount: toArchive.length
         });
       }
 
       // Keep only recent messages in state
       const recentMessages = messages.slice(-maxMessages);
-      ctx.thread.state.set('messages', recentMessages);
+      c.thread.state.set('messages', recentMessages);
     } else {
-      ctx.thread.state.set('messages', messages);
+      c.thread.state.set('messages', messages);
     }
 
     return {
@@ -802,14 +802,14 @@ export default agent;
 
 Thread IDs and session IDs serve different purposes in the SDK:
 
-**Thread ID (`ctx.thread.id`):**
+**Thread ID (`c.thread.id`):**
 - Represents a conversation or interaction sequence
 - Format: `thrd_<32-char-hex>`
 - Stored in cookie `atid` for client persistence
 - Same thread ID across multiple requests (up to 1 hour)
 - Use for grouping related requests into conversations
 
-**Session ID (`ctx.sessionId`):**
+**Session ID (`c.sessionId`):**
 - Represents a single request execution
 - Format: `sess_<32-char-hex>` (or similar)
 - Unique for each request
@@ -824,28 +824,28 @@ Demonstrate the relationship between thread and session IDs:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Track unique sessions per thread
-    const sessionsSeen = (ctx.thread.state.get('sessionsSeen') as Set<string>) || new Set();
-    sessionsSeen.add(ctx.sessionId);
-    ctx.thread.state.set('sessionsSeen', sessionsSeen);
+    const sessionsSeen = (c.thread.state.get('sessionsSeen') as Set<string>) || new Set();
+    sessionsSeen.add(c.sessionId);
+    c.thread.state.set('sessionsSeen', sessionsSeen);
 
     // Log both IDs for correlation
-    ctx.logger.info('Request tracking', {
-      threadId: ctx.thread.id,      // Same across conversation
-      sessionId: ctx.sessionId,      // Unique per request
+    c.logger.info('Request tracking', {
+      threadId: c.thread.id,      // Same across conversation
+      sessionId: c.sessionId,      // Unique per request
       requestNumber: sessionsSeen.size,
-      threadDuration: Date.now() - (ctx.thread.state.get('threadStartTime') as number || Date.now())
+      threadDuration: Date.now() - (c.thread.state.get('threadStartTime') as number || Date.now())
     });
 
     // Initialize thread tracking
-    if (!ctx.thread.state.has('threadStartTime')) {
-      ctx.thread.state.set('threadStartTime', Date.now());
+    if (!c.thread.state.has('threadStartTime')) {
+      c.thread.state.set('threadStartTime', Date.now());
     }
 
     return {
-      threadId: ctx.thread.id,
-      sessionId: ctx.sessionId,
+      threadId: c.thread.id,
+      sessionId: c.sessionId,
       requestsInThread: sessionsSeen.size,
       explanation: {
         threadId: 'Groups related requests into a conversation (up to 1 hour)',

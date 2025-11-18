@@ -24,8 +24,8 @@ const agent = createAgent({
     input: z.object({ task: z.string() }),
     output: z.object({ result: z.string() })
   },
-  handler: async (ctx, input) => {
-    ctx.logger.info('Processing task', { task: input.task });
+  handler: async (c, input) => {
+    c.logger.info('Processing task', { task: input.task });
 
     // Simulate processing
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -36,35 +36,35 @@ const agent = createAgent({
 
 // Track when agent starts
 agent.addEventListener('started', (eventName, agent, ctx) => {
-  ctx.state.set('startTime', Date.now());
-  ctx.logger.info('Agent started', {
+  c.state.set('startTime', Date.now());
+  c.logger.info('Agent started', {
     agentName: agent.metadata.name,
-    sessionId: ctx.sessionId
+    sessionId: c.sessionId
   });
 });
 
 // Track successful completion
 agent.addEventListener('completed', (eventName, agent, ctx) => {
-  const startTime = ctx.state.get('startTime') as number;
+  const startTime = c.state.get('startTime') as number;
   const duration = Date.now() - startTime;
 
-  ctx.logger.info('Agent completed', {
+  c.logger.info('Agent completed', {
     agentName: agent.metadata.name,
     duration,
-    sessionId: ctx.sessionId
+    sessionId: c.sessionId
   });
 });
 
 // Track errors
 agent.addEventListener('errored', (eventName, agent, ctx, error) => {
-  const startTime = ctx.state.get('startTime') as number;
+  const startTime = c.state.get('startTime') as number;
   const duration = Date.now() - startTime;
 
-  ctx.logger.error('Agent failed', {
+  c.logger.error('Agent failed', {
     agentName: agent.metadata.name,
     duration,
     error: error.message,
-    sessionId: ctx.sessionId
+    sessionId: c.sessionId
   });
 });
 
@@ -74,7 +74,7 @@ export default agent;
 **Key Points:**
 - Event listeners receive the event name, agent instance, and context
 - `errored` listeners also receive the error object
-- Use `ctx.state` to share data between event listeners
+- Use `c.state` to share data between event listeners
 - Events execute sequentially in registration order
 
 ### Agent Validation with Events
@@ -93,7 +93,7 @@ const agent = createAgent({
       confidence: z.number()
     })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Process query and return result
     return {
       answer: `Answer to: ${input.query}`,
@@ -105,11 +105,11 @@ const agent = createAgent({
 // Validate output quality in completed event
 agent.addEventListener('completed', (eventName, agent, ctx) => {
   // Access the validated output from context state
-  const output = ctx.state.get('_evalOutput') as { answer: string; confidence: number };
+  const output = c.state.get('_evalOutput') as { answer: string; confidence: number };
 
   // Check confidence threshold
   if (output.confidence < 0.7) {
-    ctx.logger.warn('Low confidence output detected', {
+    c.logger.warn('Low confidence output detected', {
       confidence: output.confidence,
       threshold: 0.7,
       agentName: agent.metadata.name
@@ -118,7 +118,7 @@ agent.addEventListener('completed', (eventName, agent, ctx) => {
 
   // Check answer length
   if (output.answer.length < 10) {
-    ctx.logger.warn('Suspiciously short answer', {
+    c.logger.warn('Suspiciously short answer', {
       answerLength: output.answer.length,
       agentName: agent.metadata.name
     });
@@ -129,7 +129,7 @@ export default agent;
 ```
 
 **Key Points:**
-- Validated input/output stored in `ctx.state` as `_evalInput` and `_evalOutput`
+- Validated input/output stored in `c.state` as `_evalInput` and `_evalOutput`
 - Event listeners should log warnings, not throw errors
 - Keep validation logic lightweight to avoid blocking
 
@@ -166,14 +166,14 @@ app.addEventListener('agent.started', (eventName, agent, ctx) => {
   app.logger.info('Agent execution started', {
     agent: agentName,
     executionCount: count + 1,
-    session: ctx.sessionId
+    session: c.sessionId
   });
 });
 
 app.addEventListener('agent.completed', (eventName, agent, ctx) => {
   app.logger.info('Agent execution completed', {
     agent: agent.metadata.name,
-    session: ctx.sessionId
+    session: c.sessionId
   });
 });
 
@@ -182,7 +182,7 @@ app.addEventListener('agent.errored', (eventName, agent, ctx, error) => {
     agent: agent.metadata.name,
     error: error.message,
     stack: error.stack,
-    session: ctx.sessionId
+    session: c.sessionId
   });
 });
 
@@ -276,11 +276,11 @@ Clean up resources when threads are destroyed:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Register cleanup handler on first access
-    if (!ctx.thread.state.has('cleanupRegistered')) {
-      ctx.thread.addEventListener('destroyed', (eventName, thread) => {
-        ctx.logger.info('Cleaning up thread resources', {
+    if (!c.thread.state.has('cleanupRegistered')) {
+      c.thread.addEventListener('destroyed', (eventName, thread) => {
+        c.logger.info('Cleaning up thread resources', {
           threadId: thread.id,
           messageCount: thread.state.get('messageCount') || 0
         });
@@ -289,12 +289,12 @@ const agent = createAgent({
         thread.state.clear();
       });
 
-      ctx.thread.state.set('cleanupRegistered', true);
+      c.thread.state.set('cleanupRegistered', true);
     }
 
     // Track messages in this thread
-    const messageCount = (ctx.thread.state.get('messageCount') as number) || 0;
-    ctx.thread.state.set('messageCount', messageCount + 1);
+    const messageCount = (c.thread.state.get('messageCount') as number) || 0;
+    c.thread.state.set('messageCount', messageCount + 1);
 
     return { processed: true };
   }
@@ -320,10 +320,10 @@ const agent = createAgent({
   schema: {
     input: z.object({ action: z.string() })
   },
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Register session completion handler once
-    if (!ctx.session.state.has('persistenceRegistered')) {
-      ctx.session.addEventListener('completed', async (eventName, session) => {
+    if (!c.session.state.has('persistenceRegistered')) {
+      c.session.addEventListener('completed', async (eventName, session) => {
         // Save session metrics to KV storage
         const metrics = {
           totalRequests: session.state.get('totalRequests') || 0,
@@ -331,24 +331,24 @@ const agent = createAgent({
           duration: Date.now() - (session.state.get('startTime') as number || Date.now())
         };
 
-        await ctx.kv.set('session-metrics', session.id, metrics, {
+        await c.kv.set('session-metrics', session.id, metrics, {
           ttl: 86400 // 24 hours
         });
 
-        ctx.logger.info('Session metrics saved', {
+        c.logger.info('Session metrics saved', {
           sessionId: session.id,
           metrics
         });
       });
 
-      ctx.session.state.set('persistenceRegistered', true);
-      ctx.session.state.set('startTime', Date.now());
+      c.session.state.set('persistenceRegistered', true);
+      c.session.state.set('startTime', Date.now());
     }
 
     // Track session activity
-    const totalRequests = (ctx.session.state.get('totalRequests') as number) || 0;
-    ctx.session.state.set('totalRequests', totalRequests + 1);
-    ctx.session.state.set('lastAction', input.action);
+    const totalRequests = (c.session.state.get('totalRequests') as number) || 0;
+    c.session.state.set('totalRequests', totalRequests + 1);
+    c.session.state.set('lastAction', input.action);
 
     return { success: true };
   }
@@ -372,7 +372,7 @@ Track agent execution time and identify slow operations:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     // Process request
     await new Promise(resolve => setTimeout(resolve, 1200));
     return { result: 'completed' };
@@ -380,24 +380,24 @@ const agent = createAgent({
 });
 
 agent.addEventListener('started', (eventName, agent, ctx) => {
-  ctx.state.set('performanceStart', performance.now());
+  c.state.set('performanceStart', performance.now());
 });
 
 agent.addEventListener('completed', (eventName, agent, ctx) => {
-  const startTime = ctx.state.get('performanceStart') as number;
+  const startTime = c.state.get('performanceStart') as number;
   const duration = performance.now() - startTime;
 
   // Log slow executions
   if (duration > 1000) {
-    ctx.logger.warn('Slow agent execution detected', {
+    c.logger.warn('Slow agent execution detected', {
       agentName: agent.metadata.name,
       duration,
       threshold: 1000,
-      sessionId: ctx.sessionId
+      sessionId: c.sessionId
     });
   }
 
-  ctx.logger.info('Agent execution time', {
+  c.logger.info('Agent execution time', {
     agentName: agent.metadata.name,
     duration
   });
@@ -429,7 +429,7 @@ app.addEventListener('agent.errored', async (eventName, agent, ctx, error) => {
     errorType,
     errorMessage: error.message,
     errorCount: count + 1,
-    sessionId: ctx.sessionId,
+    sessionId: c.sessionId,
     stack: error.stack
   });
 
@@ -439,11 +439,11 @@ app.addEventListener('agent.errored', async (eventName, agent, ctx, error) => {
     agentName: agent.metadata.name,
     errorType,
     message: error.message,
-    sessionId: ctx.sessionId
+    sessionId: c.sessionId
   };
 
   const errorKey = `error-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  await ctx.kv.set('error-logs', errorKey, errorLog, {
+  await c.kv.set('error-logs', errorKey, errorLog, {
     ttl: 604800 // 7 days
   });
 });
@@ -467,7 +467,7 @@ app.addEventListener('agent.completed', async (eventName, agent, ctx) => {
   const metricsKey = `agent-metrics-${today}-${agentName}`;
 
   // Get current count
-  const result = await ctx.kv.get('analytics', metricsKey);
+  const result = await c.kv.get('analytics', metricsKey);
   let count = 0;
 
   if (result.exists) {
@@ -476,7 +476,7 @@ app.addEventListener('agent.completed', async (eventName, agent, ctx) => {
   }
 
   // Increment and store
-  await ctx.kv.set('analytics', metricsKey, {
+  await c.kv.set('analytics', metricsKey, {
     count: count + 1,
     agentName,
     date: today
@@ -518,17 +518,17 @@ app.addEventListener('agent.started', async (eventName, agent, ctx) => {
     event: 'agent.started',
     agentName: agent.metadata.name,
     agentId: agent.metadata.id,
-    sessionId: ctx.sessionId,
+    sessionId: c.sessionId,
     agentVersion: agent.metadata.version
   };
 
   // Store in object storage for long-term retention
-  const logKey = `${auditLog.timestamp}-${ctx.sessionId}-${agent.metadata.name}.json`;
+  const logKey = `${auditLog.timestamp}-${c.sessionId}-${agent.metadata.name}.json`;
 
-  await ctx.objectstore.put('audit-logs', logKey, auditLog, {
+  await c.objectstore.put('audit-logs', logKey, auditLog, {
     contentType: 'application/json',
     metadata: {
-      sessionId: ctx.sessionId,
+      sessionId: c.sessionId,
       agentName: agent.metadata.name,
       timestamp: auditLog.timestamp
     }
@@ -540,13 +540,13 @@ app.addEventListener('agent.completed', async (eventName, agent, ctx) => {
     timestamp: new Date().toISOString(),
     event: 'agent.completed',
     agentName: agent.metadata.name,
-    sessionId: ctx.sessionId
+    sessionId: c.sessionId
     // Note: Do not log full input/output for privacy
   };
 
-  const logKey = `${auditLog.timestamp}-${ctx.sessionId}-${agent.metadata.name}-completed.json`;
+  const logKey = `${auditLog.timestamp}-${c.sessionId}-${agent.metadata.name}-completed.json`;
 
-  await ctx.objectstore.put('audit-logs', logKey, auditLog, {
+  await c.objectstore.put('audit-logs', logKey, auditLog, {
     contentType: 'application/json'
   });
 });
@@ -568,7 +568,7 @@ See the [API Reference](/api-reference#key-value-storage) for complete documenta
 **Event Handler Guidelines**
 
 - **Keep handlers lightweight** - Event listeners should complete quickly to avoid blocking execution
-- **Use `ctx.waitUntil()`** - For non-blocking background work, use `ctx.waitUntil()` to defer processing until after the response is sent
+- **Use `c.waitUntil()`** - For non-blocking background work, use `c.waitUntil()` to defer processing until after the response is sent
 - **Don't modify request flow** - Event handlers should not throw errors to stop execution or modify the response
 - **Sequential execution** - Event listeners execute in registration order, one at a time
 - **Error handling** - Errors in event handlers are logged but don't stop execution or affect other listeners
@@ -578,31 +578,31 @@ See the [API Reference](/api-reference#key-value-storage) for complete documenta
 
 ### Using waitUntil in Events
 
-Use `ctx.waitUntil()` to perform heavy work without blocking the response:
+Use `c.waitUntil()` to perform heavy work without blocking the response:
 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     return { result: 'processed' };
   }
 });
 
 agent.addEventListener('completed', (eventName, agent, ctx) => {
   // Use waitUntil for non-blocking background work
-  ctx.waitUntil(async () => {
+  c.waitUntil(async () => {
     // Simulate sending metrics to external service
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    ctx.logger.info('Metrics sent to external service', {
+    c.logger.info('Metrics sent to external service', {
       agentName: agent.metadata.name,
-      sessionId: ctx.sessionId
+      sessionId: c.sessionId
     });
   });
 
   // This logs immediately
-  ctx.logger.info('Agent completed (handler finished)', {
+  c.logger.info('Agent completed (handler finished)', {
     agentName: agent.metadata.name
   });
 });
@@ -651,7 +651,7 @@ export default app.server;
 
 // In agent.ts
 const agent = createAgent({
-  handler: async (ctx, input) => {
+  handler: async (c, input) => {
     console.log(`[${Date.now()}] Agent: handler executing`);
     await new Promise(resolve => setTimeout(resolve, 100));
     return { result: 'done' };
