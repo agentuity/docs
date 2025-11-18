@@ -1,0 +1,918 @@
+---
+title: Evaluations
+description: Automatically test and validate agent outputs for quality, accuracy, and compliance
+---
+
+The Agentuity SDK includes a built-in evaluation framework for automatically testing agent outputs. Evaluations run after each agent execution to validate quality, check compliance, monitor performance, and ensure outputs meet your requirements.
+
+Evals execute asynchronously without blocking agent responses, making them ideal for quality assurance in production environments.
+
+## What are Evaluations?
+
+Evaluations (evals) are automated tests that run after your agent completes. They receive the agent's input and output, then return a pass/fail result or quality score.
+
+**Key characteristics:**
+
+- **Automatic execution**: Evals run automatically after agent completion
+- **Non-blocking**: Execute asynchronously using `waitUntil()`, so they don't delay responses
+- **Type-safe**: Handler signatures automatically match your agent's schemas
+- **Full context**: Access to logging, storage, tracing, and all agent services
+- **Independent**: Multiple evals can run on a single agent; errors in one don't affect others
+
+**Use cases:**
+- Quality checking (accuracy, relevance, completeness)
+- Compliance validation (PII detection, content policy)
+- Performance monitoring (response time, token usage)
+- A/B testing and regression testing
+
+## Creating Evaluations
+
+Evaluations are created using the `createEval()` method on an agent instance.
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent({
+  schema: {
+    input: z.object({ question: z.string() }),
+    output: z.object({ answer: z.string(), confidence: z.number() }),
+  },
+  handler: async (ctx, input) => {
+    const answer = await generateAnswer(input.question);
+    return { answer, confidence: 0.95 };
+  },
+});
+
+// Add an evaluation
+agent.createEval({
+  metadata: {
+    name: 'confidence-check',
+    description: 'Ensures confidence score meets minimum threshold'
+  },
+  handler: async (ctx, input, output) => {
+    const passed = output.confidence >= 0.8;
+
+    return {
+      success: true,
+      passed,
+      metadata: {
+        confidence: output.confidence,
+        threshold: 0.8,
+        reason: passed ? 'Confidence acceptable' : 'Confidence too low'
+      }
+    };
+  },
+});
+```
+
+**Configuration:**
+
+```typescript
+agent.createEval({
+  metadata: {
+    name: string;              // Required: eval name
+    description?: string;      // Optional: what this eval checks
+  },
+  handler: EvalFunction;       // Required: eval logic
+});
+```
+
+<Callout type="info">
+**Automatic Metadata**: The SDK automatically generates internal metadata (id, version, identifier, filename) for tracking and versioning.
+</Callout>
+
+## Eval Handler Signatures
+
+The eval handler signature automatically adapts based on your agent's schema configuration:
+
+| Agent Schema | Handler Signature | Use Case |
+|--------------|------------------|----------|
+| Input + Output | `(ctx, input, output) => EvalRunResult` | Most common - validate both input and output |
+| Input only | `(ctx, input) => EvalRunResult` | Validate input format/content |
+| Output only | `(ctx, output) => EvalRunResult` | Validate output quality |
+| No schema | `(ctx) => EvalRunResult` | Check execution state/metrics |
+
+**Example: Input and Output Schemas**
+
+```typescript
+const agent = createAgent({
+  schema: {
+    input: z.object({ query: z.string() }),
+    output: z.object({ result: z.string() }),
+  },
+  handler: async (ctx, input) => {
+    return { result: `Processed: ${input.query}` };
+  },
+});
+
+agent.createEval({
+  metadata: { name: 'query-in-result' },
+  handler: async (ctx, input, output) => {
+    // Handler receives both input and output
+    const queryInResult = output.result.includes(input.query);
+
+    return {
+      success: true,
+      passed: queryInResult,
+      metadata: {
+        reason: queryInResult ? 'Query found in result' : 'Query missing from result'
+      }
+    };
+  },
+});
+```
+
+**Example: Input Schema Only**
+
+```typescript
+const agent = createAgent({
+  schema: {
+    input: z.object({ message: z.string() }),
+  },
+  handler: async (ctx, input) => {
+    return `Received: ${input.message}`;
+  },
+});
+
+agent.createEval({
+  metadata: { name: 'input-validation' },
+  handler: async (ctx, input) => {
+    // Handler receives only input
+    const isValid = input.message.length > 0 && input.message.length <= 500;
+
+    return {
+      success: true,
+      passed: isValid,
+      metadata: { length: input.message.length, maxLength: 500 }
+    };
+  },
+});
+```
+
+<Callout type="info">
+**Type Safety**: TypeScript automatically infers the correct handler signature based on your agent's schemas. Attempting to access unavailable parameters results in compile-time errors.
+</Callout>
+
+## Eval Results
+
+Evals can return three types of results:
+
+### Binary Pass/Fail
+
+```typescript
+{
+  success: true,
+  passed: boolean,
+  metadata?: Record<string, unknown>
+}
+```
+
+Use for clear yes/no validation (compliance checks, format verification).
+
+```typescript
+agent.createEval({
+  metadata: { name: 'length-check' },
+  handler: async (ctx, input, output) => {
+    const passed = output.answer.length >= 50;
+    return {
+      success: true,
+      passed,
+      metadata: {
+        actualLength: output.answer.length,
+        minimumLength: 50
+      }
+    };
+  },
+});
+```
+
+### Score-Based
+
+```typescript
+{
+  success: true,
+  score: number,  // 0-1 range
+  metadata?: Record<string, unknown>
+}
+```
+
+Use for quality measurement and A/B testing.
+
+```typescript
+agent.createEval({
+  metadata: { name: 'quality-score' },
+  handler: async (ctx, input, output) => {
+    let score = 0;
+    if (output.answer.length >= 100) score += 0.4;
+    if (output.answer.includes(input.question)) score += 0.3;
+    if (output.answer.includes('conclusion')) score += 0.3;
+
+    return { success: true, score, metadata: { breakdown: 'length+relevance+completeness' } };
+  },
+});
+```
+
+<Callout type="info">
+**Score Range**: Scores should be between 0 and 1, where 0 is worst and 1 is best.
+</Callout>
+
+### Error Results
+
+```typescript
+{
+  success: false,
+  error: string
+}
+```
+
+Use when the eval itself fails to execute.
+
+```typescript
+agent.createEval({
+  metadata: { name: 'external-validation' },
+  handler: async (ctx, input, output) => {
+    try {
+      const response = await fetch('https://api.example.com/validate', {
+        method: 'POST',
+        body: JSON.stringify({ text: output.answer })
+      });
+
+      if (!response.ok) {
+        return { success: false, error: `Service returned ${response.status}` };
+      }
+
+      const result = await response.json();
+      return { success: true, passed: result.valid };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  },
+});
+```
+
+## Accessing Context
+
+Eval handlers receive the same context (`EvalContext`) as agent handlers:
+
+**Available Properties:**
+- **Identifiers**: `ctx.sessionId`, `ctx.agentName`
+- **Storage**: `ctx.kv`, `ctx.vector`, `ctx.objectstore`, `ctx.stream`
+- **Observability**: `ctx.logger`, `ctx.tracer`
+- **State**: `ctx.session`, `ctx.thread`, `ctx.state`
+- **Agents**: `ctx.agent`, `ctx.current`, `ctx.parent`
+- **Utilities**: `ctx.waitUntil()`
+
+**Example Using Multiple Context Features:**
+
+```typescript
+agent.createEval({
+  metadata: { name: 'comprehensive-tracker' },
+  handler: async (ctx, input, output) => {
+    const startTime = ctx.state.get('startTime') as number;
+    const duration = Date.now() - startTime;
+
+    // Store metrics
+    await ctx.kv.set('performance', ctx.sessionId, {
+      duration,
+      timestamp: Date.now(),
+      agentName: ctx.agentName
+    });
+
+    // Log with tracer
+    ctx.tracer.startActiveSpan('eval-tracking', (span) => {
+      span.setAttribute('duration_ms', duration);
+      span.end();
+    });
+
+    // Log result
+    ctx.logger.info('Performance tracked', { sessionId: ctx.sessionId, duration });
+
+    return {
+      success: true,
+      passed: duration < 5000,
+      metadata: { durationMs: duration }
+    };
+  },
+});
+```
+
+## Multiple Evaluations
+
+Agents can have multiple evaluations that all run independently after each execution.
+
+```typescript
+const agent = createAgent({
+  schema: {
+    input: z.object({ text: z.string() }),
+    output: z.object({
+      summary: z.string(),
+      keywords: z.array(z.string())
+    }),
+  },
+  handler: async (ctx, input) => {
+    return {
+      summary: generateSummary(input.text),
+      keywords: extractKeywords(input.text)
+    };
+  },
+});
+
+// Eval 1: Summary length
+agent.createEval({
+  metadata: { name: 'summary-length' },
+  handler: async (ctx, input, output) => {
+    const passed = output.summary.length >= 20 && output.summary.length <= 200;
+    return {
+      success: true,
+      passed,
+      metadata: { length: output.summary.length, min: 20, max: 200 }
+    };
+  },
+});
+
+// Eval 2: Quality score
+agent.createEval({
+  metadata: { name: 'overall-quality' },
+  handler: async (ctx, input, output) => {
+    let score = 0;
+    if (output.summary.length >= 50) score += 0.5;
+    if (output.keywords.length >= 3) score += 0.5;
+
+    return { success: true, score };
+  },
+});
+```
+
+**File Organization:**
+
+For agents with multiple evals, use a separate `eval.ts` file:
+
+```
+agents/
+  my-agent/
+    agent.ts       # Agent definition
+    eval.ts        # All evals for this agent
+    route.ts       # Route definitions
+```
+
+<Callout type="info">
+**Independent Execution**: Errors in one eval don't prevent others from running. The SDK catches and logs all eval errors.
+</Callout>
+
+## Common Patterns
+
+### Task Completion Assessment
+
+Determine if the agent actually fulfilled the user's objective, not just whether it ran without errors. Uses LLM-as-judge to evaluate end-to-end success:
+
+```typescript
+import { generateObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+const customerServiceAgent = createAgent({
+  schema: {
+    input: z.object({
+      customerQuery: z.string(),
+      context: z.object({
+        orderId: z.string().optional(),
+        customerId: z.string()
+      })
+    }),
+    output: z.object({
+      response: z.string(),
+      actionsTaken: z.array(z.string())
+    })
+  },
+  handler: async (ctx, input) => {
+    // Agent processes customer request
+    return {
+      response: "Your order has been cancelled and refund processed.",
+      actionsTaken: ["cancelled_order", "issued_refund"]
+    };
+  }
+});
+
+customerServiceAgent.createEval({
+  metadata: {
+    name: 'task-completion-check',
+    description: 'Evaluates if agent successfully completed customer request'
+  },
+  handler: async (ctx, input, output) => {
+    const { object } = await generateObject({
+      model: openai('gpt-5-nano'),
+      schema: z.object({
+        completed: z.boolean(),
+        reasoning: z.string(),
+        missingSteps: z.array(z.string())
+      }),
+      prompt: `Evaluate if the agent successfully completed the customer's request.
+
+Customer Query: ${input.customerQuery}
+Agent Response: ${output.response}
+Actions Taken: ${output.actionsTaken.join(', ')}
+
+Did the agent fully address the customer's needs? Consider:
+- Was the request understood correctly?
+- Were appropriate actions taken?
+- Was the response clear and helpful?
+- Are there missing steps or incomplete resolution?`
+    });
+
+    return {
+      success: true,
+      passed: object.completed,
+      metadata: {
+        reasoning: object.reasoning,
+        missingSteps: object.missingSteps
+      }
+    };
+  }
+});
+```
+
+### Hallucination Detection (Reference-Based)
+
+Verify that agent output is grounded in retrieved context, detecting unsupported claims. This pattern stores retrieved documents in `ctx.state` during handler execution for eval access:
+
+```typescript
+import { generateObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+const ragAgent = createAgent({
+  schema: {
+    input: z.object({ question: z.string() }),
+    output: z.object({
+      answer: z.string(),
+      sources: z.array(z.string())
+    })
+  },
+  handler: async (ctx, input) => {
+    // Retrieve relevant documents
+    const results = await ctx.vector.search('knowledge-base', {
+      query: input.question,
+      limit: 3
+    });
+
+    // Store retrieved context for eval access
+    ctx.state.set('retrievedDocs', results.map(r => r.metadata?.text || ''));
+
+    // Generate answer using LLM + context
+    const answer = await generateAnswer(input.question, results);
+
+    return {
+      answer,
+      sources: results.map(r => r.id)
+    };
+  }
+});
+
+ragAgent.createEval({
+  metadata: {
+    name: 'hallucination-check',
+    description: 'Detects claims not supported by retrieved sources'
+  },
+  handler: async (ctx, input, output) => {
+    // Access retrieved documents from handler execution
+    const retrievedDocs = ctx.state.get('retrievedDocs') as string[];
+
+    const { object } = await generateObject({
+      model: openai('gpt-5-nano'),
+      schema: z.object({
+        isGrounded: z.boolean(),
+        unsupportedClaims: z.array(z.string()),
+        score: z.number().min(0).max(1)
+      }),
+      prompt: `Check if this answer is fully supported by the source documents.
+
+Question: ${input.question}
+Answer: ${output.answer}
+
+Source Documents:
+${retrievedDocs.join('\n\n')}
+
+Identify any claims in the answer that are NOT supported by the sources.`
+    });
+
+    return {
+      success: true,
+      score: object.score,
+      metadata: {
+        isGrounded: object.isGrounded,
+        unsupportedClaims: object.unsupportedClaims
+      }
+    };
+  }
+});
+```
+
+<Callout type="info">
+**State Persistence**: Data stored in `ctx.state` during agent execution persists through to eval handlers, enabling patterns like passing retrieved documents to hallucination checks.
+</Callout>
+
+### Compliance Validation
+
+Check for policy violations or sensitive content:
+
+```typescript
+agent.createEval({
+  metadata: { name: 'content-safety' },
+  handler: async (ctx, input, output) => {
+    const profanityList = ['badword1', 'badword2'];
+    const piiPatterns = {
+      email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/,
+      phone: /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/,
+      ssn: /\b\d{3}-\d{2}-\d{4}\b/
+    };
+
+    const violations = [];
+    const lowerOutput = output.answer.toLowerCase();
+
+    // Check profanity
+    for (const word of profanityList) {
+      if (lowerOutput.includes(word)) {
+        violations.push(`Profanity: ${word}`);
+      }
+    }
+
+    // Check PII
+    for (const [type, pattern] of Object.entries(piiPatterns)) {
+      if (pattern.test(output.answer)) {
+        violations.push(`PII: ${type}`);
+      }
+    }
+
+    return {
+      success: true,
+      passed: violations.length === 0,
+      metadata: { violations, violationCount: violations.length }
+    };
+  },
+});
+```
+
+### RAG Quality Metrics
+
+For retrieval-augmented generation systems, evaluate three distinct quality dimensions with focused, independent evals:
+
+```typescript
+import { generateObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+const ragAgent = createAgent({
+  schema: {
+    input: z.object({ query: z.string() }),
+    output: z.object({
+      answer: z.string(),
+      confidence: z.number()
+    })
+  },
+  handler: async (ctx, input) => {
+    const results = await ctx.vector.search('docs', {
+      query: input.query,
+      limit: 5,
+      similarity: 0.7
+    });
+
+    // Store for eval access
+    ctx.state.set('retrievedResults', results);
+
+    const answer = await generateAnswer(input.query, results);
+
+    return { answer, confidence: 0.85 };
+  }
+});
+
+// Eval 1: Contextual Relevancy - were the right docs retrieved?
+ragAgent.createEval({
+  metadata: {
+    name: 'contextual-relevancy',
+    description: 'Evaluates if retrieved documents are relevant to query'
+  },
+  handler: async (ctx, input, output) => {
+    const results = ctx.state.get('retrievedResults') as VectorSearchResult[];
+
+    const { object } = await generateObject({
+      model: openai('gpt-5-nano'),
+      schema: z.object({
+        score: z.number().min(0).max(1),
+        irrelevantDocs: z.array(z.number())
+      }),
+      prompt: `Rate how relevant these retrieved documents are to the query.
+
+Query: ${input.query}
+
+Documents:
+${results.map((r, i) => `${i + 1}. ${r.metadata?.text}`).join('\n')}
+
+Score 0-1 for overall relevance. List indices of irrelevant docs.`
+    });
+
+    return {
+      success: true,
+      score: object.score,
+      metadata: { irrelevantDocs: object.irrelevantDocs }
+    };
+  }
+});
+
+// Eval 2: Answer Relevancy - does the answer address the question?
+ragAgent.createEval({
+  metadata: {
+    name: 'answer-relevancy',
+    description: 'Evaluates if answer addresses the question'
+  },
+  handler: async (ctx, input, output) => {
+    const { object } = await generateObject({
+      model: openai('gpt-5-nano'),
+      schema: z.object({
+        score: z.number().min(0).max(1),
+        reasoning: z.string()
+      }),
+      prompt: `Rate how well this answer addresses the question.
+
+Question: ${input.query}
+Answer: ${output.answer}
+
+Score 0-1 for relevancy. Explain your reasoning.`
+    });
+
+    return {
+      success: true,
+      score: object.score,
+      metadata: { reasoning: object.reasoning }
+    };
+  }
+});
+
+// Eval 3: Faithfulness - is answer faithful to sources?
+ragAgent.createEval({
+  metadata: {
+    name: 'faithfulness',
+    description: 'Checks if answer contains information not in sources'
+  },
+  handler: async (ctx, input, output) => {
+    const results = ctx.state.get('retrievedResults') as VectorSearchResult[];
+    const sources = results.map(r => r.metadata?.text).join('\n\n');
+
+    const { object } = await generateObject({
+      model: openai('gpt-5-nano'),
+      schema: z.object({
+        score: z.number().min(0).max(1),
+        hallucinations: z.array(z.string())
+      }),
+      prompt: `Check if the answer contains information not in the sources.
+
+Sources:
+${sources}
+
+Answer: ${output.answer}
+
+Score 0-1 for faithfulness. List any hallucinated claims.`
+    });
+
+    return {
+      success: true,
+      score: object.score,
+      metadata: { hallucinations: object.hallucinations }
+    };
+  }
+});
+```
+
+**Key Pattern**: Three separate evals, each focused on one quality dimension. This makes it easy to identify specific issues (retrieval vs. generation vs. grounding) and allows independent scoring.
+
+## Error Handling
+
+Evals should handle errors gracefully to avoid breaking the eval pipeline.
+
+**Recommended Pattern:**
+
+```typescript
+agent.createEval({
+  metadata: { name: 'safe-external-check' },
+  handler: async (ctx, input, output) => {
+    try {
+      const response = await fetch('https://api.example.com/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: output.answer }),
+        signal: AbortSignal.timeout(3000)
+      });
+
+      if (!response.ok) {
+        return { success: false, error: `Service error: ${response.status}` };
+      }
+
+      const result = await response.json();
+      return { success: true, passed: result.isValid };
+    } catch (error) {
+      ctx.logger.error('External validation failed', { error: error.message });
+      return { success: false, error: error.message };
+    }
+  },
+});
+```
+
+**Fallback Pattern:**
+
+```typescript
+agent.createEval({
+  metadata: { name: 'resilient-eval' },
+  handler: async (ctx, input, output) => {
+    // Try primary method
+    try {
+      const result = await validateWithLLM(output.answer);
+      return { success: true, score: result.score, metadata: { method: 'llm' } };
+    } catch (error) {
+      ctx.logger.warn('LLM validation failed, using fallback');
+    }
+
+    // Fallback to rule-based
+    try {
+      const score = calculateRuleBasedScore(output.answer);
+      return { success: true, score, metadata: { method: 'rules-fallback' } };
+    } catch (error) {
+      return { success: false, error: 'All validation methods failed' };
+    }
+  },
+});
+```
+
+## How Evals Execute
+
+**Execution Timeline:**
+
+```
+1. HTTP request arrives
+   ↓
+2. Agent handler executes
+   ↓
+3. Output validated against schema
+   ↓
+4. Agent fires 'completed' event
+   ↓
+5. Evals scheduled via waitUntil()
+   │
+   ├→ 6. Response returned immediately
+   │
+   └→ 7. Evals execute asynchronously
+      ↓
+      8. Results sent to tracking service
+```
+
+**Key Points:**
+- Evals run after the response is sent to the caller
+- Uses `ctx.waitUntil()` to avoid blocking
+- Each eval receives validated input/output
+- Results are logged and tracked automatically
+
+<Callout type="info">
+**Non-Blocking Design**: Evals execute asynchronously after the response is sent. Users get immediate responses while quality checks run in the background.
+</Callout>
+
+## Best Practices
+
+### When to Use Evals
+
+- **Quality assurance**: Validate completeness, relevance, format
+- **Compliance**: Detect PII, check content policies
+- **Performance**: Track execution time, resource usage
+- **Testing**: A/B testing, regression testing
+
+### Eval Design
+
+**Keep evals focused on a single concern:**
+
+```typescript
+// Good: Single-purpose
+agent.createEval({
+  metadata: { name: 'length-check' },
+  handler: async (ctx, input, output) => {
+    return { success: true, passed: output.answer.length >= 50 };
+  },
+});
+
+// Avoid: Multiple concerns in one eval
+agent.createEval({
+  metadata: { name: 'everything-check' },
+  handler: async (ctx, input, output) => {
+    const lengthOk = output.answer.length >= 50;
+    const hasKeywords = checkKeywords(output);
+    const sentiment = analyzeSentiment(output);
+    // Too many checks in one eval
+  },
+});
+```
+
+**Use descriptive metadata:**
+
+```typescript
+// Good
+metadata: {
+  name: 'minimum-length-validation',
+  description: 'Ensures response meets 50 character minimum for quality'
+}
+
+// Avoid
+metadata: { name: 'check1' }
+```
+
+**Include helpful metadata in results:**
+
+```typescript
+// Good: Detailed metadata
+return {
+  success: true,
+  passed: false,
+  metadata: {
+    actualLength: output.answer.length,
+    minimumLength: 50,
+    deficit: 50 - output.answer.length,
+    reason: 'Response too short by 15 characters'
+  }
+};
+
+// Avoid: No context
+return { success: true, passed: false };
+```
+
+### Performance Considerations
+
+**Evals don't block responses:**
+- Heavy computations are acceptable
+- Network calls won't delay users
+- Complex LLM evaluations can run without impact
+
+**Consider LLM costs:**
+- LLM-as-judge evals consume API tokens
+- Set appropriate budgets for high-traffic agents
+- Consider caching common evaluations
+- Use smaller models for simple checks
+
+### Performance Monitoring Pattern
+
+Track execution time and resource usage:
+
+```typescript
+agent.createEval({
+  metadata: { name: 'performance-monitor' },
+  handler: async (ctx, input, output) => {
+    const startTime = ctx.state.get('startTime') as number;
+    const duration = startTime ? Date.now() - startTime : 0;
+
+    // Store metrics
+    await ctx.kv.set('metrics', `perf-${ctx.sessionId}`, {
+      duration,
+      timestamp: Date.now(),
+      inputSize: JSON.stringify(input).length,
+      outputSize: JSON.stringify(output).length
+    });
+
+    return {
+      success: true,
+      passed: duration < 5000,
+      metadata: { durationMs: duration, threshold: 5000 }
+    };
+  },
+});
+```
+
+### A/B Testing Pattern
+
+Compare different approaches:
+
+```typescript
+agent.createEval({
+  metadata: { name: 'ab-test-tracker' },
+  handler: async (ctx, input, output) => {
+    const variant = ctx.state.get('variant') as 'A' | 'B';
+    if (!variant) {
+      return { success: false, error: 'No variant specified' };
+    }
+
+    let score = 0;
+    if (output.answer.length >= 100) score += 0.5;
+    if (output.confidence >= 0.8) score += 0.5;
+
+    // Store for analysis
+    await ctx.kv.set('ab-test', `${variant}-${ctx.sessionId}`, {
+      variant,
+      score,
+      timestamp: Date.now()
+    });
+
+    return { success: true, score, metadata: { variant, testGroup: variant } };
+  },
+});
+```
+
+## Additional Resources
+
+- [API Reference](/SDKs/javascript/api-reference#evaluations) - Detailed type signatures and interfaces
+- [Events Guide](/SDKs/javascript/events) - Monitor eval execution with event listeners
+- [Schema Validation](/SDKs/javascript/schema-validation) - Learn more about input/output validation
+- [Core Concepts](/SDKs/javascript/core-concepts) - Understanding agent architecture

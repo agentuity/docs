@@ -1,0 +1,626 @@
+---
+title: Error Handling
+description: Learn how to handle errors effectively in the Agentuity JavaScript SDK
+---
+
+# Error Handling
+
+This guide covers error handling strategies and patterns in the Agentuity JavaScript SDK. Understanding how to handle errors ensures your agents are reliable and provide clear feedback when issues occur.
+
+## Error Handling Overview
+
+Error handling in the SDK works differently depending on where the error occurs:
+
+- **In agents**: Throw errors directly - the SDK catches and handles them
+- **In routes**: Wrap agent calls in try-catch blocks to return HTTP responses
+
+The SDK automatically validates input and output against schemas, preventing invalid data from reaching your handler.
+
+## Agent-Level Error Handling
+
+Agent handlers should throw errors when something goes wrong. The SDK's error handling system catches these errors and converts them to appropriate responses.
+
+### Basic Error Throwing
+
+Throw errors directly in your handler when validation or business logic fails:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent({
+  schema: {
+    input: z.object({
+      operation: z.enum(['create', 'update', 'delete']),
+      data: z.any()
+    })
+  },
+  handler: async (ctx, input) => {
+    // Throw errors when business logic fails
+    if (input.operation === 'create' && !input.data) {
+      throw new Error('Data is required for create operation');
+    }
+
+    // Throw errors for authorization failures
+    const user = await getUserById(ctx.sessionId);
+    if (!user.canPerform(input.operation)) {
+      throw new Error('Unauthorized to perform this operation');
+    }
+
+    return { success: true };
+  }
+});
+```
+
+The SDK catches the error and returns an appropriate error response. No manual error handling is needed in the agent.
+
+### Error Propagation Between Agents
+
+When agents call other agents, errors propagate automatically:
+
+```typescript
+const coordinatorAgent = createAgent({
+  handler: async (ctx, input) => {
+    // If validatorAgent throws an error, it propagates here
+    const validation = await ctx.agent.validatorAgent.run(input);
+
+    // If enrichmentAgent throws an error, it propagates here
+    const enriched = await ctx.agent.enrichmentAgent.run(validation);
+
+    return enriched;
+  }
+});
+```
+
+This allows critical operations to *fail fast*. If validation fails, downstream operations don't execute.
+
+### Graceful Degradation
+
+For optional operations, use try-catch to handle errors gracefully:
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    let enrichedData = input.data;
+
+    // Try optional enrichment, but continue if it fails
+    try {
+      enrichedData = await ctx.agent.enrichmentAgent.run(input);
+    } catch (error) {
+      ctx.logger.warn('Enrichment failed, using original data', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      // Continue with original data
+    }
+
+    // Process with enriched data (or fallback to original)
+    return processData(enrichedData);
+  }
+});
+```
+
+This pattern is useful for:
+- Optional external API calls
+- Caching operations (fall back to stored data)
+- Non-critical enrichment services
+- Analytics or logging operations
+
+### Custom Error Classes
+
+For structured error handling, define custom error classes:
+
+```typescript
+class ResourceNotFoundError extends Error {
+  constructor(resourceType: string, resourceId: string) {
+    super(`${resourceType} not found: ${resourceId}`);
+    this.name = 'ResourceNotFoundError';
+  }
+}
+
+class AuthorizationError extends Error {
+  constructor(action: string) {
+    super(`Not authorized to perform: ${action}`);
+    this.name = 'AuthorizationError';
+  }
+}
+
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    const user = await getUser(input.userId);
+
+    if (!user) {
+      throw new ResourceNotFoundError('User', input.userId);
+    }
+
+    if (!user.hasPermission('admin')) {
+      throw new AuthorizationError('admin access');
+    }
+
+    return { success: true };
+  }
+});
+```
+
+Custom error classes make it easier to handle specific error types in routes or parent agents.
+
+## Route-Level Error Handling
+
+Routes wrap agent calls in try-catch blocks to return HTTP responses with appropriate status codes.
+
+### Basic Pattern
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.post('/process', async (c) => {
+  try {
+    const input = await c.req.json();
+    const result = await c.agent.processingAgent.run(input);
+
+    return c.json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    return c.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
+      500
+    );
+  }
+});
+
+export default router;
+```
+
+### HTTP Status Codes
+
+Use appropriate status codes to indicate the type of error:
+
+```typescript
+router.post('/users/:id', async (c) => {
+  try {
+    const userId = c.req.param('id');
+    const input = await c.req.json();
+
+    const result = await c.agent.userAgent.run({
+      userId,
+      ...input
+    });
+
+    return c.json({ success: true, data: result });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+
+    // Return appropriate status codes based on error
+    if (message.includes('not found')) {
+      return c.json({ error: message }, 404);
+    }
+
+    if (message.includes('Unauthorized') || message.includes('permission')) {
+      return c.json({ error: message }, 403);
+    }
+
+    if (message.includes('validation') || message.includes('invalid')) {
+      return c.json({ error: message }, 400);
+    }
+
+    // Default to 500 for unexpected errors
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+```
+
+### Handling Custom Error Classes
+
+When using custom error classes, check the error type in routes:
+
+```typescript
+import { ResourceNotFoundError, AuthorizationError } from './errors';
+
+router.post('/action', async (c) => {
+  try {
+    const result = await c.agent.actionAgent.run(await c.req.json());
+    return c.json({ success: true, data: result });
+  } catch (error) {
+    if (error instanceof ResourceNotFoundError) {
+      return c.json({ error: error.message }, 404);
+    }
+
+    if (error instanceof AuthorizationError) {
+      return c.json({ error: error.message }, 403);
+    }
+
+    // Handle unexpected errors
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return c.json({ error: message }, 500);
+  }
+});
+```
+
+## Schema Validation
+
+The SDK automatically validates input and output against schemas before and after handler execution.
+
+### Input Validation
+
+Invalid input results in an error response before the handler executes:
+
+```typescript
+const agent = createAgent({
+  schema: {
+    input: z.object({
+      email: z.string().email(),
+      age: z.number().min(18),
+      role: z.enum(['user', 'admin'])
+    })
+  },
+  handler: async (ctx, input) => {
+    // If we reach this point, input is guaranteed to be valid
+    // - input.email is a valid email address
+    // - input.age is >= 18
+    // - input.role is either 'user' or 'admin'
+
+    return { success: true };
+  }
+});
+```
+
+When validation fails, the SDK returns an error response with details about which fields failed validation. Your handler never executes.
+
+### Output Validation
+
+The SDK also validates output to ensure type safety:
+
+```typescript
+const agent = createAgent({
+  schema: {
+    output: z.object({
+      status: z.enum(['success', 'error']),
+      data: z.any().optional()
+    })
+  },
+  handler: async (ctx, input) => {
+    // This return value is validated
+    return {
+      status: 'success',
+      data: { result: 'completed' }
+    };
+
+    // This would cause a validation error:
+    // return { status: 'invalid' };
+  }
+});
+```
+
+Output validation catches programming errors before they reach clients, ensuring API contracts are maintained.
+
+## Storage API Error Handling
+
+Storage operations can fail due to network issues, timeouts, or service unavailability. Use try-catch blocks to handle these errors gracefully.
+
+### Key-Value Storage
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    try {
+      const cached = await ctx.kv.get('cache', input.key);
+
+      if (cached.exists) {
+        return { source: 'cache', data: cached.data };
+      }
+    } catch (error) {
+      ctx.logger.warn('Cache lookup failed, falling back to database', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+
+    // Fall back to database if cache fails
+    const data = await fetchFromDatabase(input.key);
+
+    // Try to cache for next time (don't fail if this errors)
+    try {
+      await ctx.kv.set('cache', input.key, data, { ttl: 3600 });
+    } catch (error) {
+      ctx.logger.warn('Failed to cache result', { error });
+    }
+
+    return { source: 'database', data };
+  }
+});
+```
+
+### Vector Storage
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    try {
+      const results = await ctx.vector.search('products', {
+        query: input.searchTerm,
+        limit: 5,
+        similarity: 0.7
+      });
+
+      return { results };
+    } catch (error) {
+      ctx.logger.error('Vector search failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      // Fall back to keyword search
+      const fallbackResults = await keywordSearch(input.searchTerm);
+      return { results: fallbackResults, fallback: true };
+    }
+  }
+});
+```
+
+### Object Storage
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    try {
+      await ctx.objectstore.put('uploads', input.filename, input.data, {
+        contentType: input.contentType
+      });
+
+      const url = await ctx.objectstore.createPublicURL(
+        'uploads',
+        input.filename,
+        3600000 // 1 hour
+      );
+
+      return { success: true, url };
+    } catch (error) {
+      ctx.logger.error('Failed to upload file', {
+        filename: input.filename,
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      throw new Error('File upload failed. Please try again.');
+    }
+  }
+});
+```
+
+## Error Monitoring
+
+Agents fire lifecycle events that can be used to monitor errors across your application.
+
+### Error Event Listener
+
+Listen to the `errored` event to track when agents fail:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const agent = createAgent({
+  metadata: {
+    name: 'Processing Agent',
+    description: 'Processes user data'
+  },
+  handler: async (ctx, input) => {
+    // Handler logic
+    return { success: true };
+  }
+});
+
+// Listen for errors
+agent.addEventListener('errored', (event, agent, ctx, error) => {
+  // Log error with context
+  ctx.logger.error('Agent execution failed', {
+    agentName: agent.metadata.name,
+    sessionId: ctx.sessionId,
+    error: error.message,
+    stack: error.stack
+  });
+
+  // Send to error tracking service
+  trackError({
+    agent: agent.metadata.name,
+    session: ctx.sessionId,
+    error: error.message
+  });
+});
+```
+
+The `errored` event provides access to:
+- The agent that failed
+- The execution context
+- The error that was thrown
+
+This enables centralized error logging, alerting, and tracking across all agents. For comprehensive event handling patterns, see the [Events](/Guides/events) guide.
+
+## Debugging Techniques
+
+### Structured Logging
+
+Use the logger to track execution flow and identify issues:
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    ctx.logger.info('Processing started', { input });
+
+    try {
+      const step1 = await performStep1(input);
+      ctx.logger.debug('Step 1 completed', { step1 });
+
+      const step2 = await performStep2(step1);
+      ctx.logger.debug('Step 2 completed', { step2 });
+
+      return { result: step2 };
+    } catch (error) {
+      ctx.logger.error('Processing failed', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
+
+      throw error;
+    }
+  }
+});
+```
+
+Log levels:
+- **`debug`** - Detailed information for debugging
+- **`info`** - General informational messages
+- **`warn`** - Warning messages for recoverable issues
+- **`error`** - Error messages for failures
+
+### OpenTelemetry Tracing
+
+Use tracing to debug complex workflows:
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    const span = ctx.tracer.startSpan('process-data');
+
+    try {
+      span.setAttribute('input.size', JSON.stringify(input).length);
+      span.addEvent('processing-started');
+
+      const result = await processData(input);
+
+      span.addEvent('processing-completed', {
+        resultSize: JSON.stringify(result).length
+      });
+
+      return result;
+    } catch (error) {
+      span.recordException(error as Error);
+      throw error;
+    } finally {
+      span.end();
+    }
+  }
+});
+```
+
+Tracing helps identify:
+- Performance bottlenecks
+- Where errors occur in complex workflows
+- Dependencies between operations
+- Execution time for each step
+
+## Best Practices
+
+### When to Throw vs Catch
+
+**Throw errors** when:
+- Business logic fails (invalid state, missing data)
+- Authorization checks fail
+- Required external services are unavailable
+- Critical operations fail
+
+**Catch errors** when:
+- Operations are optional (enrichment, caching)
+- Fallback behavior exists (cache → database)
+- You want to add context before re-throwing
+- Converting errors to user-friendly messages in routes
+
+### Consistent Error Responses
+
+Return errors in a consistent format across your API:
+
+```typescript
+{
+  success: false,
+  error: "User not found",
+  code: "RESOURCE_NOT_FOUND" // Optional: for programmatic error handling
+}
+```
+
+This makes it easier for clients to handle errors predictably.
+
+### Clear Error Messages
+
+Write error messages that are actionable:
+
+```typescript
+// Good - specific and actionable
+throw new Error('Email address is required for user registration');
+throw new Error('Payment failed: insufficient funds');
+throw new Error('User not found with ID: ' + userId);
+
+// Bad - vague and unhelpful
+throw new Error('Invalid input');
+throw new Error('Error');
+throw new Error('Something went wrong');
+```
+
+Include context that helps diagnose the issue, but avoid exposing sensitive information.
+
+### Security Considerations
+
+Don't expose sensitive details in error messages:
+
+```typescript
+// Bad - exposes database structure
+throw new Error('Database query failed: SELECT * FROM users WHERE secret_token = ...');
+
+// Good - generic message for external errors
+throw new Error('Unable to authenticate user');
+
+// Good - log details internally, return generic message
+try {
+  await authenticateUser(token);
+} catch (error) {
+  ctx.logger.error('Authentication failed', {
+    error: error.message,
+    token: token.substring(0, 8) + '...' // Partially redacted
+  });
+
+  throw new Error('Authentication failed');
+}
+```
+
+Log detailed errors internally, but return generic messages to clients.
+
+### Testing Error Scenarios
+
+Test error paths in your agents:
+
+```typescript
+// Test validation errors
+test('throws error when required field is missing', async () => {
+  await expect(
+    agent.run({ /* missing required field */ })
+  ).rejects.toThrow('Required field missing');
+});
+
+// Test error propagation
+test('propagates errors from called agents', async () => {
+  // Mock subagent to throw error
+  mockAgent.run.mockRejectedValue(new Error('Subagent failed'));
+
+  await expect(
+    coordinatorAgent.run(input)
+  ).rejects.toThrow('Subagent failed');
+});
+
+// Test graceful degradation
+test('continues with fallback when optional service fails', async () => {
+  mockService.fetch.mockRejectedValue(new Error('Service unavailable'));
+
+  const result = await agent.run(input);
+  expect(result.fallback).toBe(true);
+});
+```
+
+Testing error scenarios ensures your agents handle failures gracefully.
+
+## Next Steps
+
+- [Schema Validation](/Guides/schema-validation) - Define schemas to validate input and output automatically
+- [Events](/Guides/events) - Monitor agent lifecycle and handle errors with event listeners
+- [Routing & Triggers](/Guides/routing-triggers) - Create routes that handle HTTP requests and responses
+- [API Reference](/SDK/api-reference) - Complete API documentation for context, storage, and utilities

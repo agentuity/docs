@@ -1,0 +1,514 @@
+---
+title: Core Concepts
+description: Learn the fundamental patterns and APIs of the Agentuity JavaScript SDK
+---
+
+# Core Concepts
+
+The Agentuity JavaScript SDK provides a structured approach to building AI agents. This guide covers the essential patterns and APIs you'll use when developing with the SDK.
+
+## Agent Architecture
+
+Agents are created using the `createAgent()` function from `@agentuity/runtime`. Each agent consists of a schema, metadata, and a handler function.
+
+### Basic Agent Structure
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent({
+  schema: {
+    input: z.object({ message: z.string() }),
+    output: z.object({ response: z.string() })
+  },
+  metadata: {
+    name: 'Chat Agent',
+    description: 'Processes chat messages'
+  },
+  handler: async (ctx, input) => {
+    // Input is already validated and typed
+    return { response: `You said: ${input.message}` };
+  }
+});
+```
+
+### Schema Validation
+
+The SDK supports the StandardSchema interface, which works with Zod, Valibot, and ArkType. Schemas provide:
+
+- Automatic input validation before handler execution
+- Full TypeScript type inference for the handler
+- Output validation to ensure type safety
+- Runtime safety for production environments
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent({
+  schema: {
+    input: z.object({
+      email: z.string().email(),
+      age: z.number().min(18)
+    }),
+    output: z.object({
+      userId: z.string(),
+      verified: z.boolean()
+    })
+  },
+  handler: async (ctx, input) => {
+    // input.email and input.age are fully typed
+    // Return type is also validated
+    return {
+      userId: 'user-123',
+      verified: true
+    };
+  }
+});
+```
+
+For type safety, it's recommended to add schemas to all agents. See the [Schema Validation](/Guides/schema-validation) guide for detailed patterns.
+
+### Two-File Pattern
+
+Each agent consists of two files in your project:
+
+1. **`agent.ts`** - Defines the agent logic, schemas, and metadata
+2. **`route.ts`** - Defines HTTP endpoints and how to invoke the agent
+
+```typescript
+// src/agents/chat/agent.ts
+import { createAgent } from '@agentuity/runtime';
+
+export const chatAgent = createAgent({
+  schema: { /* ... */ },
+  handler: async (ctx, input) => { /* ... */ }
+});
+```
+
+```typescript
+// src/agents/chat/route.ts
+import { createRouter } from '@agentuity/runtime';
+import { chatAgent } from './agent';
+
+const router = createRouter();
+
+router.post('/chat', async (c) => {
+  const input = await c.req.json();
+  const result = await c.agent.chatAgent.run(input);
+  return c.json(result);
+});
+
+export default router;
+```
+
+The bundler auto-discovers both files based on the directory structure. For more details on project structure, see the [Architecture](/Introduction/architecture) guide.
+
+### Handler Signature
+
+Agent handlers receive two parameters:
+
+- **`ctx`** - The agent context object with access to all SDK capabilities
+- **`input`** - The validated input data (typed based on your schema)
+
+Handlers return data directly. The SDK handles serialization and response formatting.
+
+```typescript
+handler: async (ctx, input) => {
+  // Access context capabilities
+  ctx.logger.info('Processing request', { input });
+
+  // Return data directly (no response object needed)
+  return { success: true, data: processedData };
+}
+```
+
+## Input and Output Handling
+
+The SDK provides automatic validation and type safety for inputs and outputs through schemas.
+
+### Input Validation
+
+When a schema is defined, the SDK validates input before calling your handler:
+
+```typescript
+const agent = createAgent({
+  schema: {
+    input: z.object({
+      query: z.string().min(1),
+      filters: z.array(z.string()).optional()
+    })
+  },
+  handler: async (ctx, input) => {
+    // input is validated and typed
+    // TypeScript knows: input.query is string
+    // TypeScript knows: input.filters is string[] | undefined
+    return { results: [] };
+  }
+});
+```
+
+Invalid input results in an error response before the handler executes.
+
+### Output Validation
+
+Output schemas ensure your agent returns the expected data structure:
+
+```typescript
+const agent = createAgent({
+  schema: {
+    output: z.object({
+      status: z.enum(['success', 'error']),
+      data: z.any()
+    })
+  },
+  handler: async (ctx, input) => {
+    // Return must match output schema
+    return {
+      status: 'success',
+      data: { /* ... */ }
+    };
+  }
+});
+```
+
+### Streaming Responses
+
+For streaming responses (like LLM output), set `stream: true` in the schema:
+
+```typescript
+import { streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+const agent = createAgent({
+  schema: {
+    input: z.object({ prompt: z.string() }),
+    stream: true
+  },
+  handler: async (ctx, input) => {
+    const { textStream } = streamText({
+      model: openai('gpt-5-mini'),
+      prompt: input.prompt
+    });
+
+    return textStream;
+  }
+});
+```
+
+See the [Schema Validation](/Guides/schema-validation) guide for advanced patterns including union types, transforms, and custom validation.
+
+## Agent Context (ctx)
+
+The context object provides access to all SDK capabilities within your handler. Properties are organized by function:
+
+### Identifiers
+
+Access unique identifiers for the current execution:
+
+```typescript
+handler: async (ctx, input) => {
+  // Unique ID for this execution
+  const sessionId = ctx.sessionId;
+
+  // Name of the current agent
+  const agentName = ctx.agentName;
+}
+```
+
+### Agent System
+
+Call other agents in your project or access agent references:
+
+```typescript
+handler: async (ctx, input) => {
+  // Call another agent (type-safe)
+  const result = await ctx.agent.enrichmentAgent.run({
+    text: input.data
+  });
+
+  // Reference to current agent
+  const self = ctx.current;
+
+  // Parent agent reference (in subagents)
+  const parent = ctx.parent;
+  if (parent) {
+    const parentResult = await parent.run(input);
+  }
+}
+```
+
+Agent calls are type-safe when both agents have schemas. See [Agent Communication](#agent-communication) below for patterns.
+
+### State Management
+
+Access state at three different scopes:
+
+```typescript
+handler: async (ctx, input) => {
+  // Request scope - cleared after response
+  ctx.state.set('startTime', Date.now());
+
+  // Thread scope - conversation context (1 hour lifetime)
+  const history = ctx.thread.state.get('messages') || [];
+  ctx.thread.state.set('messages', [...history, input.message]);
+
+  // Session scope - spans threads
+  const userPrefs = ctx.session.state.get('preferences');
+  ctx.session.state.set('lastActive', new Date());
+}
+```
+
+| Scope | Lifetime | Use Case |
+|-------|----------|----------|
+| `ctx.state` | Single request | Timing, temporary calculations |
+| `ctx.thread.state` | Up to 1 hour | Conversation history |
+| `ctx.session.state` | Spans threads | User preferences, settings |
+
+See the [Sessions and Threads](/Guides/sessions-threads) guide for detailed state management patterns.
+
+### Storage
+
+Access persistent storage systems:
+
+```typescript
+handler: async (ctx, input) => {
+  // Key-value storage
+  await ctx.kv.set('cache', 'user-123', userData, { ttl: 3600 });
+  const cached = await ctx.kv.get('cache', 'user-123');
+
+  // Vector storage
+  const results = await ctx.vector.search('products', {
+    query: input.searchTerm,
+    limit: 5,
+    similarity: 0.7
+  });
+
+  // Object storage
+  await ctx.objectstore.put('uploads', 'file.pdf', fileData, {
+    contentType: 'application/pdf'
+  });
+
+  // Stream storage
+  const stream = await ctx.stream.create('export', {
+    contentType: 'text/csv'
+  });
+}
+```
+
+Each storage system provides specific capabilities:
+- **Key-Value**: Fast lookups with TTL support (minimum 60 seconds)
+- **Vector**: Semantic search with similarity scoring
+- **Object Storage**: File storage with public URL generation
+- **Stream**: Large data exports and real-time streaming
+
+See the [API Reference](/SDK/api-reference) for complete storage API documentation.
+
+### Observability
+
+Monitor and trace agent execution:
+
+```typescript
+handler: async (ctx, input) => {
+  // Structured logging
+  ctx.logger.info('Processing request', { input });
+  ctx.logger.error('Operation failed', { error: err });
+
+  // OpenTelemetry tracing
+  const span = ctx.tracer.startSpan('database-query');
+  // ... perform operation
+  span.end();
+}
+```
+
+### Lifecycle
+
+Execute background tasks that continue after the response is sent:
+
+```typescript
+handler: async (ctx, input) => {
+  // Process data immediately
+  const result = processData(input);
+
+  // Run analytics in background
+  ctx.waitUntil(async () => {
+    await trackAnalytics(result);
+    await updateMetrics(ctx.sessionId);
+  });
+
+  // Response sent immediately, background tasks continue
+  return result;
+}
+```
+
+Use `waitUntil()` for non-blocking operations like logging, analytics, and cleanup tasks. See the [API Reference](/SDK/api-reference) for the complete context API.
+
+## Routing and Triggers
+
+Routes are defined in `route.ts` files using the `createRouter()` function. The router is built on Hono and supports HTTP methods plus specialized routes.
+
+### HTTP Routes
+
+Standard HTTP methods are available:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.get('/status', async (c) => {
+  return c.json({ status: 'ok' });
+});
+
+router.post('/chat', async (c) => {
+  const input = await c.req.json();
+  const result = await c.agent.chatAgent.run(input);
+  return c.json(result);
+});
+
+router.put('/update', async (c) => { /* ... */ });
+router.patch('/modify', async (c) => { /* ... */ });
+router.delete('/remove', async (c) => { /* ... */ });
+
+export default router;
+```
+
+### Specialized Routes
+
+The router provides methods for event-driven and scheduled triggers:
+
+```typescript
+// Email handling
+router.email('support@example.com', async (c) => {
+  const email = c.req.email;
+  const result = await c.agent.emailAgent.run({
+    from: email.from,
+    subject: email.subject,
+    body: email.body
+  });
+  return c.json(result);
+});
+
+// Scheduled cron jobs
+router.cron('0 9 * * *', async (c) => {
+  await c.agent.dailyReportAgent.run({ date: new Date() });
+  return c.json({ scheduled: true });
+});
+
+// SMS handling
+router.sms({ number: '+1234567890' }, async (c) => {
+  const sms = c.req.sms;
+  const result = await c.agent.smsAgent.run({
+    from: sms.from,
+    message: sms.body
+  });
+  return c.json(result);
+});
+
+// WebSocket connections
+router.websocket('/chat', {
+  onOpen: (c, ws) => {
+    console.log('Connection opened');
+  },
+  onMessage: async (c, ws, message) => {
+    const result = await c.agent.chatAgent.run({ message });
+    ws.send(JSON.stringify(result));
+  }
+});
+
+// Server-Sent Events
+router.sse('/stream', async (c) => {
+  return c.streamSSE(async (stream) => {
+    for (let i = 0; i < 10; i++) {
+      await stream.writeSSE({ data: `Event ${i}` });
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  });
+});
+```
+
+Trigger configuration (cron schedules, email addresses, phone numbers) is now defined in code rather than through the UI. This provides version control and type safety for your triggers.
+
+For detailed routing patterns, WebSocket handling, and middleware, see the [Routing & Triggers](/Guides/routing-triggers) guide.
+
+## Agent Communication
+
+Agents can call other agents in the same project using type-safe references through the context object.
+
+### Calling Other Agents
+
+Use `ctx.agent.agentName.run()` to invoke another agent:
+
+```typescript
+const coordinatorAgent = createAgent({
+  handler: async (ctx, input) => {
+    // Call another agent
+    const enriched = await ctx.agent.enrichmentAgent.run({
+      text: input.rawData
+    });
+
+    // Use the result
+    return { processed: enriched };
+  }
+});
+```
+
+When both agents have schemas, the call is fully type-safe. TypeScript will validate the input type and infer the output type.
+
+### Sequential vs Parallel Execution
+
+Execute agents sequentially when each depends on the previous result:
+
+```typescript
+handler: async (ctx, input) => {
+  const step1 = await ctx.agent.validator.run(input);
+  const step2 = await ctx.agent.enricher.run(step1);
+  const step3 = await ctx.agent.analyzer.run(step2);
+
+  return step3;
+}
+```
+
+Execute agents in parallel when operations are independent:
+
+```typescript
+handler: async (ctx, input) => {
+  const [webResults, dbResults, cacheResults] = await Promise.all([
+    ctx.agent.webSearch.run(input),
+    ctx.agent.database.run(input),
+    ctx.agent.cache.run(input)
+  ]);
+
+  return { webResults, dbResults, cacheResults };
+}
+```
+
+### Subagent Communication
+
+Access subagents using the nested path syntax:
+
+```typescript
+// Call a subagent from anywhere
+const result = await ctx.agent.team.members.run({
+  action: 'list'
+});
+
+// From a subagent, access the parent
+const parentResult = await ctx.parent.run(input);
+```
+
+Subagents organize related agents into parent-child hierarchies with one level of nesting. For detailed patterns and limitations, see the [Subagents](/Guides/subagents) guide.
+
+<Callout type="info">
+Agent calls execute within the same session context, sharing the same `sessionId` and state scopes. This enables coordinated workflows across multiple agents.
+</Callout>
+
+## Next Steps
+
+- [Schema Validation](/Guides/schema-validation) - Advanced schema patterns and validation
+- [Routing & Triggers](/Guides/routing-triggers) - HTTP methods, WebSocket, SSE, and specialized routes
+- [Sessions and Threads](/Guides/sessions-threads) - State management patterns
+- [Evaluations](/Guides/evaluations) - Automated quality testing
+- [Events](/Guides/events) - Lifecycle hooks and monitoring
+- [API Reference](/SDK/api-reference) - Complete API documentation

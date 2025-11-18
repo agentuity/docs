@@ -1,0 +1,10 @@
+{
+	"title": "v1 Documentation",
+	"pages": [
+		"Introduction",
+		"Guides",
+		"SDK",
+		"Examples",
+		"migration-guide"
+	]
+}
