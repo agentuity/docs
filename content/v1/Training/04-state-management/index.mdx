@@ -1,0 +1,291 @@
+---
+title: "Module 4: State Management"
+description: Managed memory scopes for requests, conversations, and users
+---
+
+Agents need memory to be useful. The SDK provides three managed state scopes: request, thread, and session, each designed for different data lifetimes and use cases. This module teaches you when and how to use each scope.
+
+## The State Management Challenge
+
+Without proper state management, agents lose context between requests. Users must repeat information, agents can't personalize responses, and conversations feel disconnected. State management solves this by providing structured memory scopes that match real-world interaction patterns.
+
+**Core question:** *"What should my agent remember, and for how long?"*
+
+## Understanding the Three State Scopes
+
+The SDK provides three distinct state scopes, each optimized for different memory patterns:
+
+| Scope | Lifetime | Cleared When | Access | Use Case |
+|-------|----------|--------------|--------|----------|
+| **Request** | Single request | After response sent | `c.state` | Timing, temp calculations |
+| **Thread** | Up to 1 hour | Thread expiration or destroy | `c.thread.state` | Conversation history |
+| **Session** | Spans threads | In-memory (provider dependent) | `c.session.state` | User preferences |
+
+### Request State (`c.state`)
+Ephemeral data that exists only during the current request. Automatically cleared when the response is sent. Use for temporary calculations, timing metrics, or request-specific context.
+
+**Example use cases:**
+- Request timing and performance metrics
+- Temporary calculations within handler execution
+- Request-specific flags or settings
+
+### Thread State (`c.thread.state`)
+Conversation context that persists across multiple requests for up to 1 hour. Threads are identified by a unique thread ID stored in a cookie, enabling conversation continuity.
+
+**Example use cases:**
+- Chat conversation history
+- Multi-turn workflow state
+- Conversation-specific preferences
+
+### Session State (`c.session.state`)
+User-level data that persists across multiple threads and conversations. Stored in-memory during the session lifecycle.
+
+**Example use cases:**
+- User preferences and settings
+- Cross-conversation tracking
+- User-specific context
+
+<Callout type="info">
+**State vs Storage:** This module focuses on **managed state scopes** with automatic lifecycle handling. Module 5 covers **storage APIs** (`c.kv`, `c.vector`, `c.objectstore`) for explicit control over data persistence, custom TTL, and shared data *across agents*.
+</Callout>
+
+---
+
+## Tutorial Steps
+
+Each step below focuses on one state scope with simple, runnable code you can test immediately.
+
+### Step 1: Request State
+
+<TutorialStep number={1} title="Request State" estimatedTime="7 min">
+
+Request state provides ephemeral, request-scoped memory. Data stored in `c.state` is automatically cleared after the response is sent, making it perfect for temporary calculations and timing metrics.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/04-state-management/step1-request-state/agent.ts", lang: "ts", title: "agent.ts" },
+  { path: "/examples/training/04-state-management/step1-request-state/route.ts", lang: "ts", title: "route.ts" }
+]} />
+
+**What this demonstrates:**
+- Using `c.state.set()` and `c.state.get()` for temporary data
+- Request timing measurement pattern
+- Automatic cleanup (state cleared after response)
+- State isolation between requests
+
+**Try it:**
+1. Start DevMode: `agentuity dev`
+2. Send a task with timing:
+   ```bash
+   curl -X POST http://localhost:3500/process \
+     -H "Content-Type: application/json" \
+     -d '{"task": "analyze-data", "simulateDelay": true}'
+   ```
+3. Expected response:
+   ```json
+   {
+     "result": "Completed: analyze-data",
+     "executionTime": 102,
+     "timestamp": "2025-01-19T..."
+   }
+   ```
+4. Send multiple requests - each has isolated state
+5. Check logs to see execution timing
+
+> **Key Insight:** Request state is ephemeral and request-scoped. Use it for temporary data that doesn't need to persist beyond the current request.
+
+</TutorialStep>
+
+---
+
+### Step 2: Thread State
+
+<TutorialStep number={2} title="Thread State" estimatedTime="7 min">
+
+Thread state maintains conversation context across multiple requests for up to 1 hour. Threads are identified by a unique ID stored in a cookie, enabling conversation continuity without manual session management.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/04-state-management/step2-thread-state/agent.ts", lang: "ts", title: "agent.ts" },
+  { path: "/examples/training/04-state-management/step2-thread-state/route.ts", lang: "ts", title: "route.ts" }
+]} />
+
+**What this demonstrates:**
+- Using `c.thread.state` for conversation history
+- Thread ID tracking with `c.thread.id`
+- Data persistence across requests (up to 1 hour)
+- Manual thread reset with `c.thread.destroy()`
+
+**Try it:**
+1. Send first message:
+   ```bash
+   curl -X POST http://localhost:3500/chat \
+     -H "Content-Type: application/json" \
+     -d '{"message": "Hello"}'
+   ```
+2. Send second message - see conversation history:
+   ```bash
+   curl -X POST http://localhost:3500/chat \
+     -H "Content-Type: application/json" \
+     -d '{"message": "How are you?"}'
+   ```
+3. Expected response shows both messages:
+   ```json
+   {
+     "response": "Message 2 received",
+     "messageCount": 2,
+     "threadId": "thrd_abc123...",
+     "conversationHistory": ["Hello", "How are you?"]
+   }
+   ```
+4. Reset conversation:
+   ```bash
+   curl -X POST http://localhost:3500/chat \
+     -H "Content-Type: application/json" \
+     -d '{"reset": true}'
+   ```
+5. View conversation history:
+   ```bash
+   curl http://localhost:3500/chat/history
+   ```
+
+> **Key Insight:** Thread state persists conversation context for up to 1 hour automatically. Use `c.thread.destroy()` to manually reset conversations.
+
+</TutorialStep>
+
+---
+
+### Step 3: Session State
+
+<TutorialStep number={3} title="Session State" estimatedTime="7 min">
+
+Session state stores user-level data that persists across multiple threads and conversations. Use it for user preferences, settings, and cross-conversation tracking.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/04-state-management/step3-session-state/agent.ts", lang: "ts", title: "agent.ts" },
+  { path: "/examples/training/04-state-management/step3-session-state/route.ts", lang: "ts", title: "route.ts" }
+]} />
+
+**What this demonstrates:**
+- Using `c.session.state` for user preferences
+- Data persistence across thread resets
+- Default values for new users
+- Update tracking and counting
+
+**Try it:**
+1. Get preferences (creates default):
+   ```bash
+   curl http://localhost:3500/users/user123/preferences
+   ```
+2. Expected response:
+   ```json
+   {
+     "preferences": {
+       "name": "Guest",
+       "theme": "light",
+       "language": "en"
+     },
+     "updateCount": 0,
+     "message": "Current preferences retrieved"
+   }
+   ```
+3. Update preferences:
+   ```bash
+   curl -X POST http://localhost:3500/users/user123/preferences \
+     -H "Content-Type: application/json" \
+     -d '{"name": "Alice", "theme": "dark"}'
+   ```
+4. Reset conversation (thread) - preferences persist:
+   ```bash
+   curl -X POST http://localhost:3500/chat \
+     -H "Content-Type: application/json" \
+     -d '{"reset": true}'
+   ```
+5. Get preferences again - still there:
+   ```bash
+   curl http://localhost:3500/users/user123/preferences
+   ```
+
+> **Key Insight:** Session state spans threads, making it perfect for user preferences and cross-conversation data. Thread resets don't affect session state.
+
+</TutorialStep>
+
+---
+
+### Step 4: State Lifecycle
+
+<TutorialStep number={4} title="State Lifecycle" estimatedTime="7 min">
+
+Threads expire after 1 hour of inactivity, and you can manually destroy them. Use event listeners to perform cleanup and save important data when threads are destroyed.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/04-state-management/step4-state-lifecycle/agent.ts", lang: "ts", title: "agent.ts" },
+  { path: "/examples/training/04-state-management/step4-state-lifecycle/route.ts", lang: "ts", title: "route.ts" }
+]} />
+
+**What this demonstrates:**
+- Registering cleanup handlers with `c.thread.addEventListener()`
+- Thread lifecycle tracking
+- Automatic cleanup on expiration
+- Manual cleanup with `c.thread.destroy()`
+
+**Try it:**
+1. Send a message:
+   ```bash
+   curl -X POST http://localhost:3500/conversation \
+     -H "Content-Type: application/json" \
+     -d '{"message": "Start conversation"}'
+   ```
+2. Send more messages - build conversation:
+   ```bash
+   curl -X POST http://localhost:3500/conversation \
+     -H "Content-Type: application/json" \
+     -d '{"message": "Continue conversation"}'
+   ```
+3. Check thread status:
+   ```bash
+   curl http://localhost:3500/conversation/status
+   ```
+4. Manually reset (triggers cleanup):
+   ```bash
+   curl -X POST http://localhost:3500/conversation/reset
+   ```
+5. Check logs - see cleanup event handler execution
+
+> **Key Insight:** Use event listeners for cleanup when threads are destroyed. Threads expire automatically after 1 hour, or you can destroy them manually with `c.thread.destroy()`.
+
+</TutorialStep>
+
+---
+
+## Key Takeaways
+
+By the end of this module, you should understand:
+
+1. **Three State Scopes:**
+   - Request state (`c.state`) for ephemeral, request-scoped data
+   - Thread state (`c.thread.state`) for conversation context (up to 1 hour)
+   - Session state (`c.session.state`) for user preferences (spans threads)
+
+2. **Automatic Lifecycle:**
+   - Request state cleared after response
+   - Thread state expires after 1 hour
+   - Session state persists across threads
+
+3. **Thread Management:**
+   - Threads identified by unique IDs in cookies
+   - Manual reset with `c.thread.destroy()`
+   - Cleanup handlers with `addEventListener('destroyed', ...)`
+
+4. **When to Use Each Scope:**
+   - Request → temporary calculations, timing
+   - Thread → conversation history, workflow state
+   - Session → user preferences, cross-conversation tracking
+
+Agentuity manages state automatically - you just choose the right scope for your data lifetime needs.
+
+---
+
+## What's Next?
+
+**Module 5: Storage APIs** - Learn `c.kv`, `c.vector`, and `c.objectstore` for explicit storage control, custom TTL, shared data across agents, and persistence beyond in-memory state.
+
+For more details on state management patterns and lifecycle handling, see the [Sessions & Threads Guide](/Guides/sessions-threads).

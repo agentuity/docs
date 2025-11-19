@@ -1,0 +1,726 @@
+---
+title: "Module 1: Introduction to Agents"
+description: Understanding AI agents and the $47B opportunity
+---
+
+Welcome to the age of AI agents - autonomous systems that are fundamentally transforming how we build and think about software.
+
+## The $47B Agent Opportunity
+
+The AI agents market is exploding - projected to grow from [$5.1B in 2024 to $47.1B by 2030](https://www.marketsandmarkets.com/Market-Reports/ai-agents-market-15761548.html) at a staggering 44.8% CAGR. According to [IBM's latest research](https://www.ibm.com/think/insights/ai-agents-2025-expectations-vs-reality), many developers are already exploring or building AI agents.
+
+But here's the problem: most developers are trying to build autonomous systems on infrastructure designed for websites, not agents.
+
+As [Goldman Sachs' infrastructure analysis](https://www.goldmansachs.com/insights/articles/a-generational-infrastructure-buildout-might-hinge-on-ai-agents) points out:
+
+> "We're trying to run autonomous systems on infrastructure built for click-and-response websites. It's like trying to run a Tesla on roads designed for horses."
+
+Traditional cloud platforms (AWS Lambda, Google Cloud Functions, Azure Functions) were optimized for:
+- **5ms response times** (agents need minutes or hours to think)
+- **Stateless execution** (agents need persistent memory)
+- **Edge distribution** (agents need GPU proximity)
+
+This makes them poorly suited for:
+- **Long-running reasoning** processes that require extended compute time
+- **Persistent state management** across multiple interactions
+- **Complex agent workflows** that span multiple reasoning cycles
+
+## What Exactly Is an AI Agent?
+
+<Callout type="info">
+For a comprehensive overview of agents and how they differ from traditional software, see our [What is an Agent?](/Guides/what-is-an-agent) guide.
+</Callout>
+
+An AI agent is not just another chatbot or API wrapper around an LLM. It's a fundamentally different type of software that combines a LLM with **memory, tools, and a reasoning loop**.
+
+### The Agent Formula
+```
+Agent = LLM + Memory + Tools + Reasoning Loop
+```
+
+Let's break this down:
+
+1. **LLM (Large Language Model)**: The "brain" that understands intent and generates responses
+2. **Memory**: Both short-term (conversation context) and long-term (persistent knowledge)
+3. **Tools**: Capabilities to interact with external systems, APIs, and data sources
+4. **Reasoning Loop**: The ability to plan, execute, observe results, and adapt
+
+### Agents vs. Everything Else
+
+| Traditional API | Chatbot | AI Agent |
+|----------------|---------|----------|
+| Waits for commands | Responds to messages | Acts autonomously |
+| Returns exactly what you ask | Follows scripted patterns | Figures out how to achieve goals |
+| Stateless between calls | Maintains conversation context | Remembers everything, learns over time |
+| Deterministic output | Limited variation | Adapts based on context |
+| Single request-response | Turn-based conversation | Continuous reasoning and action |
+
+Think of it this way:
+- **APIs** are like vending machines - push button, get result
+- **Chatbots** are like scripted receptionists - they can talk, but only follow a script
+- **Agents** are like smart assistants - they understand goals and figure out how to achieve them
+
+## The Paradigm Shift: From Deterministic to Non-Deterministic
+
+<Callout type="info">
+For deeper insights on this shift, read our [Agent Engineering](/Guides/agent-engineering) guide that covers thinking like an agent builder.
+</Callout>
+
+Traditional software engineering is built on determinism - given the same input, you always get the same output. We write explicit logic for every scenario:
+
+```typescript
+// Traditional deterministic approach
+function processCustomerRequest(requestType: string, data: any) {
+  if (requestType === 'refund') {
+    if (data.amount < 100) {
+      return processRefund(data);
+    } else {
+      return escalateToManager(data);
+    }
+  } else if (requestType === 'complaint') {
+    return createTicket(data);
+  }
+  // ... hundreds more conditions
+}
+```
+
+Agent engineering embraces non-determinism - the agent interprets intent and figures out the best approach:
+
+```typescript
+// Agent-based approach
+const handleCustomerRequest = async (request: string, context: AgentContext) => {
+  // Agent interprets the request
+  const intent = await analyzeIntent(request);
+
+  // Agent decides on approach
+  const plan = await createActionPlan(intent, context.customerHistory);
+
+  // Agent executes with available tools
+  const result = await executePlan(plan, context.availableTools);
+
+  // Agent learns from outcome
+  await updateKnowledge(result, context.memory);
+
+  return result;
+};
+```
+
+This shift requires a new mindset:
+- **Design for intent**, not implementation
+- **Embrace variability** as a feature, not a bug
+- **Think in capabilities**, not functions
+- **Trust but verify** - use guardrails and observability
+
+## Why Agents Need Agent-Native Infrastructure
+
+[Microsoft's analysis](https://blogs.microsoft.com/blog/2025/05/19/microsoft-build-2025-the-age-of-ai-agents-and-building-the-open-agentic-web/) confirms that "most organizations aren't agent-ready" because their infrastructure wasn't built for autonomous systems.
+
+### The Infrastructure Mismatch
+
+Traditional cloud platforms face fundamental limitations when running agents:
+
+| Traditional Cloud | What Agents Need | The Gap |
+|-------------------|------------------|---------|
+| 15-second timeouts | Long-running processes | Agents timeout mid-thought |
+| Stateless by default | Persistent memory | Agents forget everything |
+| Distributed to edge | GPU proximity | High latency to AI models |
+| Pay per request | Continuous operation | Costs explode unexpectedly |
+| Human-centric monitoring | Agent observability | Can't debug agent decisions |
+
+Major cloud providers like AWS, Google, and Microsoft are working to adapt their platforms for agents.
+
+But retrofitting existing infrastructure is like turning a highway into an airport - technically possible, but not optimal.
+
+## Enter Agentuity: The Agent-Native Cloud
+
+<Callout type="info">
+Learn more about the Agent-Native Cloud paradigm in our [Agent-Native Cloud](/Guides/agent-native-cloud) guide.
+</Callout>
+
+While others retrofit, Agentuity was built from day one specifically for agents. Agentuity's agent-native platform puts AI agents at the center of everything.
+
+### The Agentuity Difference: Purpose-Built for Agents
+
+Instead of asking "How do we make Lambda work for agents?", we asked "What would infrastructure look like if agents were the only thing that mattered?"
+
+Agentuity provides what agents actually need:
+
+- **Long-running processes**: Agents can think for hours, not seconds
+- **Persistent memory**: Built-in [key-value](/Guides/key-value), [vector](/Guides/vector-db), and [object storage](/Guides/object-storage)
+- **Agent-to-agent communication**: Seamless and secure [channels between agents](/Guides/agent-communication)
+- **Native observability**: Track agent decisions with [built-in tracing](/Guides/agent-tracing)
+- **Automatic scaling**: Based on agent workload, not request count
+- **Framework agnostic**: Run agents on any framework (LangChain, CrewAI, custom, etc.), and combine them in multi-agent projects
+- **Easily integrate with popular tools**: Including the Vercel AI SDK for streamlined AI development
+
+The result is a platform where agents are first-class citizens, not adapted workloads; memory and state are built-in, not bolted on; long-running is the default, not an exception; and agent communication is native, not a hack.
+
+## Your First Agent: From Zero to Production
+
+### Environment Setup
+
+<Callout type="info">
+For detailed setup instructions, see our [Getting Started Guide](/Introduction/getting-started) and [CLI Installation Guide](/CLI/installation).
+</Callout>
+
+Before we start building, make sure you have:
+- Node.js 18+ or Bun
+- Basic command line knowledge
+- An Agentuity account (free tier is fine)
+
+Install the Agentuity CLI:
+
+```bash
+# NPM (if you have Node.js)
+npm install -g @agentuity/cli
+
+# Bun (if you have Bun)
+bun install -g @agentuity/cli
+
+# macOS (Homebrew)
+brew tap agentuity/tap && brew install agentuity
+
+# Universal installer (Windows/Linux/macOS)
+curl -fsS https://agentuity.sh | sh
+
+# Verify installation
+agentuity --version
+
+# Login to your account
+agentuity auth login
+```
+
+### Local Development with DevMode
+
+<Callout type="info">
+DevMode is Agentuity's local development environment that provides instant feedback, complete observability, and a web interface for testing agents. Learn more in our [DevMode Guide](/Guides/devmode).
+</Callout>
+
+Start DevMode to test your agents locally:
+
+```bash
+agentuity dev
+# Opens at http://localhost:3500 with a web interface
+```
+
+You'll use DevMode throughout the tutorial below to test each step as you build your agent.
+
+### Build Your First Agent Step-by-Step
+
+Work through these steps to build your first agent. Each step adds new capabilities - follow along by creating a project (`agentuity create`), or read through to understand the patterns.
+
+## Step 1: Basic Agent with Schema
+
+<TutorialStep number={1} title="Basic Agent with Schema" estimatedTime="10 minutes">
+
+In v1, agents use a **two-file pattern**: `agent.ts` for business logic and `route.ts` for HTTP endpoints and triggers. Schemas validate your input and output from the start, providing type safety and runtime validation.
+
+### agent.ts
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+export const agent = createAgent({
+  // Schemas validate input/output (we'll explore these in Module 6)
+  schema: {
+    input: z.object({
+      name: z.string().optional() // string, but not required
+    }),
+    output: z.object({
+      message: z.string()
+    })
+  },
+
+  // Metadata helps identify your agent
+  metadata: {
+    name: 'Hello Agent',
+    description: 'Simple greeting agent for learning v1 basics'
+  },
+
+  // Handler receives (c, input) - input is already parsed and validated!
+  handler: async (c, input) => {
+    const name = input.name || 'World';
+
+    // Return data directly - no response.json() needed
+    return {
+      message: `Hello, ${name}!`
+    };
+  }
+});
+```
+
+### route.ts
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+export const router = createRouter();
+
+// Define an HTTP POST endpoint at /greet
+router.post('/greet', async (c) => {
+  // Get request body
+  const body = await c.req.json();
+
+  // Call the agent - type-safe!
+  const result = await c.agent.helloAgent.run(body);
+
+  // Return the result
+  return c.json(result);
+});
+```
+
+**What this demonstrates:**
+- **Two-file pattern**: `agent.ts` for logic, `route.ts` for HTTP endpoints
+- **`createAgent()`** replaces default export function from v0
+- **Schemas** define expected input/output types with Zod
+- **Handler signature**: `(c, input)` instead of v0's `(request, response, context)`
+- **Input is pre-validated** by schema (no manual parsing needed)
+- **Direct return values** (not `response.json()`)
+- **Routes use `c.agent.helloAgent.run()`** for type-safe agent calls
+
+**Try it:**
+1. Create a new project: `npx @agentuity/cli create`
+2. Add both files to `src/agents/hello-agent/`
+3. Start DevMode: `npx agentuity dev`
+4. Send a POST request to `/greet` with `{"name": "Alice"}`
+5. Try without a name: `{}` (uses default "World")
+6. Observe the response structure
+
+**Key insight:**
+
+<Callout type="success">
+**Schemas are the foundation of v1.** Notice how `input.name` is type-safe - your editor knows it exists and is optional. The schema validates data at runtime AND provides TypeScript types. We'll dive deeper into schemas in Module 6.
+</Callout>
+
+<Callout type="info">
+**The Two-File Pattern**
+
+v1 separates concerns:
+- `agent.ts` = Business logic (what the agent does)
+- `route.ts` = Triggers & routing (how to call the agent)
+
+This makes agents reusable - the same agent can be called from HTTP routes, cron jobs, email handlers, or other agents!
+</Callout>
+
+</TutorialStep>
+
+## Step 2: With Logging
+
+<TutorialStep number={2} title="With Logging" estimatedTime="10 minutes">
+
+Add observability with `c.logger` to track what your agent is doing. Logs appear automatically in DevMode and the dashboard.
+
+### agent.ts
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+export const agent = createAgent({
+  schema: {
+    input: z.object({ name: z.string().optional() }),
+    output: z.object({ message: z.string() })
+  },
+  metadata: {
+    name: 'Hello Agent',
+    description: 'Greeting agent with logging'
+  },
+  handler: async (c, input) => {
+    // Log when agent starts
+    c.logger.info('Hello agent received a request');
+
+    const name = input.name || 'World';
+
+    // Log the specific action
+    c.logger.info(`Greeting ${name}`);
+
+    return { message: `Hello, ${name}!` };
+  }
+});
+```
+
+### route.ts
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+export const router = createRouter();
+
+router.post('/greet', async (c) => {
+  const body = await c.req.json();
+  const result = await c.agent.helloAgent.run(body);
+  return c.json(result);
+});
+```
+
+**What this demonstrates:**
+- Using `c.logger.info()` for observability
+- Logs appear in DevMode console and dashboard
+- Structured logging helps debug and monitor agents
+
+**Try it:**
+1. Update your `agent.ts` with the logging code
+2. Call the agent via `/greet` endpoint
+3. Open DevMode logs tab
+4. See both log messages appear with timestamps
+5. Notice how logs include context automatically (sessionId, agentName)
+
+**Key insight:**
+
+<Callout type="success">
+**Observability is critical for agents.** Unlike deterministic code, agents make decisions that vary based on input and context. Logs help you understand what your agent is thinking and doing.
+</Callout>
+
+</TutorialStep>
+
+## Step 3: With KV Storage
+
+<TutorialStep number={3} title="With KV Storage" estimatedTime="10 minutes">
+
+Use `c.kv` for persistent storage to make your agent remember state across invocations. This greeting agent will count how many times it's been called.
+
+<Callout type="info">
+We're using KV storage here to make our agent stateful. In **Module 3**, you'll learn about different memory scopes (request/thread/session), and in **Module 4**, we'll explore all storage APIs (KV, Vector, Object) in depth.
+</Callout>
+
+### agent.ts
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+export const agent = createAgent({
+  schema: {
+    input: z.object({ name: z.string().optional() }),
+    output: z.object({
+      message: z.string(),
+      greetingNumber: z.number(),
+      timestamp: z.string()
+    })
+  },
+  metadata: {
+    name: 'Hello Agent',
+    description: 'Greeting agent with memory'
+  },
+  handler: async (c, input) => {
+    c.logger.info('Hello agent received a request');
+
+    const name = input.name || 'World';
+
+    // Get current greeting count from KV storage
+    const counterResult = await c.kv.get('stats', 'greeting_count');
+
+    let count: number;
+    if (counterResult.exists) {
+      // Counter exists - increment it
+      count = await counterResult.data.json();
+      count++;
+    } else {
+      // First time - start at 1
+      count = 1;
+    }
+
+    // Update the counter in storage
+    await c.kv.set('stats', 'greeting_count', count);
+
+    c.logger.info(`Greeting #${count} for ${name}`);
+
+    return {
+      message: `Hello, ${name}!`,
+      greetingNumber: count,
+      timestamp: new Date().toISOString()
+    };
+  }
+});
+```
+
+### route.ts
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+export const router = createRouter();
+
+router.post('/greet', async (c) => {
+  const body = await c.req.json();
+  const result = await c.agent.helloAgent.run(body);
+  return c.json(result);
+});
+```
+
+**What this demonstrates:**
+- `c.kv.get(bucket, key)` retrieves data
+- `counterResult.exists` checks if data was found
+- `c.kv.set(bucket, key, value)` stores data
+- Data persists across agent invocations
+- Agents can maintain state over time
+
+**Try it:**
+1. Update your agent with the storage code
+2. Call the agent multiple times
+3. Watch the `greetingNumber` increment
+4. Restart DevMode - counter persists!
+5. Check the KV storage tab in DevMode
+
+**Key insight:**
+
+<Callout type="success">
+**Agents need memory to be useful.** Without storage, every request starts from scratch. With KV storage, your agent can remember state, cache data, and build context over time. We'll explore state management deeply in Module 3.
+</Callout>
+
+<Callout type="info">
+**KV Storage Quick Reference**
+
+```typescript
+c.kv.get(bucket, key)           // Retrieve data
+c.kv.set(bucket, key, value)    // Store data
+c.kv.delete(bucket, key)        // Remove data
+```
+
+We'll cover TTL (auto-expiration) in Module 3!
+</Callout>
+
+</TutorialStep>
+
+## Step 4: Error Handling - Manual vs Schema Validation
+
+<TutorialStep number={4} title="Error Handling - Manual vs Schema Validation" estimatedTime="10 minutes">
+
+Let's compare manual validation to schema validation to see why schemas are fundamental to v1.
+
+### Approach 1: Manual Validation (The Old Way)
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+export const agent = createAgent({
+  schema: {
+    input: z.object({ name: z.string().optional() }),
+    output: z.object({
+      message: z.string(),
+      greetingNumber: z.number(),
+      timestamp: z.string()
+    })
+  },
+  metadata: {
+    name: 'Hello Agent',
+    description: 'Greeting agent with manual validation'
+  },
+  handler: async (c, input) => {
+    c.logger.info('Hello agent received a request');
+
+    // Manual validation (even though schema handles it!)
+    if (input.name !== undefined && input.name.trim().length === 0) {
+      c.logger.warn('Empty name provided');
+      throw new Error('Name cannot be empty string');
+    }
+
+    const name = input.name || 'World';
+
+    // Get counter with error handling
+    let count = 1;
+    try {
+      const counterResult = await c.kv.get('stats', 'greeting_count');
+      if (counterResult.exists) {
+        count = await counterResult.data.json();
+        count++;
+      }
+      await c.kv.set('stats', 'greeting_count', count);
+    } catch (error) {
+      c.logger.error('Storage error, using default count', { error });
+      // Continue with count = 1 instead of failing
+    }
+
+    c.logger.info(`Greeting #${count} for ${name}`);
+
+    return {
+      message: `Hello, ${name}!`,
+      greetingNumber: count,
+      timestamp: new Date().toISOString()
+    };
+  }
+});
+```
+
+### Approach 2: Schema Validation (The v1 Way)
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+export const agent = createAgent({
+  schema: {
+    // Schema handles validation automatically!
+    input: z.object({
+      name: z.string().min(1, 'Name cannot be empty').optional()
+    }),
+    output: z.object({
+      message: z.string(),
+      greetingNumber: z.number(),
+      timestamp: z.string()
+    })
+  },
+  metadata: {
+    name: 'Hello Agent',
+    description: 'Greeting agent with schema validation'
+  },
+  handler: async (c, input) => {
+    // No manual validation needed - schema rejects invalid input before handler runs
+
+    c.logger.info('Hello agent received a request');
+
+    const name = input.name || 'World';
+
+    // Still handle storage errors gracefully
+    let count = 1;
+    try {
+      const counterResult = await c.kv.get('stats', 'greeting_count');
+      if (counterResult.exists) {
+        count = await counterResult.data.json();
+        count++;
+      }
+      await c.kv.set('stats', 'greeting_count', count);
+    } catch (error) {
+      c.logger.error('Storage error, using default count', { error });
+    }
+
+    c.logger.info(`Greeting #${count} for ${name}`);
+
+    return {
+      message: `Hello, ${name}!`,
+      greetingNumber: count,
+      timestamp: new Date().toISOString()
+    };
+  }
+});
+```
+
+### route.ts
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+export const router = createRouter();
+
+router.post('/greet', async (c) => {
+  const body = await c.req.json();
+  const result = await c.agent.helloAgent.run(body);
+  return c.json(result);
+});
+```
+
+**What this demonstrates:**
+- Manual validation requires explicit checks and error throwing
+- Schema validation happens automatically before handler runs
+- Invalid input is rejected with clear error messages
+- Defensive error handling for external systems (storage)
+- Graceful degradation (continue with defaults on non-critical errors)
+
+**Try it:**
+1. First: Use manual validation version
+   - Send `{"name": ""}` (empty string)
+   - See the error from your manual check
+2. Then: Use schema validation version
+   - Send `{"name": ""}` again
+   - See the schema error (cleaner, automatic!)
+3. Compare the error messages
+4. Try valid input to confirm it still works
+
+**Key insight:**
+
+<Callout type="success">
+**Schemas prevent invalid data from reaching your handler.** Instead of writing manual validation code, define your expectations in the schema. Invalid requests are rejected automatically with helpful error messages. This is why we introduce schemas in Step 1 - they're not optional in v1, they're foundational.
+</Callout>
+
+<Callout type="info">
+**Schema Validation vs Manual Validation**
+
+**Manual:**
+- Write validation code yourself
+- Error handling scattered in handler
+- Easy to miss edge cases
+
+**Schema:**
+- Declare requirements once
+- Automatic validation before handler
+- TypeScript types inferred from schema
+- Clear, consistent error messages
+
+We'll master schemas in Module 6!
+</Callout>
+
+</TutorialStep>
+
+## Lab: Complete Hello-World Agent
+
+Ready to see everything in action? This lab combines all the concepts you've learned - schemas, logging, storage, and error handling - into a production-ready greeting agent.
+
+**Features:**
+- ✅ Schema validation (input/output)
+- ✅ Structured logging (all operations logged)
+- ✅ KV storage (persistent greeting counters)
+- ✅ Error handling (graceful degradation)
+- ✅ Multiple input modes (JSON or plain text)
+- ✅ Per-user statistics tracking
+
+<div className="flex flex-wrap gap-3 mb-6">
+  <a href="https://github.com/agentuity/examples/tree/main/training/01-hello-world" target="_blank" rel="noopener noreferrer"
+     className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    View Complete Example
+  </a>
+</div>
+
+This lab project includes:
+- Global greeting counter (tracks total greetings)
+- Per-user statistics (remembers individual users)
+- Multiple routes (JSON, text, health check)
+- Comprehensive error handling
+- Complete `agentuity.yaml` configuration
+
+### Testing Your Lab Agent
+
+After cloning the lab, try the following:
+1. Run `agentuity dev` to start DevMode
+2. Test basic greeting: `POST /greet` with `{"name": "Alice"}`
+3. Test custom greeting: `{"name": "Bob", "greeting": "hey"}`
+4. Call multiple times with same name to see personal stats
+5. Try plain text endpoint: `POST /greet/text` with body `"Charlie"`
+6. Check health: `GET /health`
+7. Monitor the logs to see detailed operation tracking
+8. Check the KV storage tab to see counters
+
+<Callout type="info">
+This complete implementation shows patterns you'll use throughout the training modules. Notice how we handle errors gracefully, store data efficiently, and provide rich observability.
+</Callout>
+
+## Key Takeaways
+
+- **Agents are different**: They're autonomous systems, not just API wrappers around LLMs
+- **The market is massive**: $47B by 2030, with many developers already building agents (you're now one of them!)
+- **Infrastructure matters**: Traditional cloud wasn't built for agents' unique needs
+- **Non-determinism is a feature**: Agents adapt and reason, they don't just execute
+- **Agentuity is agent-native**: Purpose-built infrastructure for agents, not retrofitted
+- **Schemas are foundational**: Use them from day one for type safety and validation
+- **Two-file pattern**: Separate business logic (`agent.ts`) from routing (`route.ts`)
+- **Observability is critical**: Logs help understand what non-deterministic agents are doing
+- **Memory enables statefulness**: Agents remember context across interactions
+
+## What's Next?
+
+You've just built and deployed your first agent on infrastructure designed specifically for agents. In the next module, we'll dive deeper into the anatomy of an agent - understanding the two-file pattern, routing, triggers, and how agents really work under the hood.
+
+But first, take a moment to experiment with your agent. Try:
+- Calling it with different names and greetings
+- Checking the logs in the DevMode interface
+- Calling it multiple times to see the counter increment
+- Testing error cases like empty names
+- Monitoring the KV storage in the dashboard
+
+Remember: you're learning more than just a new framework. You're learning a fundamentally new way to build software. Welcome to the age of agents!
+
+---
+
+**Ready for Module 2?** [The Anatomy of an Agent](./02-anatomy-of-an-agent)
