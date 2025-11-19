@@ -105,6 +105,8 @@ router.post('/', async (c) => {
 export default router;
 ```
 
+Routes automatically include load balancing, monitoring, and error tracking. You can configure authentication and rate limiting per route using middleware.
+
 <Callout type="info">
 **Advanced Routing:** v1 supports WebSocket, Server-Sent Events, email, cron, and more. See the [Routing & Triggers Guide](/Guides/routing-triggers) for details.
 </Callout>
@@ -277,7 +279,7 @@ agent.addEventListener('completed', (eventName, agent, ctx) => {
 
 See the [Events Guide](/SDKs/javascript/events) for complete documentation.
 
-**Evaluations** automatically test agent outputs for quality, accuracy, or compliance:
+**Evaluations** automatically test agent outputs for quality, accuracy, or compliance. Evaluations test your complete agent logic—the actual input and output from your handler—not just external LLM API responses.
 
 ```typescript
 agent.createEval({
@@ -295,12 +297,19 @@ agent.createEval({
 });
 ```
 
+Evaluations run asynchronously after responses are sent, ensuring zero impact on response times. Common use cases:
+
+- Quality assurance and compliance checking
+- RAG metrics (hallucination detection, faithfulness)
+- Performance monitoring and optimization
+
 See the [Evaluations Guide](/SDKs/javascript/evaluations) for complete documentation.
 
 ## Next Steps
 
 Now that you understand the core concepts, you can:
 
+- TODO: Create dedicated deployment guide
 - Explore the [Routing & Triggers Guide](/Guides/routing-triggers) for WebSocket, SSE, and specialized routes
 - Learn about [Schema Validation](/SDKs/javascript/schema-validation) in depth
 - Set up [Evaluations](/SDKs/javascript/evaluations) to test your agents

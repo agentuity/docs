@@ -53,6 +53,67 @@ Agentuity consists of five primary components:
    - Usage analytics, logging, monitoring and performance insights
    - Team collaboration features
 
+## Built-in Services
+
+Agentuity includes built-in services that work out of the box. These services are accessible through the agent context (`c`) and require minimal configuration.
+
+### Routing and Connectivity
+
+| Service | Description | Access |
+|---------|-------------|--------|
+| HTTP/WebSocket/SSE | Built on Hono framework with automatic load balancing | `router.get()`, `router.post()`, `router.websocket()`, `router.sse()` |
+| Email Handling | Define email addresses as routes to trigger agents from incoming messages | `router.email()` |
+| SMS Integration | Route SMS messages to agents based on phone numbers | `router.sms()` |
+| Cron Scheduling | Schedule periodic agent execution with cron expressions | `router.cron()` |
+| Authentication | Configurable authentication and rate limiting per route | Middleware |
+
+### Storage Layer
+
+| Service | Description | Access |
+|---------|-------------|--------|
+| Key-Value Storage | Fast key-value store with TTL support | `c.kv` |
+| Vector Database | Embeddings storage and semantic search | `c.vector` |
+| Object Storage | Blob and file storage with public URL generation | `c.objectstore` |
+| Stream Storage | Large data streaming and processing | `c.stream` |
+
+### Observability
+
+| Service | Description | Access |
+|---------|-------------|--------|
+| Structured Logging | Built-in logger with contextual information | `c.logger` |
+| OpenTelemetry Tracing | Distributed tracing for agent interactions | `c.tracer` |
+| Real-time Analytics | Execution metrics, performance data, and usage tracking | Web Console |
+| Error Tracking | Automatic error capture and reporting | Web Console |
+
+### AI Gateway
+
+| Feature | Description |
+|---------|-------------|
+| Unified LLM Access | Single interface for multiple LLM providers (OpenAI, Anthropic, etc.) |
+| Managed API Keys | Centralized credential management for LLM services |
+| Model Switching | Change providers without code modifications |
+| Usage Tracking | Monitor LLM API usage and costs |
+
+### Evaluation Framework
+
+| Feature | Description |
+|---------|-------------|
+| Real-time Testing | Test agent input/output during execution using `agent.createEval()` |
+| Quality Assurance | Automated checks for accuracy, relevance, and compliance |
+| Custom Evaluators | Define custom evaluation logic for specific requirements |
+| Non-blocking Execution | Evaluations run asynchronously without impacting response times |
+
+### Frontend Deployment
+
+| Feature | Description |
+|---------|-------------|
+| React Integration | Deploy React applications alongside agents |
+| Hot Reload | Automatic reload during development |
+| CDN Distribution | Built-in CDN for global frontend delivery |
+| Custom Domains | Configure custom domains with automatic SSL certificates |
+
+All services are configured in `agentuity.yaml` and accessed through the agent context. No additional infrastructure setup required.
+
 ## SDK Architecture
 
 Agentuity v1 uses a monorepo structure with specialized packages for different concerns:
@@ -142,6 +203,65 @@ Security is foundational to Agentuity's design:
 - **Agent Isolation** - Each agent project operates in its own isolated environment
 - **Encrypted Communications** - All agent-to-agent communication is encrypted
 - **Secure Deployment** - Protected deployment pipeline from development to production
+
+## Deployment Targets
+
+Agentuity supports multiple deployment targets, allowing you to choose where your agents run based on your requirements. The same agent code and configuration work across all targets.
+
+### Public Cloud
+
+Deploy to Agentuity's managed infrastructure for immediate scalability:
+
+- **Global Edge Network** - Agents run on a distributed edge network for low-latency responses
+- **Automatic Scaling** - Scale from zero to thousands of requests without configuration
+- **Fast Cold Starts** - Sub-100ms cold start times on the global edge
+- **Managed Services** - All infrastructure, monitoring, and maintenance handled by Agentuity
+
+Best for: Rapid deployment, global distribution, and zero infrastructure management.
+
+### Private Cloud
+
+Deploy agents to your own Virtual Private Cloud (VPC) while using Agentuity services:
+
+- **Infrastructure Control** - Agents run in your AWS, GCP, or Azure account
+- **Data Security** - Your data never leaves your infrastructure
+- **Agentuity Services** - Access storage, observability, and platform features
+- **Compliance** - Meet regulatory requirements for data residency
+
+Best for: Organizations with strict data governance or compliance requirements.
+
+### Multi-Cloud
+
+Deploy agents across multiple cloud providers with consistent configuration:
+
+- **Provider Flexibility** - Run on AWS, GCP, Azure, or combinations
+- **Avoid Lock-in** - Move between providers without code changes
+- **Geographic Distribution** - Place agents near users across different clouds
+- **Consistent Tooling** - Same CLI, SDK, and deployment process everywhere
+
+Best for: Organizations requiring cloud provider flexibility or multi-region deployments.
+
+### On-Premises
+
+Self-host Agentuity infrastructure on your own hardware:
+
+- **Complete Control** - Full ownership of infrastructure and data
+- **Air-Gapped Support** - Run in isolated networks without internet access
+- **Custom Hardware** - Deploy on specialized hardware or existing infrastructure
+- **Data Sovereignty** - Guarantee data never leaves your physical premises
+
+Best for: Highly regulated industries, air-gapped environments, or specific hardware requirements.
+
+### Edge Deployment
+
+Deploy agents to edge devices for local processing:
+
+- **Local Processing** - Run agents on Raspberry Pi, laptops, or IoT devices
+- **Low Latency** - Process data at the edge without network round-trips
+- **Offline Operation** - Agents function without cloud connectivity
+- **Resource Efficiency** - Optimized for resource-constrained environments
+
+Best for: IoT applications, offline scenarios, or latency-sensitive workloads.
 
 ## Project Conventions
 
@@ -417,10 +537,10 @@ const agent = createAgent({
 
 These conventions enable several key capabilities:
 
-1. **Consistent Development Experience**: Standardized structure makes it easier to work across projects
-2. **Automated Deployment**: The CLI can package and deploy your project without additional configuration
-3. **Framework Flexibility**: Use any agent framework while maintaining compatibility with the platform
-4. **Type Safety**: Full TypeScript support throughout the stack
-5. **Scalability**: Clear separation of concerns makes it easy to organize complex agent systems
+1. **Consistent Development Experience** - Standardized structure makes it easier to work across projects
+2. **Automated Deployment** - The CLI can package and deploy your project without additional configuration
+3. **Framework Flexibility** - Use any agent framework while maintaining compatibility with the platform
+4. **Type Safety** - Full TypeScript support throughout the stack
+5. **Scalability** - Clear separation of concerns makes it easy to organize complex agent systems
 
 TODO: Add examples showing integration with frontend frameworks (Next.js, Svelte, vanilla JS, etc.) for building UIs that call agents
