@@ -1,0 +1,283 @@
+---
+title: "Module 9: Advanced Multi-Agent Research System"
+description: Building sophisticated agent coordination with recursive research
+---
+
+Time to build an advanced multi-agent research system that combines everything you've learned.
+
+## Building Your Capstone
+
+As you work on your capstone project:
+
+1. **Review previous modules** - Each contains pieces you'll need
+2. **Start simple** - Get basic flow working first
+3. **Iterate** - Add features incrementally
+4. **Test thoroughly** - Each agent independently, then together
+5. **Monitor everything** - You can't fix what you can't see
+
+<Callout type="info">
+Pro Tip: Build your research system iteratively. Start with orchestrator + web search agents, get that working perfectly, then add recursive research and report generation.
+</Callout>
+
+## Coming Soon: Agentic Sandbox
+
+<Callout type="info">
+The Agentic Sandbox - an interactive environment where you can experiment with agents risk-free, test complex scenarios, and learn through hands-on exploration.
+</Callout>
+
+### What is the Agentic Sandbox?
+
+A safe, isolated environment for agent experimentation:
+- **Pre-configured scenarios**: Common agent patterns ready to explore
+- **Interactive debugging**: Step through agent decisions
+- **Instant reset**: Break things and start fresh
+- **Guided challenges**: Progressive exercises with hints
+
+### Sandbox Features (Coming Soon)
+
+- Mock data sources and APIs
+- Simulated user interactions
+- Time travel debugging
+- Performance profiling
+- Collaborative sessions
+
+## Coming Soon: Training Agent
+
+<Callout type="info">
+Your AI-powered learning companion that adapts to your progress, answers questions, and provides personalized guidance through the Agentuity platform.
+</Callout>
+
+### Your Personal Agent Instructor
+
+An intelligent assistant that helps you learn:
+- **Contextual help**: Understands what you're building
+- **Debugging assistance**: Helps identify and fix issues
+- **Learning paths**: Customized based on your experience
+- **Best practices**: Recommends patterns for your use case
+
+## Capstone Project: Deep Research System
+
+Build an advanced multi-agent research system that demonstrates mastery of sophisticated agent coordination, recursive algorithms, and real-world API integration.
+
+### Project Overview
+
+**Goal**: Create a research system that can:
+- Coordinate multiple specialized research agents
+- Conduct recursive deep-dive investigations
+- Accumulate knowledge across research iterations
+- Generate comprehensive structured reports
+- Handle complex multi-source information synthesis
+
+### System Architecture
+
+The research system coordinates four specialized agents working together:
+
+| Agent | Role |
+|-------|------|
+| **Orchestrator** | Workflow coordination and error handling |
+| **Researcher** | Recursive research with learning accumulation |
+| **Web Search** | Intelligent search with AI-powered relevance filtering |
+| **Author** | Report synthesis and markdown generation |
+
+<Mermaid chart="
+graph TD
+    User[Research Request] --> Orchestrator[Research Orchestrator]
+    Orchestrator --> Researcher[Deep Researcher]
+    Researcher -->|Recursive Calls| Researcher
+    Researcher --> WebSearch[Web Search Agent]
+    WebSearch --> Researcher
+    Researcher --> Author[Report Author]
+    Author --> User[Structured Report]
+    State[(Research State)] -.-> Orchestrator
+    State -.-> Researcher
+    State -.-> Author
+" />
+
+### Skills Progression
+
+This sophisticated system builds on concepts from every previous module:
+
+| Module | Skills Applied in Deep Research |
+|--------|--------------------------------|
+| **Module 1** | Agent fundamentals, request handling → Complex orchestration |
+| **Module 2** | Handler patterns, routing → Agent coordination |
+| **Module 3** | Specialized routes, triggers → Advanced orchestration patterns |
+| **Module 4** | State management → Research state accumulation |
+| **Module 5** | Storage APIs, vector search → Knowledge accumulation |
+| **Module 6** | Multi-agent communication → Advanced coordination |
+| **Module 7** | Validation, evaluations → Research quality assurance |
+| **Module 8** | Deployment → Production research system |
+
+### Project Structure
+
+The research system uses the two-file pattern for each agent:
+
+```
+src/agents/
+├── research-orchestrator/
+│   ├── agent.ts          # Workflow coordination logic
+│   └── route.ts          # POST /research endpoint
+├── deep-researcher/
+│   ├── agent.ts          # Recursive research algorithm
+│   └── route.ts          # Agent-to-agent communication
+├── web-search/
+│   ├── agent.ts          # Exa API integration + filtering
+│   └── route.ts          # Search endpoint
+└── report-author/
+    ├── agent.ts          # Report generation with LLM
+    └── route.ts          # Author endpoint
+```
+
+<Callout type="info">
+The code examples below demonstrate key patterns from the Deep Research system. They're simplified to highlight core concepts. For complete implementations with all helper functions, schemas, and error handling, see the [full GitHub example](#build-this-project-yourself).
+</Callout>
+
+### Key Implementation: Research Orchestration
+
+The orchestrator is the system's entry point. It receives research requests with configurable depth and breadth parameters, then coordinates the researcher and author agents sequentially using the coordination patterns from Module 6.
+
+TODO: Add v1 code example showing:
+- createAgent with input/output schemas
+- c.agent.deepResearcher.run() pattern
+- Error handling with try/catch
+- Direct return instead of response.json()
+
+
+```typescript
+// TODO: Create step1-orchestration.ts example
+// Key concepts to demonstrate:
+// 1. Schema definition with Zod (input: query/depth/breadth, output: report)
+// 2. Sequential agent coordination: researcher → author
+// 3. Type-safe agent calls via c.agent.x.run()
+// 4. Error handling for multi-agent workflows
+```
+
+Notice that the orchestrator manages the workflow without knowing implementation details of the researcher or author agents. The schema validation ensures type safety across agent boundaries.
+
+### Key Implementation: Recursive Research Pattern
+
+The researcher implements *recursive research* with controlled depth and breadth. It generates multiple search queries at each level, extracts learnings from results, and recursively explores follow-up questions - with breadth reducing by half each level to prevent exponential growth.
+
+TODO: Add v1 code example showing:
+- createAgent with Research output schema
+- Recursive function that accepts AgentContext (c)
+- c.agent.webSearch.run() within recursion
+- Depth and breadth control (base cases)
+- Learning accumulation
+
+```typescript
+// TODO: Create step2-recursive-research.ts example
+// Key concepts to demonstrate:
+// 1. Pass AgentContext (c) through recursive calls
+// 2. Base cases: depth === 0 or max results reached
+// 3. Call c.agent.webSearch.run() for each query
+// 4. Accumulate results and learnings
+// 5. Reduce breadth by half each level (Math.ceil(breadth / 2))
+```
+
+Notice how the base cases prevent runaway recursion (depth limit and max results), while the reflection prompt refines queries based on accumulated learnings for deeper investigation.
+
+### Key Implementation: Web Search with Evaluation
+
+The web search agent integrates the [Exa API](https://docs.exa.ai/reference/getting-started) for web search, then uses AI to evaluate each result's relevance to the query. This filtering ensures only high-quality, non-duplicate sources accumulate across recursive research calls.
+
+In v1, we can also add an **evaluation** to validate search quality:
+
+TODO: Add v1 code example showing:
+- createAgent with search input/output schemas
+- Exa API integration
+- AI-powered relevance filtering
+- c.state for storing search metadata
+- createEval for quality validation
+
+```typescript
+// TODO: Create step3-search-with-eval.ts example
+// Key concepts to demonstrate:
+// 1. External API integration (Exa)
+// 2. Duplicate detection using accumulated sources
+// 3. AI evaluation for relevance filtering
+// 4. Store metadata in c.state for eval
+// 5. createEval to validate search quality (min results, diversity)
+```
+
+The combination of quick filters (duplicate URLs, content length) and AI evaluation balances quality with performance. The evaluation framework validates that searches return relevant, diverse results.
+
+### Key Implementation: Report Generation
+
+The author agent takes accumulated research data and generates a comprehensive markdown report. In v1, this can leverage streaming for better user experience:
+
+TODO: Add v1 code example showing:
+- createAgent with stream: true
+- LLM integration (Vercel AI SDK)
+- Streaming report generation
+- Structured prompt building from research data
+
+```typescript
+// TODO: Create step4-report-generation.ts example (optional)
+// Key concepts to demonstrate:
+// 1. Schema with stream: true for streaming responses
+// 2. Vercel AI SDK streamText integration
+// 3. Building comprehensive prompts from research data
+// 4. Returning text stream directly
+```
+
+### Build This Project Yourself
+
+Ready to implement this project? Follow our complete example:
+
+TODO: Update GitHub link to v1 example repository
+
+### What This System Demonstrates
+
+- **Multi-agent orchestration**: Coordinated workflow between orchestrator, researcher, author, and web search agents
+- **Recursive algorithms**: Deep research with learning accumulation and follow-up question generation
+- **External API integration**: Exa web search API with AI-powered relevance evaluation
+- **State accumulation**: Research results, learnings, and queries accumulated across recursive calls
+- **Structured outputs**: Zod schemas for search queries, research data, and type-safe agent communication
+- **Evaluation framework**: Quality validation for search results and research completeness
+- **Production patterns**: Error handling, agent validation, comprehensive logging, and streaming responses
+
+The complete example shows how to build sophisticated multi-agent research systems that demonstrate mastery of advanced agent concepts from Modules 1-8.
+
+## Testing Your Deep Research System
+
+1. **Start DevMode:**
+```bash
+agentuity dev
+```
+
+2. **Test research requests:**
+   - **Simple topics**: "Benefits of renewable energy"
+   - **Complex topics**: "Impact of quantum computing on cryptography"
+   - **Technical subjects**: "Latest developments in machine learning architectures"
+
+3. **Monitor the orchestration:**
+   - Watch logs to see agent coordination and recursive research calls
+   - Observe how research accumulates across multiple iterations
+   - See report generation synthesis from accumulated findings
+   - Check evaluation results for search quality metrics
+
+## Key Takeaways
+
+By building this deep research system, you've mastered:
+
+- **Multi-agent orchestration**: Coordinating specialized agents for complex workflows
+- **Recursive algorithms**: Self-improving systems with learning accumulation
+- **Production integration**: Real-world APIs with intelligent filtering and caching
+- **Advanced state management**: Accumulation across multiple agent interactions
+- **Type safety**: Schema-driven development with full type inference
+- **Quality assurance**: Evaluation framework for validating agent outputs
+- **Sophisticated observability**: Comprehensive tracking of complex agent workflows
+
+You're now ready to build advanced production agent systems with Agentuity!
+
+## What's Next?
+
+- Deploy your research system to production
+- Experiment with different research domains
+- Build agents for your own complex use cases
+- Share your implementations with the community
+
+Welcome to advanced agent development!
+
+---

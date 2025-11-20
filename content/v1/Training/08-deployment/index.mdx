@@ -1,0 +1,429 @@
+---
+title: "Module 8: Deployment"
+description: From local development to production - deploy agents anywhere
+---
+
+You've built agents with state management, multi-agent collaboration, and production-grade quality checks. Now it's time to deploy them.
+
+## Deployment Philosophy
+
+Write your agent code once, deploy it anywhere. The same code runs in local development, public cloud, private cloud, multi-cloud, on-premises, or edge deployments. No code changes required between environments.
+
+### How It Works
+
+The SDK is deployment-agnostic by design. Your agent code stays identical across all deployment targets because the SDK automatically adapts based on environment:
+
+**Local Development (`agentuity dev`):**
+- All services (KV, vector, object storage) run locally on your machine
+- No authentication required
+- Same APIs as production
+
+**Production Deployments:**
+- Services connect to configured endpoints
+- Same API calls, different backend infrastructure
+- Automatic authentication and encryption
+
+**Deployment Targets:**
+
+Each deployment type uses the same agent code but points services to different infrastructure:
+
+- **Public Cloud**: Services at Agentuity-managed infrastructure
+- **Private Cloud/Multi-Cloud**: Services in your VPC
+- **On-Premises**: Services in your datacenter
+- **Edge**: Services on local or edge devices
+
+The SDK handles the differences automatically. For non-public-cloud deployments, you configure where services run via environment variables.
+
+## Environment Progression
+
+Every agent follows the same development path:
+
+```
+Local Development → Preview → Staging → Production
+```
+
+### Local Development
+
+DevMode (`agentuity dev`) provides the complete Agentuity experience on your machine:
+
+- **Hot Reload**: Instant feedback on code changes
+- **Full Observability**: Sessions tab shows execution traces
+- **Real Features**: Test with actual storage, state, and agent communication
+- **Fast Iteration**: Edit, save, test immediately
+
+This is where you build and debug agents. Everything works exactly as it will in production.
+
+### Preview Deployments
+
+Preview deployments test your changes in the cloud automatically when you create a pull request:
+
+- **Automatic**: Triggered on PR creation
+- **Unique URLs**: Each preview gets a URL with git hash identifier
+- **Cloud Testing**: Validate changes in production-like infrastructure
+- **Team Collaboration**: Share preview links with stakeholders
+
+Preview deployments catch issues before they reach production and enable confident merging.
+
+### Staging Environment
+
+Staging provides production-like infrastructure for final validation:
+
+- **Load Testing**: Test with realistic data volumes
+- **Integration Testing**: Validate with external services
+- **Performance Validation**: Ensure agents meet latency requirements
+- **Configuration Testing**: Verify environment-specific settings
+
+Use staging to validate changes under production conditions before deploying to users.
+
+### Production
+
+Production is where your agents serve real users:
+
+- **Auto-Scaling**: Infrastructure scales with demand
+- **Complete Observability**: Same debugging experience as development
+- **Regional Options**: Deploy to multiple regions
+- **Monitoring**: Track performance and errors
+
+Production deployments can target any of Agentuity's deployment options based on your requirements.
+
+### Environment Validation
+
+Different environments focus on different validation aspects:
+
+| Focus | Development | Preview | Staging | Production |
+|-------|------------|---------|---------|------------|
+| **Core Features** | ✓ Works | ✓ Change validation | ✓ Load testing | ✓ Success metrics |
+| **Performance** | Basic testing | Cloud behavior | Stress testing | Response time |
+| **Integration** | Mock APIs | Real APIs | Full integration | User experience |
+| **Observability** | Debug info | Cloud traces | Telemetry accuracy | Performance insights |
+| **Resilience** | Basic recovery | Team testing | Failover tests | Incident response |
+
+---
+
+## Deployment Options
+
+Agentuity supports five deployment targets. Choose based on your requirements—your agent code works everywhere without changes.
+
+### Public Cloud
+
+**Managed infrastructure with automatic scaling**
+
+Agentuity-managed infrastructure with global edge deployment:
+
+- Deploy with one command
+- Automatic scaling from zero to thousands of requests
+- Sub-100ms cold starts
+- Multi-region load balancing
+
+**Use when:**
+- Getting started with Agentuity
+- Building MVPs or prototypes
+- Standard compliance requirements are sufficient
+- You want to focus on agent development rather than infrastructure
+
+---
+
+### Private Cloud
+
+**Deploy to your own VPC**
+
+Run agents in your own cloud infrastructure:
+
+- Full infrastructure control
+- Data never leaves your VPC
+- Automatic scaling within your environment
+- Supports AWS, Azure, and GCP
+
+**Use when:**
+- You have data sovereignty requirements
+- Regulatory compliance requires it (HIPAA, SOC2, etc.)
+- You need custom networking or security policies
+- Your organization requires infrastructure control
+
+---
+
+### Multi-Cloud
+
+**Deploy across multiple cloud providers**
+
+Run agents across different cloud providers:
+
+- Deploy to any combination of AWS, Azure, GCP
+- Data stays within your chosen infrastructure
+- Mix providers based on region, features, or cost
+- Automatic scaling per provider
+
+**Use when:**
+- You want to avoid vendor lock-in
+- You need provider-specific features in different regions
+- You require multi-region redundancy across providers
+- Your organization has a multi-cloud strategy
+
+---
+
+### On-Premises
+
+**Deploy to your own datacenter**
+
+Run agents entirely within your own infrastructure:
+
+- Complete control over hardware and networking
+- Data never leaves your infrastructure
+- Supports VMware, Kubernetes, and bare metal
+- Air-gapped deployments supported
+
+**Use when:**
+- You have air-gapped environment requirements
+- You need complete data control
+- You're integrating with legacy systems
+- Government or defense requirements mandate it
+
+---
+
+### Edge
+
+**Deploy to edge devices**
+
+Run agents at the network edge or on local devices:
+
+- Deploy to Raspberry Pi, laptops, or edge servers
+- Data processed locally
+- Optional sync with central services
+- Minimal latency for local operations
+
+**Use when:**
+- You need sub-10ms latency
+- You're building IoT or embedded applications
+- You need offline-first capabilities
+- You're processing data at the source (retail, manufacturing, field deployments)
+
+---
+
+## Regional Deployment
+
+For applications requiring global reach, deploy to multiple regions simultaneously. Regional deployment enables load balancing between regions and provides failover capabilities for high availability.
+
+Use regional deployment for global SaaS applications, high-availability requirements, and latency-sensitive applications with worldwide users.
+
+---
+
+## Choosing Your Deployment
+
+**Decision Framework:**
+
+| Requirement | Recommended Option |
+|-------------|-------------------|
+| Just getting started | Public Cloud |
+| HIPAA/SOC2 compliance | Private Cloud |
+| Air-gapped networks | On-Premises |
+| Multi-region redundancy | Multi-Cloud |
+| Sub-10ms latency | Edge |
+| Data sovereignty | Private Cloud or On-Premises |
+| Vendor lock-in concerns | Multi-Cloud |
+| Global scale + speed | Public Cloud (multi-region) |
+
+**Recommendation:**
+
+Start with **Public Cloud** for development and initial production. It requires minimal configuration and provides the complete Agentuity feature set.
+
+**Evolution path:**
+
+As requirements evolve, you can migrate or expand to other deployment options:
+- Move to **Private Cloud** when compliance requires it
+- Add **Multi-Cloud** for redundancy or provider flexibility
+- Use **On-Premises** when data sovereignty is mandatory
+- Deploy to **Edge** when latency is critical
+
+**Typical progression:**
+
+1. **Development**: Local development with `agentuity dev`
+2. **Initial Production**: Public cloud deployment
+3. **Scale & Compliance**: Private cloud or multi-cloud as requirements dictate
+4. **Specialized Needs**: Edge or on-premises for specific use cases
+
+---
+
+## Real-World Deployment Patterns
+
+### Enterprise Scale: Salesforce
+
+When Salesforce deployed agents to handle 50% of support cases, they learned critical lessons about production deployment:
+
+**Gradual Rollout:**
+- Started with 1% of tickets
+- Monitored closely and iterated
+- Expanded to 50% over time
+
+**Human Oversight:**
+- Agents flagged uncertain responses initially
+- Support staff validated agent decisions
+- Continuous improvement based on feedback
+
+**Key Lessons:**
+- Start small and expand gradually
+- Monitor closely during initial rollout
+- Plan for organizational change, not just technical deployment
+- Iterate based on real-world performance
+
+### Financial Services: Compliance First
+
+[Over 100 GenAI applications are being deployed in financial services](https://www.cbinsights.com/research/report/generative-ai-financial-services-applications-2025/). Banks deploying AI agents face strict requirements:
+
+**Audit Trails:**
+- Every agent interaction needs logging
+- Complete history for regulatory review
+- Compliance validation at every step
+
+**Failover Critical:**
+- Instant human handoff when confidence low
+- No single point of failure
+- Continuous availability required
+
+**Data Security:**
+- No customer PII in prompts
+- Encryption at rest and in transit
+- Access controls and authentication
+
+**Deployment Choice:** Most financial institutions use **Private Cloud** for compliance and data sovereignty.
+
+### Healthcare: HIPAA Requirements
+
+Healthcare organizations deploying diagnostic assistance agents must meet strict data protection requirements:
+
+**Data Residency:**
+- Patient data cannot leave specific regions
+- Complete audit logs required
+- Encryption mandatory
+
+**Access Controls:**
+- Strict authentication and authorization
+- Role-based access to patient information
+- Audit every data access
+
+**Deployment Choice:** **Private Cloud** or **On-Premises** for complete control over patient data.
+
+### Global SaaS: Performance at Scale
+
+Global applications require worldwide performance:
+
+**Regional Deployment:**
+- Agents deployed in multiple regions
+- Users routed to nearest region
+- Reduced latency worldwide
+
+**High Availability:**
+- Automatic failover between regions
+- No single point of failure
+- Continuous monitoring
+
+**Deployment Choice:** **Public Cloud** with regional deployment or **Multi-Cloud** for provider flexibility.
+
+---
+
+## Best Practices
+
+### Deployment Strategy
+
+**Preview First:**
+- Always test in preview deployments before production
+- Share preview URLs with stakeholders
+- Validate changes in cloud environment
+- Catch issues before they affect users
+
+**Gradual Rollouts:**
+- Start with small percentage of traffic (1-5%)
+- Monitor error rates and performance
+- Gradually increase (10% → 25% → 50% → 100%)
+- Roll back immediately if issues detected
+
+**Environment Isolation:**
+- Use separate credentials per environment
+- Never use production keys in development
+- Test thoroughly in each environment
+- Validate performance under realistic load
+
+### Monitoring & Observability
+
+**Same Tools Everywhere:**
+- Identical observability across all environments
+- Sessions tab works in production
+- Same debugging experience everywhere
+
+**Track Key Metrics:**
+- Latency and response times
+- Error rates and types
+- Throughput and request volumes
+- Resource utilization
+
+**Set Up Alerts:**
+- Monitor for anomalies
+- Alert on error rate spikes
+- Track performance degradation
+- Automatic notifications for critical issues
+
+### Security
+
+**Credentials Management:**
+- Separate secrets per environment
+- Rotate credentials regularly
+- Use least-privilege access
+- Never commit secrets to code
+
+**Data Protection:**
+- Encryption at rest and in transit
+- Access controls on sensitive data
+- Audit logs for compliance
+- Regular security reviews
+
+### Testing
+
+**Validate Each Environment:**
+- Test in development first
+- Validate in preview deployments
+- Load test in staging
+- Monitor closely in production
+
+**Comprehensive Testing:**
+- Functional correctness
+- Performance under load
+- Failover and recovery
+- Integration with external services
+
+---
+
+## Key Takeaways
+
+By the end of this module, you should understand:
+
+1. **Environment Progression:**
+   - Development → Preview → Staging → Production
+   - Each environment serves specific validation purposes
+   - Same code works across all environments
+
+2. **Deployment Options:**
+   - Public Cloud: Speed and simplicity
+   - Private Cloud: Control and security
+   - Multi-Cloud: Flexibility and redundancy
+   - On-Premises: Complete sovereignty
+   - Edge: Ultra-low latency
+
+3. **Decision Framework:**
+   - Start with public cloud for most use cases
+   - Add other options as requirements evolve
+   - Choose based on compliance, performance, and control needs
+
+4. **Best Practices:**
+   - Preview deployments before production
+   - Gradual rollouts with monitoring
+   - Environment isolation and security
+   - Comprehensive testing at each stage
+
+TODO: Add deployment commands and configuration details for each deployment option.
+
+---
+
+## What's Next?
+
+You've learned how to deploy agents from local development to production across multiple deployment targets.
+
+**Module 9: Capstone Project** - Put everything together by building a complete multi-agent system that demonstrates all the concepts from this training series.
