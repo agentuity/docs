@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useRouter } from "next/navigation";
 import { ChatInput } from "./components/ChatInput";
 import { v4 as uuidv4 } from 'uuid';
@@ -45,12 +46,23 @@ interface RecommendationCardProps {
 }
 
 const RecommendationCard = ({ title, subtitle, onClick }: RecommendationCardProps) => {
+    const [isClicked, setIsClicked] = React.useState(false);
+
+    const handleClick = () => {
+        if (isClicked) return; // Prevent double-click
+        setIsClicked(true);
+        onClick();
+    };
+
     return (
         <button
-            onClick={onClick}
-            className="flex flex-col items-start p-3 rounded-lg text-left transition-all duration-200 hover:scale-[1.02] border"
+            onClick={handleClick}
+            disabled={isClicked}
+            className="flex flex-col items-start p-3 rounded-lg text-left transition-all duration-200 hover:scale-[1.02] border disabled:opacity-50 disabled:cursor-not-allowed"
         >
-            <div className="font-medium text-sm mb-0.5">{title}</div>
+            <div className="font-medium text-sm mb-0.5">
+                {isClicked ? "Loading..." : title}
+            </div>
             <div className="text-xs opacity-70">{subtitle}</div>
         </button>
     );

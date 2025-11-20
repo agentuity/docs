@@ -1,13 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getKVValue, setKVValue } from '@/lib/kv-store';
 import { Session, Message, SessionSchema } from '@/app/chat/types';
 import { toISOString } from '@/app/chat/utils/dateUtils';
-import { config } from '@/lib/config';
 import { parseAndValidateJSON } from '@/lib/validation/middleware';
+import { sessionService } from '@/lib/services';
+import type { Session as NewSession } from '@/lib/storage/data-model';
 
 // Constants
 const DEFAULT_SESSIONS_LIMIT = 10;
 const MAX_SESSIONS_LIMIT = 50;
+
+/**
+ * Convert new Session model to old Session model for API compatibility
+ */
+function toOldSession(newSession: NewSession): Session {
+  return {
+    sessionId: newSession.sessionId,
+    isTutorial: newSession.isTutorial,
+    title: newSession.title,
+    messages: newSession.recentMessages.map(msg => ({
+      id: msg.id,
+      author: msg.role as 'USER' | 'ASSISTANT',
+      content: msg.content,
+      timestamp: msg.timestamp,
+      tutorialData: msg.tutorialData,
+      documentationReferences: msg.documentationReferences,
+    })),
+  };
+}
 
 /**
  * GET /api/sessions - Get all sessions (paginated)
@@ -26,40 +45,27 @@ export async function GET(request: NextRequest) {
     const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), MAX_SESSIONS_LIMIT) : DEFAULT_SESSIONS_LIMIT;
     const cursor = Number.isFinite(parsedCursor) ? Math.max(parsedCursor, 0) : 0;
 
-    const response = await getKVValue<string[]>(userId, { storeName: config.defaultStoreName });
-    if (!response.success) {
-      if (response.statusCode === 404) {
-        return NextResponse.json({ sessions: [], pagination: { cursor, nextCursor: null, hasMore: false, total: 0, limit } });
-      }
-      return NextResponse.json(
-        { error: response.error || 'Failed to retrieve sessions' },
-        { status: response.statusCode || 500 }
-      );
-    }
-    
-    if (!response.data?.length) {
-      return NextResponse.json({ sessions: [], pagination: { cursor, nextCursor: null, hasMore: false, total: 0, limit } });
-    }
+    // Use SessionService to list sessions
+    const result = await sessionService.listSessions(userId, {
+      limit,
+      offset: cursor,
+      status: 'ACTIVE',
+    });
 
-    const sessionIds = response.data;
-    const total = sessionIds.length;
+    // Convert to old session format
+    const sessions = result.sessions.map(toOldSession);
 
-    const start = Math.min(cursor, total);
-    const end = Math.min(start + limit, total);
-    const pageIds = sessionIds.slice(start, end);
-
-    const sessionPromises = pageIds.map(sessionId => getKVValue<Session>(sessionId, { storeName: config.defaultStoreName }));
-    const sessionResults = await Promise.all(sessionPromises);
-    const sessions = sessionResults
-      .filter(result => result.success && result.data)
-      .map(result => result.data as Session);
-
-    const hasMore = end < total;
-    const nextCursor = hasMore ? end : null;
+    const nextCursor = result.hasMore ? cursor + limit : null;
 
     return NextResponse.json({
       sessions,
-      pagination: { cursor: start, nextCursor, hasMore, total, limit }
+      pagination: {
+        cursor,
+        nextCursor,
+        hasMore: result.hasMore,
+        total: result.total,
+        limit,
+      },
     });
   } catch (error) {
     return NextResponse.json(
@@ -84,61 +90,24 @@ export async function POST(request: NextRequest) {
       return validation.response;
     }
 
-    const session = validation.data;
+    const oldSession = validation.data;
 
-    // Process any messages to ensure timestamps are in ISO string format
-    if (session.messages && session.messages.length > 0) {
-      session.messages = session.messages.map((message: Message) => {
-        if (message.timestamp) {
-          return {
-            ...message,
-            timestamp: toISOString(message.timestamp)
-          };
-        }
-        return message;
-      });
-    }
-
-    const sessionKey = `${userId}_${session.sessionId}`;
-
-    // Save the session data
-    const sessionResponse = await setKVValue(
-      sessionKey,
-      session,
-      { storeName: config.defaultStoreName }
-    );
-
-    if (!sessionResponse.success) {
-      return NextResponse.json(
-        { error: sessionResponse.error || 'Failed to create session' },
-        { status: sessionResponse.statusCode || 500 }
-      );
-    }
-
-    // Update the sessions list with just the session ID
-    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: config.defaultStoreName });
-    const sessionIds = allSessionsResponse.success ? allSessionsResponse.data || [] : [];
-
-    // Add the new session ID to the beginning of the array
-    const updatedSessionIds = [sessionKey, ...sessionIds.filter(id => id !== sessionKey)];
-
-    const sessionsListResponse = await setKVValue(
+    // IMPORTANT: Use client-provided sessionId, not generate a new one
+    // Frontend creates the sessionId and needs it to match
+    const newSession = await sessionService.createSessionWithId({
       userId,
-      updatedSessionIds,
-      { storeName: config.defaultStoreName }
-    );
+      sessionId: oldSession.sessionId, // Use client's sessionId!
+      title: oldSession.title,
+      isTutorial: oldSession.isTutorial ?? false,
+    });
 
-    if (!sessionsListResponse.success) {
-      return NextResponse.json(
-        { error: sessionsListResponse.error || 'Failed to update sessions list' },
-        { status: sessionsListResponse.statusCode || 500 }
-      );
-    }
+    // Convert back to old format for API response
+    const session = toOldSession(newSession);
 
     return NextResponse.json({
       success: true,
       session,
-      ...(session.title ? {} : { titleGeneration: 'pending' })
+      ...(session.title ? {} : { titleGeneration: 'pending' }),
     });
   } catch (error) {
     return NextResponse.json(
