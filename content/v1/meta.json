@@ -2,10 +2,10 @@
 	"title": "v1 Documentation",
 	"pages": [
 		"Introduction",
-		"Training",
 		"Guides",
 		"SDK",
+		"migration-guide",
 		"Examples",
-		"migration-guide"
+		"Training"
 	]
 }
