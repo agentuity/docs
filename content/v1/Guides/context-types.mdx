@@ -1,0 +1,181 @@
+---
+title: Understanding Context Types
+description: Learn about Agentuity's two distinct context types - AgentContext for business logic and Router Context for HTTP handling
+---
+
+Agentuity v1 uses two distinct context types depending on where you're writing code. Understanding when and how to use each context is fundamental to working effectively with the SDK.
+
+## The Two Context Types
+
+Agentuity provides two context types, each designed for a specific purpose:
+
+- **AgentContext**: Used in `agent.ts` files for business logic (no HTTP access)
+- **Router Context (Hono)**: Used in `route.ts` files for HTTP handling (has HTTP + agent services)
+
+**Important:** The distinction is **type-based**, not **name-based**. In SDK examples, we use `ctx` for agent handlers and `c` for router handlers to visually distinguish the two context types. What differs is the **type** and **capabilities**.
+
+## AgentContext - For Business Logic
+
+The `AgentContext` is used in agent handlers defined in `agent.ts` files. This context is designed for pure business logic and provides access to Agentuity services without any HTTP-specific functionality.
+
+**Type:** `AgentContext`
+
+**Used in:** `agent.ts` files
+
+**Provides:**
+- Agent services (`.agent`, `.kv`, `.vector`, `.objectstore`, etc.)
+- State management (`.state`, `.session`, `.thread`)
+- Logging and tracing (`.logger`, `.tracer`)
+- No HTTP access - input comes through validated parameters
+
+**Example:**
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    // Business logic only - no HTTP access
+    ctx.logger.info('Processing');
+    await ctx.kv.set('key', 'value');
+    return { result: 'done' };  // Direct return
+  }
+});
+```
+
+In agent handlers, the input is passed as a separate parameter and is already validated against your schema. The context provides services but no HTTP-specific methods.
+
+## RouterContext - For HTTP Handling
+
+The Router Context is Hono's Context object, used in route handlers defined in `route.ts` files. This context extends Hono's functionality with Agentuity services, giving you both HTTP capabilities and access to the agent system.
+
+**Type:** Hono Context (extends `Context<Env, Path, Input>`)
+
+**Used in:** `route.ts` files
+
+**Provides:**
+- HTTP request access (`.req`)
+- HTTP response builders (`.json()`, `.text()`, `.html()`, etc.)
+- Agent services (`.agent`, `.kv`, `.vector`, `.objectstore`, etc.)
+- Logging and tracing (`.logger`, `.tracer`)
+
+**Example:**
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.post('/api', async (c) => {
+  // HTTP handling + agent services
+  const body = await c.req.json();  // HTTP request access
+  const result = await c.agent.processor.run(body);
+  return c.json({ result });  // HTTP response
+});
+```
+
+In route handlers, you access request data through `c.req` and return responses using Hono's builder methods like `c.json()`.
+
+## Key Differences
+
+Here's a quick comparison of the two context types:
+
+| Feature | Router Context (Hono) | Agent Context |
+|---------|----------------------|---------------|
+| **Type** | Hono Context | `AgentContext` |
+| **Used in** | `route.ts` files | `agent.ts` files |
+| **Request access** | `c.req` (Hono Request) | Direct `input` parameter (validated) |
+| **Response** | Builder methods (`.json()`, `.text()`) | Direct returns |
+| **Services** | `.agent`, `.kv`, `.logger`, etc. | `.agent`, `.kv`, `.logger`, etc. |
+| **State management** | Via Hono middleware | Built-in (`.state`, `.session`, `.thread`) |
+
+Both contexts provide access to the same Agentuity services, but differ in how they handle input and output.
+
+## Common Patterns
+
+### Calling Agents from Routes
+
+A common pattern is to receive HTTP requests in routes, then delegate business logic to agents:
+
+```typescript
+// route.ts - HTTP handling
+router.post('/process', async (c) => {
+  const body = await c.req.json();
+
+  // Call agent to handle business logic
+  const result = await c.agent.processor.run({
+    data: body.data
+  });
+
+  return c.json({ result });
+});
+```
+
+```typescript
+// agent.ts - Business logic
+const processor = createAgent({
+  handler: async (ctx, input) => {
+    // Pure business logic
+    ctx.logger.info('Processing data', { input });
+    const processed = await processData(input.data);
+    return { processed };
+  }
+});
+```
+
+### When to Use Which Context
+
+**Use AgentContext when:**
+- Writing reusable business logic
+- Building agents that can be called from multiple sources (routes, schedules, other agents)
+- You need state management (`.state`, `.session`, `.thread`)
+- You don't need HTTP-specific functionality
+
+**Use Router Context when:**
+- Handling HTTP requests and responses
+- Need access to headers, cookies, or raw request data
+- Building REST APIs or webhooks
+- Need HTTP-specific response types (redirects, streaming, etc.)
+
+### Naming Conventions
+
+In SDK examples, we use a naming convention to visually distinguish the two context types:
+
+- **Agent handlers**: Use `ctx` (e.g., `handler: async (ctx, input) => { ... }`)
+- **Router handlers**: Use `c` (e.g., `router.get('/api', async (c) => { ... })`)
+
+This convention makes it immediately clear which context type you're working with when reading code. However, you can use any variable name you prefer - `c`, `ctx`, `context`, etc. The **type** is what matters, not the name.
+
+```typescript
+// Agent handler - uses ctx in SDK examples
+handler: async (ctx, input) => { ... }
+
+// Route handler - uses c in SDK examples
+router.get('/api', async (c) => { ... })
+```
+
+When a context parameter is required but unused in your handler, use an underscore prefix:
+
+```typescript
+// Context required but unused
+handler: async (_ctx, input) => {
+  return { result: input.value * 2 };
+}
+```
+
+## Best Practices
+
+1. **Be consistent with naming**: The SDK examples use `ctx` for agent handlers and `c` for router handlers. This convention helps visually distinguish the two context types. Stick with this convention for consistency unless your team prefers otherwise.
+
+2. **Focus on types, not names**: Don't assume a parameter is one context type or another based on its variable name. Check the type definition.
+
+3. **Separate concerns**: Keep HTTP logic in routes, business logic in agents. This makes your code more testable and reusable.
+
+4. **Use underscore prefix for unused parameters**: If your route handler doesn't use the context, name it `_c` to indicate this intentionally.
+
+5. **Type your agent handlers**: Always explicitly type the context parameter in agent handlers as `AgentContext` for clarity:
+   ```typescript
+   handler: async (ctx: AgentContext, input) => { ... }
+   ```
+
+6. **Let TypeScript guide you**: If you try to access `ctx.req` in an agent handler or `c.state` in a route handler, TypeScript will catch these errors at compile time.

@@ -35,14 +35,14 @@ const agent = createAgent({
       data: z.any()
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Throw errors when business logic fails
     if (input.operation === 'create' && !input.data) {
       throw new Error('Data is required for create operation');
     }
 
     // Throw errors for authorization failures
-    const user = await getUserById(c.sessionId);
+    const user = await getUserById(ctx.sessionId);
     if (!user.canPerform(input.operation)) {
       throw new Error('Unauthorized to perform this operation');
     }
@@ -60,12 +60,12 @@ When agents call other agents, errors propagate automatically:
 
 ```typescript
 const coordinatorAgent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // If validatorAgent throws an error, it propagates here
-    const validation = await c.agent.validatorAgent.run(input);
+    const validation = await ctx.agent.validatorAgent.run(input);
 
     // If enrichmentAgent throws an error, it propagates here
-    const enriched = await c.agent.enrichmentAgent.run(validation);
+    const enriched = await ctx.agent.enrichmentAgent.run(validation);
 
     return enriched;
   }
@@ -80,14 +80,14 @@ For optional operations, use try-catch to handle errors gracefully:
 
 ```typescript
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     let enrichedData = input.data;
 
     // Try optional enrichment, but continue if it fails
     try {
-      enrichedData = await c.agent.enrichmentAgent.run(input);
+      enrichedData = await ctx.agent.enrichmentAgent.run(input);
     } catch (error) {
-      c.logger.warn('Enrichment failed, using original data', {
+      ctx.logger.warn('Enrichment failed, using original data', {
         error: error instanceof Error ? error.message : String(error)
       });
       // Continue with original data
@@ -125,7 +125,7 @@ class AuthorizationError extends Error {
 }
 
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     const user = await getUser(input.userId);
 
     if (!user) {
@@ -259,7 +259,7 @@ const agent = createAgent({
       role: z.enum(['user', 'admin'])
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // If we reach this point, input is guaranteed to be valid
     // - input.email is a valid email address
     // - input.age is >= 18
@@ -284,7 +284,7 @@ const agent = createAgent({
       data: z.any().optional()
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // This return value is validated
     return {
       status: 'success',
@@ -307,15 +307,15 @@ Storage operations can fail due to network issues, timeouts, or service unavaila
 
 ```typescript
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     try {
-      const cached = await c.kv.get('cache', input.key);
+      const cached = await ctx.kv.get('cache', input.key);
 
       if (cached.exists) {
         return { source: 'cache', data: cached.data };
       }
     } catch (error) {
-      c.logger.warn('Cache lookup failed, falling back to database', {
+      ctx.logger.warn('Cache lookup failed, falling back to database', {
         error: error instanceof Error ? error.message : String(error)
       });
     }
@@ -325,9 +325,9 @@ const agent = createAgent({
 
     // Try to cache for next time (don't fail if this errors)
     try {
-      await c.kv.set('cache', input.key, data, { ttl: 3600 });
+      await ctx.kv.set('cache', input.key, data, { ttl: 3600 });
     } catch (error) {
-      c.logger.warn('Failed to cache result', { error });
+      ctx.logger.warn('Failed to cache result', { error });
     }
 
     return { source: 'database', data };
@@ -339,9 +339,9 @@ const agent = createAgent({
 
 ```typescript
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     try {
-      const results = await c.vector.search('products', {
+      const results = await ctx.vector.search('products', {
         query: input.searchTerm,
         limit: 5,
         similarity: 0.7
@@ -349,7 +349,7 @@ const agent = createAgent({
 
       return { results };
     } catch (error) {
-      c.logger.error('Vector search failed', {
+      ctx.logger.error('Vector search failed', {
         error: error instanceof Error ? error.message : String(error)
       });
 
@@ -365,13 +365,13 @@ const agent = createAgent({
 
 ```typescript
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     try {
-      await c.objectstore.put('uploads', input.filename, input.data, {
+      await ctx.objectstore.put('uploads', input.filename, input.data, {
         contentType: input.contentType
       });
 
-      const url = await c.objectstore.createPublicURL(
+      const url = await ctx.objectstore.createPublicURL(
         'uploads',
         input.filename,
         3600000 // 1 hour
@@ -379,7 +379,7 @@ const agent = createAgent({
 
       return { success: true, url };
     } catch (error) {
-      c.logger.error('Failed to upload file', {
+      ctx.logger.error('Failed to upload file', {
         filename: input.filename,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -406,7 +406,7 @@ const agent = createAgent({
     name: 'Processing Agent',
     description: 'Processes user data'
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Handler logic
     return { success: true };
   }
@@ -415,9 +415,9 @@ const agent = createAgent({
 // Listen for errors
 agent.addEventListener('errored', (event, agent, ctx, error) => {
   // Log error with context
-  c.logger.error('Agent execution failed', {
+  ctx.logger.error('Agent execution failed', {
     agentName: agent.metadata.name,
-    sessionId: c.sessionId,
+    sessionId: ctx.sessionId,
     error: error.message,
     stack: error.stack
   });
@@ -425,7 +425,7 @@ agent.addEventListener('errored', (event, agent, ctx, error) => {
   // Send to error tracking service
   trackError({
     agent: agent.metadata.name,
-    session: c.sessionId,
+    session: ctx.sessionId,
     error: error.message
   });
 });
@@ -446,19 +446,19 @@ Use the logger to track execution flow and identify issues:
 
 ```typescript
 const agent = createAgent({
-  handler: async (c, input) => {
-    c.logger.info('Processing started', { input });
+  handler: async (ctx, input) => {
+    ctx.logger.info('Processing started', { input });
 
     try {
       const step1 = await performStep1(input);
-      c.logger.debug('Step 1 completed', { step1 });
+      ctx.logger.debug('Step 1 completed', { step1 });
 
       const step2 = await performStep2(step1);
-      c.logger.debug('Step 2 completed', { step2 });
+      ctx.logger.debug('Step 2 completed', { step2 });
 
       return { result: step2 };
     } catch (error) {
-      c.logger.error('Processing failed', {
+      ctx.logger.error('Processing failed', {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined
       });
@@ -481,8 +481,8 @@ Use tracing to debug complex workflows:
 
 ```typescript
 const agent = createAgent({
-  handler: async (c, input) => {
-    const span = c.tracer.startSpan('process-data');
+  handler: async (ctx, input) => {
+    const span = ctx.tracer.startSpan('process-data');
 
     try {
       span.setAttribute('input.size', JSON.stringify(input).length);
@@ -574,7 +574,7 @@ throw new Error('Unable to authenticate user');
 try {
   await authenticateUser(token);
 } catch (error) {
-  c.logger.error('Authentication failed', {
+  ctx.logger.error('Authentication failed', {
     error: error.message,
     token: token.substring(0, 8) + '...' // Partially redacted
   });

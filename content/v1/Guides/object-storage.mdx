@@ -46,12 +46,12 @@ Buckets are automatically created when you first access them:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // TODO: Verify file upload input handling pattern
     const imageData = new Uint8Array(input.fileData);
 
     // Bucket 'user-uploads' is auto-created if it doesn't exist
-    await c.objectstore.put('user-uploads', 'profile-123.jpg', imageData, {
+    await ctx.objectstore.put('user-uploads', 'profile-123.jpg', imageData, {
       contentType: 'image/jpeg'
     });
 
@@ -72,14 +72,14 @@ Store files with optional metadata and HTTP headers:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Store with content type
-    await c.objectstore.put('documents', 'report.pdf', pdfData, {
+    await ctx.objectstore.put('documents', 'report.pdf', pdfData, {
       contentType: 'application/pdf'
     });
 
     // Store with full metadata
-    await c.objectstore.put('uploads', 'document.pdf', pdfData, {
+    await ctx.objectstore.put('uploads', 'document.pdf', pdfData, {
       contentType: 'application/pdf',
       contentDisposition: 'attachment; filename="report.pdf"',
       cacheControl: 'max-age=3600',
@@ -91,7 +91,7 @@ const agent = createAgent({
 
     // Store text file
     const textData = new TextEncoder().encode(logContent);
-    await c.objectstore.put('logs', 'agent.log', textData, {
+    await ctx.objectstore.put('logs', 'agent.log', textData, {
       contentType: 'text/plain',
       contentEncoding: 'utf-8'
     });
@@ -123,26 +123,26 @@ Retrieve stored objects with type-safe null checking:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Get an object
-    const result = await c.objectstore.get('documents', 'report.pdf');
+    const result = await ctx.objectstore.get('documents', 'report.pdf');
 
     if (result.exists) {
       // Access binary data (Uint8Array)
       const pdfData = result.data;
       const contentType = result.contentType;
 
-      c.logger.info(`PDF size: ${pdfData.byteLength} bytes`);
-      c.logger.info(`Content type: ${contentType}`);
+      ctx.logger.info(`PDF size: ${pdfData.byteLength} bytes`);
+      ctx.logger.info(`Content type: ${contentType}`);
     } else {
-      c.logger.info('Object not found');
+      ctx.logger.info('Object not found');
     }
 
     // Convert to text if needed
     const textResult = await c.objectstore.get('logs', 'agent.log');
     if (textResult.exists) {
       const logContent = new TextDecoder().decode(textResult.data);
-      c.logger.info('Log content:', logContent);
+      ctx.logger.info('Log content:', logContent);
     }
 
     return { found: result.exists };
@@ -168,21 +168,21 @@ Create time-limited public URLs for direct access to objects:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Create a 1-hour public URL
-    const publicUrl = await c.objectstore.createPublicURL(
+    const publicUrl = await ctx.objectstore.createPublicURL(
       'documents',
       'report.pdf',
       { expiresDuration: 3600000 } // 1 hour in milliseconds
     );
 
-    c.logger.info(`Download link: ${publicUrl}`);
+    ctx.logger.info(`Download link: ${publicUrl}`);
 
     // Create with default expiration (1 hour)
-    const imageUrl = await c.objectstore.createPublicURL('images', 'photo.jpg');
+    const imageUrl = await ctx.objectstore.createPublicURL('images', 'photo.jpg');
 
     // Create short-lived URL (minimum 1 minute)
-    const tempUrl = await c.objectstore.createPublicURL(
+    const tempUrl = await ctx.objectstore.createPublicURL(
       'temp-files',
       'preview.png',
       { expiresDuration: 60000 }
@@ -208,14 +208,14 @@ Remove objects when they're no longer needed:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Delete an object
     const wasDeleted = await c.objectstore.delete('temp-files', 'processing.tmp');
 
     if (wasDeleted) {
-      c.logger.info('Temporary file cleaned up');
+      ctx.logger.info('Temporary file cleaned up');
     } else {
-      c.logger.info('File was already deleted');
+      ctx.logger.info('File was already deleted');
     }
 
     return { deleted: wasDeleted };
@@ -246,10 +246,10 @@ Use hierarchical paths for better organization:
 
 ```typescript
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Organize by user
     const key = `users/${input.userId}/profile.jpg`;
-    await c.objectstore.put('uploads', key, imageData, {
+    await ctx.objectstore.put('uploads', key, imageData, {
       contentType: 'image/jpeg'
     });
 
@@ -259,7 +259,7 @@ const agent = createAgent({
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const documentKey = `documents/${year}/${month}/report-${input.reportId}.pdf`;
 
-    await c.objectstore.put('reports', documentKey, pdfData, {
+    await ctx.objectstore.put('reports', documentKey, pdfData, {
       contentType: 'application/pdf'
     });
 
@@ -289,12 +289,12 @@ const contentTypes: Record<string, string> = {
 };
 
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     const filename = input.filename;
     const extension = filename.substring(filename.lastIndexOf('.'));
     const contentType = contentTypes[extension] || 'application/octet-stream';
 
-    await c.objectstore.put('uploads', filename, input.fileData, {
+    await ctx.objectstore.put('uploads', filename, input.fileData, {
       contentType
     });
 
@@ -309,7 +309,7 @@ Use appropriate expiration times for public URLs:
 
 ```typescript
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     let expiresDuration: number;
 
     switch (input.accessType) {
@@ -351,10 +351,10 @@ Handle storage operations gracefully:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     try {
       // Attempt to store file
-      await c.objectstore.put('uploads', input.key, input.data, {
+      await ctx.objectstore.put('uploads', input.key, input.data, {
         contentType: input.contentType
       });
 
@@ -370,7 +370,7 @@ const agent = createAgent({
         url
       };
     } catch (error) {
-      c.logger.error('Storage error:', error);
+      ctx.logger.error('Storage error:', error);
 
       return {
         success: false,
@@ -406,13 +406,13 @@ const uploadAgent = createAgent({
       url: z.string()
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Generate unique key
     const timestamp = Date.now();
     const key = `uploads/${timestamp}-${input.filename}`;
 
     // Store the uploaded file
-    await c.objectstore.put('user-files', key, input.fileData, {
+    await ctx.objectstore.put('user-files', key, input.fileData, {
       contentType: input.contentType,
       metadata: {
         'original-name': input.filename,
@@ -451,10 +451,10 @@ const documentProcessorAgent = createAgent({
       rawDocument: z.instanceof(Uint8Array)
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Store raw document
     const rawKey = `documents/raw/${input.documentId}.pdf`;
-    await c.objectstore.put('documents', rawKey, input.rawDocument, {
+    await ctx.objectstore.put('documents', rawKey, input.rawDocument, {
       contentType: 'application/pdf',
       metadata: {
         'status': 'raw',
@@ -469,7 +469,7 @@ const documentProcessorAgent = createAgent({
 
     // Store processed version
     const processedKey = `documents/processed/${input.documentId}.txt`;
-    await c.objectstore.put('documents', processedKey, textData, {
+    await ctx.objectstore.put('documents', processedKey, textData, {
       contentType: 'text/plain',
       metadata: {
         'status': 'processed',

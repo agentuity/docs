@@ -36,9 +36,9 @@ const coordinatorAgent = createAgent({
     input: z.object({ text: z.string() }),
     output: z.object({ result: z.string() })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Call another agent
-    const enriched = await c.agent.enrichmentAgent.run({
+    const enriched = await ctx.agent.enrichmentAgent.run({
       text: input.text
     });
 
@@ -62,19 +62,19 @@ Sequential execution processes data through a series of agents, where each agent
 
 ```typescript
 const pipelineAgent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Step 1: Validate input
-    const validated = await c.agent.validatorAgent.run({
+    const validated = await ctx.agent.validatorAgent.run({
       data: input.rawData
     });
 
     // Step 2: Enrich with additional data
-    const enriched = await c.agent.enrichmentAgent.run({
+    const enriched = await ctx.agent.enrichmentAgent.run({
       data: validated.cleanData
     });
 
     // Step 3: Analyze the enriched data
-    const analyzed = await c.agent.analysisAgent.run({
+    const analyzed = await ctx.agent.analysisAgent.run({
       data: enriched.enrichedData
     });
 
@@ -97,12 +97,12 @@ Parallel execution runs multiple agents simultaneously when their operations are
 
 ```typescript
 const searchAgent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Execute all searches in parallel
     const [webResults, dbResults, vectorResults] = await Promise.all([
-      c.agent.webSearchAgent.run({ query: input.query }),
-      c.agent.databaseAgent.run({ query: input.query }),
-      c.agent.vectorSearchAgent.run({ query: input.query })
+      ctx.agent.webSearchAgent.run({ query: input.query }),
+      ctx.agent.databaseAgent.run({ query: input.query }),
+      ctx.agent.vectorSearchAgent.run({ query: input.query })
     ]);
 
     // Merge and rank results
@@ -141,7 +141,7 @@ const routerAgent = createAgent({
   schema: {
     input: z.object({ userMessage: z.string() })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Classify intent with Groq (fast inference via AI Gateway)
     const intent = await generateObject({
       model: groq('llama-3.3-70b'), // Groq (fast inference via AI Gateway) for quick classification
@@ -151,7 +151,7 @@ const routerAgent = createAgent({
       temperature: 0.0 // Deterministic output for routing decisions
     });
 
-    c.logger.info('Intent classified', {
+    ctx.logger.info('Intent classified', {
       type: intent.object.agentType,
       confidence: intent.object.confidence
     });
@@ -159,25 +159,25 @@ const routerAgent = createAgent({
     // Route based on classified intent
     switch (intent.object.agentType) {
       case 'support':
-        return await c.agent.supportAgent.run({
+        return await ctx.agent.supportAgent.run({
           message: input.userMessage,
           context: intent.object.reasoning
         });
 
       case 'sales':
-        return await c.agent.salesAgent.run({
+        return await ctx.agent.salesAgent.run({
           message: input.userMessage,
           context: intent.object.reasoning
         });
 
       case 'technical':
-        return await c.agent.technicalAgent.run({
+        return await ctx.agent.technicalAgent.run({
           message: input.userMessage,
           context: intent.object.reasoning
         });
 
       case 'billing':
-        return await c.agent.billingAgent.run({
+        return await ctx.agent.billingAgent.run({
           message: input.userMessage,
           context: intent.object.reasoning
         });
@@ -200,9 +200,9 @@ Build complex pipelines with checkpoints and conditional branching:
 
 ```typescript
 const contentModerationAgent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Stage 1: Initial screening
-    const screening = await c.agent.screeningAgent.run({
+    const screening = await ctx.agent.screeningAgent.run({
       content: input.text
     });
 
@@ -216,13 +216,13 @@ const contentModerationAgent = createAgent({
 
     // Stage 2: Detailed analysis (parallel)
     const [sentiment, toxicity, pii] = await Promise.all([
-      c.agent.sentimentAgent.run({ text: input.text }),
-      c.agent.toxicityAgent.run({ text: input.text }),
-      c.agent.piiDetectionAgent.run({ text: input.text })
+      ctx.agent.sentimentAgent.run({ text: input.text }),
+      ctx.agent.toxicityAgent.run({ text: input.text }),
+      ctx.agent.piiDetectionAgent.run({ text: input.text })
     ]);
 
     // Stage 3: Final decision
-    const decision = await c.agent.decisionAgent.run({
+    const decision = await ctx.agent.decisionAgent.run({
       screening,
       sentiment,
       toxicity,
@@ -248,16 +248,16 @@ const documentAnalysisAgent = createAgent({
       sections: z.array(z.string())
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Fan-out: Analyze each section in parallel
     const sectionAnalyses = await Promise.all(
       input.sections.map(section =>
-        c.agent.sectionAnalyzer.run({ text: section })
+        ctx.agent.sectionAnalyzer.run({ text: section })
       )
     );
 
     // Fan-in: Aggregate results
-    const summary = await c.agent.summaryAgent.run({
+    const summary = await ctx.agent.summaryAgent.run({
       analyses: sectionAnalyses
     });
 
@@ -274,7 +274,7 @@ const documentAnalysisAgent = createAgent({
 ```typescript
 const results = await Promise.allSettled(
   input.items.map(item =>
-    c.agent.processingAgent.run({ item })
+    ctx.agent.processingAgent.run({ item })
   )
 );
 
@@ -287,7 +287,7 @@ const failed = results
   .map(r => r.reason);
 
 if (failed.length > 0) {
-  c.logger.warn('Some operations failed', { failed });
+  ctx.logger.warn('Some operations failed', { failed });
 }
 
 return { successful, failed: failed.length };
@@ -301,12 +301,12 @@ By default, errors propagate through the call chain, stopping execution immediat
 
 ```typescript
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // If validatorAgent throws, execution stops here
-    const validated = await c.agent.validatorAgent.run(input);
+    const validated = await ctx.agent.validatorAgent.run(input);
 
     // This line never executes if validation fails
-    const processed = await c.agent.processorAgent.run(validated);
+    const processed = await ctx.agent.processorAgent.run(validated);
 
     return processed;
   }
@@ -321,23 +321,23 @@ For optional operations, catch errors and continue with reduced functionality:
 
 ```typescript
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     let enrichedData = input.data;
 
     // Try to enrich, but continue if it fails
     try {
-      const enrichment = await c.agent.enrichmentAgent.run({
+      const enrichment = await ctx.agent.enrichmentAgent.run({
         data: input.data
       });
       enrichedData = enrichment.data;
     } catch (error) {
-      c.logger.warn('Enrichment failed, using original data', {
+      ctx.logger.warn('Enrichment failed, using original data', {
         error: error instanceof Error ? error.message : String(error)
       });
     }
 
     // Process with enriched data (or original if enrichment failed)
-    return await c.agent.processorAgent.run({
+    return await ctx.agent.processorAgent.run({
       data: enrichedData
     });
   }
@@ -377,10 +377,10 @@ async function callWithRetry<T>(
 }
 
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Retry unreliable external agent call
     const result = await callWithRetry(() =>
-      c.agent.externalServiceAgent.run(input)
+      ctx.agent.externalServiceAgent.run(input)
     );
 
     return result;
@@ -394,15 +394,15 @@ Provide alternative paths when primary agents fail:
 
 ```typescript
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     try {
       // Try primary agent
-      return await c.agent.primaryAgent.run(input);
+      return await ctx.agent.primaryAgent.run(input);
     } catch (error) {
-      c.logger.warn('Primary agent failed, using fallback', { error });
+      ctx.logger.warn('Primary agent failed, using fallback', { error });
 
       // Fall back to alternative agent
-      return await c.agent.fallbackAgent.run(input);
+      return await ctx.agent.fallbackAgent.run(input);
     }
   }
 });
@@ -416,14 +416,14 @@ Transform agent outputs to match the expected input of downstream agents:
 
 ```typescript
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Agent 1 returns { analysisResult: {...} }
-    const analysis = await c.agent.analysisAgent.run({
+    const analysis = await ctx.agent.analysisAgent.run({
       text: input.text
     });
 
     // Agent 2 expects { data: {...}, metadata: {...} }
-    const processed = await c.agent.processingAgent.run({
+    const processed = await ctx.agent.processingAgent.run({
       data: analysis.analysisResult,
       metadata: {
         timestamp: new Date().toISOString(),
@@ -468,24 +468,24 @@ Build pipelines that progressively transform data:
 
 ```typescript
 const transformationAgent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Raw text → Structured data
-    const structured = await c.agent.parserAgent.run({
+    const structured = await ctx.agent.parserAgent.run({
       text: input.rawText
     });
 
     // Structured data → Validated data
-    const validated = await c.agent.validatorAgent.run({
+    const validated = await ctx.agent.validatorAgent.run({
       data: structured.parsed
     });
 
     // Validated data → Enriched data
-    const enriched = await c.agent.enrichmentAgent.run({
+    const enriched = await ctx.agent.enrichmentAgent.run({
       data: validated.clean
     });
 
     // Enriched data → Final output
-    const final = await c.agent.formatterAgent.run({
+    const final = await ctx.agent.formatterAgent.run({
       data: enriched.enriched
     });
 
@@ -508,9 +508,9 @@ const researchAgent = createAgent({
       sources: z.array(z.string())
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Step 1: Search for relevant information
-    const searchResults = await c.agent.searchAgent.run({
+    const searchResults = await ctx.agent.searchAgent.run({
       query: input.query,
       limit: 10
     });
@@ -518,12 +518,12 @@ const researchAgent = createAgent({
     // Step 2: Summarize findings (parallel)
     const summaries = await Promise.all(
       searchResults.results.map(result =>
-        c.agent.summaryAgent.run({ text: result.content })
+        ctx.agent.summaryAgent.run({ text: result.content })
       )
     );
 
     // Step 3: Analyze and extract insights
-    const analysis = await c.agent.analysisAgent.run({
+    const analysis = await ctx.agent.analysisAgent.run({
       summaries: summaries.map(s => s.summary),
       originalQuery: input.query
     });
@@ -547,9 +547,9 @@ const approvalAgent = createAgent({
       requester: z.string()
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Step 1: Validate request format
-    const validation = await c.agent.validatorAgent.run({
+    const validation = await ctx.agent.validatorAgent.run({
       request: input.request
     });
 
@@ -562,7 +562,7 @@ const approvalAgent = createAgent({
     }
 
     // Step 2: Check user permissions
-    const permissions = await c.agent.permissionsAgent.run({
+    const permissions = await ctx.agent.permissionsAgent.run({
       userId: input.requester,
       action: input.request.action
     });
@@ -576,13 +576,13 @@ const approvalAgent = createAgent({
 
     // Step 3: Risk assessment (parallel checks)
     const [financialRisk, securityRisk, complianceCheck] = await Promise.all([
-      c.agent.financialRiskAgent.run(input.request),
-      c.agent.securityRiskAgent.run(input.request),
-      c.agent.complianceAgent.run(input.request)
+      ctx.agent.financialRiskAgent.run(input.request),
+      ctx.agent.securityRiskAgent.run(input.request),
+      ctx.agent.complianceAgent.run(input.request)
     ]);
 
     // Step 4: Final approval decision
-    const decision = await c.agent.decisionAgent.run({
+    const decision = await ctx.agent.decisionAgent.run({
       request: input.request,
       permissions,
       financialRisk,
@@ -599,7 +599,7 @@ const approvalAgent = createAgent({
 
 ```typescript
 const dataEnrichmentAgent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Start with raw user data
     let userData = input.userData;
 
@@ -609,9 +609,9 @@ const dataEnrichmentAgent = createAgent({
       behavioralData,
       preferenceData
     ] = await Promise.all([
-      c.agent.demographicAgent.run({ userId: userData.id }),
-      c.agent.behavioralAgent.run({ userId: userData.id }),
-      c.agent.preferenceAgent.run({ userId: userData.id })
+      ctx.agent.demographicAgent.run({ userId: userData.id }),
+      ctx.agent.behavioralAgent.run({ userId: userData.id }),
+      ctx.agent.preferenceAgent.run({ userId: userData.id })
     ]);
 
     // Merge all data
@@ -623,19 +623,19 @@ const dataEnrichmentAgent = createAgent({
     };
 
     // Generate insights from enriched data
-    const insights = await c.agent.insightsAgent.run({
+    const insights = await ctx.agent.insightsAgent.run({
       enrichedData: merged
     });
 
     // Store for future use
     try {
-      await c.kv.set('enriched-users', userData.id, {
+      await ctx.kv.set('enriched-users', userData.id, {
         data: merged,
         insights: insights,
         updatedAt: new Date().toISOString()
       }, { ttl: 86400 }); // 24 hours
     } catch (error) {
-      c.logger.warn('Failed to cache enriched data', { error });
+      ctx.logger.warn('Failed to cache enriched data', { error });
     }
 
     return {
@@ -654,7 +654,7 @@ For parent-child agent hierarchies, the SDK provides specialized patterns. Subag
 
 ```typescript
 // Call a subagent from anywhere
-const result = await c.agent.team.members.run({
+const result = await ctx.agent.team.members.run({
   action: 'list'
 });
 
@@ -682,7 +682,7 @@ const analysisAgent = createAgent({ /* analyzes data */ });
 
 // Bad - monolithic agent doing everything
 const megaAgent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Validates, enriches, analyzes all in one place
   }
 });
@@ -702,7 +702,7 @@ const sourceAgent = createAgent({
       metadata: z.object({ timestamp: z.string() })
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     return {
       data: 'result',
       metadata: { timestamp: new Date().toISOString() }
@@ -717,9 +717,9 @@ const consumerAgent = createAgent({
       metadata: z.object({ timestamp: z.string() })
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // TypeScript knows the exact shape of input
-    const result = await c.agent.sourceAgent.run({});
+    const result = await ctx.agent.sourceAgent.run({});
 
     // This is type-safe - TypeScript validates compatibility
     return await processData(result);
@@ -734,15 +734,15 @@ Choose the right error handling strategy for each operation:
 **Fail-fast** for critical operations:
 ```typescript
 // No try-catch - let errors propagate
-const validated = await c.agent.validatorAgent.run(input);
+const validated = await ctx.agent.validatorAgent.run(input);
 ```
 
 **Graceful degradation** for optional operations:
 ```typescript
 try {
-  await c.agent.optionalAgent.run(input);
+  await ctx.agent.optionalAgent.run(input);
 } catch (error) {
-  c.logger.warn('Optional operation failed', { error });
+  ctx.logger.warn('Optional operation failed', { error });
 }
 ```
 
@@ -752,18 +752,18 @@ Use logging and tracing to monitor multi-agent workflows:
 
 ```typescript
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     const startTime = Date.now();
 
-    c.logger.info('Starting multi-agent workflow', {
-      sessionId: c.sessionId
+    ctx.logger.info('Starting multi-agent workflow', {
+      sessionId: ctx.sessionId
     });
 
-    const result = await c.agent.processingAgent.run(input);
+    const result = await ctx.agent.processingAgent.run(input);
 
-    c.logger.info('Workflow completed', {
+    ctx.logger.info('Workflow completed', {
       duration: Date.now() - startTime,
-      sessionId: c.sessionId
+      sessionId: ctx.sessionId
     });
 
     return result;
@@ -777,16 +777,16 @@ Agent calls execute within the same session context, sharing state:
 
 ```typescript
 const coordinatorAgent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Store data in thread state
     ctx.thread.state.set('startTime', Date.now());
     ctx.thread.state.set('userId', input.userId);
 
     // Called agents can access the same thread state
-    const result = await c.agent.processingAgent.run(input);
+    const result = await ctx.agent.processingAgent.run(input);
 
     // All agents share the same sessionId
-    c.logger.info('Session ID:', c.sessionId);
+    ctx.logger.info('Session ID:', ctx.sessionId);
 
     return result;
   }
@@ -805,7 +805,7 @@ When using LLM-based routing, handle classification failures gracefully:
 
 ```typescript
 const routerAgent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     try {
       const intent = await generateObject({
         model: groq('llama-3.3-70b'),
@@ -817,25 +817,25 @@ const routerAgent = createAgent({
       // Route based on intent
       switch (intent.object.agentType) {
         case 'support':
-          return await c.agent.supportAgent.run({
+          return await ctx.agent.supportAgent.run({
             message: input.userMessage,
             context: intent.object.reasoning
           });
 
         case 'sales':
-          return await c.agent.salesAgent.run({
+          return await ctx.agent.salesAgent.run({
             message: input.userMessage,
             context: intent.object.reasoning
           });
 
         case 'technical':
-          return await c.agent.technicalAgent.run({
+          return await ctx.agent.technicalAgent.run({
             message: input.userMessage,
             context: intent.object.reasoning
           });
       }
     } catch (error) {
-      c.logger.error('Intent classification failed', {
+      ctx.logger.error('Intent classification failed', {
         error: error instanceof Error ? error.message : String(error)
       });
 

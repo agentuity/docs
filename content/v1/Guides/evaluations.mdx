@@ -39,7 +39,7 @@ const agent = createAgent({
     input: z.object({ question: z.string() }),
     output: z.object({ answer: z.string(), confidence: z.number() }),
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     const answer = await generateAnswer(input.question);
     return { answer, confidence: 0.95 };
   },
@@ -51,7 +51,7 @@ agent.createEval({
     name: 'confidence-check',
     description: 'Ensures confidence score meets minimum threshold'
   },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     const passed = output.confidence >= 0.8;
 
     return {
@@ -102,14 +102,14 @@ const agent = createAgent({
     input: z.object({ query: z.string() }),
     output: z.object({ result: z.string() }),
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     return { result: `Processed: ${input.query}` };
   },
 });
 
 agent.createEval({
   metadata: { name: 'query-in-result' },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     // Handler receives both input and output
     const queryInResult = output.result.includes(input.query);
 
@@ -131,14 +131,14 @@ const agent = createAgent({
   schema: {
     input: z.object({ message: z.string() }),
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     return `Received: ${input.message}`;
   },
 });
 
 agent.createEval({
   metadata: { name: 'input-validation' },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Handler receives only input
     const isValid = input.message.length > 0 && input.message.length <= 500;
 
@@ -174,7 +174,7 @@ Use for clear yes/no validation (compliance checks, format verification).
 ```typescript
 agent.createEval({
   metadata: { name: 'length-check' },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     const passed = output.answer.length >= 50;
     return {
       success: true,
@@ -203,7 +203,7 @@ Use for quality measurement and A/B testing.
 ```typescript
 agent.createEval({
   metadata: { name: 'quality-score' },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     let score = 0;
     if (output.answer.length >= 100) score += 0.4;
     if (output.answer.includes(input.question)) score += 0.3;
@@ -232,7 +232,7 @@ Use when the eval itself fails to execute.
 ```typescript
 agent.createEval({
   metadata: { name: 'external-validation' },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     try {
       const response = await fetch('https://api.example.com/validate', {
         method: 'POST',
@@ -269,7 +269,7 @@ Eval handlers receive the same context (`EvalContext`) as agent handlers:
 ```typescript
 agent.createEval({
   metadata: { name: 'comprehensive-tracker' },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     const startTime = c.state.get('startTime') as number;
     const duration = Date.now() - startTime;
 
@@ -287,7 +287,7 @@ agent.createEval({
     });
 
     // Log result
-    c.logger.info('Performance tracked', { sessionId: c.sessionId, duration });
+    ctx.logger.info('Performance tracked', { sessionId: c.sessionId, duration });
 
     return {
       success: true,
@@ -311,7 +311,7 @@ const agent = createAgent({
       keywords: z.array(z.string())
     }),
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     return {
       summary: generateSummary(input.text),
       keywords: extractKeywords(input.text)
@@ -322,7 +322,7 @@ const agent = createAgent({
 // Eval 1: Summary length
 agent.createEval({
   metadata: { name: 'summary-length' },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     const passed = output.summary.length >= 20 && output.summary.length <= 200;
     return {
       success: true,
@@ -335,7 +335,7 @@ agent.createEval({
 // Eval 2: Quality score
 agent.createEval({
   metadata: { name: 'overall-quality' },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     let score = 0;
     if (output.summary.length >= 50) score += 0.5;
     if (output.keywords.length >= 3) score += 0.5;
@@ -386,7 +386,7 @@ const customerServiceAgent = createAgent({
       actionsTaken: z.array(z.string())
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Agent processes customer request
     return {
       response: "Your order has been cancelled and refund processed.",
@@ -400,7 +400,7 @@ customerServiceAgent.createEval({
     name: 'task-completion-check',
     description: 'Evaluates if agent successfully completed customer request'
   },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     const { object } = await generateObject({
       model: openai('gpt-5-nano'),
       schema: z.object({
@@ -450,7 +450,7 @@ const ragAgent = createAgent({
       sources: z.array(z.string())
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Retrieve relevant documents
     const results = await c.vector.search('knowledge-base', {
       query: input.question,
@@ -475,7 +475,7 @@ ragAgent.createEval({
     name: 'hallucination-check',
     description: 'Detects claims not supported by retrieved sources'
   },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     // Access retrieved documents from handler execution
     const retrievedDocs = c.state.get('retrievedDocs') as string[];
 
@@ -520,7 +520,7 @@ Check for policy violations or sensitive content:
 ```typescript
 agent.createEval({
   metadata: { name: 'content-safety' },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     const profanityList = ['badword1', 'badword2'];
     const piiPatterns = {
       email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/,
@@ -571,7 +571,7 @@ const ragAgent = createAgent({
       confidence: z.number()
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     const results = await c.vector.search('docs', {
       query: input.query,
       limit: 5,
@@ -593,7 +593,7 @@ ragAgent.createEval({
     name: 'contextual-relevancy',
     description: 'Evaluates if retrieved documents are relevant to query'
   },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     const results = c.state.get('retrievedResults') as VectorSearchResult[];
 
     const { object } = await generateObject({
@@ -626,7 +626,7 @@ ragAgent.createEval({
     name: 'answer-relevancy',
     description: 'Evaluates if answer addresses the question'
   },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     const { object } = await generateObject({
       model: openai('gpt-5-nano'),
       schema: z.object({
@@ -655,7 +655,7 @@ ragAgent.createEval({
     name: 'faithfulness',
     description: 'Checks if answer contains information not in sources'
   },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     const results = c.state.get('retrievedResults') as VectorSearchResult[];
     const sources = results.map(r => r.metadata?.text).join('\n\n');
 
@@ -695,7 +695,7 @@ Evals should handle errors gracefully to avoid breaking the eval pipeline.
 ```typescript
 agent.createEval({
   metadata: { name: 'safe-external-check' },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     try {
       const response = await fetch('https://api.example.com/validate', {
         method: 'POST',
@@ -711,7 +711,7 @@ agent.createEval({
       const result = await response.json();
       return { success: true, passed: result.isValid };
     } catch (error) {
-      c.logger.error('External validation failed', { error: error.message });
+      ctx.logger.error('External validation failed', { error: error.message });
       return { success: false, error: error.message };
     }
   },
@@ -723,13 +723,13 @@ agent.createEval({
 ```typescript
 agent.createEval({
   metadata: { name: 'resilient-eval' },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     // Try primary method
     try {
       const result = await validateWithLLM(output.answer);
       return { success: true, score: result.score, metadata: { method: 'llm' } };
     } catch (error) {
-      c.logger.warn('LLM validation failed, using fallback');
+      ctx.logger.warn('LLM validation failed, using fallback');
     }
 
     // Fallback to rule-based
@@ -792,7 +792,7 @@ agent.createEval({
 // Good: Single-purpose
 agent.createEval({
   metadata: { name: 'length-check' },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     return { success: true, passed: output.answer.length >= 50 };
   },
 });
@@ -800,7 +800,7 @@ agent.createEval({
 // Avoid: Multiple concerns in one eval
 agent.createEval({
   metadata: { name: 'everything-check' },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     const lengthOk = output.answer.length >= 50;
     const hasKeywords = checkKeywords(output);
     const sentiment = analyzeSentiment(output);
@@ -861,7 +861,7 @@ Track execution time and resource usage:
 ```typescript
 agent.createEval({
   metadata: { name: 'performance-monitor' },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     const startTime = c.state.get('startTime') as number;
     const duration = startTime ? Date.now() - startTime : 0;
 
@@ -889,7 +889,7 @@ Compare different approaches:
 ```typescript
 agent.createEval({
   metadata: { name: 'ab-test-tracker' },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     const variant = c.state.get('variant') as 'A' | 'B';
     if (!variant) {
       return { success: false, error: 'No variant specified' };

@@ -55,7 +55,7 @@ Agentuity consists of five primary components:
 
 ## Built-in Services
 
-Agentuity includes built-in services that work out of the box. These services are accessible through the agent context (`c`) and require minimal configuration.
+Agentuity includes built-in services that work out of the box. These services are accessible through the agent context (`ctx`) and require minimal configuration.
 
 ### Routing and Connectivity
 
@@ -71,17 +71,17 @@ Agentuity includes built-in services that work out of the box. These services ar
 
 | Service | Description | Access |
 |---------|-------------|--------|
-| Key-Value Storage | Fast key-value store with TTL support | `c.kv` |
-| Vector Database | Embeddings storage and semantic search | `c.vector` |
-| Object Storage | Blob and file storage with public URL generation | `c.objectstore` |
-| Stream Storage | Large data streaming and processing | `c.stream` |
+| Key-Value Storage | Fast key-value store with TTL support | `ctx.kv` |
+| Vector Database | Embeddings storage and semantic search | `ctx.vector` |
+| Object Storage | Blob and file storage with public URL generation | `ctx.objectstore` |
+| Stream Storage | Large data streaming and processing | `ctx.stream` |
 
 ### Observability
 
 | Service | Description | Access |
 |---------|-------------|--------|
-| Structured Logging | Built-in logger with contextual information | `c.logger` |
-| OpenTelemetry Tracing | Distributed tracing for agent interactions | `c.tracer` |
+| Structured Logging | Built-in logger with contextual information | `ctx.logger` |
+| OpenTelemetry Tracing | Distributed tracing for agent interactions | `ctx.tracer` |
 | Real-time Analytics | Execution metrics, performance data, and usage tracking | Web Console |
 | Error Tracking | Automatic error capture and reporting | Web Console |
 
@@ -342,8 +342,8 @@ export default createAgent({
     name: 'My Agent',
     description: 'A simple agent'
   },
-  handler: async (c, input) => {
-    c.logger.info('Processing request', { input });
+  handler: async (ctx, input) => {
+    ctx.logger.info('Processing request', { input });
 
     return {
       response: `Received: ${input.message}`
@@ -494,7 +494,7 @@ agent.createEval({
     name: 'quality-check',
     description: 'Validates output quality'
   },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     // Evaluate the output
     const score = calculateQuality(output);
 
@@ -524,7 +524,7 @@ const agent = createAgent({
       greeting: z.string()
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // input is fully typed and validated
     return {
       greeting: `Hello ${input.name}!`

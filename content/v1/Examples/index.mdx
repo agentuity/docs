@@ -15,8 +15,8 @@ Here's a basic agent that processes requests and returns responses:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (c, input) => {
-    c.logger.info('Received request');
+  handler: async (ctx, input) => {
+    ctx.logger.info('Received request');
 
     return {
       message: 'Hello, World!',
@@ -31,7 +31,7 @@ export default agent;
 **Key Points:**
 - Direct return values (no response object needed)
 - Input is automatically available
-- Logger accessed via `c.logger`
+- Logger accessed via `ctx.logger`
 - Returns plain JavaScript objects
 
 ### Type-Safe Agent with Validation
@@ -53,7 +53,7 @@ const agent = createAgent({
       status: z.enum(['active', 'pending'])
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // input.email and input.age are fully typed and validated
     return {
       userId: crypto.randomUUID(),
@@ -83,25 +83,25 @@ This example demonstrates structured logging for monitoring and debugging:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Different log levels
-    c.logger.info('Processing request', {
-      sessionId: c.sessionId,
+    ctx.logger.info('Processing request', {
+      sessionId: ctx.sessionId,
       inputSize: JSON.stringify(input).length
     });
 
-    c.logger.debug('Detailed processing info', { data: input });
+    ctx.logger.debug('Detailed processing info', { data: input });
 
     try {
       const result = await processData(input);
 
-      c.logger.info('Processing successful', {
+      ctx.logger.info('Processing successful', {
         resultSize: JSON.stringify(result).length
       });
 
       return result;
     } catch (error) {
-      c.logger.error('Processing failed', {
+      ctx.logger.error('Processing failed', {
         error: error.message,
         stack: error.stack
       });
@@ -155,11 +155,11 @@ const agent = createAgent({
       success: v.boolean()
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     const { action, userId, preferences } = input;
 
     if (action === 'get') {
-      const result = await c.kv.get('user-preferences', userId);
+      const result = await ctx.kv.get('user-preferences', userId);
 
       if (!result.exists) {
         return { success: false, message: 'No preferences found' };
@@ -170,7 +170,7 @@ const agent = createAgent({
     }
 
     if (action === 'set') {
-      await c.kv.set(
+      await ctx.kv.set(
         'user-preferences',
         userId,
         preferences,
@@ -181,7 +181,7 @@ const agent = createAgent({
     }
 
     // Delete
-    await c.kv.delete('user-preferences', userId);
+    await ctx.kv.delete('user-preferences', userId);
     return { success: true, message: 'Preferences deleted' };
   }
 });
@@ -190,8 +190,8 @@ export default agent;
 ```
 
 **Key Points:**
-- `c.kv.get()` returns a result with `exists` flag
-- `c.kv.set()` supports optional TTL for expiring data
+- `ctx.kv.get()` returns a result with `exists` flag
+- `ctx.kv.set()` supports optional TTL for expiring data
 - Data can be stored as JSON objects or strings
 - Storage is namespaced by the first parameter
 
@@ -226,7 +226,7 @@ const agent = createAgent({
       deletedCount: 'number?'
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     const { action, query, products } = input;
 
     if (action === 'index') {
@@ -329,7 +329,7 @@ const agent = createAgent({
       message: v.optional(v.string())
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     const { action, filename, data, expiresIn } = input;
 
     if (action === 'upload') {
@@ -404,8 +404,8 @@ Calling other agents to build workflows:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (c, input) => {
-    c.logger.info('Starting multi-agent workflow');
+  handler: async (ctx, input) => {
+    ctx.logger.info('Starting multi-agent workflow');
 
     // Call enrichment agent
     const enriched = await c.agent.enrichmentAgent.run({
@@ -462,7 +462,7 @@ const agent = createAgent({
       confidence: z.number()
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Search vector database for relevant context
     const results = await c.vector.search('knowledge-base', {
       query: input.question,
@@ -550,9 +550,9 @@ const agent = createAgent({
       error: z.string().optional()
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     try {
-      c.logger.info(`Processing resource: ${input.resourceId}`);
+      ctx.logger.info(`Processing resource: ${input.resourceId}`);
 
       // Simulate resource lookup
       const resource = await lookupResource(input.resourceId, ctx);
@@ -567,7 +567,7 @@ const agent = createAgent({
     } catch (error) {
       // Handle different error types
       if (error instanceof ValidationError) {
-        c.logger.warn(`Validation error: ${error.message}`);
+        ctx.logger.warn(`Validation error: ${error.message}`);
         return {
           error: 'Validation error',
           message: error.message
@@ -575,7 +575,7 @@ const agent = createAgent({
       }
 
       if (error instanceof ResourceNotFoundError) {
-        c.logger.warn(`Resource not found: ${error.message}`);
+        ctx.logger.warn(`Resource not found: ${error.message}`);
         return {
           error: 'Resource not found',
           message: error.message
@@ -583,7 +583,7 @@ const agent = createAgent({
       }
 
       // Handle unexpected errors
-      c.logger.error('Unexpected error', error);
+      ctx.logger.error('Unexpected error', error);
       return {
         error: 'Internal server error',
         message: 'An unexpected error occurred'
@@ -647,7 +647,7 @@ const agent = createAgent({
       })
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Request-scoped state (cleared after request)
     c.state.set('startTime', Date.now());
 
@@ -701,8 +701,8 @@ const agent = createAgent({
     input: z.object({ task: z.string() }),
     output: z.object({ result: z.string() })
   },
-  handler: async (c, input) => {
-    c.logger.info('Processing task', { task: input.task });
+  handler: async (ctx, input) => {
+    ctx.logger.info('Processing task', { task: input.task });
 
     // Simulate processing
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -790,8 +790,8 @@ const agent = createAgent({
       summary: z.string()
     })
   },
-  handler: async (c, input) => {
-    c.logger.info(`Starting workflow: ${input.query}`);
+  handler: async (ctx, input) => {
+    ctx.logger.info(`Starting workflow: ${input.query}`);
 
     // Step 1: Search for relevant information
     const searchResults = await c.agent.searchAgent.run({
@@ -825,7 +825,7 @@ const agent = createAgent({
       recommendations ? `, generated ${recommendations.length} recommendations` : ''
     }`;
 
-    c.logger.info('Workflow completed successfully');
+    ctx.logger.info('Workflow completed successfully');
 
     return {
       searchResults,
@@ -874,7 +874,7 @@ const agent = createAgent({
       estimatedDuration: z.string().optional()
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     const { action, prompt, userId, includeAnalytics = true } = input;
 
     if (action === 'stream-with-background') {
@@ -1010,9 +1010,9 @@ const router = createRouter();
 router.email('support@example.com', async (email, c) => {
   // Process email with agent
   const result = await c.agent.emailProcessor.run({
-    sender: email.from,
-    subject: email.subject,
-    content: email.text || email.html || ''
+    sender: email.fromEmail() || 'unknown',
+    subject: email.subject() || 'no subject',
+    content: email.text() || email.html() || ''
   });
 
   return c.json({
@@ -1058,7 +1058,7 @@ router.websocket('/chat', (c) => (ws) => {
   });
 
   ws.onClose(() => {
-    c.logger.info('Client disconnected');
+    ctx.logger.info('Client disconnected');
   });
 });
 
@@ -1108,7 +1108,7 @@ router.cron('*/5 * * * *', async (c) => {
   const health = await c.agent.healthCheck.run({});
 
   if (health.status !== 'ok') {
-    c.logger.warn('Health check failed', { status: health.status });
+    ctx.logger.warn('Health check failed', { status: health.status });
   }
 
   return c.json({ healthy: health.status === 'ok' });
@@ -1160,7 +1160,7 @@ router.sse('/updates', (c) => async (stream) => {
   await stream.write({ type: 'complete' });
 
   stream.onAbort(() => {
-    c.logger.info('Client disconnected');
+    ctx.logger.info('Client disconnected');
   });
 });
 
@@ -1195,7 +1195,7 @@ const agent = createAgent({
       confidence: z.number()
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Process query and generate result
     const result = await processQuery(input.query);
 
@@ -1212,7 +1212,7 @@ agent.createEval({
     name: 'confidence-check',
     description: 'Ensures confidence score meets minimum threshold'
   },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     const passed = output.confidence >= 0.8;
 
     return {
@@ -1254,7 +1254,7 @@ import { createAgent } from '@agentuity/runtime';
 import { SpanStatusCode } from '@opentelemetry/api';
 
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     return c.tracer.startActiveSpan('process-request', async (span) => {
       try {
         // Add attributes to the span
@@ -1303,7 +1303,7 @@ const agent = createAgent({
           message: (error as Error).message
         });
 
-        c.logger.error('Error processing request', error);
+        ctx.logger.error('Error processing request', error);
         throw error;
       } finally {
         span.end();
@@ -1351,7 +1351,7 @@ const agent = createAgent({
     }),
     stream: true
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     const { textStream } = streamText({
       model: openai('gpt-5-nano'),
       prompt: input.prompt
@@ -1389,7 +1389,7 @@ const agent = createAgent({
     }),
     stream: true
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Call the expert agent and stream its response
     const response = await c.agent.historyExpert.run({
       question: input.question

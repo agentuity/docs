@@ -143,13 +143,13 @@ Handle incoming emails sent to a specific address.
 ```typescript
 router.email('support@example.com', async (email, c) => {
   c.logger.info('Email received', {
-    from: email.from,
-    subject: email.subject
+    from: email.fromEmail(),
+    subject: email.subject()
   });
 
   const result = await c.agent.emailProcessor.run({
-    sender: email.from,
-    content: email.text || email.html || ''
+    sender: email.fromEmail() || 'unknown',
+    content: email.text() || email.html() || ''
   });
 
   return c.json({ processed: true });
@@ -159,17 +159,30 @@ router.email('support@example.com', async (email, c) => {
 **Email object structure:**
 ```typescript
 interface Email {
-  from: string;
-  to: string[];
-  subject: string;
-  text?: string;
-  html?: string;
-  headers: Record<string, string>;
-  attachments?: Array<{
+  // Sender information
+  fromEmail(): string | null;
+  fromName(): string | null;
+
+  // Recipient information
+  to(): string | null;              // All recipients (comma-separated)
+  toEmail(): string | null;         // First recipient email
+  toName(): string | null;          // First recipient name
+
+  // Message content
+  subject(): string | null;
+  text(): string | null;
+  html(): string | null;
+
+  // Attachments
+  attachments(): Array<{
     filename: string;
     contentType: string;
-    content: Buffer;
   }>;
+
+  // Metadata
+  date(): Date | null;
+  messageId(): string | null;
+  headers(): Headers;
 }
 ```
 
@@ -353,7 +366,7 @@ const agent = createAgent({
     input: z.object({ message: z.string() }),
     output: z.string()
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     return `Received: ${input.message}`;
   }
 });
@@ -393,6 +406,8 @@ The GET route provides an easy way to test the agent in a browser, while the POS
 ### Request Context
 
 The context object (`c`) provides access to request data and Agentuity services:
+
+**Note:** Route handlers use Hono Context (often called `c`), which is different from the AgentContext used in agent handlers. See the [Context Types Guide](/v1/Guides/context-types) for details.
 
 **Request data:**
 ```typescript

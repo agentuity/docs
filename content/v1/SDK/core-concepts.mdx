@@ -26,7 +26,7 @@ const agent = createAgent({
     name: 'Chat Agent',
     description: 'Processes chat messages'
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Input is already validated and typed
     return { response: `You said: ${input.message}` };
   }
@@ -57,7 +57,7 @@ const agent = createAgent({
       verified: z.boolean()
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // input.email and input.age are fully typed
     // Return type is also validated
     return {
@@ -83,7 +83,7 @@ import { createAgent } from '@agentuity/runtime';
 
 export const chatAgent = createAgent({
   schema: { /* ... */ },
-  handler: async (c, input) => { /* ... */ }
+  handler: async (ctx, input) => { /* ... */ }
 });
 ```
 
@@ -115,9 +115,9 @@ Agent handlers receive two parameters:
 Handlers return data directly. The SDK handles serialization and response formatting.
 
 ```typescript
-handler: async (c, input) => {
+handler: async (ctx, input) => {
   // Access context capabilities
-  c.logger.info('Processing request', { input });
+  ctx.logger.info('Processing request', { input });
 
   // Return data directly (no response object needed)
   return { success: true, data: processedData };
@@ -140,7 +140,7 @@ const agent = createAgent({
       filters: z.array(z.string()).optional()
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // input is validated and typed
     // TypeScript knows: input.query is string
     // TypeScript knows: input.filters is string[] | undefined
@@ -163,7 +163,7 @@ const agent = createAgent({
       data: z.any()
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Return must match output schema
     return {
       status: 'success',
@@ -186,7 +186,7 @@ const agent = createAgent({
     input: z.object({ prompt: z.string() }),
     stream: true
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     const { textStream } = streamText({
       model: openai('gpt-5-mini'),
       prompt: input.prompt
@@ -203,17 +203,19 @@ See the [Schema Validation](/Guides/schema-validation) guide for advanced patter
 
 The context object provides access to all SDK capabilities within your handler. Properties are organized by function:
 
+**Note:** This AgentContext is distinct from the Router Context used in `route.ts` files. See the [Context Types Guide](/v1/Guides/context-types) for the differences.
+
 ### Identifiers
 
 Access unique identifiers for the current execution:
 
 ```typescript
-handler: async (c, input) => {
+handler: async (ctx, input) => {
   // Unique ID for this execution
-  const sessionId = c.sessionId;
+  const sessionId = ctx.sessionId;
 
   // Name of the current agent
-  const agentName = c.agentName;
+  const agentName = ctx.agentName;
 }
 ```
 
@@ -222,17 +224,17 @@ handler: async (c, input) => {
 Call other agents in your project or access agent references:
 
 ```typescript
-handler: async (c, input) => {
+handler: async (ctx, input) => {
   // Call another agent (type-safe)
-  const result = await c.agent.enrichmentAgent.run({
+  const result = await ctx.agent.enrichmentAgent.run({
     text: input.data
   });
 
   // Reference to current agent
-  const self = c.current;
+  const self = ctx.current;
 
   // Parent agent reference (in subagents)
-  const parent = c.parent;
+  const parent = ctx.parent;
   if (parent) {
     const parentResult = await parent.run(input);
   }
@@ -246,25 +248,25 @@ Agent calls are type-safe when both agents have schemas. See [Agent Communicatio
 Access state at three different scopes:
 
 ```typescript
-handler: async (c, input) => {
+handler: async (ctx, input) => {
   // Request scope - cleared after response
-  c.state.set('startTime', Date.now());
+  ctx.state.set('startTime', Date.now());
 
   // Thread scope - conversation context (1 hour lifetime)
-  const history = c.thread.state.get('messages') || [];
-  c.thread.state.set('messages', [...history, input.message]);
+  const history = ctx.thread.state.get('messages') || [];
+  ctx.thread.state.set('messages', [...history, input.message]);
 
   // Session scope - spans threads
-  const userPrefs = c.session.state.get('preferences');
-  c.session.state.set('lastActive', new Date());
+  const userPrefs = ctx.session.state.get('preferences');
+  ctx.session.state.set('lastActive', new Date());
 }
 ```
 
 | Scope | Lifetime | Use Case |
 |-------|----------|----------|
-| `c.state` | Single request | Timing, temporary calculations |
-| `c.thread.state` | Up to 1 hour | Conversation history |
-| `c.session.state` | Spans threads | User preferences, settings |
+| `ctx.state` | Single request | Timing, temporary calculations |
+| `ctx.thread.state` | Up to 1 hour | Conversation history |
+| `ctx.session.state` | Spans threads | User preferences, settings |
 
 See the [Sessions and Threads](/Guides/sessions-threads) guide for detailed state management patterns.
 
@@ -273,25 +275,25 @@ See the [Sessions and Threads](/Guides/sessions-threads) guide for detailed stat
 Access persistent storage systems:
 
 ```typescript
-handler: async (c, input) => {
+handler: async (ctx, input) => {
   // Key-value storage
-  await c.kv.set('cache', 'user-123', userData, { ttl: 3600 });
-  const cached = await c.kv.get('cache', 'user-123');
+  await ctx.kv.set('cache', 'user-123', userData, { ttl: 3600 });
+  const cached = await ctx.kv.get('cache', 'user-123');
 
   // Vector storage
-  const results = await c.vector.search('products', {
+  const results = await ctx.vector.search('products', {
     query: input.searchTerm,
     limit: 5,
     similarity: 0.7
   });
 
   // Object storage
-  await c.objectstore.put('uploads', 'file.pdf', fileData, {
+  await ctx.objectstore.put('uploads', 'file.pdf', fileData, {
     contentType: 'application/pdf'
   });
 
   // Stream storage
-  const stream = await c.stream.create('export', {
+  const stream = await ctx.stream.create('export', {
     contentType: 'text/csv'
   });
 }
@@ -310,13 +312,13 @@ See the [API Reference](/SDK/api-reference) for complete storage API documentati
 Monitor and trace agent execution:
 
 ```typescript
-handler: async (c, input) => {
+handler: async (ctx, input) => {
   // Structured logging
-  c.logger.info('Processing request', { input });
-  c.logger.error('Operation failed', { error: err });
+  ctx.logger.info('Processing request', { input });
+  ctx.logger.error('Operation failed', { error: err });
 
   // OpenTelemetry tracing
-  const span = c.tracer.startSpan('database-query');
+  const span = ctx.tracer.startSpan('database-query');
   // ... perform operation
   span.end();
 }
@@ -327,14 +329,14 @@ handler: async (c, input) => {
 Execute background tasks that continue after the response is sent:
 
 ```typescript
-handler: async (c, input) => {
+handler: async (ctx, input) => {
   // Process data immediately
   const result = processData(input);
 
   // Run analytics in background
-  c.waitUntil(async () => {
+  ctx.waitUntil(async () => {
     await trackAnalytics(result);
-    await updateMetrics(c.sessionId);
+    await updateMetrics(ctx.sessionId);
   });
 
   // Response sent immediately, background tasks continue
@@ -380,12 +382,11 @@ The router provides methods for event-driven and scheduled triggers:
 
 ```typescript
 // Email handling
-router.email('support@example.com', async (c) => {
-  const email = c.req.email;
+router.email('support@example.com', async (email, c) => {
   const result = await c.agent.emailAgent.run({
-    from: email.from,
-    subject: email.subject,
-    body: email.body
+    from: email.fromEmail() || 'unknown',
+    subject: email.subject() || 'no subject',
+    body: email.text() || email.html() || ''
   });
   return c.json(result);
 });
@@ -438,13 +439,13 @@ Agents can call other agents in the same project using type-safe references thro
 
 ### Calling Other Agents
 
-Use `c.agent.agentName.run()` to invoke another agent:
+Use `ctx.agent.agentName.run()` to invoke another agent:
 
 ```typescript
 const coordinatorAgent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Call another agent
-    const enriched = await c.agent.enrichmentAgent.run({
+    const enriched = await ctx.agent.enrichmentAgent.run({
       text: input.rawData
     });
 
@@ -461,10 +462,10 @@ When both agents have schemas, the call is fully type-safe. TypeScript will vali
 Execute agents sequentially when each depends on the previous result:
 
 ```typescript
-handler: async (c, input) => {
-  const step1 = await c.agent.validator.run(input);
-  const step2 = await c.agent.enricher.run(step1);
-  const step3 = await c.agent.analyzer.run(step2);
+handler: async (ctx, input) => {
+  const step1 = await ctx.agent.validator.run(input);
+  const step2 = await ctx.agent.enricher.run(step1);
+  const step3 = await ctx.agent.analyzer.run(step2);
 
   return step3;
 }
@@ -473,11 +474,11 @@ handler: async (c, input) => {
 Execute agents in parallel when operations are independent:
 
 ```typescript
-handler: async (c, input) => {
+handler: async (ctx, input) => {
   const [webResults, dbResults, cacheResults] = await Promise.all([
-    c.agent.webSearch.run(input),
-    c.agent.database.run(input),
-    c.agent.cache.run(input)
+    ctx.agent.webSearch.run(input),
+    ctx.agent.database.run(input),
+    ctx.agent.cache.run(input)
   ]);
 
   return { webResults, dbResults, cacheResults };
@@ -490,12 +491,12 @@ Access subagents using the nested path syntax:
 
 ```typescript
 // Call a subagent from anywhere
-const result = await c.agent.team.members.run({
+const result = await ctx.agent.team.members.run({
   action: 'list'
 });
 
 // From a subagent, access the parent
-const parentResult = await c.parent.run(input);
+const parentResult = await ctx.parent.run(input);
 ```
 
 Subagents organize related agents into parent-child hierarchies with one level of nesting. For detailed patterns and limitations, see the [Subagents](/Guides/subagents) guide.

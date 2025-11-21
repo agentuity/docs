@@ -24,8 +24,8 @@ const agent = createAgent({
     input: z.object({ task: z.string() }),
     output: z.object({ result: z.string() })
   },
-  handler: async (c, input) => {
-    c.logger.info('Processing task', { task: input.task });
+  handler: async (ctx, input) => {
+    ctx.logger.info('Processing task', { task: input.task });
 
     // Simulate processing
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -36,7 +36,7 @@ const agent = createAgent({
 
 // Track when agent starts
 agent.addEventListener('started', (eventName, agent, ctx) => {
-  c.state.set('startTime', Date.now());
+    ctx.state.set('startTime', Date.now());
   c.logger.info('Agent started', {
     agentName: agent.metadata.name,
     sessionId: c.sessionId
@@ -93,7 +93,7 @@ const agent = createAgent({
       confidence: z.number()
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Process query and return result
     return {
       answer: `Answer to: ${input.query}`,
@@ -109,7 +109,7 @@ agent.addEventListener('completed', (eventName, agent, ctx) => {
 
   // Check confidence threshold
   if (output.confidence < 0.7) {
-    c.logger.warn('Low confidence output detected', {
+    ctx.logger.warn('Low confidence output detected', {
       confidence: output.confidence,
       threshold: 0.7,
       agentName: agent.metadata.name
@@ -118,7 +118,7 @@ agent.addEventListener('completed', (eventName, agent, ctx) => {
 
   // Check answer length
   if (output.answer.length < 10) {
-    c.logger.warn('Suspiciously short answer', {
+    ctx.logger.warn('Suspiciously short answer', {
       answerLength: output.answer.length,
       agentName: agent.metadata.name
     });
@@ -276,11 +276,11 @@ Clean up resources when threads are destroyed:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Register cleanup handler on first access
     if (!c.thread.state.has('cleanupRegistered')) {
       c.thread.addEventListener('destroyed', (eventName, thread) => {
-        c.logger.info('Cleaning up thread resources', {
+        ctx.logger.info('Cleaning up thread resources', {
           threadId: thread.id,
           messageCount: thread.state.get('messageCount') || 0
         });
@@ -320,7 +320,7 @@ const agent = createAgent({
   schema: {
     input: z.object({ action: z.string() })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Register session completion handler once
     if (!c.session.state.has('persistenceRegistered')) {
       c.session.addEventListener('completed', async (eventName, session) => {
@@ -335,7 +335,7 @@ const agent = createAgent({
           ttl: 86400 // 24 hours
         });
 
-        c.logger.info('Session metrics saved', {
+        ctx.logger.info('Session metrics saved', {
           sessionId: session.id,
           metrics
         });
@@ -372,7 +372,7 @@ Track agent execution time and identify slow operations:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Process request
     await new Promise(resolve => setTimeout(resolve, 1200));
     return { result: 'completed' };
@@ -380,7 +380,7 @@ const agent = createAgent({
 });
 
 agent.addEventListener('started', (eventName, agent, ctx) => {
-  c.state.set('performanceStart', performance.now());
+    ctx.state.set('performanceStart', performance.now());
 });
 
 agent.addEventListener('completed', (eventName, agent, ctx) => {
@@ -389,7 +389,7 @@ agent.addEventListener('completed', (eventName, agent, ctx) => {
 
   // Log slow executions
   if (duration > 1000) {
-    c.logger.warn('Slow agent execution detected', {
+    ctx.logger.warn('Slow agent execution detected', {
       agentName: agent.metadata.name,
       duration,
       threshold: 1000,
@@ -584,7 +584,7 @@ Use `c.waitUntil()` to perform heavy work without blocking the response:
 import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     return { result: 'processed' };
   }
 });
@@ -595,7 +595,7 @@ agent.addEventListener('completed', (eventName, agent, ctx) => {
     // Simulate sending metrics to external service
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    c.logger.info('Metrics sent to external service', {
+    ctx.logger.info('Metrics sent to external service', {
       agentName: agent.metadata.name,
       sessionId: c.sessionId
     });
@@ -651,7 +651,7 @@ export default app.server;
 
 // In agent.ts
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     console.log(`[${Date.now()}] Agent: handler executing`);
     await new Promise(resolve => setTimeout(resolve, 100));
     return { result: 'done' };

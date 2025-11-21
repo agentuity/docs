@@ -17,8 +17,8 @@ const agent = createAgent({
     name: 'My Agent',
     description: 'A simple agent that greets users'
   },
-  handler: async (c) => {
-    c.logger.info('Agent invoked');
+  handler: async (ctx) => {
+    ctx.logger.info('Agent invoked');
     return { message: 'Hello!' };
   }
 });
@@ -56,7 +56,7 @@ const agent = createAgent({
       greeting: z.string()
     })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // input is fully typed and validated!
     return {
       greeting: `Hello ${input.name}!`
@@ -154,7 +154,7 @@ const agent = createAgent({
   schema: {
     input: z.object({ message: z.string() })
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // input is already parsed and validated
     return { echo: input.message };
   }
@@ -182,7 +182,7 @@ By default, returning an object will automatically serialize it as JSON. For mor
 **Simple Returns:**
 
 ```typescript
-handler: async (c, input) => {
+handler: async (ctx, input) => {
   return { message: 'Done!' }; // Automatically becomes JSON
 }
 ```
@@ -213,9 +213,9 @@ To call another agent, use `ctx.agent.otherAgent.run()`. This provides direct ac
 
 ```typescript
 const agent = createAgent({
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Call another agent
-    const result = await c.agent.helperAgent.run({
+    const result = await ctx.agent.helperAgent.run({
       data: input.data
     });
 
@@ -239,16 +239,16 @@ Sessions track individual executions, while threads track conversation histories
 **Threads** represent conversation histories for multi-turn interactions. Use threads to maintain context across multiple requests.
 
 ```typescript
-handler: async (c, input) => {
+handler: async (ctx, input) => {
   // Log session info
-  c.logger.info('Session:', {
-    id: c.sessionId,
-    session: c.session
+  ctx.logger.info('Session:', {
+    id: ctx.sessionId,
+    session: ctx.session
   });
 
   // Track conversation turns
-  const turnCount = (c.state.get('turnCount') as number || 0) + 1;
-  c.state.set('turnCount', turnCount);
+  const turnCount = (ctx.state.get('turnCount') as number || 0) + 1;
+  ctx.state.set('turnCount', turnCount);
 
   return {
     turn: turnCount,
@@ -287,7 +287,7 @@ agent.createEval({
     name: 'quality-check',
     description: 'Validates output quality'
   },
-  handler: async (c, input, output) => {
+  handler: async (ctx, input, output) => {
     const score = calculateQuality(output);
     return {
       success: true,

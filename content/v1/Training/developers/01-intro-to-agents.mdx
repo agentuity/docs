@@ -239,7 +239,7 @@ export const agent = createAgent({
   },
 
   // Handler receives (c, input) - input is already parsed and validated!
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     const name = input.name || 'World';
 
     // Return data directly - no response.json() needed
@@ -277,7 +277,7 @@ router.post('/greet', async (c) => {
 - **Handler signature**: `(c, input)` instead of v0's `(request, response, context)`
 - **Input is pre-validated** by schema (no manual parsing needed)
 - **Direct return values** (not `response.json()`)
-- **Routes use `c.agent.helloAgent.run()`** for type-safe agent calls
+- **Routes use `ctx.agent.helloAgent.run()`** for type-safe agent calls
 
 **Try it:**
 1. Create a new project: `npx @agentuity/cli create`
@@ -309,7 +309,7 @@ This makes agents reusable - the same agent can be called from HTTP routes, cron
 
 <TutorialStep number={2} title="With Logging" estimatedTime="10 minutes">
 
-Add observability with `c.logger` to track what your agent is doing. Logs appear automatically in DevMode and the dashboard.
+Add observability with `ctx.logger` to track what your agent is doing. Logs appear automatically in DevMode and the dashboard.
 
 ### agent.ts
 
@@ -326,14 +326,14 @@ export const agent = createAgent({
     name: 'Hello Agent',
     description: 'Greeting agent with logging'
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // Log when agent starts
-    c.logger.info('Hello agent received a request');
+    ctx.logger.info('Hello agent received a request');
 
     const name = input.name || 'World';
 
     // Log the specific action
-    c.logger.info(`Greeting ${name}`);
+    ctx.logger.info(`Greeting ${name}`);
 
     return { message: `Hello, ${name}!` };
   }
@@ -355,7 +355,7 @@ router.post('/greet', async (c) => {
 ```
 
 **What this demonstrates:**
-- Using `c.logger.info()` for observability
+- Using `ctx.logger.info()` for observability
 - Logs appear in DevMode console and dashboard
 - Structured logging helps debug and monitor agents
 
@@ -378,7 +378,7 @@ router.post('/greet', async (c) => {
 
 <TutorialStep number={3} title="With KV Storage" estimatedTime="10 minutes">
 
-Use `c.kv` for persistent storage to make your agent remember state across invocations. This greeting agent will count how many times it's been called.
+Use `ctx.kv` for persistent storage to make your agent remember state across invocations. This greeting agent will count how many times it's been called.
 
 <Callout type="info">
 We're using KV storage here to make our agent stateful. In **Module 3**, you'll learn about different memory scopes (request/thread/session), and in **Module 4**, we'll explore all storage APIs (KV, Vector, Object) in depth.
@@ -403,8 +403,8 @@ export const agent = createAgent({
     name: 'Hello Agent',
     description: 'Greeting agent with memory'
   },
-  handler: async (c, input) => {
-    c.logger.info('Hello agent received a request');
+  handler: async (ctx, input) => {
+    ctx.logger.info('Hello agent received a request');
 
     const name = input.name || 'World';
 
@@ -424,7 +424,7 @@ export const agent = createAgent({
     // Update the counter in storage
     await c.kv.set('stats', 'greeting_count', count);
 
-    c.logger.info(`Greeting #${count} for ${name}`);
+    ctx.logger.info(`Greeting #${count} for ${name}`);
 
     return {
       message: `Hello, ${name}!`,
@@ -473,9 +473,9 @@ router.post('/greet', async (c) => {
 **KV Storage Quick Reference**
 
 ```typescript
-c.kv.get(bucket, key)           // Retrieve data
-c.kv.set(bucket, key, value)    // Store data
-c.kv.delete(bucket, key)        // Remove data
+    ctx.kv.get(bucket, key)           // Retrieve data
+    ctx.kv.set(bucket, key, value)    // Store data
+    ctx.kv.delete(bucket, key)        // Remove data
 ```
 
 We'll cover TTL (auto-expiration) in Module 3!
@@ -508,12 +508,12 @@ export const agent = createAgent({
     name: 'Hello Agent',
     description: 'Greeting agent with manual validation'
   },
-  handler: async (c, input) => {
-    c.logger.info('Hello agent received a request');
+  handler: async (ctx, input) => {
+    ctx.logger.info('Hello agent received a request');
 
     // Manual validation (even though schema handles it!)
     if (input.name !== undefined && input.name.trim().length === 0) {
-      c.logger.warn('Empty name provided');
+      ctx.logger.warn('Empty name provided');
       throw new Error('Name cannot be empty string');
     }
 
@@ -529,11 +529,11 @@ export const agent = createAgent({
       }
       await c.kv.set('stats', 'greeting_count', count);
     } catch (error) {
-      c.logger.error('Storage error, using default count', { error });
+      ctx.logger.error('Storage error, using default count', { error });
       // Continue with count = 1 instead of failing
     }
 
-    c.logger.info(`Greeting #${count} for ${name}`);
+    ctx.logger.info(`Greeting #${count} for ${name}`);
 
     return {
       message: `Hello, ${name}!`,
@@ -566,10 +566,10 @@ export const agent = createAgent({
     name: 'Hello Agent',
     description: 'Greeting agent with schema validation'
   },
-  handler: async (c, input) => {
+  handler: async (ctx, input) => {
     // No manual validation needed - schema rejects invalid input before handler runs
 
-    c.logger.info('Hello agent received a request');
+    ctx.logger.info('Hello agent received a request');
 
     const name = input.name || 'World';
 
@@ -583,10 +583,10 @@ export const agent = createAgent({
       }
       await c.kv.set('stats', 'greeting_count', count);
     } catch (error) {
-      c.logger.error('Storage error, using default count', { error });
+      ctx.logger.error('Storage error, using default count', { error });
     }
 
-    c.logger.info(`Greeting #${count} for ${name}`);
+    ctx.logger.info(`Greeting #${count} for ${name}`);
 
     return {
       message: `Hello, ${name}!`,

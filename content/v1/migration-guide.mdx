@@ -310,18 +310,18 @@ import { createRouter } from '@agentuity/runtime';
 
 const router = createRouter();
 
-router.post('/my-agent', async (ctx) => {
+router.post('/my-agent', async (c) => {
   // Get JSON body directly from Hono context
-  const data = await ctx.req.json();
+  const data = await c.req.json();
   
   // Get text body
-  const text = await ctx.req.text();
+  const text = await c.req.text();
   
   // Get headers
-  const userId = ctx.req.header('x-user-id');
+  const userId = c.req.header('x-user-id');
   
   // Get query params
-  const param = ctx.req.query('param');
+  const param = c.req.query('param');
   
   return { processed: data };
 });

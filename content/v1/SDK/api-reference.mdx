@@ -1716,7 +1716,18 @@ export default router;
 
 ### Router Context
 
-Router handlers receive a `c` parameter (short for "context") which provides access to the request, response helpers, and Agentuity services. This is distinct from the `ctx` parameter used in agent handlers.
+Router handlers receive a context parameter (typically `c`) that provides access to the request, response helpers, and Agentuity services. This Hono Context is distinct from the `AgentContext` type used in agent handlers.
+
+#### Understanding Context Types
+
+Agentuity uses two distinct context types based on where you're writing code:
+
+- **AgentContext**: Used in `agent.ts` files for business logic (no HTTP access)
+- **Router Context (Hono)**: Used in `route.ts` files for HTTP handling (has HTTP + agent services)
+
+Both commonly use `c` as the variable name in SDK examples. The distinction is **type-based**, not name-based.
+
+For a detailed explanation with examples, see the [Context Types Guide](/v1/Guides/context-types).
 
 **Router Context Interface:**
 
@@ -1743,13 +1754,15 @@ interface RouterContext {
 }
 ```
 
-**Key Differences from Agent Context (`ctx`):**
+**Key Differences Between Context Types:**
 
-| Feature | Router Context (`c`) | Agent Context (`ctx`) |
-|---------|---------------------|---------------------|
+| Feature | Router Context (Hono) | Agent Context |
+|---------|----------------------|---------------|
+| **Type** | Hono Context | `AgentContext` |
+| **Used in** | `route.ts` files | `agent.ts` files |
 | **Request access** | `c.req` (Hono Request) | Direct `input` parameter (validated) |
 | **Response** | Builder methods (`.json()`, `.text()`) | Direct returns |
-| **Services** | Same (`.agent`, `.kv`, `.logger`, etc.) | Same |
+| **Services** | `.agent`, `.kv`, `.logger`, etc. | `.agent`, `.kv`, `.logger`, etc. |
 | **State management** | Via Hono middleware | Built-in (`.state`, `.session`, `.thread`) |
 
 **Example Usage:**
