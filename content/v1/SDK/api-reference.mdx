@@ -7,18 +7,115 @@ This section provides detailed documentation for the Agentuity JavaScript SDK AP
 
 ## Table of Contents
 
+- [Application Entry Point](#application-entry-point)
 - [Agent Creation](#agent-creation)
 - [Schema Validation](#schema-validation)
 - [Agent Handler](#agent-handler)
 - [Context API](#context-api)
+- [Router & Routes](#router--routes)
+- [Agent Communication](#agent-communication)
 - [Storage APIs](#storage-apis)
 - [Logging](#logging)
 - [Telemetry](#telemetry)
-- [Agent Communication](#agent-communication)
-- [Router & Routes](#router--routes)
 - [Session & Thread Management](#session--thread-management)
 - [Evaluations](#evaluations)
 - [Event System](#event-system)
+- [Advanced Features](#advanced-features)
+
+---
+
+## Application Entry Point
+
+Every Agentuity v1 application starts with creating an application instance using the `createApp()` function. This function initializes your application with the necessary configuration, router, server, and event system.
+
+### createApp
+
+`createApp(config?: AppConfig): App`
+
+Creates and initializes an Agentuity application instance.
+
+**Parameters**
+
+- `config` (optional): Application configuration object
+  - `cors`: Override default CORS settings
+  - `services`: Override default services (KV, Vector, ObjectStore, etc.)
+    - `useLocal`: Use local services for development (default: false)
+
+**Return Value**
+
+Returns an `App` instance with the following properties:
+
+```typescript
+interface App {
+  router: Hono;           // The main application router
+  server: Server;         // Server instance with .url property
+  logger: Logger;         // Application-level logger
+}
+```
+
+**Note:** The App instance also provides `addEventListener()` and `removeEventListener()` methods for lifecycle events. See the [Event System](#event-system) section for details.
+
+**Basic Example**
+
+```typescript
+// app.ts
+import { createApp } from '@agentuity/runtime';
+
+// Create the application instance
+const app = createApp();
+
+// The application will automatically discover and mount agents
+// from the agents directory specified in your agentuity.json
+
+// Access application properties
+app.logger.info(`Server running at ${app.server.url}`);
+```
+
+**With Configuration**
+
+```typescript
+import { createApp } from '@agentuity/runtime';
+
+const app = createApp({
+  // Custom CORS settings
+  cors: {
+    origin: ['https://example.com'],
+    credentials: true
+  },
+  // Use local services for development
+  services: {
+    useLocal: true
+  }
+});
+```
+
+### Environment Variables
+
+Agentuity applications access configuration and secrets through standard Node.js environment variables (`process.env`).
+
+**Standard Environment Variables:**
+
+- `AGENTUITY_SDK_KEY` - SDK-level API key (used in development to access Agentuity Cloud)
+- `AGENTUITY_PROJECT_KEY` - Project-level API key (used in production)
+
+**Example**
+
+```typescript
+// app.ts
+if (!process.env.AGENTUITY_SDK_KEY) {
+  console.error('Missing AGENTUITY_SDK_KEY environment variable');
+  process.exit(1);
+}
+
+const app = createApp();
+
+// Access other environment variables
+const apiEndpoint = process.env.API_ENDPOINT || 'https://api.example.com';
+const openaiKey = process.env.OPENAI_API_KEY;
+// Optional: you can use the AI Gateway to access OpenAI, Anthropic, etc without needing to set various API keys.
+```
+
+**Note**: Environment variables are typically loaded from a `.env` file in development and configured in your deployment environment for production.
 
 ---
 
@@ -170,10 +267,7 @@ The SDK supports any validation library that implements the StandardSchemaV1 int
 
 **Why StandardSchema?**
 
-StandardSchemaV1 is a common interface that allows different validation libraries to work seamlessly with the SDK. This means:
-- Not locked into a single validation library
-- Can use the library that best fits your needs
-- Future-proof as new libraries emerge
+StandardSchemaV1 is a common interface that allows different validation libraries to work seamlessly with the SDK, so you're not locked into a single library and can choose the one that best fits your needs. For more details on schema validation patterns and best practices, see the [Schema Validation Guide](/v1/Guides/schema-validation).
 
 **Example with Zod:**
 
@@ -1620,6 +1714,78 @@ router.get('/', (c) => {
 export default router;
 ```
 
+### Router Context
+
+Router handlers receive a `c` parameter (short for "context") which provides access to the request, response helpers, and Agentuity services. This is distinct from the `ctx` parameter used in agent handlers.
+
+**Router Context Interface:**
+
+```typescript
+interface RouterContext {
+  // Request
+  req: Request;                       // Hono request object with .param(), .query(), .header(), .json()
+
+  // Agentuity Services (same as agent context)
+  agent: AgentRegistry;               // Type-safe agent calls
+  kv: KeyValueStorage;                // Key-value storage
+  vector: VectorStorage;              // Vector storage
+  objectstore: ObjectStorage;         // Object storage
+  stream: StreamStorage;              // Stream storage
+  logger: Logger;                     // Structured logging
+  tracer: Tracer;                     // OpenTelemetry tracing
+
+  // Response Helpers
+  json(data: any, status?: number): Response;
+  text(text: string, status?: number): Response;
+  html(html: string, status?: number): Response;
+  redirect(url: string, status?: number): Response;
+  // ... other Hono response methods
+}
+```
+
+**Key Differences from Agent Context (`ctx`):**
+
+| Feature | Router Context (`c`) | Agent Context (`ctx`) |
+|---------|---------------------|---------------------|
+| **Request access** | `c.req` (Hono Request) | Direct `input` parameter (validated) |
+| **Response** | Builder methods (`.json()`, `.text()`) | Direct returns |
+| **Services** | Same (`.agent`, `.kv`, `.logger`, etc.) | Same |
+| **State management** | Via Hono middleware | Built-in (`.state`, `.session`, `.thread`) |
+
+**Example Usage:**
+
+```typescript
+router.post('/process', async (c) => {
+  // Access request
+  const body = await c.req.json();
+  const authHeader = c.req.header('Authorization');
+
+  // Use Agentuity services
+  c.logger.info('Processing request', { body });
+
+  // Call an agent
+  const result = await c.agent.processor.run({ data: body.data });
+
+  // Store result
+  await c.kv.set('results', body.id, result);
+
+  // Return response
+  return c.json({ success: true, result });
+});
+```
+
+**Accessing Services:**
+
+All Agentuity storage and observability services are available in router handlers, enabling you to:
+- Call agents via `c.agent.agentName.run()`
+- Use key-value storage via `c.kv`
+- Log with `c.logger`
+- Trace with `c.tracer`
+- Store objects via `c.objectstore`
+- Search vectors via `c.vector`
+
+This unified context makes it easy to build HTTP endpoints that leverage the full Agentuity platform.
+
 ### HTTP Methods
 
 The router supports all standard HTTP methods.
@@ -1705,17 +1871,30 @@ Handle incoming emails sent to a specific address.
 type EmailHandler = (email: Email, c: Context) => any | Promise<any>;
 
 interface Email {
-  from: string;
-  to: string[];
-  subject: string;
-  text?: string;
-  html?: string;
-  headers: Record<string, string>;
-  attachments?: Array<{
+  // Sender information
+  fromEmail(): string | null;
+  fromName(): string | null;
+
+  // Recipient information
+  to(): string | null;              // All recipients (comma-separated)
+  toEmail(): string | null;         // First recipient email
+  toName(): string | null;          // First recipient name
+
+  // Message content
+  subject(): string | null;
+  text(): string | null;
+  html(): string | null;
+
+  // Attachments
+  attachments(): Array<{
     filename: string;
     contentType: string;
-    content: Buffer;
   }>;
+
+  // Metadata
+  date(): Date | null;
+  messageId(): string | null;
+  headers(): Headers;
 }
 ```
 
@@ -1724,14 +1903,32 @@ interface Email {
 ```typescript
 router.email('support@example.com', async (email, c) => {
   c.logger.info('Email received', {
-    from: email.from,
-    subject: email.subject
+    from: email.fromEmail(),
+    fromName: email.fromName(),
+    to: email.to(),                    // All recipients
+    toEmail: email.toEmail(),          // First recipient
+    subject: email.subject(),
+    date: email.date(),
+    messageId: email.messageId(),
+    hasAttachments: email.attachments().length > 0
   });
+
+  // Process attachments if present
+  const attachments = email.attachments();
+  if (attachments.length > 0) {
+    c.logger.info('Attachments found', {
+      count: attachments.length,
+      files: attachments.map(att => ({
+        filename: att.filename,
+        contentType: att.contentType
+      }))
+    });
+  }
 
   // Process email and trigger agent
   const result = await c.agent.emailProcessor.run({
-    sender: email.from,
-    content: email.text || email.html || ''
+    sender: email.fromEmail(),
+    content: email.text() || email.html() || ''
   });
 
   return c.json({ processed: true });
@@ -2674,6 +2871,128 @@ agent.addEventListener('errored', erroredHandler);
 
 ---
 
+## Advanced Features
+
+### File Imports
+
+The Agentuity bundler supports importing various file types directly into your agent code. Files are processed at build time and embedded in your agent bundle, making them immediately available without disk I/O.
+
+**Supported File Types:**
+
+| File Extension | Data Type | Description |
+|----------------|-----------|-------------|
+| `.json` | `object` | Parsed JSON data |
+| `.yaml`, `.yml` | `object` | Parsed YAML data |
+| `.toml` | `object` | Parsed TOML data |
+| `.sql` | `string` | SQL query content |
+| `.txt` | `string` | Text content |
+| `.md` | `string` | Markdown content |
+| `.csv` | `string` | CSV data |
+| `.xml` | `string` | XML content |
+| `.html` | `string` | HTML content |
+| `.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`, `.webp` | `string` | Base64 data URL |
+
+**Usage Example:**
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+// Import various file types
+import config from './config.json';              // object
+import emailTemplate from './templates/welcome.txt';  // string
+import getUserQuery from './queries/getUser.sql';     // string
+import logo from './assets/logo.png';            // string (base64 data URL)
+
+const agent = createAgent({
+  schema: {
+    input: z.object({ userId: z.string(), format: z.enum(['html', 'text']) }),
+    output: z.object({ sent: z.boolean(), report: z.string() }),
+  },
+  handler: async (ctx, input) => {
+    // Use JSON config
+    const apiUrl = config.api.baseUrl;
+
+    // Use text template
+    const message = emailTemplate
+      .replace('{{userId}}', input.userId)
+      .replace('{{appName}}', config.appName);
+
+    // Use SQL query
+    const user = await database.query(getUserQuery, [input.userId]);
+
+    // Use image in HTML report
+    let report = 'Text report';
+    if (input.format === 'html') {
+      report = `
+        <html>
+          <body>
+            <img src="${logo}" alt="Logo" />
+            <h1>User Report</h1>
+            <p>User: ${user.name}</p>
+          </body>
+        </html>
+      `;
+    }
+
+    await sendEmail(input.userId, message);
+
+    return { sent: true, report };
+  },
+});
+```
+
+**Key Features:**
+
+- **Build-time processing**: Files are embedded during build, not loaded at runtime
+- **No disk I/O**: Data is immediately available in memory
+- **Automatic parsing**: JSON and YAML files are automatically parsed into objects
+- **Type safety**: TypeScript infers types for imported data
+- **Relative paths**: Import from current directory, subdirectories, or parent directories
+
+**TypeScript Support:**
+
+For TypeScript projects, add type declarations:
+
+```typescript
+// src/types/assets.d.ts
+declare module '*.json' {
+  const value: any;
+  export default value;
+}
+
+declare module '*.sql' {
+  const value: string;
+  export default value;
+}
+
+declare module '*.png' {
+  const value: string; // Base64 data URL
+  export default value;
+}
+
+declare module '*.txt' {
+  const value: string;
+  export default value;
+}
+```
+
+**Best Practices:**
+
+- **Keep files small** - Imported files are bundled with your code, increasing bundle size and deployment time
+- **Use for static data** - Best for configuration, templates, and static assets that don't change frequently
+- **Consider external storage** - For large datasets or frequently changing data, use Object Storage or Vector Storage APIs instead
+- **Version control** - Commit imported files to your repository to keep them in sync with code
+
+**Notes:**
+
+- All imports are processed at build time, not runtime
+- Imported files become part of your agent bundle
+- File paths are relative to the importing file
+- The bundler automatically handles file types by extension
+
+---
+
 ## Migrating from v0
 
 For users upgrading from v0, the key architectural changes include:
@@ -2689,5 +3008,3 @@ For users upgrading from v0, the key architectural changes include:
 For complete migration instructions, see the [Migration Guide](/migration-guide).
 
 ---
-
-**This completes the API Reference documentation.**

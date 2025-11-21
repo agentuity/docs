@@ -124,7 +124,7 @@ export default handler;
 
 **v1:**
 ```typescript
-import { createAgent, createApp } from '@agentuity/runtime';
+import { createAgent, createRouter } from '@agentuity/runtime';
 
 const agent = createAgent({
   metadata: {
@@ -141,10 +141,10 @@ const agent = createAgent({
   }
 });
 
-const app = createApp();
-app.router.post('/my-agent', agent.handler);
+const router = createRouter();
+router.post('/my-agent', agent.handler);
 
-export default app.server;
+export default router;
 ```
 
 **Key Changes:**
@@ -152,8 +152,8 @@ export default app.server;
 2. Use `createAgent()` instead of a plain function
 3. Handler receives `(ctx, input)` instead of `(request, response, context)`
 4. Return values directly instead of using `response.json()`
-5. Create an `app` and register your agent with the router
-6. Export `app.server` instead of the handler
+5. Use `createRouter()` to define HTTP endpoints and register your agent
+6. Export the router instead of the handler
 
 **File Structure Change:**
 In v0, agents were typically single files. In v1, each agent has two files:
@@ -169,7 +169,8 @@ The route file imports the agent and invokes it via `ctx.agent.name.run(input)`.
 v1 introduces optional schema validation for type safety:
 
 ```typescript
-import { createAgent, createApp } from '@agentuity/runtime';
+// src/agents/typed-agent/agent.ts
+import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
 const agent = createAgent({
@@ -198,10 +199,18 @@ const agent = createAgent({
   }
 });
 
-const app = createApp();
-app.router.post('/typed-agent', agent.handler);
+export default agent;
+```
 
-export default app.server;
+```typescript
+// src/agents/typed-agent/route.ts
+import { createRouter } from '@agentuity/runtime';
+import agent from './agent';
+
+const router = createRouter();
+router.post('/typed-agent', agent.handler);
+
+export default router;
 ```
 
 **Benefits:**
@@ -297,9 +306,11 @@ const handler: AgentHandler = async (request, response, context) => {
 
 **v1 (HTTP Routes):**
 ```typescript
-const app = createApp();
+import { createRouter } from '@agentuity/runtime';
 
-app.router.post('/my-agent', async (ctx) => {
+const router = createRouter();
+
+router.post('/my-agent', async (ctx) => {
   // Get JSON body directly from Hono context
   const data = await ctx.req.json();
   
@@ -314,6 +325,8 @@ app.router.post('/my-agent', async (ctx) => {
   
   return { processed: data };
 });
+
+export default router;
 ```
 
 **v1 (Agent with Schema):**
@@ -497,9 +510,11 @@ const handler: AgentHandler = async (request, response, context) => {
 
 **v1 (Native email route):**
 ```typescript
-const app = createApp();
+import { createRouter } from '@agentuity/runtime';
 
-app.router.email('support@example.com', async (email, ctx) => {
+const router = createRouter();
+
+router.email('support@example.com', async (email, ctx) => {
   // Email is automatically parsed
   ctx.logger.info('Email received:', {
     from: email.fromEmail(),
@@ -515,12 +530,14 @@ app.router.email('support@example.com', async (email, ctx) => {
   
   return { status: 'processed' };
 });
+
+export default router;
 ```
 
 #### WebSocket Routes (NEW)
 
 ```typescript
-app.router.websocket('/chat', (ctx) => (ws) => {
+router.websocket('/chat', (ctx) => (ws) => {
   ws.onOpen((event) => {
     ctx.logger.info('Client connected');
     ws.send('Welcome!');
@@ -544,7 +561,7 @@ app.router.websocket('/chat', (ctx) => (ws) => {
 #### Server-Sent Events (NEW)
 
 ```typescript
-app.router.sse('/updates', (ctx) => async (stream) => {
+router.sse('/updates', (ctx) => async (stream) => {
   // Send updates to client
   await stream.write({ event: 'started', data: 'Processing...' });
   
@@ -561,7 +578,7 @@ app.router.sse('/updates', (ctx) => async (stream) => {
 #### Cron Routes (NEW)
 
 ```typescript
-app.router.cron('0 0 * * *', async (ctx) => {
+router.cron('0 0 * * *', async (ctx) => {
   // Runs daily at midnight
   ctx.logger.info('Running daily job');
   
@@ -803,7 +820,7 @@ export default handler;
 
 **v1:**
 ```typescript
-import { createAgent, createApp } from '@agentuity/runtime';
+import { createAgent, createRouter } from '@agentuity/runtime';
 import { z } from 'zod';
 
 const agent = createAgent({
@@ -816,10 +833,10 @@ const agent = createAgent({
   }
 });
 
-const app = createApp();
-app.router.post('/greet', agent.handler);
+const router = createRouter();
+router.post('/greet', agent.handler);
 
-export default app.server;
+export default router;
 ```
 
 ---
@@ -848,7 +865,7 @@ export default handler;
 
 **v1:**
 ```typescript
-import { createAgent, createApp } from '@agentuity/runtime';
+import { createAgent, createRouter } from '@agentuity/runtime';
 import { z } from 'zod';
 
 const agent = createAgent({
@@ -870,10 +887,10 @@ const agent = createAgent({
   }
 });
 
-const app = createApp();
-app.router.post('/store', agent.handler);
+const router = createRouter();
+router.post('/store', agent.handler);
 
-export default app.server;
+export default router;
 ```
 
 ---
@@ -911,7 +928,7 @@ export default handler;
 
 **v1:**
 ```typescript
-import { createAgent, createApp } from '@agentuity/runtime';
+import { createAgent, createRouter } from '@agentuity/runtime';
 
 const agent = createAgent({
   handler: async (ctx, input) => {
@@ -925,10 +942,10 @@ const agent = createAgent({
   }
 });
 
-const app = createApp();
-app.router.post('/workflow', agent.handler);
+const router = createRouter();
+router.post('/workflow', agent.handler);
 
-export default app.server;
+export default router;
 ```
 
 ---
@@ -963,14 +980,14 @@ import { ... } from '@agentuity/runtime';
 
 #### Issue 3: "Handler is not a function"
 
-**Cause**: You're exporting the agent directly instead of the app server.
+**Cause**: You're exporting the agent directly instead of the router.
 
-**Solution**: Make sure you export the app server:
+**Solution**: Make sure you export the router:
 ```typescript
-const app = createApp();
-app.router.post('/agent', agent.handler);
+const router = createRouter();
+router.post('/agent', agent.handler);
 
-export default app.server; // Not 'agent' or 'handler'
+export default router; // Not 'agent' or 'handler'
 ```
 
 ---
@@ -999,15 +1016,15 @@ const agent = createAgent({
 
 #### Issue 5: "Cannot access other agents"
 
-**Cause**: Agents aren't properly registered with the app router.
+**Cause**: Agents aren't properly registered with the router.
 
 **Solution**: Ensure all agents are registered:
 ```typescript
-const app = createApp();
+const router = createRouter();
 
 // Register each agent
-app.router.post('/agent1', agent1.handler);
-app.router.post('/agent2', agent2.handler);
+router.post('/agent1', agent1.handler);
+router.post('/agent2', agent2.handler);
 
 // Now they can access each other via ctx.agent
 ```
