@@ -25,6 +25,7 @@ export interface CreateSessionWithIdInput extends CreateSessionInput {
 export interface UpdateSessionInput {
   title?: string;
   status?: 'ACTIVE' | 'ARCHIVED';
+  isTutorial?: boolean;
   metadata?: Record<string, any>;
 }
 
@@ -206,6 +207,7 @@ export class SessionService {
       ...session,
       title: input.title ?? session.title,
       status: input.status ?? session.status,
+      isTutorial: input.isTutorial ?? session.isTutorial,
       metadata: input.metadata ? { ...session.metadata, ...input.metadata } : session.metadata,
       updatedAt: new Date().toISOString(),
     };

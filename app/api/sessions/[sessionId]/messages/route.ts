@@ -140,6 +140,9 @@ export async function POST(
                 finalTutorialData.currentStep,
                 finalTutorialData.totalSteps
               );
+
+              // Mark session as a tutorial session
+              await sessionService.updateSession(userId, sessionId, { isTutorial: true });
             } else if (data.type === 'documentation-references' && data.documents) {
               documentationReferences = data.documents;
             } else if (data.type === 'finish') {
