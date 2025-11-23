@@ -1,81 +1,14 @@
 import type { AgentContext } from "@agentuity/sdk";
+import type { TextStreamPart, ToolSet } from "ai";
 import type { AgentState } from "../state";
 import type { StreamingChunk } from "./types";
 import { handleTutorialState } from "../state/manager";
 
 /**
- * AI SDK v6 fullStream chunk types
+ * Stream chunk type from AI SDK v6
  * @see https://sdk.vercel.ai/docs/ai-sdk-core/generating-text#full-stream
  */
-interface TextStartChunk {
-	type: "text-start";
-	id: string;
-}
-
-interface TextDeltaChunk {
-	type: "text-delta";
-	text: string;
-}
-
-interface TextEndChunk {
-	type: "text-end";
-	id: string;
-}
-
-interface ToolInputStartChunk {
-	type: "tool-input-start";
-	toolCallId: string;
-	toolName: string;
-}
-
-interface ToolInputDeltaChunk {
-	type: "tool-input-delta";
-	toolCallId: string;
-	toolName: string;
-	argsTextDelta: string;
-}
-
-interface ToolInputEndChunk {
-	type: "tool-input-end";
-	toolCallId: string;
-	toolName: string;
-}
-
-interface ToolCallChunk {
-	type: "tool-call";
-	toolCallId: string;
-	toolName: string;
-	input: unknown;
-}
-
-interface ToolResultChunk {
-	type: "tool-result";
-	toolCallId: string;
-	toolName: string;
-	output: unknown;
-}
-
-interface ReasoningDeltaChunk {
-	type: "reasoning-delta";
-	text: string;
-}
-
-type V6StreamChunk =
-	| TextStartChunk
-	| TextDeltaChunk
-	| TextEndChunk
-	| ToolInputStartChunk
-	| ToolInputDeltaChunk
-	| ToolInputEndChunk
-	| ToolCallChunk
-	| ToolResultChunk
-	| ReasoningDeltaChunk;
-
-// For unhandled chunk types
-interface UnknownChunk {
-	type: string;
-	[key: string]: unknown;
-}
+type StreamChunk = TextStreamPart<ToolSet>;
 
 /**
  * State tracked during stream processing
@@ -87,7 +20,7 @@ interface StreamState {
 }
 
 export function createStreamingProcessor(
-	result: { fullStream: AsyncIterable<V6StreamChunk | UnknownChunk> },
+	result: { fullStream: AsyncIterable<StreamChunk> },
 	state: AgentState,
 	ctx: AgentContext
 ): ReadableStream {
@@ -145,15 +78,13 @@ export function createStreamingProcessor(
 }
 
 function processChunk(
-	chunk: V6StreamChunk | UnknownChunk,
+	chunk: StreamChunk,
 	controller: ReadableStreamDefaultController,
 	encoder: TextEncoder,
 	ctx: AgentContext,
 	streamState: StreamState
 ): void {
-	const chunkType = chunk.type;
-
-	switch (chunkType) {
+	switch (chunk.type) {
 		case "text-start":
 			sendChunk(controller, encoder, {
 				type: "status",
@@ -162,15 +93,13 @@ function processChunk(
 			});
 			break;
 
-		case "text-delta": {
-			const textChunk = chunk as TextDeltaChunk;
-			streamState.accumulatedContent += textChunk.text;
+		case "text-delta":
+			streamState.accumulatedContent += chunk.text;
 			sendChunk(controller, encoder, {
 				type: "text-delta",
-				textDelta: textChunk.text,
+				textDelta: chunk.text,
 			});
 			break;
-		}
 
 		case "text-end":
 			sendChunk(controller, encoder, {
@@ -180,34 +109,32 @@ function processChunk(
 			});
 			break;
 
-		case "tool-input-start": {
-			const toolStartChunk = chunk as ToolInputStartChunk;
+		case "tool-input-start":
 			streamState.currentToolInput = "";
-			streamState.currentToolName = toolStartChunk.toolName;
+			streamState.currentToolName = chunk.toolName;
 			sendChunk(controller, encoder, {
 				type: "status",
-				message: `Preparing ${getToolDisplayName(toolStartChunk.toolName)}...`,
+				message: `Preparing ${getToolDisplayName(chunk.toolName)}...`,
 				category: "tool",
 			});
 			break;
-		}
 
-		case "tool-input-delta": {
-			const toolDeltaChunk = chunk as ToolInputDeltaChunk;
-			streamState.currentToolInput += toolDeltaChunk.argsTextDelta;
-			const progressMessage = parseToolInputProgress(
-				streamState.currentToolName,
-				streamState.currentToolInput
-			);
-			if (progressMessage) {
-				sendChunk(controller, encoder, {
-					type: "status",
-					message: progressMessage,
-					category: "tool",
-				});
+		case "tool-input-delta":
+			streamState.currentToolInput += chunk.delta;
+			{
+				const progressMessage = parseToolInputProgress(
+					streamState.currentToolName,
+					streamState.currentToolInput
+				);
+				if (progressMessage) {
+					sendChunk(controller, encoder, {
+						type: "status",
+						message: progressMessage,
+						category: "tool",
+					});
+				}
 			}
 			break;
-		}
 
 		case "tool-input-end":
 			sendChunk(controller, encoder, {
@@ -217,19 +144,17 @@ function processChunk(
 			});
 			break;
 
-		case "tool-call": {
-			const toolCallChunk = chunk as ToolCallChunk;
+		case "tool-call":
 			sendChunk(controller, encoder, {
 				type: "status",
-				message: getToolStatusMessage(toolCallChunk.toolName),
+				message: getToolStatusMessage(chunk.toolName),
 				category: "tool",
 			});
-			ctx.logger.debug("Tool called: %s", toolCallChunk.toolName);
+			ctx.logger.debug("Tool called: %s", chunk.toolName);
 			break;
-		}
 
 		case "tool-result":
-			handleToolResult(chunk as ToolResultChunk, controller, encoder, ctx);
+			handleToolResult(chunk, controller, encoder, ctx);
 			break;
 
 		case "reasoning-delta":
@@ -241,11 +166,12 @@ function processChunk(
 			break;
 
 		default:
-			// Log unhandled types for debugging (helps identify new v6 events)
-			ctx.logger.debug("Unhandled chunk type: %s", chunkType);
+			// Other chunk types (start, finish, error, etc.) are handled by SDK
 			break;
 	}
 }
+
+type ToolResultChunk = Extract<StreamChunk, { type: "tool-result" }>;
 
 function handleToolResult(
 	chunk: ToolResultChunk,

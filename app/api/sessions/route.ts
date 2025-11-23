@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Session, Message, SessionSchema } from '@/app/chat/types';
-import { toISOString } from '@/app/chat/utils/dateUtils';
+import { Session, SessionSchema } from '@/app/chat/types';
 import { parseAndValidateJSON } from '@/lib/validation/middleware';
 import { sessionService } from '@/lib/services';
 import type { Session as NewSession } from '@/lib/storage/data-model';
