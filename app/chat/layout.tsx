@@ -78,17 +78,18 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
         // Update cache optimistically without revalidating
         await swrMutate(updatedPages, { revalidate: false });
 
-        // If we're deleting the current session, navigate to /chat
-        if (sessionIdToDelete === sessionId) {
-            router.push('/chat');
-        }
-
-        // Call the API to delete the session
+        // Call the API to delete the session BEFORE navigation
         const response = await sessionService.deleteSession(sessionIdToDelete);
         if (!response.success) {
             // If deletion failed, revalidate to restore the correct state
             alert(`Failed to delete session: ${response.error}`);
             await swrMutate(undefined, { revalidate: true });
+            return;
+        }
+
+        // Navigate AFTER successful deletion to avoid race condition
+        if (sessionIdToDelete === sessionId) {
+            router.push('/chat');
         }
     };
 

@@ -101,7 +101,7 @@ ${JSON.stringify(relevantDocs, null, 2)}
 			system: systemPrompt,
 			prompt: 'The user is mostly a software engineer. Your answer should be concise, straightforward and in most cases, supplying the answer with examples code snippets is ideal.',
 			schema: AnswerSchema,
-			maxTokens: 2048,
+			maxOutputTokens: 2048,
 		});
 		return result.object;
 	} catch (error) {

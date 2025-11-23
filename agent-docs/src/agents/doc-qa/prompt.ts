@@ -48,7 +48,7 @@ Return ONLY the query text, nothing else.`;
 			model: openai('gpt-4o-mini'),
 			system: systemPrompt,
 			prompt: `User query: "${input}"`,
-			maxTokens: 100,
+			maxOutputTokens: 100,
 			temperature: 0.1,
 		});
 

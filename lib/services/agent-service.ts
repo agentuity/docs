@@ -6,12 +6,13 @@
  */
 
 import type { Message as OldMessage, TutorialData, StreamingChunk } from '@/app/chat/types';
+import type { TutorialState } from '@/lib/tutorial/types';
 import { getAgentPulseConfig } from '@/lib/env';
 
 export interface AgentStreamRequest {
   message: string;
   conversationHistory: OldMessage[];
-  tutorialData?: TutorialData;
+  tutorialData?: TutorialState | null;
   userId: string;
 }
 

@@ -1,5 +1,5 @@
 import type { AgentRequest, AgentResponse, AgentContext } from "@agentuity/sdk";
-import { streamText } from "ai";
+import { streamText, stepCountIs } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { createTools } from "./tools";
 import { createAgentState } from "./state";
@@ -124,7 +124,7 @@ export default async function Agent(
 				content: msg.content,
 			})),
 			tools,
-			maxSteps: 3,
+			stopWhen: stepCountIs(3),
 			system: systemPrompt,
 		});
 

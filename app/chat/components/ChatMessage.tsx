@@ -8,6 +8,22 @@ import type { TutorialSnippet } from '../types';
 import { formatTime } from '../utils/dateUtils';
 import { TutorialData } from '../types';
 
+/**
+ * Convert internal status messages to user-friendly display text
+ */
+function formatStatusMessage(status?: string): string {
+    if (!status) return 'Agent is processing...';
+
+    switch (status) {
+        case 'typing-start':
+            return 'Preparing response...';
+        case 'typing-end':
+            return 'Finishing up...';
+        default:
+            return status;
+    }
+}
+
 function transformMdxWithSnippets(mdx: string, snippets: TutorialSnippet[] = []) {
     // Replace each <CodeFromFiles .../> by consuming the appropriate number of snippets
     // based on the number of objects in its snippets={[ ... ]} prop.
@@ -160,7 +176,7 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                                         <div className="w-3 h-3 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite_0.4s]" />
                                     </div>
                                     <span className="text-sm tracking-wide text-gray-200">
-                                        {message.statusMessage || 'Agent is processing...'}
+                                        {formatStatusMessage(message.statusMessage)}
                                     </span>
                                 </div>
                             ) : (

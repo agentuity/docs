@@ -38,7 +38,7 @@ export async function createTools(context: ToolContext) {
         On success, return the tutorial title, total number of steps, and description.
         If something goes wrong (e.g., invalid step), return a short 3–5 word error message.
       `,
-        parameters: z.object({
+        inputSchema: z.object({
             tutorialId: z.string().describe("The exact ID of the tutorial to start"),
             stepNumber: z.number().describe("The step number of the tutorial to start (1 to total available steps in the tutorial)")
         }),
@@ -91,7 +91,7 @@ You do NOT need to repeat or paraphrase the documentation content. Just call thi
 After calling this tool, you can optionally add brief context or follow-up questions, but do not repeat the documentation answer itself.
 
 This tool provides authoritative, up-to-date documentation specific to the Agentuity platform.`,
-        parameters: z.object({
+        inputSchema: z.object({
             query: z.string().describe("The question or query to send to the query function"),
         }),
         execute: async ({ query }) => {
@@ -115,7 +115,7 @@ This tool provides authoritative, up-to-date documentation specific to the Agent
      */
     const getUserTutorialProgressTool = tool({
         description: "Fetch the user's tutorial progress to see which tutorials they have started, completed, or not yet begun. Use this when you need to recommend tutorials based on what the user has already done, or when answering questions about topics covered in specific tutorials.",
-        parameters: z.object({}),
+        inputSchema: z.object({}),
         execute: async () => {
             if (!userId) {
                 agentContext.logger.warn("Cannot fetch tutorial progress: userId not available");

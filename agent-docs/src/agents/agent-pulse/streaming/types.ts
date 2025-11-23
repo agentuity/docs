@@ -6,7 +6,7 @@ export interface TextDeltaChunk {
 export interface StatusChunk {
   type: 'status';
   message: string;
-  category?: 'tool' | 'search' | 'processing' | 'thinking';
+  category?: 'tool' | 'search' | 'processing' | 'thinking' | 'streaming';
 }
 
 export interface TutorialSnippet {

@@ -129,12 +129,6 @@ export async function retrieveRelevantDocs(
 	try {
 		const vectors = await ctx.vector.search(VECTOR_STORE_NAME, dbQuery);
 
-		ctx.logger.debug(
-			'Vector search returned %d results. First vector structure: %o',
-			vectors.length,
-			vectors[0]
-		);
-
 		// Process each relevant chunk and expand with context
 		const relevantChunks: Array<{
 			path: string;
@@ -166,14 +160,6 @@ export async function retrieveRelevantDocs(
 			}
 
 			const relevanceScore = (vector as any).similarity;
-
-			ctx.logger.debug(
-				'Vector for path %s, chunk %d: similarity=%s, relevanceScore=%s',
-				path,
-				chunkIndex,
-				(vector as any).similarity,
-				relevanceScore
-			);
 
 			relevantChunks.push({
 				path,

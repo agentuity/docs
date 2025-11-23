@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams } from "next/navigation";
 import { Allotment } from "allotment";
 import "allotment/dist/style.css";
@@ -10,101 +10,51 @@ import { CodeEditor } from '../components/CodeEditor';
 import { Session, Message } from '../types';
 import { useSessions } from '../SessionContext';
 import { sessionService } from '../services/sessionService';
+import { useCodeTabs } from '../hooks';
+import { useStreamingMessage } from '../hooks';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Simple hash function to create identifiers for code snippets
-function hashCode(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  return hash.toString(36);
-}
-
-interface CodeTab {
-  id: string;
-  content: string;
-  language: string;
-  label: string;
-  identifier?: string; // Used to prevent duplicates (e.g., file path or content hash)
-}
-
 export default function ChatSessionPage() {
-
   const { sessionId } = useParams<{ sessionId: string }>();
   const [session, setSession] = useState<Session | undefined>();
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [codeTabs, setCodeTabs] = useState<CodeTab[]>([]);
-  const [activeTabId, setActiveTabId] = useState<string | null>(null);
-  const { sessions, setSessions, revalidateSessions } = useSessions();
   const [creationError, setCreationError] = useState<string | null>(null);
-  const [minimizedCodeBlocks, setMinimizedCodeBlocks] = useState<Set<string>>(new Set());
+  const { sessions, setSessions, revalidateSessions } = useSessions();
 
-  // Refs for character-by-character streaming
-  const charQueueRef = useRef<string>('');
-  const streamingMessageIdRef = useRef<string | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
-  const lastTypeTimeRef = useRef<number>(0);
-  const typewriterLoopRef = useRef<((timestamp: number) => void) | null>(null);
+  // Code tabs management
+  const {
+    editorOpen,
+    tabs: codeTabs,
+    activeTabId,
+    minimizedBlocks: minimizedCodeBlocks,
+    setActiveTabId,
+    addTab: addCodeTab,
+    closeTab: closeCodeTab,
+    toggleMinimized: toggleCodeBlockMinimized,
+    updateContent: updateTabContent,
+    closeEditor: toggleEditor,
+  } = useCodeTabs();
 
-  useEffect(() => {
-    const typewriterLoop = (timestamp: number) => {
-      const messageId = streamingMessageIdRef.current;
-      if (!messageId) {
-        animationFrameRef.current = null;
-        return;
-      }
-
-      const timeSinceLastType = timestamp - lastTypeTimeRef.current;
-      const queueLength = charQueueRef.current.length;
-
-      let charsPerUpdate = 3;
-      let updateInterval = 20;
-
-      if (queueLength > 200) {
-        charsPerUpdate = 10;
-        updateInterval = 16;
-      } else if (queueLength > 50) {
-        charsPerUpdate = 5;
-        updateInterval = 16;
-      }
-
-      if (queueLength > 0 && timeSinceLastType >= updateInterval) {
-        const charsToAdd = charQueueRef.current.slice(0, charsPerUpdate);
-        charQueueRef.current = charQueueRef.current.slice(charsPerUpdate);
-        lastTypeTimeRef.current = timestamp;
-
-        setSession(prev => {
-          if (!prev) return prev;
-          const updatedMessages = prev.messages.map(msg => {
-            if (msg.id === messageId) {
-              return {
-                ...msg,
-                content: msg.content + charsToAdd,
-                isStreaming: true,
-                statusMessage: undefined
-              };
-            }
-            return msg;
-          });
-          return { ...prev, messages: updatedMessages };
-        });
-      }
-
-      // Continue animation loop while streaming
-      if (streamingMessageIdRef.current) {
-        animationFrameRef.current = requestAnimationFrame(typewriterLoop);
-      } else {
-        animationFrameRef.current = null;
-      }
-    };
-
-    typewriterLoopRef.current = typewriterLoop;
+  // Streaming message with typewriter effect
+  const updateMessageText = useCallback((messageId: string, text: string) => {
+    setSession(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        messages: prev.messages.map(msg =>
+          msg.id === messageId
+            ? { ...msg, content: msg.content + text, isStreaming: true, statusMessage: undefined }
+            : msg
+        )
+      };
+    });
   }, []);
 
-  const handleSendMessage = async (content: string, sessionId: string) => {
+  const { streamingState, appendText, finishStreaming, cancelStreaming } = useStreamingMessage(updateMessageText);
+
+  // Store current streaming message id for callbacks
+  const currentAssistantIdRef = useRef<string | null>(null);
+
+  const handleSendMessage = useCallback(async (content: string, sessionId: string) => {
     if (!content || !sessionId) return;
 
     const newMessage: Message = {
@@ -122,156 +72,121 @@ export default function ChatSessionPage() {
       isStreaming: true
     };
 
-    try {
-      setSession(prevSession => {
-        if (!prevSession) return prevSession;
-        return {
-          ...prevSession,
-          messages: [...prevSession.messages, newMessage, assistantMessage]
-        };
-      });
+    currentAssistantIdRef.current = assistantMessage.id;
 
+    // Add messages to session
+    setSession(prev => {
+      if (!prev) return prev;
+      return { ...prev, messages: [...prev.messages, newMessage, assistantMessage] };
+    });
+
+    try {
       await sessionService.addMessageToSessionStreaming(
         sessionId,
         newMessage,
         {
           onTextDelta: (textDelta) => {
-            charQueueRef.current += textDelta;
-            streamingMessageIdRef.current = assistantMessage.id;
-
-            // Start the typewriter animation if not already running
-            if (!animationFrameRef.current && typewriterLoopRef.current) {
-              lastTypeTimeRef.current = performance.now();
-              animationFrameRef.current = requestAnimationFrame(typewriterLoopRef.current);
-            }
+            appendText(textDelta, assistantMessage.id);
           },
 
           onTutorialData: (tutorialData) => {
             setSession(prev => {
               if (!prev) return prev;
-              const updatedMessages = prev.messages.map(msg =>
-                msg.id === assistantMessage.id
-                  ? { ...msg, tutorialData: tutorialData }
-                  : msg
-              );
-              return { ...prev, messages: updatedMessages };
+              return {
+                ...prev,
+                messages: prev.messages.map(msg =>
+                  msg.id === assistantMessage.id ? { ...msg, tutorialData } : msg
+                )
+              };
             });
           },
 
           onDocumentationReferences: (documents) => {
             setSession(prev => {
               if (!prev) return prev;
-              const updatedMessages = prev.messages.map(msg =>
-                msg.id === assistantMessage.id
-                  ? { ...msg, documentationReferences: documents }
-                  : msg
-              );
-              return { ...prev, messages: updatedMessages };
+              return {
+                ...prev,
+                messages: prev.messages.map(msg =>
+                  msg.id === assistantMessage.id ? { ...msg, documentationReferences: documents } : msg
+                )
+              };
             });
           },
 
-          onStatus: (message, category) => {
-            // Update the assistant message's status
+          onStatus: (message) => {
             setSession(prev => {
               if (!prev) return prev;
-              const updatedMessages = prev.messages.map(msg =>
-                msg.id === assistantMessage.id
-                  ? { ...msg, statusMessage: message }
-                  : msg
-              );
-              return { ...prev, messages: updatedMessages };
+              return {
+                ...prev,
+                messages: prev.messages.map(msg =>
+                  msg.id === assistantMessage.id ? { ...msg, statusMessage: message } : msg
+                )
+              };
             });
           },
 
           onFinish: (finalSession) => {
-            // Stop the animation loop
-            if (animationFrameRef.current) {
-              cancelAnimationFrame(animationFrameRef.current);
-              animationFrameRef.current = null;
-            }
+            // Flush remaining characters
+            const remaining = finishStreaming();
 
-            // Flush any remaining characters from queue immediately
-            if (charQueueRef.current) {
-              setSession(prev => {
-                if (!prev) return prev;
-                const updatedMessages = prev.messages.map(msg => {
-                  if (msg.id === streamingMessageIdRef.current) {
-                    return {
-                      ...msg,
-                      content: msg.content + charQueueRef.current,
-                      isStreaming: false
-                    };
-                  }
-                  return msg;
-                });
-                return { ...prev, messages: updatedMessages };
+            // Apply remaining text and final session
+            setSession(prev => {
+              if (!prev) return prev;
+              const messagesWithRemaining = prev.messages.map(msg => {
+                if (msg.id === assistantMessage.id && remaining) {
+                  return { ...msg, content: msg.content + remaining, isStreaming: false };
+                }
+                return { ...msg, isStreaming: false };
               });
-            }
+              return { ...prev, messages: messagesWithRemaining };
+            });
 
-            // Reset refs
-            charQueueRef.current = '';
-            streamingMessageIdRef.current = null;
-
-            // Set the final session with isStreaming: false
+            // Update with final session data
             const updatedFinalSession = {
               ...finalSession,
-              messages: finalSession.messages.map(msg => ({
-                ...msg,
-                isStreaming: false
-              }))
+              messages: finalSession.messages.map(msg => ({ ...msg, isStreaming: false }))
             };
             setSession(updatedFinalSession);
             setSessions(prev => prev.map(s => s.sessionId === sessionId ? updatedFinalSession : s));
+            currentAssistantIdRef.current = null;
           },
 
           onError: (error, details) => {
             console.error('Error sending message:', error, details ? `Details: ${details}` : '');
+            cancelStreaming();
+            currentAssistantIdRef.current = null;
 
-            // Stop the animation loop
-            if (animationFrameRef.current) {
-              cancelAnimationFrame(animationFrameRef.current);
-              animationFrameRef.current = null;
-            }
-
-            // Reset refs
-            charQueueRef.current = '';
-            streamingMessageIdRef.current = null;
-
-            // Remove both user and assistant messages since we didn't get a response
+            // Remove both messages on error
             setSession(prev => {
               if (!prev) return prev;
-              const updatedMessages = prev.messages.filter(msg =>
-                msg.id !== newMessage.id && msg.id !== assistantMessage.id
-              );
-              return { ...prev, messages: updatedMessages };
+              return {
+                ...prev,
+                messages: prev.messages.filter(msg =>
+                  msg.id !== newMessage.id && msg.id !== assistantMessage.id
+                )
+              };
             });
           }
         }
       );
-
     } catch (error) {
       console.error('Error sending message:', error);
+      cancelStreaming();
+      currentAssistantIdRef.current = null;
 
-      // Stop the animation loop
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-
-      // Reset refs
-      charQueueRef.current = '';
-      streamingMessageIdRef.current = null;
-
-      setSession(prevSession => {
-        if (!prevSession) return prevSession;
-        const filteredMessages = prevSession.messages.filter(msg =>
-          msg.id !== newMessage.id && msg.id !== assistantMessage.id
-        );
-        return { ...prevSession, messages: filteredMessages };
+      setSession(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          messages: prev.messages.filter(msg =>
+            msg.id !== newMessage.id && msg.id !== assistantMessage.id
+          )
+        };
       });
     }
-  };
+  }, [appendText, finishStreaming, cancelStreaming, setSessions]);
 
+  // Load session or create new one
   useEffect(() => {
     const foundSession = sessions.find(s => s.sessionId === sessionId);
     if (foundSession) {
@@ -281,9 +196,7 @@ export default function ChatSessionPage() {
 
     const storageKey = `initialMessage:${sessionId}`;
     const initialMessage = sessionStorage.getItem(storageKey);
-    if (!initialMessage) {
-      return;
-    }
+    if (!initialMessage) return;
     sessionStorage.removeItem(storageKey);
 
     const userMessage: Message = {
@@ -305,10 +218,7 @@ export default function ChatSessionPage() {
 
     setSession(temporarySession);
 
-    sessionService.createSession({
-      sessionId: sessionId as string,
-      messages: []
-    })
+    sessionService.createSession({ sessionId: sessionId as string, messages: [] })
       .then(async response => {
         if (response.success && response.data) {
           setSession(response.data);
@@ -322,109 +232,10 @@ export default function ChatSessionPage() {
         setCreationError(error.message || 'Error creating session');
         revalidateSessions?.();
       });
-  }, [sessionId, sessions]);
-
-  // Cleanup effect to clear animation frames on unmount
-  useEffect(() => {
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, []);
-
-  const toggleEditor = () => { setEditorOpen(false) };
-  const stopServer = () => { };
-
-  const addCodeTab = (code: string, language: string, label?: string, identifier?: string) => {
-    // Generate identifier if not provided (hash of content + language)
-    const tabIdentifier = identifier || `${language}-${hashCode(code)}`;
-
-    // Check if a tab with this identifier already exists
-    const existingTab = codeTabs.find(tab => tab.identifier === tabIdentifier);
-    if (existingTab) {
-      // Switch to the existing tab instead of creating a duplicate
-      setActiveTabId(existingTab.id);
-      setEditorOpen(true);
-      // Minimize the code block in chat when opened in editor
-      setMinimizedCodeBlocks(prev => new Set(prev).add(tabIdentifier));
-      return;
-    }
-
-    // Create new tab
-    const newTabId = uuidv4();
-
-    // Determine the best label to display
-    let tabLabel = label;
-    if (!tabLabel && identifier) {
-      // Extract filename from path if identifier looks like a path
-      const pathParts = identifier.split('/');
-      tabLabel = pathParts[pathParts.length - 1];
-    }
-    if (!tabLabel) {
-      tabLabel = `${language} snippet`;
-    }
-
-    const newTab: CodeTab = {
-      id: newTabId,
-      content: code,
-      language: language,
-      label: tabLabel,
-      identifier: tabIdentifier
-    };
-
-    setCodeTabs(prev => [...prev, newTab]);
-    setActiveTabId(newTabId);
-    setEditorOpen(true);
-    // Minimize the code block in chat when opened in editor
-    setMinimizedCodeBlocks(prev => new Set(prev).add(tabIdentifier));
-  };
-
-  const closeCodeTab = (tabId: string) => {
-    setCodeTabs(prev => {
-      const tabToClose = prev.find(tab => tab.id === tabId);
-      const filtered = prev.filter(tab => tab.id !== tabId);
-
-      // Remove from minimized set when tab is closed
-      if (tabToClose?.identifier) {
-        setMinimizedCodeBlocks(prevMinimized => {
-          const newSet = new Set(prevMinimized);
-          newSet.delete(tabToClose.identifier!);
-          return newSet;
-        });
-      }
-
-      if (filtered.length === 0) {
-        setEditorOpen(false);
-        setActiveTabId(null);
-      } else if (activeTabId === tabId) {
-        setActiveTabId(filtered[filtered.length - 1].id);
-      }
-      return filtered;
-    });
-  };
-
-  const toggleCodeBlockMinimized = (identifier: string) => {
-    setMinimizedCodeBlocks(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(identifier)) {
-        newSet.delete(identifier);
-      } else {
-        newSet.add(identifier);
-      }
-      return newSet;
-    });
-  };
-
-  const updateTabContent = (tabId: string, content: string) => {
-    setCodeTabs(prev => prev.map(tab =>
-      tab.id === tabId ? { ...tab, content } : tab
-    ));
-  };
+  }, [sessionId, sessions, handleSendMessage, revalidateSessions]);
 
   return (
     <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden overflow-y-auto uity-scrollbar relative">
-      {/* Non-blocking error banner */}
       {creationError && (
         <div className="absolute top-2 right-2 z-50 bg-red-500/20 border border-red-500/40 text-red-200 text-sm px-3 py-2 rounded-md backdrop-blur">
           <div className="flex items-center gap-3">
@@ -471,11 +282,6 @@ export default function ChatSessionPage() {
           <Allotment.Pane minSize={450} preferredSize="60%">
             <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
               <CodeEditor
-                executionResult={''}
-                serverRunning={false}
-                executingFiles={[]}
-                runCode={() => { }}
-                stopServer={stopServer}
                 codeTabs={codeTabs}
                 activeTabId={activeTabId}
                 setActiveTabId={setActiveTabId}

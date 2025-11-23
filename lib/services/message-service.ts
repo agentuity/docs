@@ -106,13 +106,14 @@ export class MessageService {
           } else if (parsedChunk.type === 'tutorial-data' && parsedChunk.tutorialData) {
             finalTutorialData = parsedChunk.tutorialData;
 
-            // Update tutorial progress
+            // Update tutorial progress using the narrowed type
+            const tutorialData = parsedChunk.tutorialData;
             const { TutorialStateManager } = await import('@/lib/tutorial/state-manager');
             await TutorialStateManager.updateTutorialProgress(
               input.userId,
-              finalTutorialData.tutorialId,
-              finalTutorialData.currentStep,
-              finalTutorialData.totalSteps
+              tutorialData.tutorialId,
+              tutorialData.currentStep,
+              tutorialData.totalSteps
             );
           } else if (parsedChunk.type === 'documentation-references' && parsedChunk.documents) {
             documentationReferences = parsedChunk.documents;

@@ -206,22 +206,15 @@ export class SessionService {
   async addMessageToSessionStreaming(
     sessionId: string,
     message: Message,
-    callbacks: {
-      onTextDelta?: (text: string) => void,
-      onTutorialData?: (tutorialData: TutorialData) => void,
-      onDocumentationReferences?: (documents: string[]) => void,
-      onStatus?: (message: string, category?: string) => void,
-      onFinish?: (session: Session) => void,
-      onError?: (error: string, details?: string) => void
-    }
+    callbacks: StreamingCallbacks,
+    abortSignal?: AbortSignal
   ): Promise<void> {
     try {
       const response = await fetch(`/api/sessions/${sessionId}/messages`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ message })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+        signal: abortSignal,
       });
 
       if (!response.ok) {
@@ -239,70 +232,77 @@ export class SessionService {
       const decoder = new TextDecoder();
       let buffer = '';
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
 
-        // Process complete lines
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; // Keep the last incomplete line in buffer
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-
-              if (data.type === 'text-delta' && data.textDelta) {
-                callbacks.onTextDelta?.(data.textDelta);
-              } else if (data.type === 'tutorial-data' && data.tutorialData) {
-                callbacks.onTutorialData?.(data.tutorialData);
-              } else if (data.type === 'documentation-references' && data.documents) {
-                callbacks.onDocumentationReferences?.(data.documents);
-              } else if (data.type === 'status' && data.message) {
-                callbacks.onStatus?.(data.message, data.category);
-              } else if (data.type === 'error') {
-                callbacks.onError?.(data.error || 'Unknown error', data.details);
-              } else if (data.type === 'finish' && data.session) {
-                callbacks.onFinish?.(data.session);
-              }
-            } catch (error) {
-              console.error('Error parsing SSE data:', error);
-            }
-          }
+          // Process complete lines
+          lines.forEach(line => processSSELine(line, callbacks));
         }
-      }
 
-      // Process any remaining data
-      if (buffer.length > 0) {
-        const lines = buffer.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.type === 'text-delta' && data.textDelta) {
-                callbacks.onTextDelta?.(data.textDelta);
-              } else if (data.type === 'tutorial-data' && data.tutorialData) {
-                callbacks.onTutorialData?.(data.tutorialData);
-              } else if (data.type === 'documentation-references' && data.documents) {
-                callbacks.onDocumentationReferences?.(data.documents);
-              } else if (data.type === 'status' && data.message) {
-                callbacks.onStatus?.(data.message, data.category);
-              } else if (data.type === 'error') {
-                callbacks.onError?.(data.error || 'Unknown error', data.details);
-              } else if (data.type === 'finish' && data.session) {
-                callbacks.onFinish?.(data.session);
-              }
-            } catch (error) {
-              console.error('Error parsing SSE data:', error);
-            }
-          }
-        }
+        // Process any remaining buffer
+        buffer.split('\n').forEach(line => processSSELine(line, callbacks));
+      } finally {
+        reader.releaseLock();
       }
     } catch (error) {
+      // Ignore abort errors - request was intentionally cancelled
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
       callbacks.onError?.(error instanceof Error ? error.message : 'Unknown error occurred');
     }
+  }
+}
+
+/**
+ * Streaming callback types
+ */
+export interface StreamingCallbacks {
+  onTextDelta?: (text: string) => void;
+  onTutorialData?: (tutorialData: TutorialData) => void;
+  onDocumentationReferences?: (documents: string[]) => void;
+  onStatus?: (message: string, category?: string) => void;
+  onFinish?: (session: Session) => void;
+  onError?: (error: string, details?: string) => void;
+}
+
+/**
+ * Process a single SSE line and dispatch to appropriate callback
+ */
+function processSSELine(line: string, callbacks: StreamingCallbacks): void {
+  if (!line.startsWith('data: ')) return;
+
+  try {
+    const data = JSON.parse(line.slice(6));
+
+    switch (data.type) {
+      case 'text-delta':
+        if (data.textDelta) callbacks.onTextDelta?.(data.textDelta);
+        break;
+      case 'tutorial-data':
+        if (data.tutorialData) callbacks.onTutorialData?.(data.tutorialData);
+        break;
+      case 'documentation-references':
+        if (data.documents) callbacks.onDocumentationReferences?.(data.documents);
+        break;
+      case 'status':
+        if (data.message) callbacks.onStatus?.(data.message, data.category);
+        break;
+      case 'error':
+        callbacks.onError?.(data.error || 'Unknown error', data.details);
+        break;
+      case 'finish':
+        if (data.session) callbacks.onFinish?.(data.session);
+        break;
+    }
+  } catch (error) {
+    console.error('Error parsing SSE data:', error);
   }
 }
 
