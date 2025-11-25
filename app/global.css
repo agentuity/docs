@@ -66,32 +66,32 @@ figure > div:nth-child(2) {
 }
 
 .mermaid .cluster rect {
-	fill: #fff !important;
-	stroke: #099 !important;
+	fill: var(--color-white) !important;
+	stroke: var(--color-cyan-700) !important;
 }
 
 .dark .mermaid .cluster rect {
-	fill: #111 !important;
-	stroke: #099 !important;
+	fill: var(--color-gray-900) !important;
+	stroke: var(--color-cyan-700) !important;
 }
 
 .mermaid .flowchart-link {
-	stroke: #999 !important;
+	stroke: var(--color-gray-400) !important;
 }
 
 .mermaid .marker {
-	stroke: #999 !important;
-	fill: #777 !important;
+	stroke: var(--color-gray-400) !important;
+	fill: var(--color-gray-500) !important;
 }
 
 .mermaid rect.label-container {
 	fill: rgba(150, 236, 236, 0.1) !important;
-	stroke: #099 !important;
+	stroke: var(--color-cyan-700) !important;
 	stroke-dasharray: 2 2 !important;
 }
 
 .dark .mermaid .nodeLabel {
-	color: #fff !important;
+	color: var(--color-white) !important;
 }
 
 .mermaid text.actor > tspan {
@@ -104,7 +104,7 @@ figure > div:nth-child(2) {
 
 .mermaid .messageLine0,
 .mermaid .messageLine1 {
-	stroke: #099 !important;
+	stroke: var(--color-cyan-700) !important;
 }
 
 /* Blockquote styling */
