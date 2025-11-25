@@ -107,6 +107,19 @@ figure > div:nth-child(2) {
 	stroke: #099 !important;
 }
 
+/* Blockquote styling */
+.prose blockquote {
+	border: 2px solid var(--color-cyan-600);
+	background-color: var(--color-cyan-50);
+	font-style: normal;
+	border-radius: 0.5rem;
+}
+
+.dark .prose blockquote {
+	border: 1px solid var(--color-cyan-800);
+	background-color: var(--color-gray-950);
+}
+
 .prose {
 	:where(blockquote p:first-of-type):not(
 			:where([class~="not-prose"], [class~="not-prose"] *)
