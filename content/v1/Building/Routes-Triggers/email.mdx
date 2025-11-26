@@ -1,0 +1,129 @@
+---
+title: Email Handling
+description: Process incoming emails with router.email()
+---
+
+Handle incoming emails sent to a specific address. Email addresses are defined in code and automatically provisioned when deployed.
+
+## Basic Example
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.email('support@example.com', async (email, c) => {
+  c.var.logger.info('Email received', {
+    from: email.fromEmail(),
+    subject: email.subject(),
+  });
+
+  const response = await c.agent.supportAgent.run({
+    sender: email.fromEmail() || 'unknown',
+    subject: email.subject() || 'No Subject',
+    body: email.text() || '',
+  });
+
+  return c.text('Email processed');
+});
+
+export default router;
+```
+
+## Email Object API
+
+The `email` parameter provides methods to access email content:
+
+```typescript
+// Sender information
+email.fromEmail();    // "sender@example.com" or null
+email.fromName();     // "John Doe" or null
+
+// Recipients
+email.to();           // All recipients (comma-separated)
+email.toEmail();      // First recipient email
+email.toName();       // First recipient name
+
+// Content
+email.subject();      // "Re: Your inquiry" or null
+email.text();         // Plain text body or null
+email.html();         // HTML body or null
+
+// Attachments
+email.attachments();  // Array of { filename, contentType }
+
+// Metadata
+email.date();         // Date object or null
+email.messageId();    // Message-ID header or null
+email.headers();      // Full Headers object
+```
+
+## Accessing Attachments
+
+```typescript
+router.email('uploads@example.com', async (email, c) => {
+  const attachments = email.attachments();
+
+  for (const attachment of attachments) {
+    c.var.logger.info('Attachment received', {
+      filename: attachment.filename,
+      contentType: attachment.contentType,
+    });
+  }
+
+  return c.text(`Received ${attachments.length} attachments`);
+});
+```
+
+## Full Example
+
+A support inbox that categorizes and routes emails:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.email('support@myapp.com', async (email, c) => {
+  const from = email.fromEmail() || 'unknown';
+  const subject = email.subject() || 'No Subject';
+  const body = email.text() || email.html() || '';
+  const attachmentCount = email.attachments().length;
+
+  try {
+    // Classify and process the email
+    const result = await c.agent.supportRouter.run({
+      from,
+      subject,
+      body,
+      hasAttachments: attachmentCount > 0,
+    });
+
+    // Store for audit trail
+    await c.kv.set('emails', `${Date.now()}-${from}`, {
+      from,
+      subject,
+      processedAt: new Date().toISOString(),
+      category: result.category,
+    });
+
+    c.var.logger.info('Email processed', { from, category: result.category });
+    return c.text('OK');
+  } catch (error) {
+    c.var.logger.error('Email processing failed', { error, from });
+    return c.text('Error', 500);
+  }
+});
+
+export default router;
+```
+
+<Callout type="info" title="Email Replies">
+The `email.sendReply()` method for sending replies is coming soon. Currently, you can process emails and trigger notifications through other channels (Slack, SMS, etc.) or store responses for manual follow-up.
+</Callout>
+
+## Next Steps
+
+- [SMS Handling](/Building/Routes-Triggers/sms) — Process incoming text messages
+- [Scheduled Jobs](/Building/Routes-Triggers/cron) — Run tasks on a schedule
+- [Key-Value Storage](/Building/Storage/key-value) — Store processed email data

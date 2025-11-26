@@ -1,0 +1,66 @@
+---
+title: What is Agentuity?
+description: The full-stack platform for AI agents
+---
+
+<div className="text-lg sm:text-xl font-bold h-8 text-cyan-700 dark:text-cyan-300 mb-6">
+  <TypingAnimation delay={300}>Build agents, not infrastructure</TypingAnimation>
+</div>
+
+Agentuity is a full-stack platform for building, deploying, and operating AI agents.
+
+Write TypeScript, define routes, and deploy with a single command. We handle the infrastructure, from automatic scaling to built-in observability and more.
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+const agent = createAgent({
+  schema: {
+    input: z.object({ message: z.string() }),
+    output: z.object({ response: z.string() }),
+  },
+  handler: async (ctx, input) => {
+    const { text } = await generateText({
+      model: openai('gpt-5-mini'),
+      prompt: input.message,
+    });
+    return { response: text };
+  },
+});
+
+export default agent;
+```
+
+This agent uses the AI SDK to call OpenAI and respond to messages. Deploy with `agentuity deploy` and it scales automatically. Call it from any frontend, CLI, or other agent.
+
+## What You Get
+
+- **Routes & Triggers** — HTTP, WebSocket, SSE, cron, email, SMS
+- **Storage** — Key-value, vector, object storage, durable streams
+- **Observability** — Logging, tracing, real-time analytics
+- **[AI Gateway](/Building/Agents/ai-gateway)** — Route LLM calls through OpenAI, Anthropic, Google, and more
+- **Evaluations** — Automated quality checks that run after each agent execution
+- **Frontend** — Deploy React apps alongside your agents
+
+## How It Works
+
+Each agent has two files:
+
+| File | Purpose |
+|------|---------|
+| `agent.ts` | Business logic with schema validation |
+| `route.ts` | HTTP routing (built on Hono) |
+
+Infrastructure like cron schedules and email handlers are defined in code, not config. Rolling back a deployment restores the exact configuration from that version.
+
+---
+
+<p className="text-sm text-fd-muted-foreground italic">We're building for a future where agents are the primary way to build and operate software, and where infrastructure is purpose-built for this new paradigm.</p>
+
+## Next Steps
+
+- [Installation](/Getting-Started/installation) — Set up your environment
+- [Quickstart](/Getting-Started/quickstart) — Build your first agent in 5 minutes

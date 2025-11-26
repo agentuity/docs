@@ -1,0 +1,355 @@
+---
+title: Managing State
+description: Request, thread, and session state for stateful agents
+---
+
+# Managing State
+
+Agentuity provides three state scopes for managing data across requests:
+
+- request state for temporary calculations
+- thread state for conversation context
+- session state for user-level data
+
+## The Three State Scopes
+
+| Scope | Lifetime | Cleared When | Access | Example Use Case |
+|-------|----------|--------------|--------|----------|
+| Request | Single request | After response sent | `ctx.state` | Timing, temp calculations |
+| Thread | Up to 1 hour | Expiration or `destroy()` | `ctx.thread.state` | Conversation history |
+| Session | Spans threads | In-memory (server restart) | `ctx.session.state` | User preferences |
+
+### Quick Example
+
+```typescript
+import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent({
+  schema: {
+    input: z.object({ message: z.string() }),
+    output: z.object({
+      response: z.string(),
+      requestTime: z.number(),
+      messageCount: z.number(),
+    }),
+  },
+  handler: async (ctx: AgentContext, input) => {
+    // REQUEST STATE: Cleared after this response
+    ctx.state.set('startTime', Date.now());
+
+    // THREAD STATE: Persists across requests (up to 1 hour)
+    const messages = (ctx.thread.state.get('messages') as string[]) || [];
+    messages.push(input.message);
+    ctx.thread.state.set('messages', messages);
+
+    // SESSION STATE: Persists across threads
+    const totalRequests = (ctx.session.state.get('totalRequests') as number) || 0;
+    ctx.session.state.set('totalRequests', totalRequests + 1);
+
+    const requestTime = Date.now() - (ctx.state.get('startTime') as number);
+
+    return {
+      response: `Received: ${input.message}`,
+      requestTime,
+      messageCount: messages.length,
+    };
+  },
+});
+
+export default agent;
+```
+
+## Request State
+
+Request state (`ctx.state`) holds temporary data within a single request. It's cleared automatically after the response is sent.
+
+```typescript
+handler: async (ctx, input) => {
+  // Track timing
+  ctx.state.set('startTime', Date.now());
+
+  // Process request...
+  const result = await processData(input);
+
+  // Use the timing data
+  const duration = Date.now() - (ctx.state.get('startTime') as number);
+  ctx.logger.info('Request completed', { durationMs: duration });
+
+  return result;
+}
+```
+
+**Use cases:** Request timing, temporary calculations, passing data between event listeners.
+
+## Thread State
+
+Thread state (`ctx.thread.state`) persists across multiple requests within a conversation, expiring after 1 hour of inactivity. Thread identity is managed automatically via cookies.
+
+### Conversation Memory
+
+```typescript
+import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+const agent = createAgent({
+  schema: {
+    input: z.object({ message: z.string() }),
+    output: z.string(),
+  },
+  handler: async (ctx: AgentContext, input) => {
+    // Initialize on first request
+    if (!ctx.thread.state.has('messages')) {
+      ctx.thread.state.set('messages', []);
+      ctx.thread.state.set('turnCount', 0);
+    }
+
+    const messages = ctx.thread.state.get('messages') as Message[];
+    const turnCount = ctx.thread.state.get('turnCount') as number;
+
+    // Add user message
+    messages.push({ role: 'user', content: input.message });
+
+    // Generate response with conversation context
+    const { text } = await generateText({
+      model: openai('gpt-5-mini'),
+      system: 'You are a helpful assistant. Reference previous messages when relevant.',
+      messages,
+    });
+
+    // Update thread state
+    messages.push({ role: 'assistant', content: text });
+    ctx.thread.state.set('messages', messages);
+    ctx.thread.state.set('turnCount', turnCount + 1);
+
+    ctx.logger.info('Conversation turn', {
+      threadId: ctx.thread.id,
+      turnCount: turnCount + 1,
+    });
+
+    return text;
+  },
+});
+
+export default agent;
+```
+
+### Thread Properties and Methods
+
+```typescript
+ctx.thread.id;  // Thread ID (thrd_...)
+ctx.thread.state.set('key', value);
+ctx.thread.state.get('key');
+ctx.thread.state.has('key');
+ctx.thread.state.delete('key');
+
+// Reset the conversation
+await ctx.thread.destroy();
+```
+
+### Resetting a Conversation
+
+Call `ctx.thread.destroy()` to clear all thread state and start fresh:
+
+```typescript
+handler: async (ctx, input) => {
+  if (input.command === 'reset') {
+    await ctx.thread.destroy();
+    return 'Conversation reset. Thread state cleared.';
+  }
+
+  // Continue conversation...
+}
+```
+
+## Session State
+
+Session state (`ctx.session.state`) spans multiple threads, useful for user-level data that should persist across conversations.
+
+```typescript
+handler: async (ctx, input) => {
+  // Track user activity across threads
+  const visits = (ctx.session.state.get('visits') as number) || 0;
+  ctx.session.state.set('visits', visits + 1);
+  ctx.session.state.set('lastActive', new Date().toISOString());
+
+  ctx.logger.info('Session activity', {
+    sessionId: ctx.sessionId,
+    visits: visits + 1,
+  });
+
+  return { visits: visits + 1 };
+}
+```
+
+**Note:** Session state is in-memory and cleared on server restart. For durable data, use [KV storage](/Building/Storage/key-value).
+
+## Persisting to Storage
+
+In-memory state is lost on server restart. For durability, combine state management with KV storage:
+
+### Load → Cache → Save Pattern
+
+```typescript
+import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+type Message = { role: 'user' | 'assistant'; content: string };
+
+const agent = createAgent({
+  schema: {
+    input: z.object({ message: z.string() }),
+    stream: true,
+  },
+  handler: async (ctx: AgentContext, input) => {
+    const key = `chat_${ctx.thread.id}`;
+    let messages: Message[] = [];
+
+    // Load from KV on first access in this thread
+    if (!ctx.thread.state.has('loaded')) {
+      const result = await ctx.kv.get<Message[]>('conversations', key);
+      if (result.exists) {
+        messages = result.data;
+        ctx.logger.info('Loaded conversation from KV', { messageCount: messages.length });
+      }
+      ctx.thread.state.set('messages', messages);
+      ctx.thread.state.set('loaded', true);
+    } else {
+      messages = ctx.thread.state.get('messages') as Message[];
+    }
+
+    // Add user message
+    messages.push({ role: 'user', content: input.message });
+
+    // Stream response
+    const result = streamText({
+      model: openai('gpt-5-mini'),
+      messages,
+    });
+
+    // Save in background (non-blocking)
+    ctx.waitUntil(async () => {
+      const fullText = await result.text;
+      messages.push({ role: 'assistant', content: fullText });
+
+      // Keep last 20 messages to bound state size
+      const recentMessages = messages.slice(-20);
+      ctx.thread.state.set('messages', recentMessages);
+
+      // Persist to KV
+      await ctx.kv.set('conversations', key, recentMessages, {
+        ttl: 86400, // 24 hours
+      });
+    });
+
+    return result.textStream;
+  },
+});
+
+export default agent;
+```
+
+**Key points:**
+- Load from KV once per thread, cache in thread state
+- Use `ctx.waitUntil()` for non-blocking saves
+- Bound state size to prevent unbounded growth
+
+## Thread Lifecycle
+
+Threads expire after 1 hour of inactivity. Use the `destroyed` event to run cleanup logic:
+
+```typescript
+handler: async (ctx, input) => {
+  // Register cleanup handler once per thread
+  if (!ctx.thread.state.has('cleanupRegistered')) {
+    ctx.thread.addEventListener('destroyed', async (eventName, thread) => {
+      const messages = thread.state.get('messages') as string[] || [];
+
+      if (messages.length > 0) {
+        // Save conversation before thread expires
+        await ctx.kv.set('archives', thread.id, {
+          messages,
+          endedAt: new Date().toISOString(),
+        }, { ttl: 604800 }); // 7 days
+
+        ctx.logger.info('Archived conversation', {
+          threadId: thread.id,
+          messageCount: messages.length,
+        });
+      }
+    });
+
+    ctx.thread.state.set('cleanupRegistered', true);
+  }
+
+  // Process request...
+}
+```
+
+### Session Completion Events
+
+Track when sessions (individual requests) complete:
+
+```typescript
+ctx.session.addEventListener('completed', async (eventName, session) => {
+  ctx.logger.info('Session completed', {
+    sessionId: session.id,
+    threadId: session.thread.id,
+  });
+});
+```
+
+For app-level event monitoring, see [Events & Lifecycle](/Building/Agents/events-lifecycle).
+
+## Thread vs Session IDs
+
+| ID | Format | Lifetime | Purpose |
+|----|--------|----------|---------|
+| Thread ID | `thrd_<hex>` | Up to 1 hour (shared across requests) | Group related requests into conversations |
+| Session ID | `sess_<hex>` | Single request (unique per call) | Request tracing and analytics |
+
+```typescript
+handler: async (ctx, input) => {
+  ctx.logger.info('Request received', {
+    threadId: ctx.thread.id,    // Same across conversation
+    sessionId: ctx.sessionId,    // Unique per request
+  });
+
+  return { threadId: ctx.thread.id, sessionId: ctx.sessionId };
+}
+```
+
+## Best Practices
+
+- **Use the right scope**: Request for temp data, thread for conversations, session for user data
+- **Keep state bounded**: Limit conversation history (e.g., last 20-50 messages)
+- **Persist important data**: Don't rely on state for data that must survive restarts
+- **Clean up resources**: Use `destroyed` event to save or archive data
+- **Cache strategically**: Load from KV once, cache in state, save on completion
+
+```typescript
+// Good: Bounded conversation history
+const messages = ctx.thread.state.get('messages') as Message[];
+if (messages.length > 50) {
+  const archived = messages.slice(0, -50);
+  ctx.waitUntil(async () => {
+    await ctx.kv.set('archives', `${ctx.thread.id}_${Date.now()}`, archived);
+  });
+  ctx.thread.state.set('messages', messages.slice(-50));
+}
+```
+
+## Next Steps
+
+- [Key-Value Storage](/Building/Storage/key-value): Durable data persistence with namespaces and TTL
+- [Calling Other Agents](/Building/Agents/calling-other-agents): Share state between agents in workflows
+- [Events & Lifecycle](/Building/Agents/events-lifecycle): Monitor agent execution and cleanup

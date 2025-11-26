@@ -1,0 +1,308 @@
+---
+title: Evaluations
+description: Automatically test and validate agent outputs for quality and compliance
+---
+
+# Evaluations
+
+Evaluations (evals) are automated tests that run after your agent completes. They validate output quality, check compliance, and monitor performance without blocking agent responses.
+
+Evals come in two types: **binary** (pass/fail) for yes/no criteria, and **score** (0-1) for quality gradients.
+
+## Basic Example
+
+Attach an eval to any agent using `createEval()`:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent({
+  schema: {
+    input: z.object({ question: z.string() }),
+    output: z.object({ answer: z.string(), confidence: z.number() }),
+  },
+  handler: async (ctx, input) => {
+    const answer = await generateAnswer(input.question);
+    return { answer, confidence: 0.95 };
+  },
+});
+
+// Score eval: returns 0-1 quality score
+agent.createEval({
+  metadata: {
+    name: 'confidence-check',
+    description: 'Scores output based on confidence level',
+  },
+  handler: async (ctx, input, output) => {
+    return {
+      success: true,
+      score: output.confidence,
+      metadata: { threshold: 0.8 },
+    };
+  },
+});
+
+export default agent;
+```
+
+Evals run asynchronously after the response is sent, so they don't delay users.
+
+## Binary vs Score Evals
+
+### Binary (Pass/Fail)
+
+Use for yes/no criteria. You can use programmatic checks or LLM-based judgment:
+
+```typescript
+import { generateObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+// Programmatic: pattern matching
+agent.createEval({
+  metadata: { name: 'pii-check' },
+  handler: async (ctx, input, output) => {
+    const ssnPattern = /\b\d{3}-\d{2}-\d{4}\b/;
+    const hasPII = ssnPattern.test(output.answer);
+
+    return {
+      success: true,
+      passed: !hasPII,
+      metadata: { reason: hasPII ? 'Contains SSN pattern' : 'No PII detected' },
+    };
+  },
+});
+
+// LLM-based: subjective judgment
+agent.createEval({
+  metadata: { name: 'is-helpful' },
+  handler: async (ctx, input, output) => {
+    const { object } = await generateObject({
+      model: openai('gpt-5-nano'),
+      schema: z.object({
+        isHelpful: z.boolean().describe('Whether the response is helpful'),
+        reason: z.string().describe('Brief explanation'),
+      }),
+      prompt: `Evaluate if this response is helpful for the user's question.
+
+Question: ${input.question}
+Response: ${output.answer}
+
+Consider: Does it answer the question? Is it actionable?`,
+    });
+
+    return {
+      success: true,
+      passed: object.isHelpful,
+      metadata: { reason: object.reason },
+    };
+  },
+});
+```
+
+### Score (0-1)
+
+Use for quality gradients where you need nuance beyond pass/fail:
+
+```typescript
+import { generateObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+agent.createEval({
+  metadata: {
+    name: 'relevance-score',
+    description: 'Scores how relevant the answer is to the question',
+  },
+  handler: async (ctx, input, output) => {
+    const { object } = await generateObject({
+      model: openai('gpt-5-nano'),
+      schema: z.object({
+        score: z.number().min(0).max(1).describe('Relevance score'),
+        reason: z.string().describe('Brief explanation'),
+      }),
+      prompt: `Score how relevant this answer is to the question (0-1).
+
+Question: ${input.question}
+Answer: ${output.answer}
+
+0 = completely off-topic, 1 = directly addresses the question.`,
+    });
+
+    return {
+      success: true,
+      score: object.score,
+      metadata: { reason: object.reason },
+    };
+  },
+});
+```
+
+## LLM-as-Judge Pattern
+
+The LLM-as-judge pattern uses one model to evaluate another model's output. This is useful for subjective quality assessments that can't be checked programmatically. In this example, a small model judges whether a RAG agent's answer is grounded in the retrieved sources:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { generateObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+const ragAgent = createAgent({
+  schema: {
+    input: z.object({ question: z.string() }),
+    output: z.object({ answer: z.string(), sources: z.array(z.string()) }),
+  },
+  handler: async (ctx, input) => {
+    const results = await ctx.vector.search('knowledge-base', {
+      query: input.question,
+      limit: 3,
+    });
+
+    // Store sources for eval access
+    ctx.state.set('retrievedDocs', results.map((r) => r.metadata?.text || ''));
+
+    const answer = await generateAnswer(input.question, results);
+    return { answer, sources: results.map((r) => r.id) };
+  },
+});
+
+ragAgent.createEval({
+  metadata: {
+    name: 'hallucination-check',
+    description: 'Detects claims not supported by sources',
+  },
+  handler: async (ctx, input, output) => {
+    const retrievedDocs = ctx.state.get('retrievedDocs') as string[];
+
+    const { object } = await generateObject({
+      model: openai('gpt-5-nano'),
+      schema: z.object({
+        isGrounded: z.boolean(),
+        unsupportedClaims: z.array(z.string()),
+        score: z.number().min(0).max(1),
+      }),
+      prompt: `Check if this answer is supported by the source documents.
+
+Question: ${input.question}
+Answer: ${output.answer}
+
+Sources:
+${retrievedDocs.join('\n\n')}
+
+Identify claims NOT supported by the sources.`,
+    });
+
+    return {
+      success: true,
+      score: object.score,
+      metadata: {
+        isGrounded: object.isGrounded,
+        unsupportedClaims: object.unsupportedClaims,
+      },
+    };
+  },
+});
+
+export default ragAgent;
+```
+
+<Callout type="info" title="State Sharing">
+Data stored in `ctx.state` during agent execution persists to eval handlers. Use this to pass retrieved documents, intermediate results, or timing data.
+</Callout>
+
+<Callout type="tip" title="Built-in Evals vs Custom Agent Chaining">
+Built-in evals (`agent.createEval()`) are designed for automated background monitoring of a single agent's output. For user-facing comparison reports or cross-model evaluations (like comparing GPT vs Claude outputs), use custom agent chaining with `generateObject` instead. See [Learning/Examples](/Learning/Examples) for advanced patterns.
+</Callout>
+
+## Multiple Evals
+
+Attach multiple evals to assess different quality dimensions. All run in parallel after the agent completes:
+
+```typescript
+import { generateObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+// Eval 1: Is the response relevant?
+agent.createEval({
+  metadata: { name: 'relevance' },
+  handler: async (ctx, input, output) => {
+    const { object } = await generateObject({
+      model: openai('gpt-5-nano'),
+      schema: z.object({
+        score: z.number().min(0).max(1),
+        reason: z.string(),
+      }),
+      prompt: `Score relevance (0-1): Does "${output.answer}" answer "${input.question}"?`,
+    });
+    return { success: true, score: object.score, metadata: { reason: object.reason } };
+  },
+});
+
+// Eval 2: Is it concise?
+agent.createEval({
+  metadata: { name: 'conciseness' },
+  handler: async (ctx, input, output) => {
+    const { object } = await generateObject({
+      model: openai('gpt-5-nano'),
+      schema: z.object({
+        score: z.number().min(0).max(1),
+        reason: z.string(),
+      }),
+      prompt: `Score conciseness (0-1): Is "${output.answer}" clear without unnecessary fluff?`,
+    });
+    return { success: true, score: object.score, metadata: { reason: object.reason } };
+  },
+});
+
+// Eval 3: Compliance check (programmatic)
+agent.createEval({
+  metadata: { name: 'no-pii' },
+  handler: async (ctx, input, output) => {
+    const patterns = [/\b\d{3}-\d{2}-\d{4}\b/, /\b\d{16}\b/]; // SSN, credit card
+    const hasPII = patterns.some((p) => p.test(output.answer));
+    return { success: true, passed: !hasPII };
+  },
+});
+```
+
+Errors in one eval don't affect others. Each runs independently.
+
+## Error Handling
+
+Return `success: false` when an eval can't complete:
+
+```typescript
+agent.createEval({
+  metadata: { name: 'external-validation' },
+  handler: async (ctx, input, output) => {
+    try {
+      const response = await fetch('https://api.example.com/validate', {
+        method: 'POST',
+        body: JSON.stringify({ text: output.answer }),
+        signal: AbortSignal.timeout(3000),
+      });
+
+      if (!response.ok) {
+        return { success: false, error: `Service error: ${response.status}` };
+      }
+
+      const result = await response.json();
+      return { success: true, passed: result.isValid };
+    } catch (error) {
+      ctx.logger.error('Validation failed', { error });
+      return { success: false, error: error.message };
+    }
+  },
+});
+```
+
+Eval errors are logged but don't affect agent responses.
+
+## Next Steps
+
+- [Events & Lifecycle](/Building/Agents/events-lifecycle): Monitor agent execution with lifecycle hooks
+- [State Management](/Building/Agents/state-management): Share data between handlers and evals
+- [Calling Other Agents](/Building/Agents/calling-other-agents): Build multi-agent workflows

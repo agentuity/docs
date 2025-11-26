@@ -564,7 +564,7 @@ const ragAgent = createAgent({
 
       // 4. Generate response using context
       const { text } = await generateText({
-        model: openai('gpt-4o-mini'),
+        model: openai('gpt-5-mini'),
         prompt: `Answer the question based on the following context:
 
 Context: ${assembledContext}

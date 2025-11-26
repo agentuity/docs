@@ -1,0 +1,161 @@
+---
+title: Events & Lifecycle
+description: Lifecycle hooks for monitoring and extending agent behavior
+---
+
+# Events & Lifecycle
+
+Events provide lifecycle hooks for monitoring agent execution. Use them for logging, metrics, analytics, and error tracking.
+
+## Agent Events
+
+Track individual agent execution with `started`, `completed`, and `errored` events:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent({
+  schema: {
+    input: z.object({ task: z.string() }),
+    output: z.object({ result: z.string() }),
+  },
+  handler: async (ctx, input) => {
+    ctx.logger.info('Processing task', { task: input.task });
+    return { result: `Completed: ${input.task}` };
+  },
+});
+
+// Track execution timing
+agent.addEventListener('started', (event, agent, ctx) => {
+  ctx.state.set('startTime', Date.now());
+  ctx.logger.info('Agent started', { agent: agent.metadata.name });
+});
+
+agent.addEventListener('completed', (event, agent, ctx) => {
+  const startTime = ctx.state.get('startTime') as number;
+  const duration = Date.now() - startTime;
+
+  ctx.logger.info('Agent completed', {
+    agent: agent.metadata.name,
+    durationMs: duration,
+  });
+
+  // Warn on slow executions
+  if (duration > 1000) {
+    ctx.logger.warn('Slow execution detected', { duration, threshold: 1000 });
+  }
+});
+
+agent.addEventListener('errored', (event, agent, ctx, error) => {
+  const startTime = ctx.state.get('startTime') as number;
+  const duration = Date.now() - startTime;
+
+  ctx.logger.error('Agent failed', {
+    agent: agent.metadata.name,
+    error: error.message,
+    durationMs: duration,
+  });
+});
+
+export default agent;
+```
+
+Event listeners receive: event name, agent instance, context, and (for `errored`) the error object.
+
+## App-Level Events
+
+Monitor all agents globally by registering listeners in `app.ts`:
+
+```typescript
+import { createApp } from '@agentuity/runtime';
+
+const app = createApp();
+
+// Track all agent executions
+app.addEventListener('agent.started', (event, agent, ctx) => {
+  ctx.logger.info('Agent execution started', {
+    agent: agent.metadata.name,
+    sessionId: ctx.sessionId,
+  });
+});
+
+app.addEventListener('agent.completed', (event, agent, ctx) => {
+  ctx.logger.info('Agent execution completed', {
+    agent: agent.metadata.name,
+    sessionId: ctx.sessionId,
+  });
+});
+
+app.addEventListener('agent.errored', (event, agent, ctx, error) => {
+  ctx.logger.error('Agent execution failed', {
+    agent: agent.metadata.name,
+    error: error.message,
+    sessionId: ctx.sessionId,
+  });
+});
+
+export default app.server;
+```
+
+### Available App Events
+
+| Event | Description |
+|-------|-------------|
+| `agent.started` | Any agent starts execution |
+| `agent.completed` | Any agent completes successfully |
+| `agent.errored` | Any agent throws an error |
+| `session.started` | New session begins |
+| `session.completed` | Session ends |
+| `thread.created` | New thread created |
+| `thread.destroyed` | Thread expired or destroyed |
+
+## Shared State
+
+Event handlers share state via `ctx.state`:
+
+```typescript
+agent.addEventListener('started', (event, agent, ctx) => {
+  ctx.state.set('startTime', Date.now());
+  ctx.state.set('metadata', { userId: '123', source: 'api' });
+});
+
+agent.addEventListener('completed', (event, agent, ctx) => {
+  const startTime = ctx.state.get('startTime') as number;
+  const metadata = ctx.state.get('metadata') as Record<string, string>;
+
+  ctx.logger.info('Execution complete', {
+    duration: Date.now() - startTime,
+    ...metadata,
+  });
+});
+```
+
+<Callout type="tip" title="Background Work">
+Use `ctx.waitUntil()` in event handlers for non-blocking operations like sending metrics to external services:
+
+```typescript
+agent.addEventListener('completed', (event, agent, ctx) => {
+  ctx.waitUntil(async () => {
+    await sendMetricsToExternalService({ agent: agent.metadata.name });
+  });
+});
+```
+</Callout>
+
+## Events vs Evals
+
+| Aspect | Events | Evals |
+|--------|--------|-------|
+| **Purpose** | Monitoring, logging | Quality assessment |
+| **Timing** | During execution | After completion |
+| **Blocking** | Synchronous | Background (`waitUntil`) |
+| **Output** | Logs, metrics | Pass/fail, scores |
+
+Use events for observability. Use [evaluations](/Building/Agents/evaluations) for output quality checks.
+
+## Next Steps
+
+- [Evaluations](/Building/Agents/evaluations): Automated quality testing for agent outputs
+- [State Management](/Building/Agents/state-management): Thread and session state patterns
+- [Calling Other Agents](/Building/Agents/calling-other-agents): Multi-agent coordination
