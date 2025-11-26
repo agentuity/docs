@@ -98,6 +98,9 @@
         "sdkKey": {
           "description": "the project specific SDK key",
           "type": "string"
+        },
+        "$schema": {
+          "type": "string"
         }
       },
       "required": ["sdkKey"],
