@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentuity.dev/schema/cli/v1/agentuity.json",
+  "$comment": "The agentuity.json configuration schema",
+  "type": "object",
+  "properties": {
+    "projectId": {
+      "description": "the project id",
+      "type": "string"
+    },
+    "orgId": {
+      "description": "the organization id",
+      "type": "string"
+    },
+    "region": {
+      "description": "the region identifier that the project is deployed into",
+      "type": "string"
+    },
+    "deployment": {
+      "description": "the deployment configuration",
+      "type": "object",
+      "properties": {
+        "resources": {
+          "description": "the resource requirements for your deployed project",
+          "type": "object",
+          "properties": {
+            "memory": {
+              "description": "The memory requirements",
+              "default": "500Mi",
+              "type": "string"
+            },
+            "cpu": {
+              "description": "The CPU requirements",
+              "default": "500m",
+              "type": "string"
+            },
+            "disk": {
+              "description": "The disk requirements",
+              "default": "500Mi",
+              "type": "string"
+            },
+            "db": {
+              "description": "the name of the database to use",
+              "type": "string"
+            },
+            "storage": {
+              "description": "the name of the storage bucket to use",
+              "type": "string"
+            }
+          },
+          "required": ["memory", "cpu", "disk"],
+          "additionalProperties": false
+        },
+        "mode": {
+          "description": "the provisioning mode for the project",
+          "type": "object",
+          "properties": {
+            "type": {
+              "description": "on-demand or provisioned",
+              "default": "on-demand",
+              "type": "string",
+              "enum": ["on-demand", "provisioned"]
+            },
+            "idle": {
+              "description": "duration in seconds if on-demand",
+              "type": "string"
+            }
+          },
+          "required": ["type"],
+          "additionalProperties": false
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "description": "APT dependencies to install prior to launching your project",
+            "type": "string"
+          }
+        },
+        "domains": {
+          "type": "array",
+          "items": {
+            "description": "the custom domain",
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "$schema": {
+      "type": "string"
+    }
+  },
+  "required": ["projectId", "orgId", "region"],
+  "additionalProperties": false
+}
