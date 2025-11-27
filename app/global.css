@@ -201,3 +201,12 @@ figure > div:nth-child(2) {
 article > p {
 	margin-bottom: 1rem;
 }
+
+/* Remove spacing when no banner follows (v1 only) */
+#nd-sidebar > div:first-child:has(> button:last-child) {
+	padding-bottom: 0;
+}
+
+#nd-sidebar > div:first-child > button:last-child {
+	margin-bottom: 0;
+}
