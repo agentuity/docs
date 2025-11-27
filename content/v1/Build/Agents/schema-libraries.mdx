@@ -1,0 +1,200 @@
+---
+title: Schema Libraries
+description: Using Valibot and ArkType as alternatives to Zod
+---
+
+Agentuity uses the [StandardSchema](https://github.com/standard-schema/standard-schema) interface for validation, which means you can use any compatible library. While we recommend Zod for most projects, Valibot and ArkType are solid alternatives with different trade-offs.
+
+## Choosing a Library
+
+| Library | Bundle Size | Performance | Syntax | Best For |
+|---------|-------------|-------------|--------|----------|
+| [Zod](https://zod.dev) | ~13.5 kB | Baseline | Method chaining | Most projects (largest ecosystem) |
+| [Valibot](https://valibot.dev) | ~1-2 kB | ~2x faster | Modular pipes | Bundle-sensitive apps |
+| [ArkType](https://arktype.io) | Lightweight | ~20x faster | TypeScript-like | Performance-critical apps |
+
+## Using Valibot
+
+### Installation
+
+```bash
+bun add valibot
+```
+
+### Basic Schema
+
+```typescript
+import { createAgent, type AgentContext } from '@agentuity/runtime';
+import * as v from 'valibot';
+
+const InputSchema = v.object({
+  email: v.pipe(v.string(), v.email()),
+  age: v.pipe(v.number(), v.minValue(0), v.maxValue(120)),
+  role: v.picklist(['admin', 'user', 'guest']),
+});
+
+const OutputSchema = v.object({
+  success: v.boolean(),
+  userId: v.string(),
+});
+
+const agent = createAgent({
+  schema: {
+    input: InputSchema,
+    output: OutputSchema,
+  },
+  handler: async (ctx: AgentContext, input) => {
+    ctx.logger.info('Processing user', { email: input.email, role: input.role });
+    return {
+      success: true,
+      userId: crypto.randomUUID(),
+    };
+  },
+});
+
+export default agent;
+```
+
+### Common Patterns
+
+```typescript
+import * as v from 'valibot';
+
+// Strings
+v.string()                              // Any string
+v.pipe(v.string(), v.minLength(5))      // Minimum length
+v.pipe(v.string(), v.maxLength(100))    // Maximum length
+v.pipe(v.string(), v.email())           // Email format
+v.pipe(v.string(), v.url())             // URL format
+
+// Numbers
+v.number()                              // Any number
+v.pipe(v.number(), v.minValue(0))       // Minimum value
+v.pipe(v.number(), v.maxValue(100))     // Maximum value
+v.pipe(v.number(), v.integer())         // Integer only
+
+// Arrays and objects
+v.array(v.string())                     // Array of strings
+v.object({ name: v.string() })          // Object shape
+
+// Optional and nullable
+v.optional(v.string())                  // string | undefined
+v.nullable(v.string())                  // string | null
+v.nullish(v.string())                   // string | null | undefined
+
+// Enums
+v.picklist(['a', 'b', 'c'])             // One of these values
+v.literal('exact')                      // Exact value
+
+// Defaults
+v.optional(v.string(), 'default')       // With default value
+```
+
+## Using ArkType
+
+### Installation
+
+```bash
+bun add arktype
+```
+
+### Basic Schema
+
+```typescript
+import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { type } from 'arktype';
+
+const InputSchema = type({
+  email: 'string.email',
+  age: 'number>=0&<=120',
+  role: '"admin"|"user"|"guest"',
+});
+
+const OutputSchema = type({
+  success: 'boolean',
+  userId: 'string',
+});
+
+const agent = createAgent({
+  schema: {
+    input: InputSchema,
+    output: OutputSchema,
+  },
+  handler: async (ctx: AgentContext, input) => {
+    ctx.logger.info('Processing user', { email: input.email, role: input.role });
+    return {
+      success: true,
+      userId: crypto.randomUUID(),
+    };
+  },
+});
+
+export default agent;
+```
+
+### Common Patterns
+
+```typescript
+import { type } from 'arktype';
+
+// Strings
+type('string')                    // Any string
+type('string>5')                  // Minimum length (greater than 5 chars)
+type('string<100')                // Maximum length
+type('string.email')              // Email format
+type('string.url')                // URL format
+
+// Numbers
+type('number')                    // Any number
+type('number>0')                  // Greater than 0
+type('number<=100')               // Less than or equal to 100
+type('integer')                   // Integer only
+type('number>=0&<=120')           // Range (0 to 120)
+
+// Arrays and objects
+type('string[]')                  // Array of strings
+type({ name: 'string' })          // Object shape
+
+// Optional and union
+type('string?')                   // string | undefined
+type('string|null')               // string | null
+
+// Enums and literals
+type('"a"|"b"|"c"')               // One of these values
+type('"exact"')                   // Exact value
+
+// Nested objects
+type({
+  user: {
+    name: 'string',
+    email: 'string.email',
+  },
+  tags: 'string[]?',
+})
+```
+
+## Migrating Between Libraries
+
+Schemas are interchangeable in `createAgent()`. The same agent structure works with any StandardSchema library:
+
+```typescript
+// With Zod
+import { z } from 'zod';
+const schema = { input: z.object({ name: z.string() }) };
+
+// With Valibot
+import * as v from 'valibot';
+const schema = { input: v.object({ name: v.string() }) };
+
+// With ArkType
+import { type } from 'arktype';
+const schema = { input: type({ name: 'string' }) };
+
+// All work the same way in createAgent()
+createAgent({ schema, handler: async (ctx, input) => { ... } });
+```
+
+## Next Steps
+
+- [Creating Agents](/Build/Agents/creating-agents): Full guide to agent creation with Zod examples
+- [Using the AI SDK](/Build/Agents/ai-sdk-integration): Add LLM capabilities to your agents

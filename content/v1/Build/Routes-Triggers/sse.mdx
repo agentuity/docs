@@ -1,0 +1,214 @@
+---
+title: Server-Sent Events (SSE)
+description: Stream updates from server to client with router.sse()
+---
+
+Server-Sent Events (SSE) provide efficient one-way streaming from server to client over HTTP. Use them for progress indicators, live feeds, notifications, and LLM response streaming.
+
+## Basic Example
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.sse('/updates', (c) => async (stream) => {
+  await stream.write('Connected!');
+
+  // Stream data to client
+  for (let i = 0; i < 5; i++) {
+    await stream.write(`Update ${i + 1}`);
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+
+  stream.close();
+});
+
+export default router;
+```
+
+## Handler Structure
+
+The SSE handler uses an async callback pattern:
+
+```typescript
+router.sse('/path', (c) => async (stream) => {
+  // c - Route context (logger, agents, storage)
+  // stream - SSE stream object
+
+  await stream.write('data');
+  await stream.writeSSE({ event, data, id });
+  stream.onAbort(() => { /* cleanup */ });
+  stream.close();
+});
+```
+
+## Two Write APIs
+
+### Simple Write
+
+```typescript
+await stream.write('Hello');
+await stream.write(JSON.stringify({ status: 'ok' }));
+```
+
+Automatically formats data as SSE.
+
+### Full SSE Format
+
+```typescript
+await stream.writeSSE({
+  event: 'status',        // Event type for client filtering
+  data: 'Processing...',  // The payload
+  id: '1',                // Optional event ID
+});
+```
+
+Use this for named events that clients can filter.
+
+## Named Events
+
+Clients can listen for specific event types:
+
+**Server:**
+```typescript
+await stream.writeSSE({ event: 'progress', data: '50%' });
+await stream.writeSSE({ event: 'complete', data: JSON.stringify({ success: true }) });
+```
+
+**Client:**
+```javascript
+const source = new EventSource('/agent-name');
+
+source.addEventListener('progress', (e) => {
+  console.log('Progress:', e.data);
+});
+
+source.addEventListener('complete', (e) => {
+  console.log('Done:', JSON.parse(e.data));
+  source.close();
+});
+```
+
+## Full Example
+
+A job progress tracker that streams status updates:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.sse('/', (c) => async (stream) => {
+  c.var.logger.info('Client connected');
+
+  const steps = [
+    'Loading resources...',
+    'Processing data...',
+    'Generating report...',
+    'Finalizing...',
+  ];
+
+  let stepIndex = 0;
+
+  const interval = setInterval(async () => {
+    try {
+      if (stepIndex < steps.length) {
+        const progress = ((stepIndex + 1) / steps.length * 100).toFixed(0);
+
+        await stream.writeSSE({
+          event: 'status',
+          data: `[${progress}%] ${steps[stepIndex]}`,
+          id: String(stepIndex),
+        });
+
+        stepIndex++;
+      } else {
+        await stream.write(JSON.stringify({ success: true }));
+        clearInterval(interval);
+        stream.close();
+      }
+    } catch (error) {
+      c.var.logger.error('Stream error', { error });
+      clearInterval(interval);
+    }
+  }, 1000);
+
+  stream.onAbort(() => {
+    c.var.logger.info('Client disconnected');
+    clearInterval(interval);
+  });
+
+  // Keep connection open
+  await new Promise(() => {});
+});
+
+export default router;
+```
+
+## Client Disconnection
+
+Handle early client disconnection with `onAbort`:
+
+```typescript
+stream.onAbort(() => {
+  clearInterval(interval);
+  // Cancel any pending work
+});
+```
+
+Always clean up resources to prevent memory leaks.
+
+## Keeping the Connection Open
+
+SSE connections stay open until closed. Use a pending promise to keep the handler alive:
+
+```typescript
+router.sse('/stream', (c) => async (stream) => {
+  // Set up intervals, subscriptions, etc.
+
+  // Keep connection open until client disconnects or stream.close()
+  await new Promise(() => {});
+});
+```
+
+## Client Connection
+
+Connect from JavaScript using the EventSource API:
+
+```javascript
+const source = new EventSource('https://your-project.agentuity.cloud/agent-name');
+
+source.onmessage = (event) => {
+  console.log('Received:', event.data);
+};
+
+source.onerror = () => {
+  console.log('Connection error or closed');
+  source.close();
+};
+```
+
+Or with cURL:
+
+```bash
+curl -N https://your-project.agentuity.cloud/agent-name
+```
+
+## SSE vs WebSocket
+
+| Aspect | SSE | WebSocket |
+|--------|-----|-----------|
+| Direction | Server → Client only | Bidirectional |
+| Protocol | HTTP | WebSocket |
+| Reconnection | Built-in auto-reconnect | Manual |
+| Browser support | Native EventSource | Native WebSocket |
+| Best for | Progress, feeds, LLM streaming | Chat, collaboration |
+
+Use SSE when you only need to push data **from server to client**. Use [WebSockets](/Build/Routes-Triggers/websockets) when you need **bidirectional** communication.
+
+## Next Steps
+
+- [WebSockets](/Build/Routes-Triggers/websockets): Bidirectional real-time communication
+- [HTTP Routes](/Build/Routes-Triggers/http-routes): Standard request/response endpoints
+- [React Hooks](/Build/Frontend/react-hooks): Connect from React with `useAgentEventStream`

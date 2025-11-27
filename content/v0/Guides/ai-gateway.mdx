@@ -1,0 +1,131 @@
+---
+title: Using AI Gateway
+description: Using the AI Gateway in your Agents
+---
+
+## What is the AI Gateway?
+
+The AI Gateway provides seamless access to multiple AI providers through a single interface. It automatically routes your LLM requests, tracks usage and costs, and eliminates the need to manage individual API keys for each provider.
+
+## Supported Providers
+
+The AI Gateway supports the following providers out of the box:
+
+- **OpenAI**
+- **Anthropic**
+- **Google**
+- **Cohere**
+- **DeepSeek**
+- **Grok**
+- **Groq**
+- **Mistral**
+- **Perplexity**
+
+<Callout type="info">
+[Purchase credits and manage billing](https://app.agentuity.com/billing) in the Cloud Console.
+</Callout>
+
+## How It Works
+
+### Automatic Detection
+
+When you use supported LLM SDKs without providing API keys, Agentuity automatically routes requests through the AI Gateway:
+
+<CodeExample js={`// No API key needed - automatically uses the AI Gateway
+import OpenAI from 'openai';
+
+const openai = new OpenAI();
+
+const completion = await openai.chat.completions.create({
+  model: "gpt-4o-mini",
+  messages: [{ role: "user", content: "Hello!" }]
+});`} py={`# No API key needed - automatically uses the AI Gateway
+from openai import OpenAI
+
+client = OpenAI()
+
+completion = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Hello!"}]
+)`} />
+
+### Using Your Own API Keys
+
+To bypass the AI Gateway and use your own API keys, simply provide them:
+
+<CodeExample js={`// Uses your API key directly, bypasses the AI Gateway
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});`} py={`# Uses your API key directly, bypasses the AI Gateway
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ.get("OPENAI_API_KEY")
+)`} />
+
+## Cost Tracking and Monitoring
+
+### Session Overview
+
+Navigate to **Services > AI Gateway** in the Cloud Console to view:
+
+- **Agent**: Which agent made the request
+- **Provider**: AI provider used (OpenAI, Anthropic, etc.)
+- **Model**: Specific model used
+- **LLM Cost**: Cost per request
+- **Timestamp**: When the request was made
+
+<ThemeImage baseName="aigateway" alt="AI Gateway Traffic Overview" />
+
+### Detailed Session Analysis
+
+Click any session to view comprehensive details:
+
+<ThemeImage baseName="aigateway-detail" alt="AI Gateway Session Details" />
+
+- **Token usage**: Input and output token counts
+- **Cost breakdown**: Per-token pricing and total cost
+- **Request metadata**: Model, provider, and performance metrics
+- **Trace information**: Full span details for debugging
+
+## Filtering and Search
+
+Use the filter options to analyze your AI usage:
+
+- **By Provider**: Compare costs across different AI providers
+- **By Model**: Track usage of specific models
+- **By Agent**: See which agents consume the most tokens
+- **By Time Range**: Analyze usage patterns over time
+
+<ThemeImage baseName="aigateway-filters" alt="AI Gateway Filtering Options" />
+
+## Framework Integration
+
+AI Gateway works seamlessly with popular AI frameworks:
+
+### JavaScript
+- OpenAI SDK
+- Anthropic SDK
+- Langchain.js
+- Vercel AI SDK
+
+### Python
+- OpenAI SDK
+- Anthropic SDK
+- LangChain
+- LiteLLM
+
+The Agentuity CLI provides templates with these frameworks already configured. Since these frameworks use the underlying LLM SDKs, requests are routed through the AI Gateway when no API keys are provided.
+
+## Telemetry Integration
+
+AI Gateway spans appear in your [agent telemetry](/v0/Guides/agent-telemetry) with:
+- Request duration
+- Token counts
+- Cost information
+- Provider details
+
+This integration enables you to track costs, monitor usage patterns, and understand the full performance impact of AI calls in your agent workflows.

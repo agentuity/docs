@@ -1,0 +1,144 @@
+---
+title: Quickstart
+description: Build your first agent in 5 minutes
+---
+
+This guide walks you through creating a simple chat agent that uses OpenAI to generate responses.
+
+## 1. Create the Agent
+
+Create `src/agents/chat/agent.ts`:
+
+```typescript
+import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+const agent = createAgent({
+  schema: {
+    input: z.object({ message: z.string() }),
+    output: z.object({ response: z.string() }),
+  },
+  handler: async (ctx: AgentContext, input) => {
+    ctx.logger.info('Received message', { message: input.message });
+
+    const { text } = await generateText({
+      model: openai('gpt-5-mini'),
+      prompt: input.message,
+    });
+
+    return { response: text };
+  },
+});
+
+export default agent;
+```
+
+## 2. Add a Route
+
+Create `src/agents/chat/route.ts`:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.post('/', async (c) => {
+  const body = await c.req.json();
+  const result = await c.agent.chat.run(body);
+  return c.json(result);
+});
+
+export default router;
+```
+
+## 3. Test It
+
+Start the dev server:
+
+```bash
+bun dev
+```
+
+Send a request:
+
+```bash
+curl -X POST http://localhost:3500/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What is the capital of France?"}'
+```
+
+Response:
+
+```json
+{
+  "response": "The capital of France is Paris."
+}
+```
+
+## 4. Add Streaming
+
+For real-time responses, return a stream instead:
+
+```typescript
+import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+const agent = createAgent({
+  schema: {
+    input: z.object({ message: z.string() }),
+    stream: true,
+  },
+  handler: async (ctx: AgentContext, input) => {
+    const { textStream } = streamText({
+      model: openai('gpt-5-mini'),
+      prompt: input.message,
+    });
+
+    return textStream;
+  },
+});
+
+export default agent;
+```
+
+Update the route to use the streaming endpoint:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.stream('/', async (c) => {
+  const body = await c.req.json();
+  return c.agent.chat.run(body);
+});
+
+export default router;
+```
+
+## 5. Deploy
+
+When you're ready, deploy to Agentuity:
+
+```bash
+agentuity deploy
+```
+
+Your agent is now live with a public URL.
+
+## What's Next?
+
+**Build something more:**
+
+- [Build a multi-agent system](/Build/Agents/calling-other-agents) — Routing, RAG, workflows
+- [Add a React frontend](/Build/Frontend/react-hooks) — Call your agent from the web
+- [Persist data](/Build/Agents/state-management) — Use thread and session state
+
+**Understand the platform:**
+
+- [Project Structure](/Get-Started/project-structure) — The two-file pattern
+- [App Configuration](/Get-Started/app-configuration) — Configure your project

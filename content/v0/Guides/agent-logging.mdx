@@ -1,0 +1,253 @@
+---
+title: Agent Logging
+description: How to use logging in your agents
+---
+
+## What is Agent Logging?
+
+Agent logging provides structured, real-time insights into your agent's execution. Effective logging helps you debug issues, monitor behavior, and understand agent decision-making.
+
+## Logging Interface
+
+The Agentuity platform provides persistent, searchable logs with real-time streaming for all deployed agents.
+
+<ThemeImage baseName="agent-logs" alt="Logs Overview" />
+
+### Log Overview
+
+The Logs dashboard displays:
+
+- **Timestamps**: Precise timing for each log entry
+- **Severity levels**: INFO, WARN, ERROR for categorization  
+- **Source identification**: Which component generated the log
+- **Detailed messages**: Context about agent actions
+
+### Search and Filtering
+
+**AI-Powered Search:**
+Use natural language queries to find log entries. Click the purple sparkle icon and enter your search:
+
+<ThemeImage baseName="agent-logs-filter" alt="AI-Powered Log Search" />
+
+**Filtering Options:**
+- **Severity**: Filter by log level (INFO, WARN, ERROR, etc.)
+- **Project**: Scope logs to specific projects
+- **Agent**: View logs from specific agents
+- **Session ID**: Filter logs for a particular session
+- **Deployment ID**: View logs from specific deployments
+- **Time Range**: Focus on specific time periods
+
+### Detailed Log Analysis
+
+Each log entry provides comprehensive context and can be expanded for full details:
+
+<ThemeImage baseName="agent-logs-detail" alt="Detailed Log Entry View" />
+
+## Logging Best Practices
+
+<Callout type="info">
+**Language Differences:** JavaScript supports structured data objects directly, while Python uses the standard `logging.Logger` interface (with structured data via `extra` parameters).
+</Callout>
+
+### 1. Use Appropriate Log Levels
+
+<CodeExample js={`// INFO: Normal flow and state changes
+ctx.logger.info('Processing user request', { userId, action });
+
+// WARN: Potential issues that don't stop execution
+ctx.logger.warn('Rate limit approaching', { remaining: 5 });
+
+// ERROR: Failures requiring attention
+ctx.logger.error('Failed to fetch data', { error: error.message });`} py={`# INFO: Normal flow and state changes
+user_id = "user123"
+action_type = "login"
+context.logger.info(f"Processing user request user_id={user_id} action={action_type}")
+
+# WARNING: Potential issues that don't stop execution
+remaining_requests = 5
+context.logger.warning(f"Rate limit approaching remaining={remaining_requests}")
+
+# ERROR: Failures requiring attention
+try:
+    # Operation that might fail
+    data = fetch_some_data()
+except Exception as err:
+    error_msg = str(err)
+    context.logger.error(f"Failed to fetch data error={error_msg}")`} />
+
+### 2. Use Structured Data
+
+Use structured data to provide context and make logs easier to parse and analyze:
+
+<CodeExample js={`// JavaScript: Use objects for structured context
+ctx.logger.info('API call completed', {
+  endpoint: '/api/users',
+  method: 'GET',
+  duration: 234,
+  status: 200,
+  contentType: req.data.contentType
+});
+
+// Extract variables for dynamic values
+const orderId = order.id;
+const itemCount = order.items.length;
+
+ctx.logger.info('Order processed', {
+  orderId: orderId,
+  itemCount: itemCount,
+  total: order.total
+});`} py={`# Python: Use f-strings with key=value format
+api_endpoint = "/api/users"
+http_method = "GET"
+duration = 234
+response_status = 200
+content_type = req.data.content_type
+
+context.logger.info(f"API call completed endpoint={api_endpoint} method={http_method} duration={duration}ms status={response_status} content_type={content_type}")
+
+# Extract variables for dynamic values
+order_id = order.id
+item_count = len(order.items)
+total_amount = order.total
+
+context.logger.info(f"Order processed order_id={order_id} item_count={item_count} total={total_amount}")
+
+# For structured logging, extra parameters are also supported
+context.logger.info("Order processed", extra={"order_id": order_id, "item_count": item_count})`} />
+
+### 3. Include Relevant Context
+
+Log enough information to understand what happened without re-running:
+
+<CodeExample js={`// Good - includes context
+ctx.logger.info('Order processed', {
+  orderId: order.id,
+  customerId: customer.id,
+  total: order.total,
+  itemCount: order.items.length
+});
+
+// Less helpful
+ctx.logger.info('Order done');`} py={`# Good - includes context
+order_num = order.id
+customer_num = customer.id
+total_amount = order.total
+item_count = len(order.items)
+context.logger.info(f"Order processed order_id={order_num} customer_id={customer_num} total={total_amount} item_count={item_count}")
+
+# Less helpful
+context.logger.info("Order done")`} />
+
+### 4. Include Agentuity-Specific Information
+
+Add Agentuity-specific information to help with debugging and monitoring:
+
+<CodeExample js={`// Include Agentuity information in logs
+ctx.logger.info('Agent processing request', {
+  agentId: ctx.agent.id,
+  agentName: ctx.agent.name,
+  sessionId: ctx.sessionId,
+  trigger: req.trigger,
+});
+
+// For errors, include additional context
+ctx.logger.error('Agent execution failed', {
+  agentId: ctx.agent.id,
+  sessionId: ctx.sessionId,
+  trigger: req.trigger,
+  error: error.message
+});`} py={`# Include Agentuity information in logs
+agent_id = context.agent_id
+session_id = context.sessionId
+trigger_type = req.trigger
+
+context.logger.info(f"Agent processing request agent_id={agent_id} session_id={session_id} trigger={trigger_type}")
+
+# For errors, include additional context
+error_msg = str(error)
+context.logger.error(f"Agent execution failed agent_id={agent_id} session_id={session_id} trigger={trigger_type} error={error_msg}")`} />
+
+### 5. Log Decision Points
+
+Help future debugging by logging key decisions:
+
+<CodeExample js={`if (useCache) {
+  ctx.logger.info('Using cached response', { 
+    cacheKey, 
+    age: cacheAge 
+  });
+} else {
+  ctx.logger.info('Cache miss, fetching fresh data', { 
+    cacheKey,
+    reason: 'expired' 
+  });
+}`} py={`if use_cache:
+    key = "user_123"
+    age_seconds = 300
+    context.logger.info(f"Using cached response cache_key={key} age={age_seconds}s")
+else:
+    key = "user_123" 
+    reason = "expired"
+    context.logger.info(f"Cache miss, fetching fresh data cache_key={key} reason={reason}")
+`} />
+
+### 6. Avoid Logging Sensitive Data
+
+Never log passwords, tokens, or personal information:
+
+<CodeExample js={`// Don't log sensitive data
+ctx.logger.info('User authenticated', { userId });
+
+// Not this
+ctx.logger.info('Login attempt', { 
+  username, 
+  password  // Never log passwords!
+});`} py={`# Don't log sensitive data
+user_id = "user123"
+context.logger.info(f"User authenticated user_id={user_id}")
+
+# Not this - Never log passwords!
+login_name = "john"
+user_password = "secret123"  
+context.logger.info(f"Login attempt username={login_name} password={user_password}")  # Never do this!
+`} />
+
+### 7. Use Child Loggers for Different Tasks
+
+Create child loggers to organize logging for different parts of your workflow:
+
+<CodeExample js={`// Create child loggers for different tasks
+const orderLogger = ctx.logger.child({ component: 'order-processing' });
+const paymentLogger = ctx.logger.child({ component: 'payment' });
+const inventoryLogger = ctx.logger.child({ component: 'inventory' });
+
+// Use specific loggers for their respective operations
+orderLogger.info('Starting order validation');
+paymentLogger.info('Processing payment');
+
+// Add context data to individual log messages:
+const orderId = order.id;
+const paymentAmount = order.total;
+const itemCount = order.items.length;
+
+orderLogger.info('Order validated', { 
+  orderId: orderId,
+  itemCount: itemCount,
+  total: paymentAmount
+});`} py={`# Python: Manual context approach (child logger method coming soon)
+
+# Extract variables for context
+order_id = order.id
+payment_amount = order.total
+item_count = len(order.items)
+payment_method = "credit_card"
+
+# Include context in each log message
+context.logger.info(f"Order validation completed order_id={order_id} item_count={item_count} total={payment_amount}")
+context.logger.info(f"Payment processed order_id={order_id} amount={payment_amount} method={payment_method}")
+
+# Use prefixes to organize log messages
+context.logger.info(f"[ORDER] Validation completed order_id={order_id} item_count={item_count}")
+context.logger.info(f"[PAYMENT] Processing amount={payment_amount} method={payment_method}")`} />
+
+For more observability features, see [Agent Telemetry](/v0/Guides/agent-telemetry) and [Agent Tracing](/v0/Guides/agent-tracing).

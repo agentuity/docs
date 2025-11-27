@@ -1,0 +1,37 @@
+---
+title: Development Commands
+description: Commands for local development of agents using DevMode
+---
+
+The `dev` commands allow you to run and test your Agentuity projects locally during development using DevMode.
+
+## dev
+
+Runs a development server for local testing and development.
+
+**Aliases:** run
+
+**Usage**
+
+<CLICommand command="agentuity dev" />
+
+**Flags:**
+- `-d, --dir string` - The directory to run the development server in (default ".")
+- `-h, --help` - help for dev
+- `--port int` - The port to run the development server on (uses project default if not provided)
+
+**Examples**
+
+Run a development server for a project in the current directory:
+
+<CLICommand command="agentuity dev">
+✓ Development server started
+</CLICommand>
+
+Run a development server for a project in a specific directory:
+
+<CLICommand command="agentuity dev --dir ~/projects/my-project">
+✓ Development server started
+</CLICommand>
+
+> See the [DevMode](/v0/Guides/devmode) documentation for more information on how to use DevMode.

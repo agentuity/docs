@@ -1,0 +1,119 @@
+---
+title: Project Structure
+description: Understand how Agentuity projects are organized
+---
+
+Agentuity projects follow a convention-based structure that enables automatic discovery and deployment.
+
+## Directory Layout
+
+```
+my-project/
+├── agentuity.json        # Project configuration
+├── .env                  # Environment variables
+├── package.json          # Dependencies
+├── app.ts                # App entry point
+└── src/
+    ├── agents/           # Agent code (required)
+    │   └── chat/
+    │       ├── agent.ts  # Business logic
+    │       └── route.ts  # HTTP routing
+    ├── apis/             # Pure HTTP endpoints (optional)
+    │   └── health/
+    │       └── route.ts
+    └── web/              # Frontend code (scaffolded by default)
+        └── App.tsx
+```
+
+Agent names come from their directory. `src/agents/chat/` creates an agent accessible as `c.agent.chat`.
+
+## The Two-File Pattern
+
+Every agent has two files. Both are required for agents. For HTTP-only endpoints without agent logic, use `src/apis/` with just a `route.ts`.
+
+| File | Purpose | Creates |
+|------|---------|---------|
+| `agent.ts` | Business logic, schemas, metadata | `createAgent()` |
+| `route.ts` | HTTP endpoints, triggers | `createRouter()` |
+
+This separation keeps concerns clear—agents focus on logic, routes handle HTTP.
+
+### agent.ts
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent({
+  schema: {
+    input: z.object({ message: z.string() }),
+    output: z.object({ response: z.string() }),
+  },
+  handler: async (ctx, input) => {
+    return { response: `Echo: ${input.message}` };
+  },
+});
+
+export default agent;
+```
+
+### route.ts
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.post('/', async (c) => {
+  const body = await c.req.json();
+  const result = await c.agent.chat.run(body);
+  return c.json(result);
+});
+
+export default router;
+```
+
+The route calls the agent via `c.agent.<name>.run()`. The name comes from the directory, so `src/agents/chat/` becomes `c.agent.chat`, for example.
+
+## APIs vs Agents
+
+| | Agents (`src/agents/`) | APIs (`src/apis/`) |
+|---|---|---|
+| **Files** | `agent.ts` + `route.ts` | Just `route.ts` |
+| **Schema validation** | Built-in | Manual |
+| **Events & Evals** | Yes | No |
+| **Storage access** | Full | Full |
+| **Best for** | Core business logic | Health checks, webhooks, simple endpoints |
+
+Use APIs when you need a lightweight HTTP endpoint without the agent overhead.
+
+## Frontend (`src/web/`)
+
+Place frontend code in `src/web/` to deploy alongside your agents. The CLI bundles and serves it automatically.
+
+React is currently supported via `@agentuity/react`, with a framework-agnostic approach that enables support for Next.js, Svelte, and others.
+
+```typescript
+// src/web/App.tsx
+import { useAgent } from '@agentuity/react';
+
+function App() {
+  const { data, run, running } = useAgent('chat');
+
+  return (
+    <button onClick={() => run({ message: 'Hello' })}>
+      {running ? 'Loading...' : 'Send'}
+    </button>
+  );
+}
+```
+
+<Callout type="info" title="Deployment Scenarios">
+You can also deploy your frontend elsewhere (e.g.,Vercel, Netlify) and call your Agentuity agents via the React hooks with a configured `baseUrl`.
+</Callout>
+
+## Next Steps
+
+- [App Configuration](/Get-Started/app-configuration) — Configure `app.ts` and `agentuity.json`
+- [Creating Agents](/Build/Agents/creating-agents) — Deep dive into agent creation
+- [HTTP Routes](/Build/Routes-Triggers/http-routes) — Learn about routing options

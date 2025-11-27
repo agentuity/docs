@@ -1,0 +1,422 @@
+---
+title: Using Object Storage
+description: Using Object Storage for files and media in your Agents
+---
+
+## When to Use Object Storage
+
+Object storage is your solution for storing files, media, and large unstructured data that agents need to manage. Think of it as your agent's file system — perfect for documents, images, videos, backups, and any binary content.
+
+Choose the right storage for your use case:
+
+- **Object Storage**: Files, media, documents, backups
+- **[Key-Value Storage](/v0/Cloud/key-value-memory)**: Fast lookups, session data, configuration
+- **[Vector Storage](/v0/Cloud/vector-memory)**: Semantic search, embeddings, AI context
+
+## Common Use Cases
+
+- **File Management**: Store user uploads, generated documents, and processed files
+- **Media Storage**: Keep images, videos, audio files, and other media assets
+- **Document Processing**: Store PDFs, spreadsheets, and documents for agent processing
+- **Backup and Archive**: Maintain backups of agent-generated content or historical data
+- **Static Asset Serving**: Host files that can be accessed via public URLs
+- **Data Export**: Store generated reports, exports, and downloadable content
+
+## Creating Object Storage
+
+You can create object storage buckets either through the Cloud Console or programmatically in your agent code.
+
+### Via Cloud Console
+
+Navigate to **Services > Object Store** and click **Create Storage**. Choose a descriptive bucket name that reflects its purpose (e.g., `user-uploads`, `processed-documents`, `media-assets`).
+
+<ThemeImage baseName="object-store" alt="Object Storage Overview" />
+
+### Via SDK
+
+Both JavaScript and Python SDKs automatically create buckets when you first access them:
+
+<CodeExample js={`// JavaScript/TypeScript
+import { AgentHandler } from '@agentuity/sdk';
+
+const handler: AgentHandler = async (request, response, context) => {
+  // Bucket is created automatically on first use
+  const imageData = Buffer.from(await request.data.binary());
+  
+  // Auto-detect content type (simplest approach)
+  await context.objectstore.put('user-uploads', 'profile-123.jpg', imageData)
+  
+  return response.json({ message: 'Image uploaded successfully' });
+};
+
+export default handler;`} py={`# Python
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    # Bucket is created automatically on first use
+    image_data = await request.data.binary()
+    
+    # Auto-detect content type (simplest approach)
+    await context.objectstore.put("user-uploads", "profile-123.jpg", image_data)
+    
+    return response.json({"message": "Image uploaded successfully"})
+`} />
+
+## Working with Object Storage
+
+The object storage API provides four core operations: `get`, `put`, `delete`, and `createPublicURL`. All operations are asynchronous and support various content types.
+
+### Storing Objects
+
+Object storage supports two approaches for storing files:
+
+1. **Automatic content type detection** (recommended for most cases) - The SDK detects the content type from the data
+2. **Explicit parameters** - Specify content type, metadata, and other options manually
+
+<CodeExample js={`// Store with automatic content type detection
+await context.objectstore.put('documents', 'report.json', { data: 'values' });
+
+// Store with explicit content type
+await context.objectstore.put('images', 'photo.jpg', imageBuffer, {
+  contentType: 'image/jpeg'
+});
+
+// Store with full metadata
+// These optional parameters control how the object is served
+await context.objectstore.put('uploads', 'document.pdf', pdfData, {
+  contentType: 'application/pdf',
+  contentDisposition: 'attachment; filename="report.pdf"',  // Download as 'report.pdf'
+  cacheControl: 'max-age=3600',  // Browser caches for 1 hour
+  metadata: {
+    'uploaded-by': userId,
+    'processed': 'false'
+  }
+});
+
+// Store text file
+await context.objectstore.put('logs', 'agent.log', logContent, {
+  contentType: 'text/plain',
+  contentEncoding: 'utf-8'
+});`} py={`# Store with automatic content type detection (simplest approach)
+# The SDK will automatically detect content type from the file extension or data
+await context.objectstore.put("documents", "report.json", {"data": "values"})
+await context.objectstore.put("images", "photo.jpg", image_buffer)
+await context.objectstore.put("logs", "agent.log", log_content)
+
+# Store with explicit parameters using ObjectStorePutParams
+# Use this when you need to set specific metadata or explicit content type
+from agentuity.server.objectstore import ObjectStorePutParams
+
+# With explicit content type
+params = ObjectStorePutParams(content_type="image/jpeg")
+await context.objectstore.put("images", "photo.jpg", image_buffer, params)
+
+# With full metadata
+# These optional parameters control how the object is served via public URLs
+params = ObjectStorePutParams(
+    content_type="application/pdf",
+    content_disposition='attachment; filename="report.pdf"',  # Download as 'report.pdf'
+    cache_control="max-age=3600",  # Browser caches for 1 hour  
+    metadata={
+        "uploaded-by": user_id,
+        "processed": "false"
+    }
+)
+await context.objectstore.put("uploads", "document.pdf", pdf_data, params)
+
+# Text file with encoding
+params = ObjectStorePutParams(
+    content_type="text/plain",
+    content_encoding="utf-8"
+)
+await context.objectstore.put("logs", "agent.log", log_content, params)`} />
+
+### Retrieving Objects
+
+Retrieve stored objects with automatic format handling:
+
+<CodeExample js={`// Get an object
+const result = await context.objectstore.get('documents', 'report.pdf');
+
+if (result.exists) {
+  // Access as binary data
+  const pdfData = await result.data.binary();
+  console.log(\`PDF size: \${pdfData.byteLength} bytes\`);
+  
+  // Or as text for text files
+  const textResult = await context.objectstore.get('logs', 'agent.log');
+  const logContent = await textResult.data.text();
+}
+
+// Handle missing objects
+const imageResult = await context.objectstore.get('images', 'missing.jpg');
+if (!imageResult.exists) {
+  console.log('Image not found');
+}`} py={`# Get an object
+result = await context.objectstore.get("documents", "report.pdf")
+
+if result.exists:
+    # Access as binary data
+    pdf_data = await result.data.binary()
+    print(f"PDF size: {len(pdf_data)} bytes")
+    
+    # Or as text for text files
+    text_result = await context.objectstore.get("logs", "agent.log")
+    log_content = await text_result.data.text()
+
+# Handle missing objects
+image_result = await context.objectstore.get("images", "missing.jpg")
+if not image_result.exists:
+    print("Image not found")`} />
+
+### Generating Public URLs
+
+Create time-limited public URLs for direct access to objects:
+
+<CodeExample js={`// Create a 1-hour public URL
+const publicUrl = await context.objectstore.createPublicURL(
+  'documents', 
+  'report.pdf', 
+  3600000 // 1 hour in milliseconds
+);
+
+// Share the URL
+console.log(\`Download link: \${publicUrl}\`);
+
+// Create with default expiration (1 hour)
+const imageUrl = await context.objectstore.createPublicURL('images', 'photo.jpg');
+
+// Create short-lived URL (minimum 1 minute)
+const tempUrl = await context.objectstore.createPublicURL(
+  'temp-files', 
+  'preview.png', 
+  60000 // 1 minute
+);`} py={`# Create a 1-hour public URL
+public_url = await context.objectstore.create_public_url(
+    "documents", 
+    "report.pdf", 
+    3600000  # 1 hour in milliseconds
+)
+
+# Share the URL
+print(f"Download link: {public_url}")
+
+# Create with default expiration (1 hour)
+image_url = await context.objectstore.create_public_url("images", "photo.jpg")
+
+# Create short-lived URL (minimum 1 minute)
+temp_url = await context.objectstore.create_public_url(
+    "temp-files", 
+    "preview.png", 
+    60000  # 1 minute
+)`} />
+
+### Deleting Objects
+
+Remove objects when they're no longer needed:
+
+<CodeExample js={`// Delete an object
+const wasDeleted = await context.objectstore.delete('temp-files', 'processing.tmp');
+
+if (wasDeleted) {
+  console.log('Temporary file cleaned up');
+} else {
+  console.log('File was already deleted');
+}`} py={`# Delete an object
+was_deleted = await context.objectstore.delete("temp-files", "processing.tmp")
+
+if was_deleted:
+    print("Temporary file cleaned up")
+else:
+    print("File was already deleted")`} />
+
+## Best Practices
+
+### Bucket Organization
+
+Structure your buckets by purpose and access patterns:
+- `user-uploads`: User-submitted content
+- `processed-output`: Agent-generated results
+- `public-assets`: Files meant for public access
+- `temp-storage`: Short-lived processing files
+
+### Key Naming Conventions
+
+Use hierarchical paths for better organization:
+- `users/{userId}/profile.jpg`
+- `documents/{year}/{month}/report-{id}.pdf`
+- `exports/{timestamp}/data.csv`
+
+### Content Type Management
+
+Always set appropriate content types for better browser handling:
+
+<CodeExample js={`import path from 'path';
+
+const contentTypes = {
+  '.jpg': 'image/jpeg',
+  '.png': 'image/png',
+  '.pdf': 'application/pdf',
+  '.json': 'application/json',
+  '.csv': 'text/csv'
+};
+
+const extension = path.extname(filename);
+const contentType = contentTypes[extension] || 'application/octet-stream';
+
+await context.objectstore.put('uploads', filename, data, {
+  contentType
+});`} py={`import os
+
+# Auto-detect or use explicit params
+from agentuity.server.objectstore import ObjectStorePutParams
+
+content_types = {
+    ".jpg": "image/jpeg",
+    ".png": "image/png",
+    ".pdf": "application/pdf",
+    ".json": "application/json",
+    ".csv": "text/csv"
+}
+
+extension = os.path.splitext(filename)[1]
+content_type = content_types.get(extension, "application/octet-stream")
+
+params = ObjectStorePutParams(content_type=content_type)
+await context.objectstore.put("uploads", filename, data, params)`} />
+
+### Public URL Security
+
+Use appropriate expiration times for public URLs:
+- **Temporary downloads**: 5-15 minutes
+- **Shared documents**: 1-24 hours
+- **Never**: Create permanent public URLs for sensitive data
+
+### Error Handling
+
+Handle storage operations gracefully:
+
+<CodeExample js={`try {
+  // Attempt to store file
+  await context.objectstore.put('uploads', key, data);
+  
+  // Generate temporary URL for response
+  const url = await context.objectstore.createPublicURL('uploads', key, 900000);
+  
+  return response.json({ 
+    success: true, 
+    url 
+  });
+} catch (error) {
+  context.logger.error('Storage error:', error);
+  return response.json({ 
+    success: false, 
+    error: 'Failed to process file' 
+  });
+}`} py={`try:
+    # Attempt to store file
+    await context.objectstore.put("uploads", key, data)
+    
+    # Generate temporary URL for response
+    url = await context.objectstore.create_public_url("uploads", key, 900000)
+    
+    return response.json({
+        "success": True,
+        "url": url
+    })
+except Exception as e:
+    context.logger.error(f"Storage error: {e}")
+    return response.json({
+        "success": False,
+        "error": "Failed to process file"
+    })`} />
+
+## File Processing Patterns
+
+### Upload Handler
+
+Create a robust file upload handler:
+
+<CodeExample js={`const handler: AgentHandler = async (request, response, context) => {
+  const contentType = request.headers.get('content-type') || '';
+  const fileName = request.headers.get('x-filename') || 'upload';
+  
+  // Store the uploaded file
+  const fileData = await request.data.binary();
+  const key = \`uploads/\${Date.now()}-\${fileName}\`;
+  
+  await context.objectstore.put('user-files', key, fileData, {
+    contentType,
+    metadata: {
+      'original-name': fileName,
+      'upload-time': new Date().toISOString()
+    }
+  });
+  
+  // Generate access URL
+  const url = await context.objectstore.createPublicURL(
+    'user-files', 
+    key, 
+    3600000
+  );
+  
+  return response.json({
+    message: 'File uploaded successfully',
+    key,
+    url
+  });
+};`} py={`async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    content_type = request.headers.get("content-type", "")
+    file_name = request.headers.get("x-filename", "upload")
+    
+    # Store the uploaded file
+    file_data = await request.data.binary()
+    key = f"uploads/{int(time.time())}-{file_name}"
+    
+    # Using explicit params for metadata
+    from agentuity.server.objectstore import ObjectStorePutParams
+    
+    params = ObjectStorePutParams(
+        content_type=content_type,
+        metadata={
+            "original-name": file_name,
+            "upload-time": datetime.now().isoformat()
+        }
+    )
+    await context.objectstore.put("user-files", key, file_data, params)
+    
+    # Generate access URL
+    url = await context.objectstore.create_public_url(
+        "user-files", 
+        key, 
+        3600000
+    )
+    
+    return response.json({
+        "message": "File uploaded successfully",
+        "key": key,
+        "url": url
+    })`} />
+
+## Monitoring Usage
+
+Track your object storage usage through the Cloud Console:
+
+1. Navigate to **Services > Object Store**
+2. View storage size and object count for each bucket
+3. Monitor provider information and creation dates
+4. Use [agent telemetry](/v0/Guides/agent-telemetry) to track storage operations
+
+For structured data with complex queries, consider using object storage to store data exports while maintaining indexes in key-value or vector storage.
+
+## Storage Types Overview
+
+<iframe 
+  width="100%" 
+  height="400" 
+  src="https://www.youtube.com/embed/rT9eCMRztpI" 
+  title="How to Give Your AI Agents Persistent Memory" 
+  frameBorder="0" 
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+  allowFullScreen
+></iframe>

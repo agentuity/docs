@@ -1,0 +1,206 @@
+---
+title: HTTP Routes
+description: Define GET, POST, and other HTTP endpoints with createRouter()
+---
+
+Routes define how your application responds to HTTP requests. Built on [Hono](https://hono.dev), the router provides a familiar Express-like API with full TypeScript support.
+
+<Callout type="info" title="Infrastructure as Code">
+Routes are defined in your codebase (`route.ts` files) and automatically discovered by the SDK. Changes are tracked in Git, reviewed in pull requests, and deployed with your code. No UI configuration required.
+</Callout>
+
+## Basic Routes
+
+Create routes using `createRouter()`:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.get('/', async (c) => {
+  return c.json({ status: 'healthy' });
+});
+
+router.post('/process', async (c) => {
+  const body = await c.req.json();
+  return c.json({ received: body });
+});
+
+export default router;
+```
+
+## HTTP Methods
+
+The router supports all standard HTTP methods:
+
+```typescript
+router.get('/items', handler);        // Read
+router.post('/items', handler);       // Create
+router.put('/items/:id', handler);    // Replace
+router.patch('/items/:id', handler);  // Update
+router.delete('/items/:id', handler); // Delete
+```
+
+## Route Parameters
+
+Capture URL segments with `:paramName`:
+
+```typescript
+router.get('/users/:id', async (c) => {
+  const userId = c.req.param('id');
+  return c.json({ userId });
+});
+
+router.get('/posts/:year/:month/:slug', async (c) => {
+  const { year, month, slug } = c.req.param();
+  return c.json({ year, month, slug });
+});
+```
+
+## Query Parameters
+
+Access query strings with `c.req.query()`:
+
+```typescript
+router.get('/search', async (c) => {
+  const query = c.req.query('q');
+  const page = c.req.query('page') || '1';
+  const limit = c.req.query('limit') || '10';
+
+  return c.json({ query, page, limit });
+});
+// GET /search?q=hello&page=2 → { query: "hello", page: "2", limit: "10" }
+```
+
+## Calling Agents
+
+Invoke agents from routes using `c.agent`:
+
+```typescript
+router.post('/chat', async (c) => {
+  const { message } = await c.req.json();
+
+  const response = await c.agent.chatAgent.run({ message });
+
+  return c.json(response);
+});
+```
+
+For background processing, use `c.waitUntil()`:
+
+```typescript
+router.post('/webhook', async (c) => {
+  const payload = await c.req.json();
+
+  // Process in background, respond immediately
+  c.waitUntil(async () => {
+    await c.agent.webhookProcessor.run(payload);
+  });
+
+  return c.json({ status: 'accepted' });
+});
+```
+
+## Request Validation
+
+Use `zValidator` middleware for type-safe validation:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';
+
+const router = createRouter();
+
+const createUserSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1),
+});
+
+router.post('/users',
+  zValidator('json', createUserSchema),
+  async (c) => {
+    const data = c.req.valid('json'); // Typed as { email: string, name: string }
+    const user = await c.agent.userCreator.run(data);
+    return c.json(user);
+  }
+);
+
+export default router;
+```
+
+## Request Context
+
+The context object (`c`) provides access to request data and Agentuity services:
+
+**Request data:**
+```typescript
+await c.req.json();        // Parse JSON body
+await c.req.text();        // Get raw text body
+c.req.param('id');         // Route parameter
+c.req.query('page');       // Query string
+c.req.header('Authorization'); // Request header
+```
+
+**Responses:**
+```typescript
+c.json({ data });          // JSON response
+c.text('OK');              // Plain text
+c.html('<h1>Hello</h1>');  // HTML response
+c.redirect('/other');      // Redirect
+```
+
+**Agentuity services:**
+```typescript
+c.agent.myAgent.run(input);   // Call an agent
+c.kv.get('bucket', 'key');    // Key-value storage
+c.vector.search('ns', opts);  // Vector search
+c.var.logger.info('message'); // Logging
+```
+
+## Best Practices
+
+### Validate input
+
+Always validate request bodies, especially for public endpoints:
+
+```typescript
+router.post('/api',
+  zValidator('json', inputSchema),
+  async (c) => {
+    const data = c.req.valid('json');
+    // data is guaranteed valid
+  }
+);
+```
+
+### Use structured logging
+
+Use `c.var.logger` instead of `console.log` for searchable, traceable logs:
+
+```typescript
+c.var.logger.info('Request processed', { userId, duration: Date.now() - start });
+c.var.logger.error('Processing failed', { error: err.message });
+```
+
+### Order routes correctly
+
+Register specific routes before generic ones:
+
+```typescript
+// Correct: specific before generic
+router.get('/users/me', getCurrentUser);
+router.get('/users/:id', getUserById);
+
+// Wrong: :id matches "me" first
+router.get('/users/:id', getUserById);
+router.get('/users/me', getCurrentUser); // Never reached
+```
+
+## Next Steps
+
+- [Scheduled Jobs (Cron)](/Build/Routes-Triggers/cron): Run tasks on a schedule
+- [Email Handling](/Build/Routes-Triggers/email): Process incoming emails
+- [WebSockets](/Build/Routes-Triggers/websockets): Real-time bidirectional communication
+- [Server-Sent Events](/Build/Routes-Triggers/sse): Stream updates to clients

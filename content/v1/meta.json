@@ -1,7 +1,9 @@
 {
-	"title": "v1 Documentation",
+	"title": "v1 (Latest)",
+	"description": "Agentuity SDK 1.x",
+	"root": true,
 	"pages": [
-		"Getting-Started",
-		"Building"
+		"Get-Started",
+		"Build"
 	]
 }

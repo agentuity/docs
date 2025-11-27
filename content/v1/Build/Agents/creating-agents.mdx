@@ -1,0 +1,253 @@
+---
+title: Creating Agents
+description: Build agents with createAgent(), schemas, and handlers
+---
+
+Each agent encapsulates a handler function, input/output validation, and metadata in a single unit that can be invoked from routes, other agents, or scheduled tasks.
+
+## Basic Agent
+
+Create an agent with `createAgent()` and a handler function:
+
+```typescript
+import { createAgent, type AgentContext } from '@agentuity/runtime';
+
+const agent = createAgent({
+  handler: async (ctx: AgentContext, input) => {
+    ctx.logger.info('Processing request', { input });
+    return { message: 'Hello from agent!' };
+  },
+});
+
+export default agent;
+```
+
+The handler receives two parameters:
+- `ctx` - The agent context with logging, storage, and state management
+- `input` - The data passed to the agent (validated if schema is defined)
+
+## Adding Schema Validation
+
+Define input and output schemas for type safety and runtime validation using [Zod](https://zod.dev):
+
+```typescript
+import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent({
+  schema: {
+    input: z.object({
+      email: z.string().email(),
+      message: z.string().min(1),
+    }),
+    output: z.object({
+      success: z.boolean(),
+      id: z.string(),
+    }),
+  },
+  handler: async (ctx: AgentContext, input) => {
+    // input is typed as { email: string, message: string }
+    ctx.logger.info('Received message', { from: input.email });
+
+    return {
+      success: true,
+      id: crypto.randomUUID(),
+    };
+  },
+});
+
+export default agent;
+```
+
+**Validation behavior:**
+- Input is validated before the handler runs
+- Output is validated before returning to the caller
+- Invalid data throws an error with details about what failed
+
+<Callout type="info" title="Other Validation Libraries">
+Agentuity supports any library implementing StandardSchema, including [Valibot](https://valibot.dev) and [ArkType](https://arktype.io). See [Schema Libraries](/Build/Agents/schema-libraries) for examples with alternative libraries.
+</Callout>
+
+### Type Inference
+
+TypeScript automatically infers types from your schemas:
+
+```typescript
+const agent = createAgent({
+  schema: {
+    input: z.object({
+      query: z.string(),
+      filters: z.object({
+        category: z.enum(['tech', 'business', 'sports']),
+        limit: z.number().default(10),
+      }),
+    }),
+    output: z.object({
+      results: z.array(z.string()),
+      total: z.number(),
+    }),
+  },
+  handler: async (ctx, input) => {
+    // Full autocomplete for input.query, input.filters.category, etc.
+    const category = input.filters.category; // type: 'tech' | 'business' | 'sports'
+
+    return {
+      results: ['result1', 'result2'],
+      total: 2,
+    };
+  },
+});
+```
+
+### Common Zod Patterns
+
+```typescript
+z.object({
+  // Strings
+  name: z.string().min(1).max(100),
+  email: z.string().email(),
+  url: z.string().url().optional(),
+
+  // Numbers
+  age: z.number().min(0).max(120),
+  score: z.number().min(0).max(1),
+
+  // Enums and literals
+  status: z.enum(['active', 'pending', 'complete']),
+  type: z.literal('user'),
+
+  // Arrays and nested objects
+  tags: z.array(z.string()),
+  metadata: z.object({
+    createdAt: z.date(),
+    version: z.number(),
+  }).optional(),
+
+  // Defaults
+  limit: z.number().default(10),
+})
+```
+
+### Schema Descriptions for AI
+
+When using `generateObject()` from the AI SDK, add `.describe()` to help the LLM understand each field:
+
+```typescript
+z.object({
+  title: z.string().describe('Event title, concise, without names'),
+  startTime: z.string().describe('Start time in HH:MM format (e.g., 14:00)'),
+  priority: z.enum(['low', 'medium', 'high']).describe('Urgency level'),
+})
+```
+
+Call `.describe()` at the end of the chain: schema methods like `.min()` return new instances that don't inherit metadata.
+
+## Handler Context
+
+The handler context (`ctx`) provides access to Agentuity services:
+
+```typescript
+handler: async (ctx, input) => {
+  // Logging (Remember: always use ctx.logger, not console.log)
+  ctx.logger.info('Processing', { data: input });
+  ctx.logger.error('Something failed', { error });
+
+  // Identifiers
+  ctx.sessionId;      // Unique per request (sess_...)
+  ctx.thread.id;      // Conversation context (thrd_...)
+  ctx.agentName;      // Current agent name
+
+  // Call other agents
+  const result = await ctx.agent.otherAgent.run({ query: input.query });
+
+  // State management
+  ctx.state.set('key', value);           // Request-scoped (cleared after response)
+  ctx.thread.state.set('key', value);    // Thread-scoped (up to 1 hour)
+  ctx.session.state.set('key', value);   // Session-scoped
+
+  // Storage
+  await ctx.kv.set('bucket', 'key', data);
+  await ctx.vector.search('namespace', { query: 'text' });
+  await ctx.objectstore.put('bucket', 'file.txt', buffer);
+
+  // Background tasks
+  ctx.waitUntil(async () => {
+    await ctx.kv.set('analytics', 'event', { timestamp: Date.now() });
+  });
+
+  return { result };
+}
+```
+
+For detailed state management patterns, see [Managing State](/Build/Agents/state-management).
+
+## Agent Metadata
+
+Every agent requires metadata with a name and description:
+
+```typescript
+const agent = createAgent({
+  metadata: {
+    name: 'Email Processor',
+    description: 'Processes incoming emails and extracts key information',
+  },
+  schema: { ... },
+  handler: async (ctx, input) => { ... },
+});
+```
+
+### Workbench Welcome Message
+
+The Workbench is Agentuity's development UI for testing agents locally and in production. Export a `welcome` function to customize the experience:
+
+```typescript
+export const welcome = () => ({
+  welcome: `Welcome to the **Email Processor** agent.
+
+This agent extracts key information from emails including:
+- Sender and recipient
+- Subject analysis
+- Action items`,
+  prompts: [
+    {
+      data: JSON.stringify({ email: 'test@example.com', subject: 'Meeting tomorrow' }),
+      contentType: 'application/json',
+    },
+    {
+      data: 'Process this email',
+      contentType: 'text/plain',
+    },
+  ],
+});
+
+export default agent;
+```
+
+The `prompts` array provides quick-test options in the Workbench UI.
+
+## Best Practices
+
+- **Single responsibility**: Each agent should have one clear purpose
+- **Always define schemas**: Schemas provide type safety and serve as documentation
+- **Handle errors gracefully**: Wrap external calls in try-catch blocks
+- **Keep handlers focused**: Move complex logic to helper functions
+
+```typescript
+// Good: Clear, focused handler
+handler: async (ctx, input) => {
+  try {
+    const enriched = await enrichData(input.data);
+    const result = await ctx.agent.processor.run(enriched);
+    return { success: true, result };
+  } catch (error) {
+    ctx.logger.error('Processing failed', { error });
+    return { success: false, error: 'Processing failed' };
+  }
+}
+```
+
+## Next Steps
+
+- [Using the AI SDK](/Build/Agents/ai-sdk-integration): Add LLM capabilities with generateText and streamText
+- [Managing State](/Build/Agents/state-management): Persist data across requests with thread and session state
+- [Calling Other Agents](/Build/Agents/calling-other-agents): Build multi-agent workflows

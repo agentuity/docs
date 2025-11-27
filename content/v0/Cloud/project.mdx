@@ -1,0 +1,61 @@
+---
+title: Projects
+description: The projects page is for managing your agent projects
+---
+
+## Projects Overview
+
+The project dashboard provides a list of your agent projects. This page helps you monitor your projects' status, usage metrics, and recent activity.
+
+<ThemeImage baseName="projects" alt="Project Dashboard"  />
+
+### Project Settings
+
+#### Environment Variables & Secrets
+
+You can manage environment variables and secrets for your project in the Project > Settings page.
+
+<ThemeImage baseName="project-env" alt="Project Environment Variables"  />
+
+In addition to environment variables, you can also view your Project API Key and the SDK Key.
+
+You can also manage your environment variables and secrets from the CLI using the following command:
+
+<CLICommand command="agentuity env set <key> <value>" />
+
+Use `--help` to see other options.
+
+You can `get`, `delete`, `list` and `set` environment variables and secrets using the CLI.
+
+When setting an environment variable or secret, the CLI will attempt to determine the type of the value and set it accordingly. However, you can force the value to be a secret by using the `--secret` flag.
+
+The `.env` file is a special file that is used to store environment variables and secrets for your project. It is a simple text file that contains key-value pairs.  The `.env` file is automatically loaded when you run the CLI but not used (or not uploaded) in production.
+
+If you would like to have different environment variables and secrets for development and production, you can use the `.env.development` file which will override values in the `.env` file when running `agentuity dev`.
+
+<Callout type="warn">
+  The `.env` file must not be committed to your source code repository as it contains sensitive information. By default, an Agentuity project will exclude this file and others like it in the `.gitignore` file if you use the `agentuity create` command to create your project.
+</Callout>
+
+##### API Keys
+
+There are two automatically generated API keys for your project:
+
+- **Project API Key** (the environment variable is `AGENTUITY_PROJECT_API_KEY`)
+- **SDK Key** (the environment variable is `AGENTUITY_SDK_KEY`)
+
+The Project API Key is used to authenticate requests to the Agentuity API. You can view your Project API Key in the Project > Settings page.
+
+The SDK Key is used to authenticate requests to the Agentuity SDK from your agents when running in development mode. You can view your SDK Key in the Project > Settings page.
+
+Both keys are created automatically when you create a new project and stored in the project's `.env` file.
+
+You can create additional API keys for your project in the [Settings > API Keys page](./api-keys).
+
+## CLI
+
+You can use the CLI to manage your project using the following command:
+
+<CLICommand command="agentuity project" />
+
+See the [CLI documentation](/v0/CLI/project) for more information on specific command usage and flags.
