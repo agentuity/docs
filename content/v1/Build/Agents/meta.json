@@ -2,8 +2,8 @@
 	"title": "Agents",
 	"pages": [
 		"creating-agents",
-		"ai-sdk-integration",
 		"ai-gateway",
+		"ai-sdk-integration",
 		"streaming-responses",
 		"state-management",
 		"schema-libraries",
