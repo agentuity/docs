@@ -21,8 +21,16 @@ export const PromptClassificationSchema = z.object({
 	reasoning: z.string(),
 });
 
+export const ConversationMessageSchema = z.object({
+	author: z.enum(['USER', 'ASSISTANT']),
+	content: z.string(),
+});
+
+export const ConversationHistorySchema = z.array(ConversationMessageSchema);
+
 // Generated TypeScript types
 export type RelevantDoc = z.infer<typeof RelevantDocSchema>;
 export type Answer = z.infer<typeof AnswerSchema>;
 export type PromptType = z.infer<typeof PromptTypeSchema>;
 export type PromptClassification = z.infer<typeof PromptClassificationSchema>;
+export type ConversationMessage = z.infer<typeof ConversationMessageSchema>;

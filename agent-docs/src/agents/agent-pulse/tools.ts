@@ -4,6 +4,7 @@ import { ActionType } from "./state";
 import type { AgentState } from "./state";
 import type { AgentContext } from "@agentuity/sdk";
 import { getTutorialMeta } from "./tutorial";
+import type { ConversationMessage } from "./request/types";
 
 /**
  * Context passed to tools for state management and logging
@@ -11,13 +12,14 @@ import { getTutorialMeta } from "./tutorial";
 interface ToolContext {
     state: AgentState;
     agentContext: AgentContext;
+    conversationHistory?: ConversationMessage[];
 }
 
 /**
  * Factory function that creates tools with state management context
  */
 export async function createTools(context: ToolContext) {
-    const { state, agentContext } = context;
+    const { state, agentContext, conversationHistory } = context;
     const DOC_QA_AGENT_NAME = "doc-qa";
     const docQaAgent = await agentContext.getAgent({ name: DOC_QA_AGENT_NAME });
     /**
@@ -65,13 +67,12 @@ export async function createTools(context: ToolContext) {
             agentContext.logger.info("Querying agent %s with: %s", DOC_QA_AGENT_NAME, query);
             const agentPayload = {
                 message: query,
-
+                conversationHistory: conversationHistory || [],
             }
             const response = await docQaAgent.run({
                 data: agentPayload,
                 contentType: 'application/json'
             })
-            // TODO: handle the docs referencing and inject it to the frontend response
             const responseData = await response.data.json();
             return responseData;
         },
@@ -84,4 +85,4 @@ export async function createTools(context: ToolContext) {
     };
 }
 
-export type { ToolContext }; 
+export type { ToolContext };      

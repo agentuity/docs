@@ -101,6 +101,7 @@ export default async function Agent(
 			tools = await createTools({
 				state,
 				agentContext: ctx,
+				conversationHistory: parsedRequest.conversationHistory,
 			});
 
 			// Build tutorial context and system prompt

@@ -1,17 +1,33 @@
 import type { AgentContext } from '@agentuity/sdk';
 import { openai } from '@ai-sdk/openai';
 import { generateObject } from 'ai';
-import { rephraseVaguePrompt } from './prompt';
+import { rephraseVaguePrompt, rewriteQueryWithHistory } from './prompt';
 import { retrieveRelevantDocs } from './retriever';
-import type { Answer } from './types';
+import type { Answer, ConversationMessage } from './types';
 import { AnswerSchema } from './types';
+
+interface AnswerQuestionOptions {
+	conversationHistory?: ConversationMessage[];
+}
 
 export default async function answerQuestion(
 	ctx: AgentContext,
-	prompt: string
+	prompt: string,
+	options: AnswerQuestionOptions = {}
 ) {
-	// First, rephrase the prompt for better vector search
-	const rephrasedPrompt = await rephraseVaguePrompt(ctx, prompt);
+	const { conversationHistory } = options;
+
+	let rephrasedPrompt: string;
+
+	if (conversationHistory && conversationHistory.length >= 2) {
+		rephrasedPrompt = await rewriteQueryWithHistory(
+			ctx,
+			prompt,
+			conversationHistory
+		);
+	} else {
+		rephrasedPrompt = await rephraseVaguePrompt(ctx, prompt);
+	}
 
 	// Use the rephrased prompt for document retrieval
 	const relevantDocs = await retrieveRelevantDocs(ctx, rephrasedPrompt);

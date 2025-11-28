@@ -2,7 +2,7 @@ import type { AgentContext } from '@agentuity/sdk';
 import { openai } from '@ai-sdk/openai';
 import { generateObject, generateText } from 'ai';
 
-import type { PromptType } from './types';
+import type { PromptType, ConversationMessage } from './types';
 import { PromptClassificationSchema } from './types';
 
 export async function rephraseVaguePrompt(
@@ -67,6 +67,127 @@ Return ONLY the query text, nothing else.`;
 		return rephrasedQuery;
 	} catch (error) {
 		ctx.logger.error('Error rephrasing prompt, returning original: %o', error);
+		return input;
+	}
+}
+
+/**
+ * Helper function to sanitize and truncate conversation history
+ * Takes last N messages and truncates content to avoid token bloat
+ */
+function sanitizeConversationHistory(
+	history: ConversationMessage[],
+	maxMessages = 10,
+	maxContentLength = 400
+): ConversationMessage[] {
+	if (!history || history.length === 0) {
+		return [];
+	}
+
+	const recentHistory = history.slice(-maxMessages);
+
+	return recentHistory.map((msg) => {
+		let content = msg.content || '';
+		
+		content = content.replace(/```[\s\S]*?```/g, '[code block]');
+		
+		if (content.length > maxContentLength) {
+			content = content.slice(0, maxContentLength) + '...';
+		}
+
+		return {
+			author: msg.author,
+			content: content.trim(),
+		};
+	});
+}
+
+/**
+ * Rewrites a query using conversation history to make follow-up questions standalone.
+ * Only rewrites when the query is elliptical or references prior turns.
+ * Otherwise returns the original query unchanged.
+ */
+export async function rewriteQueryWithHistory(
+	ctx: AgentContext,
+	input: string,
+	conversationHistory: ConversationMessage[]
+): Promise<string> {
+	if (!conversationHistory || conversationHistory.length < 2) {
+		ctx.logger.info('No conversation history, skipping query rewriting');
+		return input;
+	}
+
+	const sanitizedHistory = sanitizeConversationHistory(conversationHistory);
+
+	const systemPrompt = `You are a query rewriting assistant for a technical documentation search system.
+
+Your job is to rewrite follow-up questions into standalone queries ONLY when necessary.
+
+BE EXTREMELY CONSERVATIVE. Most queries should be returned UNCHANGED.
+
+ONLY rewrite if the query:
+1. Contains pronouns or references that need context (e.g., "that", "it", "this", "those", "them")
+2. Is elliptical or incomplete (e.g., "and for Python?", "what about CLI?", "how do I do it?")
+3. References previous conversation implicitly (e.g., "can you explain more?", "show me an example")
+
+DO NOT rewrite if the query:
+- Is already a complete, standalone question
+- Contains all necessary context
+- Is a new topic unrelated to previous messages
+
+When rewriting:
+- Incorporate relevant context from the conversation history
+- Keep technical terms EXACTLY as written
+- Make the query standalone and clear
+- Don't add assumptions or implementation details
+- Keep it concise
+
+Examples of GOOD rewriting:
+History: [USER: "How do I create an agent?", ASSISTANT: "Use agentuity agent create..."]
+Query: "What about in Python?" → "How do I create an agent in Python?"
+
+History: [USER: "Tell me about the SDK", ASSISTANT: "The SDK provides..."]
+Query: "How do I install it?" → "How do I install the Agentuity SDK?"
+
+Examples of what to LEAVE UNCHANGED:
+Query: "How do I use the CLI?" → "How do I use the CLI?" (already complete)
+Query: "What is vector storage?" → "What is vector storage?" (new topic, complete)
+Query: "Show me agent examples" → "Show me agent examples" (clear and standalone)
+
+Return ONLY the rewritten query text (or original if no rewriting needed), nothing else.`;
+
+	try {
+		const historyText = sanitizedHistory
+			.map((msg) => `${msg.author}: ${msg.content}`)
+			.join('\n');
+
+		const result = await generateText({
+			model: openai('gpt-4o-mini'),
+			system: systemPrompt,
+			prompt: `Conversation history:\n${historyText}\n\nCurrent query: "${input}"\n\nRewrite the query if needed, or return it unchanged if it's already standalone:`,
+			maxTokens: 150,
+			temperature: 0,
+		});
+
+		const rewrittenQuery = result.text?.trim() || input;
+
+		// Log if we actually rewrote it
+		if (rewrittenQuery !== input) {
+			ctx.logger.info(
+				'Rewrote query with history from "%s" to "%s"',
+				input,
+				rewrittenQuery
+			);
+		} else {
+			ctx.logger.info('Query already standalone, no rewriting needed');
+		}
+
+		return rewrittenQuery;
+	} catch (error) {
+		ctx.logger.error(
+			'Error rewriting query with history, returning original: %o',
+			error
+		);
 		return input;
 	}
 }
