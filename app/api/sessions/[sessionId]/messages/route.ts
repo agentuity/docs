@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Session, Message, TutorialData, StreamingChunk } from '@/app/chat/types';
 import { toISOString } from '@/app/chat/utils/dateUtils';
 import { parseAndValidateJSON, SessionMessageRequestSchema } from '@/lib/validation/middleware';
 import { sessionService, messageService, agentService } from '@/lib/services';
-import type { Session as NewSession, Message as NewMessage } from '@/lib/storage/data-model';
+import { createAgentStreamProcessor } from '@/lib/streaming/agent-stream-processor';
+import type { Session as NewSession } from '@/lib/storage/data-model';
 
 /**
  * Convert new Session model to old Session model for API compatibility
  */
-function toOldSession(newSession: NewSession): Session {
+function toOldSession(newSession: NewSession) {
   return {
     sessionId: newSession.sessionId,
     isTutorial: newSession.isTutorial,
@@ -107,102 +107,12 @@ export async function POST(
       throw new Error('No response body from agent');
     }
 
-    // Process stream and save assistant response
+    // Create transform stream with shared processor
     const assistantMessageId = crypto.randomUUID();
-    let accumulatedContent = '';
-    let finalTutorialData: TutorialData | undefined = undefined;
-    let documentationReferences: string[] = [];
-
-    const transformStream = new TransformStream({
-      transform: async (chunk, controller) => {
-        // Forward chunk to client
-        controller.enqueue(chunk);
-
-        // Parse and accumulate
-        const text = new TextDecoder().decode(chunk);
-        const lines = text.split('\n');
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-
-          try {
-            const data = JSON.parse(line.slice(6)) as StreamingChunk;
-
-            if (data.type === 'text-delta' && data.textDelta) {
-              accumulatedContent += data.textDelta;
-            } else if (data.type === 'tutorial-data' && data.tutorialData) {
-              finalTutorialData = data.tutorialData;
-
-              // Update tutorial progress
-              await TutorialStateManager.updateTutorialProgress(
-                userId,
-                finalTutorialData.tutorialId,
-                finalTutorialData.currentStep,
-                finalTutorialData.totalSteps
-              );
-
-              // Mark session as a tutorial session
-              await sessionService.updateSession(userId, sessionId, { isTutorial: true });
-            } else if (data.type === 'documentation-references' && data.documents) {
-              documentationReferences = data.documents;
-            } else if (data.type === 'finish') {
-              // Save assistant message
-              const assistantMessage: NewMessage = {
-                id: assistantMessageId,
-                sessionId,
-                role: 'ASSISTANT',
-                content: accumulatedContent,
-                timestamp: new Date().toISOString(),
-                status: 'COMPLETED',
-                tutorialData: finalTutorialData,
-                documentationReferences:
-                  documentationReferences.length > 0 ? documentationReferences : undefined,
-              };
-
-              await sessionService.addMessageToSession(userId, sessionId, assistantMessage);
-
-              // Get updated session to send to frontend
-              const updatedSession = await sessionService.getSession(userId, sessionId);
-              if (updatedSession) {
-                const oldFormatSession = toOldSession(updatedSession);
-
-                // Send finish event with session to frontend
-                const finishEvent = `data: ${JSON.stringify({
-                  type: 'finish',
-                  session: oldFormatSession,
-                })}\n\n`;
-                controller.enqueue(new TextEncoder().encode(finishEvent));
-              } else {
-                console.error('[MessageRoute] Could not fetch updated session for finish event!');
-              }
-
-              // Trigger background title generation (don't await)
-              void (async () => {
-                try {
-                  const currentSession = await sessionService.getSession(userId, sessionId);
-                  if (!currentSession || currentSession.title) {
-                    return;
-                  }
-
-                  const history = currentSession.recentMessages.slice(-10).map((m) => ({
-                    author: m.role,
-                    content: m.content.slice(0, 400),
-                  }));
-
-                  const title = await agentService.generateTitle(history, 3000);
-                  if (title) {
-                    await sessionService.updateSession(userId, sessionId, { title });
-                  }
-                } catch (error) {
-                  console.error('[MessageRoute] Title generation failed:', error);
-                }
-              })();
-            }
-          } catch (error) {
-            console.error('[MessageRoute] Error parsing SSE chunk:', error);
-          }
-        }
-      },
+    const transformStream = await createAgentStreamProcessor({
+      userId,
+      sessionId,
+      assistantMessageId,
     });
 
     // Pipe agent response through transform stream

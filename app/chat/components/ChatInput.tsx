@@ -1,16 +1,20 @@
 'use client';
 
 import { useEffect, KeyboardEvent, useState } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Square } from 'lucide-react';
 import { useAutoResize } from '../utils/useAutoResize';
 
 interface ChatInputProps {
   loading?: boolean;
+  isStreaming?: boolean;
+  onStopGenerating?: () => void;
   onSendMessage: (message: string) => void;
 }
 
 export function ChatInput({
   loading = false,
+  isStreaming = false,
+  onStopGenerating,
   onSendMessage
 }: ChatInputProps) {
   const [currentInput, setCurrentInput] = useState('');
@@ -34,6 +38,14 @@ export function ChatInput({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Escape to stop generating
+    if (e.key === 'Escape' && isStreaming && onStopGenerating) {
+      e.preventDefault();
+      onStopGenerating();
+      return;
+    }
+
+    // Enter (or Cmd/Ctrl+Enter) to send
     if (e.key === 'Enter' && (!e.shiftKey || e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       handleSend();
@@ -59,16 +71,29 @@ export function ChatInput({
         </div>
       </div>
 
-      {/* Send button positioned at bottom right */}
-      <button
-        onClick={handleSend}
-        disabled={loading || !currentInput.trim()}
-        className="group h-8 w-8 agentuity-button-primary disabled:agentuity-button disabled:text-gray-300 text-white text-sm rounded-lg transition-all duration-200 disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0 self-end"
-        aria-label="Send message"
-        type="button"
-      >
-        <Send className="w-3.5 h-3.5" />
-      </button>
+      {/* Send/Stop button positioned at bottom right */}
+      {isStreaming ? (
+        <button
+          onClick={onStopGenerating}
+          className="group h-8 w-8 bg-red-500/80 hover:bg-red-500 text-white text-sm rounded-lg transition-all duration-200 flex items-center justify-center flex-shrink-0 self-end"
+          aria-label="Stop generating"
+          title="Stop generating (Esc)"
+          type="button"
+        >
+          <Square className="w-3 h-3 fill-current" />
+        </button>
+      ) : (
+        <button
+          onClick={handleSend}
+          disabled={loading || !currentInput.trim()}
+          className="group h-8 w-8 agentuity-button-primary disabled:agentuity-button disabled:text-gray-300 text-white text-sm rounded-lg transition-all duration-200 disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0 self-end"
+          aria-label="Send message"
+          title="Send message (Enter)"
+          type="button"
+        >
+          <Send className="w-3.5 h-3.5" />
+        </button>
+      )}
     </div>
   );
 }

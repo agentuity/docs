@@ -9,6 +9,7 @@ interface StreamingState {
 
 interface UseStreamingMessageReturn {
     streamingState: StreamingState;
+    startStreaming: (messageId: string) => void;
     appendText: (text: string, messageId: string) => void;
     finishStreaming: () => string;
     cancelStreaming: () => void;
@@ -65,6 +66,12 @@ export function useStreamingMessage(
         }
     }, []);
 
+    // Start streaming state immediately (before text arrives)
+    const startStreaming = useCallback((messageId: string) => {
+        messageIdRef.current = messageId;
+        setStreamingState({ isStreaming: true, messageId });
+    }, []);
+
     const appendText = useCallback((text: string, messageId: string) => {
         charQueueRef.current += text;
         messageIdRef.current = messageId;
@@ -105,5 +112,5 @@ export function useStreamingMessage(
         };
     }, []);
 
-    return { streamingState, appendText, finishStreaming, cancelStreaming };
+    return { streamingState, startStreaming, appendText, finishStreaming, cancelStreaming };
 }

@@ -246,6 +246,48 @@ export class SessionService {
   }
 
   /**
+   * Remove the last assistant message from a session
+   * Used for retry/regenerate functionality
+   */
+  async removeLastAssistantMessage(
+    userId: string,
+    sessionId: string
+  ): Promise<boolean> {
+    const session = await this.getSession(userId, sessionId);
+
+    if (!session) {
+      return false;
+    }
+
+    // Find the last assistant message index
+    const lastAssistantIdx = session.recentMessages.reduceRight(
+      (found, msg, idx) => (found === -1 && msg.role === 'ASSISTANT' ? idx : found),
+      -1
+    );
+
+    if (lastAssistantIdx === -1) {
+      return false; // No assistant message to remove
+    }
+
+    // Remove the message
+    session.recentMessages.splice(lastAssistantIdx, 1);
+    session.messageCount = Math.max(0, session.messageCount - 1);
+    session.updatedAt = new Date().toISOString();
+
+    // Save to storage
+    const sessionKey = `${userId}_${sessionId}`;
+    await this.storage.set(KVBuckets.SESSIONS, sessionKey, session);
+
+    // Update cache
+    this.cache.set(`session:${sessionKey}`, session);
+
+    // Invalidate list cache
+    this.listCache.delete(`list:${userId}`);
+
+    return true;
+  }
+
+  /**
    * Add a message to session's recent messages
    * This is called by MessageService when a new message is created
    */

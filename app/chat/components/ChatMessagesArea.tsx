@@ -9,6 +9,9 @@ import { Session } from '../types';
 export interface ChatMessagesAreaProps {
     session: Session
     handleSendMessage: (content: string, sessionId: string) => void;
+    isStreaming?: boolean;
+    onStopGenerating?: () => void;
+    onRetry?: () => void;
     addCodeTab?: (code: string, language: string, label?: string, identifier?: string) => void;
     minimizedCodeBlocks?: Set<string>;
     toggleCodeBlockMinimized?: (identifier: string) => void;
@@ -17,6 +20,9 @@ export interface ChatMessagesAreaProps {
 export function ChatMessagesArea({
     session,
     handleSendMessage,
+    isStreaming = false,
+    onStopGenerating,
+    onRetry,
     addCodeTab,
     minimizedCodeBlocks,
     toggleCodeBlockMinimized
@@ -24,6 +30,31 @@ export function ChatMessagesArea({
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+
+    // Determine which message should show the retry button
+    // - Last ASSISTANT message (not streaming): regenerate response
+    // - Last USER message with no ASSISTANT after: agent never responded
+    const getShowRetry = (index: number): boolean => {
+        // Hide retry during any streaming (including before onStart callback fires)
+        if (isStreaming) return false;
+
+        const messages = session.messages;
+        const message = messages[index];
+        const isLastMessage = index === messages.length - 1;
+
+        if (!isLastMessage || message.isStreaming) return false;
+
+        if (message.author === 'ASSISTANT') {
+            return true; // Last message is assistant, can retry
+        }
+
+        if (message.author === 'USER') {
+            // Last message is user with no assistant response - agent never responded
+            return true;
+        }
+
+        return false;
+    };
 
     // Check if user has scrolled up
     const handleScroll = () => {
@@ -63,10 +94,12 @@ export function ChatMessagesArea({
                 className="flex-1 p-4 md:p-6 space-y-6 h-full overflow-y-auto scrollbar-thin"
                 style={{ maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' }}
             >
-                {session.messages.map((message) => (
+                {session.messages.map((message, index) => (
                     <ChatMessageComponent
                         key={message.id}
                         message={message}
+                        showRetry={getShowRetry(index)}
+                        onRetry={onRetry}
                         addCodeTab={addCodeTab}
                         minimizedCodeBlocks={minimizedCodeBlocks}
                         toggleCodeBlockMinimized={toggleCodeBlockMinimized}
@@ -90,7 +123,12 @@ export function ChatMessagesArea({
             )}
             
             <div className="px-4 md:px-6 pb-4 md:pb-6">
-                <ChatInput loading={false} onSendMessage={(content) => handleSendMessage(content, session.sessionId)} />
+                <ChatInput
+                    loading={isStreaming}
+                    isStreaming={isStreaming}
+                    onStopGenerating={onStopGenerating}
+                    onSendMessage={(content) => handleSendMessage(content, session.sessionId)}
+                />
             </div>
         </div>
     );

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { User } from 'lucide-react';
+import { User, RefreshCw } from 'lucide-react';
 import { AgentuityLogo } from '@/components/icons/AgentuityLogo';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import type { TutorialSnippet } from '../types';
@@ -90,12 +90,16 @@ interface ChatMessageProps {
         statusMessage?: string;
         isStreaming?: boolean;
     };
+    showRetry?: boolean;
+    onRetry?: () => void;
     addCodeTab?: (code: string, language: string, label?: string, identifier?: string) => void;
     minimizedCodeBlocks?: Set<string>;
     toggleCodeBlockMinimized?: (identifier: string) => void;
 }
 export const ChatMessageComponent = React.memo(function ChatMessageComponent({
     message,
+    showRetry = false,
+    onRetry,
     addCodeTab,
     minimizedCodeBlocks,
     toggleCodeBlockMinimized
@@ -252,9 +256,22 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                     </div>
                 )}
 
-                {/* Timestamp */}
-                <div className="text-xs text-gray-300 mt-2 px-2">
-                    {formatTime(message.timestamp)}
+                {/* Timestamp and actions */}
+                <div className="flex items-center gap-2 mt-2 px-2">
+                    <span className="text-xs text-gray-300">
+                        {formatTime(message.timestamp)}
+                    </span>
+                    {/* Retry button - show when showRetry is true */}
+                    {showRetry && onRetry && (
+                        <button
+                            onClick={onRetry}
+                            className="text-xs text-gray-400 hover:text-gray-200 flex items-center gap-1 transition-colors"
+                            title="Regenerate response"
+                        >
+                            <RefreshCw className="w-3 h-3" />
+                            <span>Retry</span>
+                        </button>
+                    )}
                 </div>
             </div>
 

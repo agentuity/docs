@@ -20,6 +20,9 @@ export default function ChatSessionPage() {
   const [creationError, setCreationError] = useState<string | null>(null);
   const { sessions, setSessions, revalidateSessions } = useSessions();
 
+  // Abort controller for cancelling requests
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   // Code tabs management
   const {
     editorOpen,
@@ -49,18 +52,155 @@ export default function ChatSessionPage() {
     });
   }, []);
 
-  const { streamingState, appendText, finishStreaming, cancelStreaming } = useStreamingMessage(updateMessageText);
+  const { streamingState, startStreaming, appendText, finishStreaming, cancelStreaming } = useStreamingMessage(updateMessageText);
 
   // Store current streaming message id for callbacks
   const currentAssistantIdRef = useRef<string | null>(null);
+  
+  // Uses currentAssistantIdRef so callbacks always reference the active message ID
+  const createStreamingCallbacks = useCallback((
+    onComplete: (finalSession: Session) => void,
+    onErrorCleanup?: () => void
+  ) => ({
+    onTextDelta: (textDelta: string) => {
+      if (!currentAssistantIdRef.current) return;
+      appendText(textDelta, currentAssistantIdRef.current);
+    },
+    onTutorialData: (tutorialData: TutorialData) => {
+      if (!currentAssistantIdRef.current) return;
+      setSession(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          messages: prev.messages.map(msg =>
+            msg.id === currentAssistantIdRef.current ? { ...msg, tutorialData } : msg
+          )
+        };
+      });
+    },
+    onDocumentationReferences: (documents: string[]) => {
+      if (!currentAssistantIdRef.current) return;
+      setSession(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          messages: prev.messages.map(msg =>
+            msg.id === currentAssistantIdRef.current ? { ...msg, documentationReferences: documents } : msg
+          )
+        };
+      });
+    },
+    onStatus: (statusMessage: string) => {
+      if (!currentAssistantIdRef.current) return;
+      setSession(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          messages: prev.messages.map(msg =>
+            msg.id === currentAssistantIdRef.current ? { ...msg, statusMessage } : msg
+          )
+        };
+      });
+    },
+    onFinish: (finalSession: Session) => {
+      const remaining = finishStreaming();
 
-  const handleSendMessage = useCallback(async (content: string, sessionId: string) => {
-    if (!content || !sessionId) return;
+      // Apply remaining text then sync with server
+      setSession(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          messages: prev.messages.map(msg => {
+            if (msg.id === currentAssistantIdRef.current && remaining) {
+              return { ...msg, content: msg.content + remaining, isStreaming: false };
+            }
+            return { ...msg, isStreaming: false };
+          })
+        };
+      });
 
-    const newMessage: Message = {
+      const updatedFinalSession = {
+        ...finalSession,
+        messages: finalSession.messages.map(msg => ({ ...msg, isStreaming: false }))
+      };
+
+      onComplete(updatedFinalSession);
+      currentAssistantIdRef.current = null;
+    },
+    onError: (error: string, details?: string) => {
+      console.error('Streaming error:', error, details);
+      cancelStreaming();
+      currentAssistantIdRef.current = null;
+      if (onErrorCleanup) {
+        onErrorCleanup();
+      }
+    }
+  }), [appendText, finishStreaming, cancelStreaming, setSession]);
+
+  // Stop generating handler
+  const handleStopGenerating = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    cancelStreaming();
+
+    // Mark current message as stopped
+    if (currentAssistantIdRef.current) {
+      setSession(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          messages: prev.messages.map(msg =>
+            msg.id === currentAssistantIdRef.current
+              ? { ...msg, isStreaming: false, content: msg.content || '*(Generation stopped)*' }
+              : msg
+          )
+        };
+      });
+      currentAssistantIdRef.current = null;
+    }
+  }, [cancelStreaming]);
+
+  // Core streaming logic for sending new messages
+  const streamAssistantResponse = useCallback(async (
+    targetSessionId: string,
+    userMessage: Message,
+    assistantMessageId: string,
+    onErrorCleanup: () => void
+  ) => {
+    abortControllerRef.current = new AbortController();
+    currentAssistantIdRef.current = assistantMessageId;
+
+    try {
+      await sessionService.addMessageToSessionStreaming(
+        targetSessionId,
+        userMessage,
+        createStreamingCallbacks(
+          (updatedFinalSession) => {
+            setSession(updatedFinalSession);
+            setSessions(prev => prev.map(s => s.sessionId === targetSessionId ? updatedFinalSession : s));
+          },
+          onErrorCleanup
+        ),
+        abortControllerRef.current.signal
+      );
+    } catch (error) {
+      console.error('Streaming error:', error);
+      cancelStreaming();
+      currentAssistantIdRef.current = null;
+      onErrorCleanup();
+    }
+  }, [createStreamingCallbacks, cancelStreaming, setSessions]);
+
+  // Send a new message
+  const handleSendMessage = useCallback(async (content: string, targetSessionId: string) => {
+    if (!content || !targetSessionId) return;
+
+    const userMessage: Message = {
       id: uuidv4(),
       author: 'USER',
-      content: content,
+      content,
       timestamp: new Date().toISOString()
     };
 
@@ -72,119 +212,104 @@ export default function ChatSessionPage() {
       isStreaming: true
     };
 
-    currentAssistantIdRef.current = assistantMessage.id;
-
-    // Add messages to session
+    // Add both messages to session
     setSession(prev => {
       if (!prev) return prev;
-      return { ...prev, messages: [...prev.messages, newMessage, assistantMessage] };
+      return { ...prev, messages: [...prev.messages, userMessage, assistantMessage] };
     });
 
-    try {
-      await sessionService.addMessageToSessionStreaming(
-        sessionId,
-        newMessage,
-        {
-          onTextDelta: (textDelta) => {
-            appendText(textDelta, assistantMessage.id);
-          },
+    // Stream the response
+    await streamAssistantResponse(
+      targetSessionId,
+      userMessage,
+      assistantMessage.id,
+      () => {
+        // On error: remove both messages
+        setSession(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            messages: prev.messages.filter(msg =>
+              msg.id !== userMessage.id && msg.id !== assistantMessage.id
+            )
+          };
+        });
+      }
+    );
+  }, [streamAssistantResponse]);
 
-          onTutorialData: (tutorialData) => {
-            setSession(prev => {
-              if (!prev) return prev;
+  // Retry/regenerate the response
+  const handleRetry = useCallback(async () => {
+    if (!sessionId) return;
+
+    abortControllerRef.current = new AbortController();
+    startStreaming('pending'); // Hide retry button immediately
+
+    // Optimistically clear entire message for clean regeneration UX
+    setSession(prev => {
+      if (!prev) return prev;
+      const lastAssistantIndex = [...prev.messages].reverse().findIndex(m => m.author === 'ASSISTANT');
+      if (lastAssistantIndex === -1) return prev;
+      const actualIndex = prev.messages.length - 1 - lastAssistantIndex;
+      return {
+        ...prev,
+        messages: prev.messages.map((msg, idx) =>
+          idx === actualIndex
+            ? {
+                ...msg,
+                content: '',
+                documentationReferences: undefined,
+                tutorialData: undefined
+              }
+            : msg
+        )
+      };
+    });
+
+    await sessionService.regenerate(
+      sessionId,
+      {
+        onStart: ({ action, messageId }) => {
+          currentAssistantIdRef.current = messageId;
+          startStreaming(messageId);
+
+          setSession(prev => {
+            if (!prev) return prev;
+
+            if (action === 'replace') {
+              // Mark as streaming - content already cleared optimistically above
               return {
                 ...prev,
                 messages: prev.messages.map(msg =>
-                  msg.id === assistantMessage.id ? { ...msg, tutorialData } : msg
+                  msg.id === messageId ? { ...msg, isStreaming: true } : msg
                 )
               };
-            });
-          },
-
-          onDocumentationReferences: (documents) => {
-            setSession(prev => {
-              if (!prev) return prev;
+            } else {
+              // Add new assistant placeholder (agent never responded case)
               return {
                 ...prev,
-                messages: prev.messages.map(msg =>
-                  msg.id === assistantMessage.id ? { ...msg, documentationReferences: documents } : msg
-                )
+                messages: [...prev.messages, {
+                  id: messageId,
+                  author: 'ASSISTANT' as const,
+                  content: '',
+                  timestamp: new Date().toISOString(),
+                  isStreaming: true
+                }]
               };
-            });
-          },
-
-          onStatus: (message) => {
-            setSession(prev => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                messages: prev.messages.map(msg =>
-                  msg.id === assistantMessage.id ? { ...msg, statusMessage: message } : msg
-                )
-              };
-            });
-          },
-
-          onFinish: (finalSession) => {
-            // Flush remaining characters
-            const remaining = finishStreaming();
-
-            // Apply remaining text and final session
-            setSession(prev => {
-              if (!prev) return prev;
-              const messagesWithRemaining = prev.messages.map(msg => {
-                if (msg.id === assistantMessage.id && remaining) {
-                  return { ...msg, content: msg.content + remaining, isStreaming: false };
-                }
-                return { ...msg, isStreaming: false };
-              });
-              return { ...prev, messages: messagesWithRemaining };
-            });
-
-            // Update with final session data
-            const updatedFinalSession = {
-              ...finalSession,
-              messages: finalSession.messages.map(msg => ({ ...msg, isStreaming: false }))
-            };
+            }
+          });
+        },
+        ...createStreamingCallbacks(
+          (updatedFinalSession) => {
             setSession(updatedFinalSession);
             setSessions(prev => prev.map(s => s.sessionId === sessionId ? updatedFinalSession : s));
-            currentAssistantIdRef.current = null;
           },
-
-          onError: (error, details) => {
-            console.error('Error sending message:', error, details ? `Details: ${details}` : '');
-            cancelStreaming();
-            currentAssistantIdRef.current = null;
-
-            // Remove both messages on error
-            setSession(prev => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                messages: prev.messages.filter(msg =>
-                  msg.id !== newMessage.id && msg.id !== assistantMessage.id
-                )
-              };
-            });
-          }
-        }
-      );
-    } catch (error) {
-      console.error('Error sending message:', error);
-      cancelStreaming();
-      currentAssistantIdRef.current = null;
-
-      setSession(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          messages: prev.messages.filter(msg =>
-            msg.id !== newMessage.id && msg.id !== assistantMessage.id
-          )
-        };
-      });
-    }
-  }, [appendText, finishStreaming, cancelStreaming, setSessions]);
+          () => revalidateSessions?.()
+        )
+      },
+      abortControllerRef.current.signal
+    );
+  }, [sessionId, startStreaming, createStreamingCallbacks, setSessions, revalidateSessions]);
 
   // Load session or create new one
   useEffect(() => {
@@ -258,6 +383,9 @@ export default function ChatSessionPage() {
                 <ChatMessagesArea
                   session={session}
                   handleSendMessage={handleSendMessage}
+                  isStreaming={streamingState.isStreaming}
+                  onStopGenerating={handleStopGenerating}
+                  onRetry={handleRetry}
                   addCodeTab={addCodeTab}
                   minimizedCodeBlocks={minimizedCodeBlocks}
                   toggleCodeBlockMinimized={toggleCodeBlockMinimized}

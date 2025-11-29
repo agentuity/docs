@@ -201,6 +201,63 @@ export class SessionService {
   }
 
   /**
+   * Regenerate the assistant response for a session
+   * - If last message is ASSISTANT: replaces it with new response
+   * - If last message is USER: generates new assistant response
+   */
+  async regenerate(
+    sessionId: string,
+    callbacks: RegenerateCallbacks,
+    abortSignal?: AbortSignal
+  ): Promise<void> {
+    try {
+      const response = await fetch(`/api/sessions/${sessionId}/regenerate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+        signal: abortSignal,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        callbacks.onError?.(errorData.error || `Error: ${response.status}`);
+        return;
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        callbacks.onError?.('No response body available');
+        return;
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          lines.forEach(line => processSSELine(line, callbacks));
+        }
+
+        buffer.split('\n').forEach(line => processSSELine(line, callbacks));
+      } finally {
+        reader.releaseLock();
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
+      callbacks.onError?.(error instanceof Error ? error.message : 'Unknown error occurred');
+    }
+  }
+
+  /**
    * Add a message to a session with streaming response support
    */
   async addMessageToSessionStreaming(
@@ -273,15 +330,32 @@ export interface StreamingCallbacks {
 }
 
 /**
- * Process a single SSE line and dispatch to appropriate callback
+ * Regenerate callback types
  */
-function processSSELine(line: string, callbacks: StreamingCallbacks): void {
+export interface RegenerateCallbacks extends StreamingCallbacks {
+  onStart?: (data: { action: 'replace' | 'new'; messageId: string }) => void;
+}
+
+/**
+ * Process a single SSE line and dispatch to appropriate callback
+ * Handles both regular streaming and regenerate callbacks (with onStart support)
+ */
+function processSSELine(
+  line: string,
+  callbacks: StreamingCallbacks | RegenerateCallbacks
+): void {
   if (!line.startsWith('data: ')) return;
 
   try {
     const data = JSON.parse(line.slice(6));
 
     switch (data.type) {
+      case 'start':
+        // Type guard: check if callbacks has onStart (regenerate callbacks only)
+        if ('onStart' in callbacks && callbacks.onStart) {
+          callbacks.onStart({ action: data.action, messageId: data.messageId });
+        }
+        break;
       case 'text-delta':
         if (data.textDelta) callbacks.onTextDelta?.(data.textDelta);
         break;
