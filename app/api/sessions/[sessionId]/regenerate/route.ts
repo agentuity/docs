@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { sessionService, agentService } from '@/lib/services';
 import { createAgentStreamProcessor } from '@/lib/streaming/agent-stream-processor';
 

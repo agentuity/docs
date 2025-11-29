@@ -1,4 +1,4 @@
-import { TutorialData, StreamingChunk, Session as OldSession } from '@/app/chat/types';
+import type { TutorialData, StreamingChunk, Session as OldSession } from '@/app/chat/types';
 import { sessionService } from '@/lib/services';
 import type { Session as NewSession, Message as NewMessage } from '@/lib/storage/data-model';
 

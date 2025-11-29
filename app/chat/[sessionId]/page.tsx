@@ -7,7 +7,7 @@ import "allotment/dist/style.css";
 import { v4 as uuidv4 } from 'uuid';
 import { ChatMessagesArea } from '../components/ChatMessagesArea';
 import { CodeEditor } from '../components/CodeEditor';
-import { Session, Message } from '../types';
+import type { Session, Message, TutorialData } from '../types';
 import { useSessions } from '../SessionContext';
 import { sessionService } from '../services/sessionService';
 import { useCodeTabs } from '../hooks';
@@ -135,7 +135,7 @@ export default function ChatSessionPage() {
         onErrorCleanup();
       }
     }
-  }), [appendText, finishStreaming, cancelStreaming, setSession]);
+  }), [appendText, finishStreaming, cancelStreaming]);
 
   // Stop generating handler
   const handleStopGenerating = useCallback(() => {
@@ -284,19 +284,18 @@ export default function ChatSessionPage() {
                   msg.id === messageId ? { ...msg, isStreaming: true } : msg
                 )
               };
-            } else {
-              // Add new assistant placeholder (agent never responded case)
-              return {
-                ...prev,
-                messages: [...prev.messages, {
-                  id: messageId,
-                  author: 'ASSISTANT' as const,
-                  content: '',
-                  timestamp: new Date().toISOString(),
-                  isStreaming: true
-                }]
-              };
             }
+            // Add new assistant placeholder (agent never responded case)
+            return {
+              ...prev,
+              messages: [...prev.messages, {
+                id: messageId,
+                author: 'ASSISTANT' as const,
+                content: '',
+                timestamp: new Date().toISOString(),
+                isStreaming: true
+              }]
+            };
           });
         },
         ...createStreamingCallbacks(
@@ -366,6 +365,7 @@ export default function ChatSessionPage() {
           <div className="flex items-center gap-3">
             <span>Error creating session: {creationError}</span>
             <button
+              type="button"
               onClick={() => revalidateSessions?.()}
               className="px-2 py-0.5 text-xs rounded bg-red-500/30 hover:bg-red-500/40 border border-red-500/50"
             >

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { toISOString } from '@/app/chat/utils/dateUtils';
 import { parseAndValidateJSON, SessionMessageRequestSchema } from '@/lib/validation/middleware';
 import { sessionService, messageService, agentService } from '@/lib/services';
