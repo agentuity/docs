@@ -3,29 +3,22 @@ title: Installation
 description: Set up your development environment
 ---
 
-## Prerequisites
-
-- **Node.js 18+** or **Bun** (recommended)
-- A code editor
-
 ## Install the CLI
 
 ```bash
-npm install -g @agentuity/cli
+curl -fsS https://agentuity.sh | sh
 ```
 
-Or with Bun (recommended):
-TODO: not sure our stuff works with anything BUT Bun...need to double check this, but I think we're "tied to Bun" as my CEO said recently.
+This installs the `agentuity` CLI globally on your system.
 
-```bash
-bun install -g @agentuity/cli
-```
+<Callout type="info" title="Alternative: Install via Bun">
+If you prefer package managers: `bun install -g @agentuity/cli`
+</Callout>
 
 ## Create a Project
 
 ```bash
-agentuity new my-project
-cd my-project
+agentuity create
 ```
 
 The CLI will prompt you to select a template and configure your project.
@@ -33,13 +26,13 @@ The CLI will prompt you to select a template and configure your project.
 ## Start the Dev Server
 
 ```bash
-bun dev
+agentuity dev
 ```
 
-Your project is now running at `http://localhost:3500`.
+Your project is now running at `http://localhost:3500`. The dev server includes hot reload, so changes to your agents and routes are reflected immediately.
 
-<Callout type="info" title="Dev Mode">
-The dev server includes hot reload, so changes to your agents and routes are reflected immediately.
+<Callout type="info" title="Bun Required">
+Agentuity projects run on [Bun](https://bun.sh). If you don't have Bun installed, the CLI will prompt you to install it when you create your first project.
 </Callout>
 
 ## Next Steps

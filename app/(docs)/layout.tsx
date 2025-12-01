@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { baseOptions } from '@/app/layout.config';
 import { source } from '@/lib/source';
 import AISearchToggle from '../../components/AISearchToggle';
-import { V0DeprecationBanner } from '../../components/V0DeprecationBanner';
+import { V1PreviewBanner } from '../../components/V1PreviewBanner';
 
 export default function Layout({ children }: { children: ReactNode }) {
 	return (
@@ -22,7 +22,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 				},
 			}}
 			sidebar={{
-				banner: <V0DeprecationBanner />,
+				banner: <V1PreviewBanner />,
 			}}
 		>
 			{children}

@@ -524,7 +524,7 @@ router.email('support@example.com', async (email, ctx) => {
   const htmlBody = email.html();
   const attachments = email.attachments();
   
-  // TODO: Email reply functionality is not yet available in v1
+  // Note: Email reply functionality is coming soon
   
   return { status: 'processed' };
 });
@@ -742,8 +742,6 @@ const agent = createAgent({
 ### Creating Subagents (NEW in v1)
 
 Organize complex agents with parent-child relationships.
-
-TODO: Add example of subagents
 
 **Project Structure:**
 ```
