@@ -1,0 +1,259 @@
+---
+title: Calling Agents from APIs
+description: Invoke agents from API routes using c.agent
+---
+
+API routes can call any agent in your project using `c.agent`. Use APIs as lightweight entry points that hand off work to agents, keeping schema validation and evaluations where they belong. 
+
+## Basic Agent Call
+
+Call an agent by name through the `c.agent` registry:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.post('/chat', async (c) => {
+  const { message } = await c.req.json();
+
+  // Call the chat agent
+  const result = await c.agent.chat.run({ message });
+
+  return c.json(result);
+});
+
+export default router;
+```
+
+The agent receives validated input (if it has a schema) and returns typed output.
+
+## Agent Registry
+
+The `c.agent` object contains all agents in your project, accessed by their directory name:
+
+```
+src/agents/
+├── chat/           → c.agent.chat
+├── summarizer/     → c.agent.summarizer
+└── team/
+    ├── members/    → c.agent.team.members
+    └── tasks/      → c.agent.team.tasks
+```
+
+```typescript
+router.post('/process', async (c) => {
+  const input = await c.req.json();
+
+  // Call different agents
+  const chatResult = await c.agent.chat.run({ message: input.text });
+  const summary = await c.agent.summarizer.run({ content: input.text });
+
+  // Call subagents
+  const members = await c.agent.team.members.run({ teamId: input.teamId });
+
+  return c.json({ chatResult, summary, members });
+});
+```
+
+## Parallel Agent Calls
+
+Run multiple agents concurrently when they don't depend on each other:
+
+```typescript
+router.post('/analyze', async (c) => {
+  const { content } = await c.req.json();
+
+  // Run agents in parallel
+  const [sentiment, topics, summary] = await Promise.all([
+    c.agent.sentimentAnalyzer.run({ text: content }),
+    c.agent.topicExtractor.run({ text: content }),
+    c.agent.summarizer.run({ content }),
+  ]);
+
+  return c.json({ sentiment, topics, summary });
+});
+```
+
+## Background Agent Calls
+
+Use `c.waitUntil()` to run agents after responding to the client:
+
+```typescript
+router.post('/webhook', async (c) => {
+  const payload = await c.req.json();
+
+  // Acknowledge immediately
+  c.waitUntil(async () => {
+    // Process in background
+    await c.agent.webhookProcessor.run(payload);
+    c.var.logger.info('Webhook processed');
+  });
+
+  return c.json({ received: true });
+});
+```
+
+<Callout type="info" title="Webhook Best Practice">
+Webhook providers expect fast responses (usually under 3 seconds). Use `c.waitUntil()` to acknowledge receipt immediately and process the payload in the background.
+</Callout>
+
+## Error Handling
+
+Wrap agent calls in try-catch for graceful error handling:
+
+```typescript
+router.post('/safe-chat', async (c) => {
+  const { message } = await c.req.json();
+
+  try {
+    const result = await c.agent.chat.run({ message });
+    return c.json({ success: true, result });
+  } catch (error) {
+    c.var.logger.error('Agent call failed', {
+      agent: 'chat',
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    return c.json(
+      { success: false, error: 'Chat processing failed' },
+      500
+    );
+  }
+});
+```
+
+## Full Example: Multi-Endpoint API
+
+Combine authentication, validation, and multiple agent calls in a single API file:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { createMiddleware } from 'hono/factory';
+import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';
+
+const router = createRouter();
+
+// Auth middleware
+const authMiddleware = createMiddleware(async (c, next) => {
+  const apiKey = c.req.header('X-API-Key');
+  if (!apiKey) {
+    return c.json({ error: 'API key required' }, 401);
+  }
+
+  const keyData = await c.kv.get('api-keys', apiKey);
+  if (!keyData.exists) {
+    return c.json({ error: 'Invalid API key' }, 401);
+  }
+
+  c.set('userId', keyData.data.userId);
+  await next();
+});
+
+// Apply auth to all routes
+router.use('/*', authMiddleware);
+
+// Chat endpoint
+const chatSchema = z.object({
+  message: z.string().min(1),
+  conversationId: z.string().optional(),
+});
+
+router.post('/chat',
+  zValidator('json', chatSchema),
+  async (c) => {
+    const userId = c.var.userId;
+    const { message, conversationId } = c.req.valid('json');
+
+    const result = await c.agent.chat.run({
+      message,
+      userId,
+      conversationId,
+    });
+
+    // Track usage in background
+    c.waitUntil(async () => {
+      await c.kv.set('usage', `${userId}:${Date.now()}`, {
+        endpoint: 'chat',
+        tokens: result.tokensUsed,
+      });
+    });
+
+    return c.json(result);
+  }
+);
+
+// Summarization endpoint
+const summarizeSchema = z.object({
+  content: z.string().min(10),
+  maxLength: z.number().optional().default(200),
+});
+
+router.post('/summarize',
+  zValidator('json', summarizeSchema),
+  async (c) => {
+    const { content, maxLength } = c.req.valid('json');
+
+    const result = await c.agent.summarizer.run({ content, maxLength });
+
+    return c.json(result);
+  }
+);
+
+// Multi-agent analysis endpoint
+const analyzeSchema = z.object({
+  content: z.string().min(1),
+});
+
+router.post('/analyze',
+  zValidator('json', analyzeSchema),
+  async (c) => {
+    const { content } = c.req.valid('json');
+
+    // Run multiple agents in parallel
+    const [sentiment, entities, summary] = await Promise.all([
+      c.agent.sentimentAnalyzer.run({ text: content }),
+      c.agent.entityExtractor.run({ text: content }),
+      c.agent.summarizer.run({ content, maxLength: 100 }),
+    ]);
+
+    return c.json({
+      sentiment: sentiment.score,
+      entities: entities.items,
+      summary: summary.text,
+    });
+  }
+);
+
+export default router;
+```
+
+## Type Safety
+
+If your agents have schemas, TypeScript provides full type checking:
+
+```typescript
+// Agent with schema (src/agents/chat/agent.ts)
+const chatAgent = createAgent({
+  schema: {
+    input: z.object({ message: z.string() }),
+    output: z.object({ response: z.string(), tokensUsed: z.number() }),
+  },
+  handler: async (ctx, input) => { ... },
+});
+
+// In API route - TypeScript knows the types
+router.post('/chat', async (c) => {
+  const result = await c.agent.chat.run({ message: 'Hello' });
+  // result is typed as { response: string, tokensUsed: number }
+
+  return c.json({ text: result.response });
+});
+```
+
+## Next Steps
+
+- [Creating Agents](/Build/Agents/creating-agents): Build agents with schemas and handlers
+- [Calling Other Agents](/Build/Agents/calling-other-agents): Agent-to-agent communication patterns
+- [Creating API Routes](/Build/APIs/creating-api-routes): Complete API routing guide

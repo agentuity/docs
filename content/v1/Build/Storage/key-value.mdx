@@ -1,0 +1,208 @@
+---
+title: Key-Value Storage
+description: Fast, ephemeral storage for caching, session data, and configuration
+---
+
+Key-value ("KV") storage provides fast data access for agents. Use it for caching, configuration, rate limiting, and data that needs quick lookups.
+
+## When to Use Key-Value Storage
+
+| Storage Type | Best For |
+|--------------|----------|
+| **Key-Value** | Fast lookups, caching, configuration, rate limits |
+| [Vector](/Build/Storage/vector) | Semantic search, embeddings, RAG |
+| [Object](/Build/Storage/object) | Files, images, documents, media |
+| [Durable Streams](/Build/Storage/durable-streams) | Large exports, audit logs, real-time data |
+
+<Callout type="info" title="KV vs Built-in State">
+Use built-in state (`ctx.state`, `ctx.thread.state`, `ctx.session.state`) for data tied to active requests and conversations. Use KV when you need custom TTL, *persistent data across sessions*, or *shared state across agents*.
+</Callout>
+
+## Basic Operations
+
+Access key-value storage through `ctx.kv` in agents or `c.kv` in routes. Buckets are auto-created on first use.
+
+### Storing Data
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    // Store with optional TTL (minimum 60 seconds)
+    await ctx.kv.set('cache', 'api-response', responseData, {
+      ttl: 3600,  // expires in 1 hour
+      contentType: 'application/json',
+    });
+
+    // Store without TTL (persists indefinitely)
+    await ctx.kv.set('config', 'feature-flags', {
+      darkMode: true,
+      betaFeatures: false,
+    });
+
+    return { success: true };
+  },
+});
+```
+
+### Retrieving Data
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    const result = await ctx.kv.get('cache', 'api-response');
+
+    if (result.exists) {
+      ctx.logger.info('Cache hit', { contentType: result.contentType });
+      return { data: result.data };
+    }
+
+    ctx.logger.info('Cache miss');
+    return { data: null };
+  },
+});
+```
+
+### Deleting Data
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    await ctx.kv.delete('sessions', input.sessionId);
+    return { deleted: true };
+  },
+});
+```
+
+## Type Safety
+
+Use generics for type-safe data access:
+
+```typescript
+interface UserPreferences {
+  theme: 'light' | 'dark';
+  language: string;
+  notifications: boolean;
+}
+
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    const result = await ctx.kv.get<UserPreferences>('prefs', input.userId);
+
+    if (result.exists) {
+      // TypeScript knows the shape of result.data
+      const theme = result.data.theme;  // Type: 'light' | 'dark'
+      return { theme };
+    }
+
+    return { theme: 'light' };  // default
+  },
+});
+```
+
+## Additional Methods
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    // Search keys by keyword
+    const matches = await ctx.kv.search('cache', 'user-');
+
+    // List all keys in a bucket
+    const keys = await ctx.kv.getKeys('cache');
+
+    // List all buckets
+    const buckets = await ctx.kv.getNamespaces();
+
+    // Get bucket statistics
+    const stats = await ctx.kv.getStats('cache');
+
+    return { keys, buckets, stats };
+  },
+});
+```
+
+## TTL Strategy
+
+Keys persist indefinitely by default. Use TTL for temporary data:
+
+| Data Type | Suggested TTL |
+|-----------|---------------|
+| API cache | 5-60 minutes (300-3600s) |
+| Session data | 24-48 hours (86400-172800s) |
+| Rate limit counters | Until period reset |
+| Feature flags | No TTL (persistent) |
+
+```typescript
+interface UserSession {
+  userId: string;
+  email: string;
+  loginAt: string;
+  preferences: { theme: string };
+}
+
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    const sessionKey = `session:${input.token}`;
+
+    // Check for existing session
+    const existing = await ctx.kv.get<UserSession>('sessions', sessionKey);
+    if (existing.exists) {
+      return { session: existing.data };
+    }
+
+    // Create new session with 24-hour TTL
+    const session: UserSession = {
+      userId: input.userId,
+      email: input.email,
+      loginAt: new Date().toISOString(),
+      preferences: { theme: 'light' },
+    };
+
+    await ctx.kv.set('sessions', sessionKey, session, {
+      ttl: 86400,  // 24 hours
+    });
+
+    return { session };
+  },
+});
+```
+
+## Using in Routes
+
+Routes have the same KV access via `c.kv`:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.get('/session/:id', async (c) => {
+  const sessionId = c.req.param('id');
+  const result = await c.kv.get('sessions', sessionId);
+
+  if (!result.exists) {
+    return c.json({ error: 'Session not found' }, 404);
+  }
+
+  return c.json({ session: result.data });
+});
+
+export default router;
+```
+
+## Best Practices
+
+- **Use descriptive keys**: `user:{userId}:prefs` instead of `u123`
+- **Set appropriate TTLs**: Prevent storage bloat with expiring cache entries
+- **Handle missing keys**: Always check `result.exists` before accessing data
+- **Keep values small**: KV is optimized for small-to-medium values; use Object Storage for large files
+
+## Next Steps
+
+- [Vector Storage](/Build/Storage/vector): Semantic search and embeddings
+- [Object Storage](/Build/Storage/object): File and media storage
+- [Durable Streams](/Build/Storage/durable-streams): Large data exports
+- [Custom Storage](/Build/Storage/custom): Bring your own storage implementations
+- [State Management](/Build/Agents/state-management): Built-in request/thread/session state

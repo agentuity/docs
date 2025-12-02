@@ -1,0 +1,150 @@
+---
+title: Sessions & Debugging
+description: Debug agents using session IDs, CLI commands, and trace timelines
+---
+
+Every request to your agents gets a unique session ID (`sess_...`). Sessions link logs, traces, and state, making them essential for debugging.
+
+## Sessions vs Threads
+
+| Scope | Lifetime | ID Prefix | Use For |
+|-------|----------|-----------|---------|
+| **Session** | Single request | `sess_` | Debugging, request-scoped state |
+| **Thread** | 1 hour (conversation) | `thrd_` | Chat history, user preferences |
+
+A thread contains multiple sessions. When a user has a multi-turn conversation, each message creates a new session within the same thread.
+
+## Accessing Session ID
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    // In agents
+    ctx.logger.info('Processing request', { sessionId: ctx.sessionId });
+
+    // Thread ID for conversation tracking
+    ctx.logger.info('Thread context', { threadId: ctx.thread.id });
+
+    return { sessionId: ctx.sessionId };
+  },
+});
+```
+
+In routes:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.post('/', async (c) => {
+  // In routes
+  c.var.logger.info('Route called', { sessionId: c.var.sessionId });
+
+  const result = await c.agent.myAgent.run(input);
+
+  return c.json({ ...result, sessionId: c.var.sessionId });
+});
+
+export default router;
+```
+
+## Viewing Session Logs
+
+Use the CLI to view logs for a specific session:
+
+```bash
+agentuity cloud session logs sess_abc123xyz
+```
+
+See [CLI Reference](/Reference/CLI) for additional session commands.
+
+## Including Session ID in Responses
+
+For easier debugging, include the session ID in error responses:
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    try {
+      const result = await processRequest(input);
+      return { success: true, data: result };
+    } catch (error) {
+      ctx.logger.error('Request failed', {
+        sessionId: ctx.sessionId,
+        error: error.message,
+      });
+
+      return {
+        success: false,
+        error: 'Processing failed',
+        sessionId: ctx.sessionId,  // Helpful for debugging
+      };
+    }
+  },
+});
+```
+
+## Linking External Logs
+
+If you use external logging services, include the session ID so you can connect logs across systems:
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    // Create a logger with session context for external services
+    const requestLogger = ctx.logger.child({
+      sessionId: ctx.sessionId,
+      threadId: ctx.thread.id,
+      service: 'webhook-handler',
+    });
+
+    requestLogger.info('Processing webhook', { eventType: input.event });
+
+    // External service call with session context
+    await externalApi.process({
+      ...input,
+      metadata: { agentuitySessionId: ctx.sessionId },
+    });
+
+    return { success: true };
+  },
+});
+```
+
+## Session State
+
+Use session state for request-scoped data that doesn't persist:
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    // Track timing within this request
+    ctx.session.state.set('startTime', Date.now());
+
+    const result = await processRequest(input);
+
+    const duration = Date.now() - (ctx.session.state.get('startTime') as number);
+    ctx.logger.info('Request completed', { durationMs: duration });
+
+    return result;
+  },
+});
+```
+
+Session state is cleared after the response. For persistent data, use [thread state](/Build/Agents/state-management) or [KV storage](/Build/Storage/key-value).
+
+## Best Practices
+
+- **Log the session ID**: Include it in error logs and responses for debugging
+- **Use structured logging**: Add context to logs for easier filtering
+- **Create child loggers**: Add session context to component-specific loggers
+- **Return session ID on errors**: Makes it easy to trace issues back to specific requests
+
+## Next Steps
+
+- [Logging](/Build/Observability/logging): Structured logging patterns
+- [Tracing](/Build/Observability/tracing): OpenTelemetry spans for performance
+- [State Management](/Build/Agents/state-management): Session, thread, and request state

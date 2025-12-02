@@ -1,0 +1,189 @@
+---
+title: Object Storage
+description: Durable file storage for documents, images, and binary content
+---
+
+Object storage provides durable file storage for agents. Use it for documents, images, media, and any binary content that needs to persist.
+
+## When to Use Object Storage
+
+| Storage Type | Best For |
+|--------------|----------|
+| **Object** | Files, images, documents, media, backups |
+| [Key-Value](/Build/Storage/key-value) | Fast lookups, caching, configuration |
+| [Vector](/Build/Storage/vector) | Semantic search, embeddings, RAG |
+| [Durable Streams](/Build/Storage/durable-streams) | Large exports, audit logs |
+
+## Storing Objects
+
+Access object storage through `ctx.objectstore` in agents or `c.objectstore` in routes. Buckets are auto-created on first use.
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    // Store text file
+    const textData = new TextEncoder().encode('Hello, World!');
+    await ctx.objectstore.put('uploads', 'hello.txt', textData, {
+      contentType: 'text/plain',
+    });
+
+    // Store with full options
+    await ctx.objectstore.put('documents', 'report.pdf', pdfData, {
+      contentType: 'application/pdf',
+      contentDisposition: 'attachment; filename="report.pdf"',
+      cacheControl: 'max-age=3600',
+      metadata: {
+        'uploaded-by': input.userId,
+        'processed': 'false',
+      },
+    });
+
+    return { success: true };
+  },
+});
+```
+
+**Supported data types**: `Uint8Array`, `ArrayBuffer`, `ReadableStream`
+
+## Retrieving Objects
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    const result = await ctx.objectstore.get('uploads', 'hello.txt');
+
+    if (result.exists) {
+      // Data is Uint8Array, convert to text if needed
+      const text = new TextDecoder().decode(result.data);
+      ctx.logger.info('File content', {
+        size: result.data.byteLength,
+        contentType: result.contentType,
+      });
+      return { content: text };
+    }
+
+    return { error: 'File not found' };
+  },
+});
+```
+
+## Public URLs
+
+Generate time-limited signed URLs for sharing files:
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    // Create URL valid for 1 hour
+    const url = await ctx.objectstore.createPublicURL('documents', 'report.pdf', {
+      expiresDuration: 3600000,  // milliseconds
+    });
+
+    return { downloadUrl: url };
+  },
+});
+```
+
+<Callout type="warn" title="URL Expiration">
+Always use time-limited URLs for sensitive data. The minimum expiration is 1 minute (60000ms), and the default is 1 hour.
+</Callout>
+
+## Deleting Objects
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    // Returns true if deleted, false if not found
+    const deleted = await ctx.objectstore.delete('uploads', 'temp-file.txt');
+
+    if (deleted) {
+      ctx.logger.info('File deleted');
+    }
+
+    return { deleted };
+  },
+});
+```
+
+## Listing and Metadata
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    // List all buckets
+    const buckets = await ctx.objectstore.listBuckets();
+
+    // List objects in a bucket with optional filtering
+    const objects = await ctx.objectstore.listObjects('uploads', {
+      prefix: 'users/',  // filter by prefix
+      limit: 100,        // max results
+    });
+
+    // Get object metadata without downloading content
+    const metadata = await ctx.objectstore.headObject('uploads', 'large-file.zip');
+
+    return { buckets, objects, metadata };
+  },
+});
+```
+
+## Using in Routes
+
+Routes have the same access via `c.objectstore`:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+// File upload endpoint
+router.post('/upload/:filename', async (c) => {
+  const filename = c.req.param('filename');
+  const contentType = c.req.header('content-type') || 'application/octet-stream';
+
+  const arrayBuffer = await c.req.arrayBuffer();
+  const data = new Uint8Array(arrayBuffer);
+
+  await c.objectstore.put('uploads', filename, data, { contentType });
+
+  return c.json({
+    success: true,
+    size: data.byteLength,
+  });
+});
+
+// File download endpoint
+router.get('/download/:filename', async (c) => {
+  const filename = c.req.param('filename');
+  const result = await c.objectstore.get('uploads', filename);
+
+  if (!result.exists) {
+    return c.json({ error: 'File not found' }, 404);
+  }
+
+  return c.body(result.data, {
+    headers: {
+      'content-type': result.contentType,
+      'content-disposition': `attachment; filename="${filename}"`,
+    },
+  });
+});
+
+export default router;
+```
+
+## Best Practices
+
+- **Organize with paths**: Use hierarchical keys like `users/{userId}/avatar.jpg`
+- **Set content types**: Specify MIME types like `image/jpeg`, `application/pdf`, `text/plain` for proper browser handling. If omitted, defaults to `application/octet-stream`
+- **Use short-lived URLs**: For sensitive data, use minimal expiration times
+- **Store metadata**: Use the metadata option to track upload info, processing status, etc.
+
+## Next Steps
+
+- [Key-Value Storage](/Build/Storage/key-value): Fast caching and configuration
+- [Vector Storage](/Build/Storage/vector): Semantic search and embeddings
+- [Durable Streams](/Build/Storage/durable-streams): Streaming large data exports
+- [Custom Storage](/Build/Storage/custom): Bring your own storage implementations

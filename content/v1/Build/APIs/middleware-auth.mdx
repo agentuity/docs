@@ -1,0 +1,327 @@
+---
+title: Middleware and Authentication
+description: Add authentication, validation, and request processing to API routes
+---
+
+Agentuity routes are built on [Hono](https://hono.dev), giving you access to Hono's middleware system. Use middleware to add authentication, logging, CORS, rate limiting, and other shared request processing.
+
+## Basic Middleware
+
+Create middleware with `createMiddleware` from Hono:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { createMiddleware } from 'hono/factory';
+
+const router = createRouter();
+
+// Middleware that logs all requests
+const loggerMiddleware = createMiddleware(async (c, next) => {
+  const start = Date.now();
+  await next();
+  const duration = Date.now() - start;
+  c.var.logger.info('Request completed', {
+    method: c.req.method,
+    path: c.req.path,
+    duration,
+  });
+});
+
+// Apply to specific route
+router.get('/data', loggerMiddleware, (c) => {
+  return c.json({ data: 'value' });
+});
+
+export default router;
+```
+
+## Authentication Patterns
+
+### API Key Authentication
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { createMiddleware } from 'hono/factory';
+
+const router = createRouter();
+
+const apiKeyAuth = createMiddleware(async (c, next) => {
+  const apiKey = c.req.header('X-API-Key');
+
+  if (!apiKey) {
+    return c.json({ error: 'API key required' }, 401);
+  }
+
+  // Validate against stored keys
+  const keyData = await c.kv.get('api-keys', apiKey);
+  if (!keyData.exists) {
+    return c.json({ error: 'Invalid API key' }, 401);
+  }
+
+  // Add user info to context for downstream handlers
+  c.set('apiKeyOwner', keyData.data.ownerId);
+  await next();
+});
+
+router.get('/protected', apiKeyAuth, (c) => {
+  const ownerId = c.var.apiKeyOwner;
+  return c.json({ message: 'Access granted', ownerId });
+});
+
+export default router;
+```
+
+### Bearer Token (JWT)
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { createMiddleware } from 'hono/factory';
+import { verify } from 'hono/jwt';
+
+const router = createRouter();
+
+const jwtAuth = createMiddleware(async (c, next) => {
+  const authHeader = c.req.header('Authorization');
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    return c.json({ error: 'Bearer token required' }, 401);
+  }
+
+  const token = authHeader.slice(7);
+
+  try {
+    const payload = await verify(token, process.env.JWT_SECRET!);
+    c.set('user', payload);
+    await next();
+  } catch {
+    return c.json({ error: 'Invalid token' }, 401);
+  }
+});
+
+router.get('/me', jwtAuth, (c) => {
+  const user = c.var.user;
+  return c.json({ userId: user.sub, email: user.email });
+});
+
+export default router;
+```
+
+### Third-Party Auth Providers
+
+Services like [Clerk](https://clerk.dev), [Auth0](https://auth0.com), and [Supabase Auth](https://supabase.com/auth) provide drop-in authentication. Here's an example with Clerk:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { clerkMiddleware, getAuth } from '@hono/clerk-auth';
+
+const router = createRouter();
+
+// Apply Clerk middleware
+router.use('/*', clerkMiddleware());
+
+router.get('/public', (c) => {
+  return c.json({ message: 'Public endpoint' });
+});
+
+router.get('/protected', (c) => {
+  const auth = getAuth(c);
+
+  if (!auth?.userId) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  return c.json({ userId: auth.userId });
+});
+
+export default router;
+```
+
+<Callout type="info" title="Using Other Providers">
+For other auth providers, check if they have Hono middleware available, or use JWT validation with their tokens.
+</Callout>
+
+## Request Validation
+
+Use `zValidator` for type-safe request validation:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';
+
+const router = createRouter();
+
+const createItemSchema = z.object({
+  name: z.string().min(1).max(100),
+  price: z.number().positive(),
+  category: z.enum(['electronics', 'clothing', 'food']),
+});
+
+router.post('/items',
+  zValidator('json', createItemSchema),
+  async (c) => {
+    // data is typed as { name: string, price: number, category: string }
+    const data = c.req.valid('json');
+
+    await c.kv.set('items', crypto.randomUUID(), data);
+
+    return c.json({ created: true, item: data });
+  }
+);
+
+export default router;
+```
+
+### Validating Multiple Sources
+
+```typescript
+const querySchema = z.object({
+  page: z.coerce.number().default(1),
+  limit: z.coerce.number().default(10),
+});
+
+const headerSchema = z.object({
+  'x-api-version': z.string().optional(),
+});
+
+router.get('/items',
+  zValidator('query', querySchema),
+  zValidator('header', headerSchema),
+  async (c) => {
+    const { page, limit } = c.req.valid('query');
+    const headers = c.req.valid('header');
+
+    return c.json({ page, limit, apiVersion: headers['x-api-version'] });
+  }
+);
+```
+
+## Route-Level Middleware
+
+Apply middleware to all routes in a router with `router.use()`:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { createMiddleware } from 'hono/factory';
+
+const router = createRouter();
+
+// Apply to all routes in this file
+router.use('/*', createMiddleware(async (c, next) => {
+  c.var.logger.info('API request', { path: c.req.path });
+  await next();
+}));
+
+// Apply to specific path prefix
+router.use('/admin/*', adminAuthMiddleware);
+
+router.get('/public', (c) => c.text('Anyone can access'));
+router.get('/admin/users', (c) => c.json({ users: [] })); // Requires admin auth
+
+export default router;
+```
+
+## Combining Middleware
+
+Chain multiple middleware for complex requirements:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { createMiddleware } from 'hono/factory';
+import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';
+
+const router = createRouter();
+
+const rateLimiter = createMiddleware(async (c, next) => {
+  const ip = c.req.header('x-forwarded-for') || 'unknown';
+  const key = `ratelimit:${ip}`;
+
+  const result = await c.kv.get<number>('ratelimit', key);
+  const count = result.exists ? result.data : 0;
+
+  if (count >= 100) {
+    return c.json({ error: 'Rate limit exceeded' }, 429);
+  }
+
+  await c.kv.set('ratelimit', key, count + 1, { ttl: 60 });
+  await next();
+});
+
+const authMiddleware = createMiddleware(async (c, next) => {
+  const token = c.req.header('Authorization')?.slice(7);
+  if (!token) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+  c.set('userId', await validateToken(token));
+  await next();
+});
+
+const inputSchema = z.object({
+  message: z.string().min(1),
+});
+
+// Chain: rate limit → auth → validation → handler
+router.post('/message',
+  rateLimiter,
+  authMiddleware,
+  zValidator('json', inputSchema),
+  async (c) => {
+    const userId = c.var.userId;
+    const { message } = c.req.valid('json');
+
+    return c.json({ received: true, userId, message });
+  }
+);
+
+export default router;
+```
+
+## Error Handling
+
+Handle errors gracefully in middleware:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { createMiddleware } from 'hono/factory';
+
+const router = createRouter();
+
+const errorHandler = createMiddleware(async (c, next) => {
+  try {
+    await next();
+  } catch (error) {
+    c.var.logger.error('Unhandled error', {
+      error: error instanceof Error ? error.message : String(error),
+      path: c.req.path,
+    });
+
+    return c.json(
+      { error: 'Internal server error' },
+      500
+    );
+  }
+});
+
+router.use('/*', errorHandler);
+
+router.get('/risky', (c) => {
+  // If this throws, errorHandler catches it
+  throw new Error('Something went wrong');
+});
+
+export default router;
+```
+
+## Best Practices
+
+- **Order matters**: Middleware runs in registration order. Put error handling first, then auth, then validation.
+- **Early returns**: Return immediately on failure (don't call `next()`).
+- **Share data via context**: Use `c.set('key', value)` to pass data to downstream handlers, access with `c.var.key`.
+- **Keep middleware focused**: Each middleware should do one thing.
+
+## Next Steps
+
+- [Creating API Routes](/Build/APIs/creating-api-routes): Complete routing reference
+- [Calling Agents from APIs](/Build/APIs/calling-agents): Invoke agents from API routes
+- [HTTP Routes](/Build/Routes-Triggers/http-routes): Routes in agent directories

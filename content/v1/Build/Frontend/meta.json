@@ -1,0 +1,4 @@
+{
+  "title": "Frontend",
+  "pages": ["react-hooks", "provider-setup", "deployment-scenarios", "advanced-hooks"]
+}

@@ -1,0 +1,186 @@
+---
+title: React Hooks
+description: Call agents from React components with useAgent, useAgentWebsocket, and useAgentEventStream
+---
+
+Call your agents from React components using type-safe hooks from `@agentuity/react`.
+
+## Installation
+
+```bash
+npm install @agentuity/react
+```
+
+## Basic Usage with useAgent
+
+The `useAgent` hook calls an agent and returns the response:
+
+```tsx
+import { AgentuityProvider, useAgent } from '@agentuity/react';
+
+function ChatForm() {
+  const { run, running, data, error } = useAgent('chat');
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const message = formData.get('message') as string;
+
+    try {
+      await run({ message });
+    } catch (err) {
+      // Error is also available via the error state
+      console.error('Agent call failed:', err);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input name="message" placeholder="Type a message..." disabled={running} />
+      <button type="submit" disabled={running}>
+        {running ? 'Sending...' : 'Send'}
+      </button>
+      {error && <p>Error: {error.message}</p>}
+      {data && <p>Response: {data.response}</p>}
+    </form>
+  );
+}
+
+export default function App() {
+  return (
+    <AgentuityProvider>
+      <ChatForm />
+    </AgentuityProvider>
+  );
+}
+```
+
+**Return values:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `run` | `(input, options?) => Promise<TOutput>` | Call the agent |
+| `running` | `boolean` | True while the request is pending |
+| `data` | `TOutput \| undefined` | Last successful response |
+| `error` | `Error \| null` | Last error, if any |
+| `reset` | `() => void` | Clear error state |
+
+## Real-Time with useAgentWebsocket
+
+For bidirectional real-time communication, use `useAgentWebsocket`:
+
+```tsx
+import { useAgentWebsocket } from '@agentuity/react';
+import { useEffect, useState } from 'react';
+
+function RealtimeChat() {
+  const [messages, setMessages] = useState<string[]>([]);
+  const { connected, send, data } = useAgentWebsocket('chat');
+
+  // Handle incoming messages
+  useEffect(() => {
+    if (data) {
+      setMessages((prev) => [...prev, `Agent: ${data}`]);
+    }
+  }, [data]);
+
+  const handleSend = (message: string) => {
+    setMessages((prev) => [...prev, `You: ${message}`]);
+    send({ message });
+  };
+
+  return (
+    <div>
+      <p>Status: {connected ? 'Connected' : 'Connecting...'}</p>
+      <ul>
+        {messages.map((msg, i) => (
+          <li key={i}>{msg}</li>
+        ))}
+      </ul>
+      <button onClick={() => handleSend('Hello!')}>Send Hello</button>
+    </div>
+  );
+}
+```
+
+<Callout type="info" title="Auto-Reconnection">
+WebSocket connections automatically reconnect with exponential backoff if the connection drops. Messages sent while disconnected are queued and sent when the connection is restored.
+</Callout>
+
+**Return values:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `connected` | `boolean` | True when WebSocket is open |
+| `send` | `(data: TInput) => void` | Send a message |
+| `data` | `TOutput \| undefined` | Last received message |
+| `error` | `Error \| null` | Connection or message error |
+| `close` | `() => void` | Close the connection |
+| `reset` | `() => void` | Clear error state |
+
+## Streaming with useAgentEventStream
+
+For one-way streaming from server to client, use Server-Sent Events:
+
+```tsx
+import { useAgentEventStream } from '@agentuity/react';
+
+function LiveStatus() {
+  const { connected, data, error } = useAgentEventStream('status');
+
+  if (!connected) {
+    return <p>Connecting to status feed...</p>;
+  }
+
+  if (error) {
+    return <p>Error: {error.message}</p>;
+  }
+
+  return (
+    <div>
+      <p>Live Status: {data?.status ?? 'Waiting for update...'}</p>
+      <p>Last updated: {data?.timestamp ?? '-'}</p>
+    </div>
+  );
+}
+```
+
+<Callout type="tip" title="When to Use SSE">
+Use `useAgentEventStream` when you only need server-to-client updates (e.g., progress indicators, live dashboards, notifications). For bidirectional communication, use `useAgentWebsocket`.
+</Callout>
+
+## Choosing the Right Hook
+
+| Hook | Use Case | Direction | Examples |
+|------|----------|-----------|---------|
+| `useAgent` | Request/response | One-time | Form submissions, button clicks, etc. |
+| `useAgentWebsocket` | Real-time chat | Bidirectional | Chat apps, collaborative editing, etc. |
+| `useAgentEventStream` | Live updates | Server → Client | Progress bars, dashboards, notifications, etc. |
+
+## Request Options
+
+All hooks accept options for customizing requests:
+
+```tsx
+const { run } = useAgent('myAgent');
+
+// Add query parameters
+await run(input, {
+  query: new URLSearchParams({ version: '2' }),
+});
+
+// Add custom headers
+await run(input, {
+  headers: { 'X-Custom-Header': 'value' },
+});
+
+// Cancel request with AbortSignal
+const controller = new AbortController();
+await run(input, { signal: controller.signal });
+```
+
+## Next Steps
+
+- [Provider Setup](/Build/Frontend/provider-setup): Configure `AgentuityProvider` for production deployments
+- [Advanced Hooks](/Build/Frontend/advanced-hooks): Connect to custom WebSocket and SSE endpoints
+- [Deployment Scenarios](/Build/Frontend/deployment-scenarios): Choose where your frontend lives

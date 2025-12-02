@@ -1,0 +1,256 @@
+---
+title: Vector Storage
+description: Semantic search and retrieval for knowledge bases and RAG systems
+---
+
+Vector storage enables semantic search, allowing agents to find information by *meaning* rather than keywords. Use it for knowledge bases, RAG systems, recommendations, and persistent agent memory.
+
+## When to Use Vector Storage
+
+| Storage Type | Best For |
+|--------------|----------|
+| **Vector** | Semantic search, embeddings, RAG, recommendations |
+| [Key-Value](/Build/Storage/key-value) | Fast lookups, caching, configuration |
+| [Object](/Build/Storage/object) | Files, images, documents, media |
+| [Durable Streams](/Build/Storage/durable-streams) | Large exports, audit logs |
+
+## Upserting Documents
+
+Store documents with automatic embedding generation. The `upsert` operation is idempotent: using an existing key updates the vector rather than creating a duplicate.
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    // Upsert with text (auto-generates embeddings)
+    const results = await ctx.vector.upsert('knowledge-base',
+      {
+        key: 'doc-1',
+        document: 'Agentuity is an agent-native cloud platform',
+        metadata: { category: 'platform', source: 'docs' },
+      },
+      {
+        key: 'doc-2',
+        document: 'Vector storage enables semantic search capabilities',
+        metadata: { category: 'features', source: 'docs' },
+      }
+    );
+
+    // Returns: [{ key: 'doc-1', id: 'internal-id' }, ...]
+    return { inserted: results.length };
+  },
+});
+```
+
+**With pre-computed embeddings:**
+
+```typescript
+await ctx.vector.upsert('custom-embeddings', {
+  key: 'embedding-1',
+  embeddings: [0.1, 0.2, 0.3, 0.4, ...],
+  metadata: { source: 'external' },
+});
+```
+
+
+## Searching
+
+Find semantically similar documents:
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    const results = await ctx.vector.search('knowledge-base', {
+      query: 'What is an AI agent?',
+      limit: 5,
+      similarity: 0.7,  // minimum similarity threshold
+      metadata: { category: 'platform' },  // filter by metadata
+    });
+
+    // Each result includes: id, key, similarity, metadata
+    return {
+      results: results.map(r => ({
+        key: r.key,
+        similarity: r.similarity,
+        title: r.metadata?.title,
+      })),
+    };
+  },
+});
+```
+
+## Direct Retrieval
+
+### get() - Single Item
+
+Retrieve a specific vector by key without similarity search:
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    const result = await ctx.vector.get('knowledge-base', 'doc-1');
+
+    if (result.exists) {
+      return {
+        id: result.data.id,
+        key: result.data.key,
+        metadata: result.data.metadata,
+      };
+    }
+
+    return { error: 'Document not found' };
+  },
+});
+```
+
+### getMany() - Batch Retrieval
+
+Retrieve multiple vectors efficiently:
+
+```typescript
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    const keys = ['doc-1', 'doc-2', 'doc-3'];
+    const resultMap = await ctx.vector.getMany('knowledge-base', ...keys);
+
+    // resultMap is Map<string, VectorSearchResultWithDocument>
+    return {
+      found: resultMap.size,
+      documents: Array.from(resultMap.values()).map(doc => ({
+        key: doc.key,
+        content: doc.document,
+      })),
+    };
+  },
+});
+```
+
+### exists() - Check Namespace
+
+```typescript
+const hasData = await ctx.vector.exists('knowledge-base');
+if (!hasData) {
+  return { error: 'Knowledge base not initialized' };
+}
+```
+
+## Deleting Vectors
+
+```typescript
+// Delete single vector
+await ctx.vector.delete('knowledge-base', 'doc-1');
+
+// Delete multiple vectors, returns count deleted
+const count = await ctx.vector.delete('knowledge-base', 'doc-1', 'doc-2', 'doc-3');
+```
+
+## Type Safety
+
+Use generics for type-safe metadata:
+
+```typescript
+interface DocumentMetadata {
+  title: string;
+  category: 'guide' | 'api' | 'tutorial';
+  author: string;
+}
+
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    // Type-safe upsert
+    await ctx.vector.upsert<DocumentMetadata>('docs', {
+      key: 'guide-1',
+      document: 'Getting started with agents',
+      metadata: {
+        title: 'Getting Started',
+        category: 'guide',
+        author: 'team',
+      },
+    });
+
+    // Type-safe search
+    const results = await ctx.vector.search<DocumentMetadata>('docs', {
+      query: input.question,
+    });
+
+    // TypeScript knows metadata shape
+    const titles = results.map(r => r.metadata?.title);
+
+    return { titles };
+  },
+});
+```
+
+## Simple RAG Example
+
+Search for relevant context and generate an informed response:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+const ragAgent = createAgent({
+  schema: {
+    input: z.object({ question: z.string() }),
+    output: z.object({
+      answer: z.string(),
+      sources: z.array(z.string()),
+    }),
+  },
+  handler: async (ctx, input) => {
+    // Search for relevant documents
+    const results = await ctx.vector.search('knowledge-base', {
+      query: input.question,
+      limit: 3,
+      similarity: 0.7,
+    });
+
+    if (results.length === 0) {
+      return {
+        answer: "I couldn't find relevant information.",
+        sources: [],
+      };
+    }
+
+    // Build context from results
+    const context = results
+      .map(r => r.metadata?.content || '')
+      .join('\n\n');
+
+    // Generate response using context
+    const { text } = await generateText({
+      model: openai('gpt-5-mini'),
+      prompt: `Answer based on this context:\n\n${context}\n\nQuestion: ${input.question}`,
+    });
+
+    return {
+      answer: text,
+      sources: results.map(r => r.key),
+    };
+  },
+});
+```
+
+## Troubleshooting
+
+- **Empty results**: Lower your similarity threshold (try 0.5 instead of 0.8) or check metadata filters
+- **Duplicates**: Ensure consistent key naming; upsert with same key updates rather than duplicates
+- **Poor relevance**: Results with similarity < 0.7 may be weak matches; filter post-search if needed
+
+## Best Practices
+
+- **Include context in documents**: Store enough text so documents are meaningful when retrieved
+- **Use descriptive metadata**: Include title, category, tags for filtering and identification
+- **Batch upserts**: Insert documents in batches of 100-500 for better performance
+- **Combine get + search**: Use `search` for finding, `getMany` for fetching full details
+
+## Next Steps
+
+- [Key-Value Storage](/Build/Storage/key-value): Fast caching and configuration
+- [Object Storage](/Build/Storage/object): File and media storage
+- [Durable Streams](/Build/Storage/durable-streams): Streaming large data exports
+- [Custom Storage](/Build/Storage/custom): Bring your own storage implementations
+- [Evaluations](/Build/Agents/evaluations): Quality checks for RAG systems

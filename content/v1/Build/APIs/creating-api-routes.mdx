@@ -1,0 +1,280 @@
+---
+title: Creating API Routes
+description: Build lightweight HTTP endpoints with createRouter() in src/apis/
+---
+
+API routes provide a lightweight way to expose HTTP endpoints without the overhead of agent schemas and validation. Use them for health checks, webhooks, static data, or any endpoint that doesn't need structured agent processing.
+
+<Callout type="info" title="New to REST APIs?">
+API routes let your application respond to HTTP requests (GET, POST, etc.). If you're new to building APIs, check out [MDN's HTTP overview](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview) or [Hono's documentation](https://hono.dev) for the router we use under the hood.
+</Callout>
+
+## Basic API Route
+
+Create a `route.ts` file in the `src/apis/` directory:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.get('/', (c) => {
+  return c.json({ status: 'healthy', timestamp: Date.now() });
+});
+
+router.get('/version', (c) => {
+  return c.json({ version: '1.0.0' });
+});
+
+export default router;
+```
+
+<Callout type="info" title="URL Prefix">
+Routes in `src/apis/` are automatically prefixed with `/api/`. A route at `src/apis/health/route.ts` becomes `/api/health/`.
+</Callout>
+
+To test locally, run `bun dev` and use curl, Postman, or your browser to hit `http://localhost:3500/api/...`.
+
+## Directory Structure
+
+```
+src/
+├── agents/              # Agent routes (prefixed with /agent/)
+│   └── chat/
+│       ├── agent.ts     # Required for agents
+│       └── route.ts
+└── apis/                # API routes (prefixed with /api/)
+    ├── health/
+    │   └── route.ts     # Only route.ts needed
+    ├── webhooks/
+    │   └── route.ts
+    └── route.ts         # Root API at /api/
+```
+
+API directories only need a `route.ts` file. No `agent.ts` required.
+
+## HTTP Methods
+
+The router supports all standard HTTP methods:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.get('/items', async (c) => {
+  const items = await fetchItems();
+  return c.json(items);
+});
+
+router.post('/items', async (c) => {
+  const body = await c.req.json();
+  const created = await createItem(body);
+  return c.json(created, 201);
+});
+
+router.put('/items/:id', async (c) => {
+  const id = c.req.param('id');
+  const body = await c.req.json();
+  const updated = await updateItem(id, body);
+  return c.json(updated);
+});
+
+router.delete('/items/:id', async (c) => {
+  const id = c.req.param('id');
+  await deleteItem(id);
+  return c.json({ deleted: true });
+});
+
+export default router;
+```
+
+## Route Parameters
+
+Capture URL segments with `:paramName`:
+
+```typescript
+router.get('/users/:userId/posts/:postId', async (c) => {
+  const userId = c.req.param('userId');
+  const postId = c.req.param('postId');
+
+  return c.json({ userId, postId });
+});
+
+// Wildcard parameters for file paths
+router.get('/files/:path{.*}', async (c) => {
+  const filePath = c.req.param('path');
+  // filePath captures everything after /files/
+  return c.text(`File: ${filePath}`);
+});
+```
+
+## Request and Response
+
+**Reading request data:**
+
+```typescript
+router.post('/data', async (c) => {
+  // Body parsing
+  const jsonBody = await c.req.json();
+  const textBody = await c.req.text();
+  const formData = await c.req.formData();
+  const arrayBuffer = await c.req.arrayBuffer();
+
+  // Headers and query params
+  const authHeader = c.req.header('Authorization');
+  const page = c.req.query('page') || '1';
+
+  return c.json({ received: true });
+});
+```
+
+**Sending responses:**
+
+```typescript
+router.get('/examples', (c) => {
+// JSON
+  return c.json({ data: 'value' });
+
+  // With status code
+  return c.json({ error: 'Not found' }, 404);
+
+  // Plain text
+  return c.text('OK');
+
+  // Binary data
+  return c.body(new Uint8Array([1, 2, 3]), 200, {
+    'Content-Type': 'application/octet-stream',
+  });
+
+  // Redirect
+  return c.redirect('/other-path');
+});
+```
+
+<Callout type="tip" title="Consistent Error Responses">
+Pick a standard error format and use it everywhere. For example: `{ error: string, code?: string }`. This makes client-side error handling predictable.
+</Callout>
+
+## Accessing Services
+
+API routes have access to all Agentuity services through the route context:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.post('/cache', async (c) => {
+  const { key, value } = await c.req.json();
+
+  // Key-value storage
+  await c.kv.set('api-cache', key, value, { ttl: 3600 });
+
+  return c.json({ cached: true });
+});
+
+router.get('/cache/:key', async (c) => {
+  const key = c.req.param('key');
+  const result = await c.kv.get('api-cache', key);
+
+  if (!result.exists) {
+    return c.json({ error: 'Not found' }, 404);
+  }
+
+  return c.json({ value: result.data });
+});
+
+router.post('/upload/:bucket/:filename', async (c) => {
+  const bucket = c.req.param('bucket');
+  const filename = c.req.param('filename');
+  const data = new Uint8Array(await c.req.arrayBuffer());
+  const contentType = c.req.header('Content-Type') || 'application/octet-stream';
+
+  // Object storage
+  await c.objectstore.put(bucket, filename, data, { contentType });
+
+  return c.json({ uploaded: true, bucket, filename });
+});
+
+// Vector search
+router.post('/search', async (c) => {
+  const { query } = await c.req.json();
+
+  const results = await c.vector.search('documents', {
+    query,
+    limit: 5,
+  });
+
+  return c.json({ results });
+});
+
+export default router;
+```
+
+**Available services:**
+
+| Service | Description |
+|---------|-------------|
+| `c.kv` | Key-value storage |
+| `c.vector` | Vector database |
+| `c.objectstore` | Object/file storage |
+| `c.stream` | Durable stream storage |
+| `c.var.logger` | Structured logging |
+
+## Logging
+
+<Callout type="info" title="Logger Access">
+In route handlers, use `c.var.logger`. In agent handlers, use `ctx.logger` directly.
+</Callout>
+
+Use structured logging instead of `console.log`:
+
+```typescript
+router.post('/webhook', async (c) => {
+  const payload = await c.req.json();
+
+  c.var.logger.info('Webhook received', {
+    source: payload.source,
+    eventType: payload.type,
+  });
+
+  try {
+    await processWebhook(payload);
+    c.var.logger.info('Webhook processed successfully');
+    return c.json({ processed: true });
+  } catch (error) {
+    c.var.logger.error('Webhook processing failed', { error });
+    return c.json({ error: 'Processing failed' }, 500);
+  }
+});
+```
+
+## Background Tasks
+
+Use `c.waitUntil()` for work that should complete after the response is sent:
+
+```typescript
+router.post('/events', async (c) => {
+  const event = await c.req.json();
+
+  // Respond immediately
+  c.waitUntil(async () => {
+    // This runs after the response is sent
+    await c.kv.set('events', `event-${Date.now()}`, event);
+    c.var.logger.info('Event stored in background');
+  });
+
+  return c.json({ accepted: true });
+});
+```
+
+<Callout type="info" title="CORS Configuration">
+If your API is called from a browser on a different domain, you'll need to configure CORS. See [App Configuration](/Get-Started/app-configuration) for details on setting up `createApp({ cors: ... })`.
+</Callout>
+
+## Next Steps
+
+- [When to Use APIs](/Build/APIs/when-to-use-apis): Decision guide for APIs vs agents
+- [Adding Middleware](/Build/APIs/middleware-auth): Authentication and request processing
+- [Calling Agents from APIs](/Build/APIs/calling-agents): Invoke agents from API routes

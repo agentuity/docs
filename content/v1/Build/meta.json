@@ -1,4 +1,4 @@
 {
 	"title": "Build",
-	"pages": ["Agents", "Routes-Triggers"]
+	"pages": ["Agents", "Routes-Triggers", "APIs", "Frontend", "Storage", "Observability"]
 }
