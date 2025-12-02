@@ -1,0 +1,11 @@
+{
+  "title": "CLI",
+  "pages": [
+    "getting-started",
+    "development",
+    "deployment",
+    "debugging",
+    "data-management",
+    "ai-commands"
+  ]
+}

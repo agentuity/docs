@@ -1,0 +1,426 @@
+---
+title: Managing Cloud Data
+description: Inspect and manage storage, environment variables, secrets, and API keys from the CLI.
+---
+
+These CLI commands help you inspect and manage cloud data during development and debugging. For programmatic access in your agents, use the SDK context objects like `ctx.kv`, `ctx.vector`, and `ctx.object`.
+
+## Key-Value Storage
+
+Inspect and manage key-value data organized into namespaces.
+
+### Interactive REPL
+
+Start an interactive session for faster exploration:
+
+```bash
+agentuity cloud kv repl
+```
+
+In the REPL, use commands like `set`, `get`, `delete`, `keys`, and `stats`:
+
+```
+> set cache user:123 '{"name":"Alice"}'
+> get cache user:123
+> keys cache
+> stats
+```
+
+### Get a Value
+
+```bash
+agentuity cloud kv get production user:123
+agentuity cloud kv get cache session:abc
+```
+
+<Callout type="info" title="Cloud Prefix Required">
+All data management commands require the `cloud` prefix. See [Command Shortcuts](/v1/Reference/CLI/getting-started#command-shortcuts) for commands that have shortcuts.
+</Callout>
+
+### Set a Value
+
+```bash
+# Store JSON data
+agentuity cloud kv set production user:123 '{"name":"Alice","email":"alice@example.com"}'
+
+# Set with TTL (expires after 1 hour)
+agentuity cloud kv set cache session:abc "session-data" --ttl 3600
+```
+
+### Delete a Key
+
+```bash
+agentuity cloud kv delete production user:123
+agentuity cloud kv rm cache session:abc  # Using alias
+```
+
+### List Keys
+
+```bash
+agentuity cloud kv keys production
+agentuity cloud kv ls cache  # Using alias
+```
+
+### Search Keys
+
+```bash
+agentuity cloud kv search production user
+agentuity cloud kv search cache session
+```
+
+### View Statistics
+
+```bash
+# Stats for all namespaces
+agentuity cloud kv stats
+
+# Stats for specific namespace
+agentuity cloud kv stats production
+```
+
+### Namespace Management
+
+A namespace is a logical container that groups related keys together. For example, you might use `cache` for temporary data, `users` for user profiles, and `sessions` for session state. Namespaces help organize your data and prevent key collisions.
+
+```bash
+# List all namespaces
+agentuity cloud kv list-namespaces
+agentuity cloud kv ns  # Using alias
+
+# Create a namespace
+agentuity cloud kv create-namespace staging
+
+# Delete a namespace and all its keys
+agentuity cloud kv delete-namespace old-cache
+```
+
+<Callout type="info" title="SDK Access">
+For programmatic access in agents, use `ctx.kv`:
+
+```typescript
+await ctx.kv.set('cache', 'user:123', data);
+const value = await ctx.kv.get('cache', 'user:123');
+```
+
+See [Using Key-Value Storage](/v1/Build/Storage/key-value) for details.
+</Callout>
+
+## Object Storage
+
+Manage file uploads and binary objects in buckets.
+
+### Interactive REPL
+
+```bash
+agentuity cloud obj repl
+```
+
+### Upload a File
+
+```bash
+# Upload from file path
+agentuity cloud obj put uploads images/logo.png @./logo.png
+
+# Store JSON directly
+agentuity cloud obj put assets config.json '{"api":"https://api.example.com"}'
+
+# With custom content type
+agentuity cloud obj put backups db.sql @~/backup.sql --content-type application/sql
+```
+
+### Download a File
+
+```bash
+agentuity cloud obj get uploads images/logo.png
+agentuity cloud obj get assets config.json
+```
+
+### Delete a File
+
+```bash
+agentuity cloud obj delete uploads old-image.png
+```
+
+### Generate Public URL
+
+```bash
+# Permanent URL
+agentuity cloud obj url uploads images/logo.png
+
+# Temporary URL (expires in 1 hour)
+agentuity cloud obj url uploads private-doc.pdf --expires 3600
+
+# 5-minute presigned URL
+agentuity cloud obj presigned backups db.sql --expires 300
+```
+
+### List Buckets
+
+```bash
+agentuity cloud obj list-buckets
+```
+
+### List Files in a Bucket
+
+```bash
+agentuity cloud obj list-keys uploads
+agentuity cloud obj ls assets  # Using alias
+```
+
+<Callout type="info" title="SDK Access">
+For programmatic access, use `ctx.objectstore`:
+
+```typescript
+await ctx.objectstore.put('uploads', 'image.png', buffer);
+const file = await ctx.objectstore.get('uploads', 'image.png');
+```
+
+See [Object Storage](/v1/Build/Storage/object) for details.
+</Callout>
+
+## Vector Storage
+
+Search and inspect vector embeddings.
+
+### Search by Similarity
+
+```bash
+# Basic search
+agentuity cloud vector search products "comfortable office chair"
+
+# Limit results
+agentuity cloud vector search docs "API documentation" --limit 5
+
+# Set minimum similarity threshold
+agentuity cloud vector search products "ergonomic" --similarity 0.8
+
+# Filter by metadata
+agentuity cloud vector search embeddings "neural networks" --metadata category=ai
+```
+
+### Get Vector by ID
+
+```bash
+agentuity cloud vec get <vector-id>
+```
+
+### Delete a Vector
+
+```bash
+agentuity cloud vec delete <vector-id>
+```
+
+<Callout type="info" title="SDK Access">
+For programmatic access, use `ctx.vector`:
+
+```typescript
+const results = await ctx.vector.search('products', {
+  query: 'comfortable chair',
+  limit: 10
+});
+```
+
+See [Vector Storage](/v1/Build/Storage/vector) for details.
+</Callout>
+
+## Streams
+
+List and manage durable event streams.
+
+### List Streams
+
+```bash
+agentuity cloud stream list
+```
+
+### Get Stream Details
+
+```bash
+agentuity cloud stream get <stream-id>
+```
+
+### Delete a Stream
+
+```bash
+agentuity cloud stream delete <stream-id>
+```
+
+## Environment Variables
+
+Manage non-sensitive configuration values.
+
+### List Variables
+
+```bash
+agentuity cloud env list
+```
+
+### Get a Variable
+
+```bash
+agentuity cloud env get NODE_ENV
+```
+
+### Set a Variable
+
+```bash
+agentuity cloud env set NODE_ENV production
+agentuity cloud env set API_URL https://api.example.com
+```
+
+### Delete a Variable
+
+```bash
+agentuity cloud env delete OLD_CONFIG
+```
+
+### Push from Local File
+
+Upload variables from `.env.production` (or `.env`) to cloud:
+
+```bash
+agentuity cloud env push
+```
+
+This filters out `AGENTUITY_` prefixed keys automatically.
+
+### Pull to Local File
+
+Download cloud variables to `.env.production`:
+
+```bash
+# Merge with local (local values take priority)
+agentuity cloud env pull
+
+# Overwrite local with cloud values
+agentuity cloud env pull --force
+```
+
+### Import from File
+
+```bash
+agentuity cloud env import .env.staging
+```
+
+<Callout type="warning" title="Secrets vs Environment Variables">
+Use `cloud secret` for sensitive values like API keys. Use `cloud env` for non-sensitive configuration.
+</Callout>
+
+## Secrets
+
+Manage sensitive values like API keys and tokens. Commands mirror `cloud env`.
+
+### List Secrets
+
+```bash
+agentuity cloud secret list
+```
+
+### Get a Secret
+
+```bash
+agentuity cloud secret get API_KEY
+```
+
+### Set a Secret
+
+```bash
+agentuity cloud secret set API_KEY "sk_live_..."
+agentuity cloud secret set DATABASE_URL "postgresql://..."
+```
+
+### Delete a Secret
+
+```bash
+agentuity cloud secret delete OLD_TOKEN
+```
+
+### Push/Pull
+
+```bash
+# Push from local file
+agentuity cloud secret push
+
+# Pull to local file
+agentuity cloud secret pull
+agentuity cloud secret pull --force
+```
+
+### Import from File
+
+```bash
+agentuity cloud secret import .env.secrets
+```
+
+<Callout type="info" title="SDK Access">
+Access secrets in agents via `process.env`:
+
+```typescript
+const apiKey = process.env.API_KEY;
+```
+
+Secrets are injected at runtime and never logged.
+</Callout>
+
+## API Keys
+
+Create and manage API keys for programmatic access to your project.
+
+### Create an API Key
+
+```bash
+# With 1 year expiration
+agentuity cloud apikey create --name "Production Key" --expires-at 1y
+
+# With 30 day expiration
+agentuity cloud apikey create --name "Short-lived Key" --expires-at 30d
+
+# With specific date
+agentuity cloud apikey create --name "Q1 Key" --expires-at 2026-03-31T23:59:59Z
+
+# Skip confirmation prompt
+agentuity cloud apikey create --name "CI/CD Key" --expires-at 90d --confirm
+```
+
+<Callout type="warning" title="Save Your Key">
+The API key value is shown only once during creation. Copy it immediately; you cannot retrieve it later.
+</Callout>
+
+### List API Keys
+
+```bash
+agentuity cloud apikey list
+```
+
+### Get API Key Details
+
+```bash
+agentuity cloud apikey get <key-id>
+```
+
+This shows metadata (name, expiration) but not the key value.
+
+### Delete an API Key
+
+```bash
+agentuity cloud apikey delete <key-id>
+```
+
+<Callout type="info" title="Using API Keys">
+API keys authenticate requests to Agentuity APIs. Store them in your `.env` as `AGENTUITY_SDK_KEY`:
+
+```bash
+AGENTUITY_SDK_KEY=agt_...
+```
+</Callout>
+
+## Database (Coming Soon)
+
+The CLI includes `cloud db` commands for database operations (list, create, delete, SQL queries). Documentation is coming soon.
+
+## Next Steps
+
+- [Getting Started with the CLI](/v1/Reference/CLI/getting-started): Install and authenticate
+- [Key-Value Storage](/v1/Build/Storage/key-value): Programmatic KV access in agents
+- [Object Storage](/v1/Build/Storage/object): Upload files from agents
+- [Vector Storage](/v1/Build/Storage/vector): Semantic search in agents

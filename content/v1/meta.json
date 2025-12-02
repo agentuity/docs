@@ -4,6 +4,7 @@
 	"root": true,
 	"pages": [
 		"Get-Started",
-		"Build"
+		"Build",
+		"Reference"
 	]
 }

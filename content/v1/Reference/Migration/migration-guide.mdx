@@ -13,8 +13,13 @@ This guide will help you migrate your existing v0 agents to v1, understand the b
 
 ## What's New in v1?
 
+<Callout type="success" title="No More Manual Agent Registration">
+In v0, agents had to be created via the CLI (`agentuity agent create`) to register them with unique IDs in the cloud. In v1, just create a folder in `src/agents/` with `agent.ts` and `route.ts` — agents are auto-discovered and registered on deploy. No CLI commands or manual registration required.
+</Callout>
+
 v1 introduces several major improvements:
 
+- **Auto-Discovery**: Create agents by adding folders — no CLI registration needed
 - **Modern Architecture**: Built on Hono, a fast and lightweight web framework
 - **Type-Safe Schemas**: Built-in support for Zod, Valibot, ArkType, and other StandardSchema libraries
 - **Evaluation Framework**: Automatically test and validate agent outputs
