@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, KeyboardEvent, useState } from 'react';
+import { useEffect, type KeyboardEvent, useState } from 'react';
 import { Send } from 'lucide-react';
 import { useAutoResize } from '../utils/useAutoResize';
 

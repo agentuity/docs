@@ -39,13 +39,12 @@ export async function handleTutorialState(
             state.clearAction();
             ctx.logger.info("Tutorial state processed successfully");
             return tutorialData;
-          } else {
+          }
             // Handle API errors gracefully
             ctx.logger.error("Failed to fetch tutorial step: %s", tutorialStep.error || 'Unknown error');
             if (tutorialStep.details) {
               ctx.logger.error("Error details: %s", JSON.stringify(tutorialStep.details));
             }
-          }
         }
         break;
       default:

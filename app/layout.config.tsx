@@ -10,7 +10,7 @@ export const baseOptions: BaseLayoutProps = {
 	nav: {
 		url: '/v0/Introduction',
 		title: (
-			<div className="flex items-center gap-3 font-medium">
+			<div className="flex items-center gap-3 font-medium ml-2">
 				<svg
 					role="img"
 					aria-label="Agentuity"

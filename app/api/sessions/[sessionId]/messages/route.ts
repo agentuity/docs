@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { getKVValue, setKVValue } from "@/lib/kv-store";
-import {
+import type {
   Session,
   Message,
   StreamingChunk,
@@ -32,7 +32,7 @@ function sanitizeTitle(input: string): string {
   // Sentence case
   s = sentenceCase(s);
   // Trim trailing punctuation noise
-  s = s.replace(/[\s\-–—:;,\.]+$/g, '').trim();
+  s = s.replace(/[\s\-–—:;,.]+$/g, '').trim();
   // Enforce 60 chars
   if (s.length > 60) s = s.slice(0, 60).trim();
   return s;
@@ -99,7 +99,7 @@ export async function POST(
             content: (m.content || '').slice(0, MAX_CONTENT_LEN),
           }));
 
-        const prompt = `Generate a very short session title summarizing the conversation topic.\n\nRequirements:\n- sentence case\n- no emojis\n- <= 60 characters\n- no quotes or markdown\n- output the title only, no extra text`;
+        const prompt = 'Generate a very short session title summarizing the conversation topic.\n\nRequirements:\n- sentence case\n- no emojis\n- <= 60 characters\n- no quotes or markdown\n- output the title only, no extra text';
 
         const agentConfig = getAgentPulseConfig();
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -254,7 +254,7 @@ export async function POST(
 
     // Process streaming response
     let accumulatedContent = "";
-    let finalTutorialData: TutorialData | undefined = undefined;
+    let finalTutorialData: TutorialData | undefined ;
 
     const transformStream = new TransformStream({
       async transform(chunk, controller) {

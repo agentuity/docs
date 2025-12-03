@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { getKVValue, setKVValue } from '@/lib/kv-store';
-import { Session, Message, SessionSchema } from '@/app/chat/types';
+import { type Session, type Message, SessionSchema } from '@/app/chat/types';
 import { toISOString } from '@/app/chat/utils/dateUtils';
 import { config } from '@/lib/config';
 import { parseAndValidateJSON } from '@/lib/validation/middleware';

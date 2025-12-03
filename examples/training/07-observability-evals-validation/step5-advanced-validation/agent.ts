@@ -20,7 +20,7 @@ export const agent = createAgent({
 
       // Transform: parse string to number
       age: z.string()
-        .transform(val => parseInt(val, 10))
+        .transform(val => Number.parseInt(val, 10))
         .pipe(z.number().min(13).max(120)),
 
       // Date fields for cross-field validation

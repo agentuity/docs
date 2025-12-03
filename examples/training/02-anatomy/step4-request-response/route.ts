@@ -107,11 +107,10 @@ router.get('/tasks/:id', async (c) => {
   // Check what format client wants
   if (accept?.includes('text/html')) {
     return c.html(`<h1>${result.task?.title}</h1>`);
-  } else if (accept?.includes('text/plain')) {
+  }if (accept?.includes('text/plain')) {
     return c.text(result.task?.title || '');
-  } else {
-    return c.json(result);
   }
+    return c.json(result);
 });
 
 // ===== Custom Status Codes & Headers =====

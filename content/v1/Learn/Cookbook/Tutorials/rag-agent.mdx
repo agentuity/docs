@@ -1,0 +1,371 @@
+---
+title: Build a RAG Agent
+description: Create a retrieval-augmented generation agent with vector search and citations
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+This tutorial walks through building a RAG (Retrieval-Augmented Generation) agent that answers questions using your own knowledge base.
+
+## What You'll Build
+
+A question-answering agent that:
+- Searches a vector database for relevant content
+- Uses retrieved documents as context for the LLM
+- Returns answers with source citations
+- Handles cases where no relevant information is found
+
+## Prerequisites
+
+- An Agentuity project ([Quickstart](/v1/Get-Started/quickstart) if you need one)
+- Basic familiarity with [Vector Storage](/v1/Build/Storage/vector)
+
+## Project Structure
+
+```
+src/agents/knowledge/
+├── agent.ts    # RAG agent logic
+└── route.ts    # HTTP endpoint
+```
+
+<Steps>
+
+<Step>
+## Create the Agent
+
+When a user asks a question, the agent needs to:
+
+1. Search the vector database for relevant documents
+2. Build context from the search results
+3. Generate an answer using the LLM with that context
+4. Return the answer with source citations
+
+Here's the code for `src/agents/knowledge/agent.ts`:
+
+```typescript
+import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+const agent = createAgent({
+  metadata: {
+    name: 'Knowledge Agent',
+    description: 'Answers questions using a knowledge base',
+  },
+  schema: {
+    input: z.object({
+      question: z.string().describe('The question to answer'),
+    }),
+    output: z.object({
+      answer: z.string(),
+      sources: z.array(z.object({
+        id: z.string(),
+        title: z.string(),
+        relevance: z.number(),
+      })),
+      confidence: z.number().min(0).max(1),
+    }),
+  },
+  handler: async (ctx: AgentContext, input) => {
+    ctx.logger.info('Searching knowledge base', { question: input.question });
+
+    // Search for relevant documents
+    const results = await ctx.vector.search('knowledge-base', {
+      query: input.question,
+      limit: 5,
+      similarity: 0.7,
+    });
+
+    // Handle no results
+    if (results.length === 0) {
+      ctx.logger.info('No relevant documents found');
+      return {
+        answer: "I couldn't find relevant information to answer your question.",
+        sources: [],
+        confidence: 0,
+      };
+    }
+
+    // Build context from search results
+    const context = results
+      .map((r, i) => `[${i + 1}] ${r.document}`)
+      .join('\n\n');
+
+    ctx.logger.debug('Built context from documents', {
+      documentCount: results.length
+    });
+
+    // Generate answer with LLM
+    const { text } = await generateText({
+      model: openai('gpt-5-mini'),
+      system: `You are a helpful assistant that answers questions based on provided context.
+Only use information from the context. If the context doesn't contain the answer, say so.
+Cite sources using [1], [2], etc. when referencing specific information.`,
+      prompt: `Context:
+${context}
+
+Question: ${input.question}
+
+Answer the question using only the provided context. Cite your sources.`,
+    });
+
+    // Calculate confidence from average similarity
+    const avgSimilarity = results.reduce((sum, r) => sum + r.similarity, 0) / results.length;
+
+    return {
+      answer: text,
+      sources: results.map((r, i) => ({
+        id: r.key,
+        title: (r.metadata?.title as string) || `Document ${i + 1}`,
+        relevance: r.similarity,
+      })),
+      confidence: avgSimilarity,
+    };
+  },
+});
+
+export default agent;
+```
+</Step>
+
+<Step>
+## Create the Route
+
+The route exposes your agent over HTTP. We use `zValidator` to validate incoming requests before passing them to the agent.
+
+Here's the code for `src/agents/knowledge/route.ts`:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';
+
+const router = createRouter();
+
+// Query endpoint
+router.post('/', zValidator('json', z.object({
+  question: z.string().min(1),
+})), async (c) => {
+  const { question } = c.req.valid('json');
+  const result = await c.agent.knowledge.run({ question });
+  return c.json(result);
+});
+
+// Health check
+router.get('/health', (c) => c.text('OK'));
+
+export default router;
+```
+</Step>
+
+<Step>
+## Add an Indexing Agent
+
+Before you can query your knowledge base, you need to populate it. A separate indexing agent handles this by:
+
+1. Accepting an array of documents
+2. Storing each document in the vector database with metadata
+3. Returning the count and IDs of indexed documents
+
+Here's the code for `src/agents/indexer/agent.ts`:
+
+```typescript
+import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const DocumentSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  content: z.string(),
+  category: z.string().optional(),
+});
+
+const agent = createAgent({
+  metadata: {
+    name: 'Document Indexer',
+    description: 'Indexes documents into the knowledge base',
+  },
+  schema: {
+    input: z.object({
+      documents: z.array(DocumentSchema),
+    }),
+    output: z.object({
+      indexed: z.number(),
+      ids: z.array(z.string()),
+    }),
+  },
+  handler: async (ctx: AgentContext, input) => {
+    ctx.logger.info('Indexing documents', { count: input.documents.length });
+
+    const ids: string[] = [];
+
+    for (const doc of input.documents) {
+      await ctx.vector.upsert('knowledge-base', {
+        key: doc.id,
+        document: doc.content,
+        metadata: {
+          title: doc.title,
+          category: doc.category,
+          indexedAt: new Date().toISOString(),
+        },
+      });
+      ids.push(doc.id);
+    }
+
+    ctx.logger.info('Indexing complete', { indexed: ids.length });
+
+    return {
+      indexed: ids.length,
+      ids,
+    };
+  },
+});
+
+export default agent;
+```
+</Step>
+
+<Step>
+## Test Your Agent
+
+With both agents created, you can test the full flow: index some documents, then query them.
+
+Start the dev server:
+
+```bash
+agentuity dev
+```
+
+Index some test documents:
+
+```bash
+curl -X POST http://localhost:3500/indexer \
+  -H "Content-Type: application/json" \
+  -d '{
+    "documents": [
+      {
+        "id": "doc-1",
+        "title": "Getting Started",
+        "content": "Agentuity is a full-stack platform for building AI agents. You can create agents using TypeScript and deploy them with a single command."
+      },
+      {
+        "id": "doc-2",
+        "title": "Storage Options",
+        "content": "Agentuity provides three storage options: key-value for simple data, vector for semantic search, and object storage for files."
+      }
+    ]
+  }'
+```
+
+Query the knowledge base:
+
+```bash
+curl -X POST http://localhost:3500/knowledge \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What storage options does Agentuity provide?"}'
+```
+
+Expected response:
+
+```json
+{
+  "answer": "Agentuity provides three storage options [2]: key-value storage for simple data, vector storage for semantic search, and object storage for files.",
+  "sources": [
+    { "id": "doc-2", "title": "Storage Options", "relevance": 0.89 }
+  ],
+  "confidence": 0.89
+}
+```
+</Step>
+
+</Steps>
+
+## Full Code
+
+Here's the complete RAG agent with all features:
+
+```typescript
+// src/agents/knowledge/agent.ts
+import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+const agent = createAgent({
+  metadata: {
+    name: 'Knowledge Agent',
+    description: 'Answers questions using a knowledge base',
+  },
+  schema: {
+    input: z.object({
+      question: z.string().describe('The question to answer'),
+    }),
+    output: z.object({
+      answer: z.string(),
+      sources: z.array(z.object({
+        id: z.string(),
+        title: z.string(),
+        relevance: z.number(),
+      })),
+      confidence: z.number().min(0).max(1),
+    }),
+  },
+  handler: async (ctx: AgentContext, input) => {
+    ctx.logger.info('Searching knowledge base', { question: input.question });
+
+    const results = await ctx.vector.search('knowledge-base', {
+      query: input.question,
+      limit: 5,
+      similarity: 0.7,
+    });
+
+    if (results.length === 0) {
+      ctx.logger.info('No relevant documents found');
+      return {
+        answer: "I couldn't find relevant information to answer your question.",
+        sources: [],
+        confidence: 0,
+      };
+    }
+
+    const context = results
+      .map((r, i) => `[${i + 1}] ${r.document}`)
+      .join('\n\n');
+
+    const { text } = await generateText({
+      model: openai('gpt-5-mini'),
+      system: `You are a helpful assistant that answers questions based on provided context.
+Only use information from the context. If the context doesn't contain the answer, say so.
+Cite sources using [1], [2], etc. when referencing specific information.`,
+      prompt: `Context:
+${context}
+
+Question: ${input.question}
+
+Answer the question using only the provided context. Cite your sources.`,
+    });
+
+    const avgSimilarity = results.reduce((sum, r) => sum + r.similarity, 0) / results.length;
+
+    return {
+      answer: text,
+      sources: results.map((r, i) => ({
+        id: r.key,
+        title: (r.metadata?.title as string) || `Document ${i + 1}`,
+        relevance: r.similarity,
+      })),
+      confidence: avgSimilarity,
+    };
+  },
+});
+
+export default agent;
+```
+
+## Next Steps
+
+- Add an [evaluation](/v1/Build/Agents/evaluations) to check answer quality
+- Implement [streaming](/v1/Build/Agents/streaming-responses) for longer responses
+- Add metadata filtering to search specific categories
+- See the [Vector Storage](/v1/Build/Storage/vector) guide for advanced search options

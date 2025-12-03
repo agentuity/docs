@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Message, TutorialData, StreamingChunk } from '../types';
+import type { Message, TutorialData, StreamingChunk } from '../types';
 import { getCurrentTimestamp } from './dateUtils';
 
 // Generate unique IDs
@@ -72,7 +72,7 @@ export function useStreaming({
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let accumulatedContent = '';
-      let finalTutorialData: TutorialData | undefined = undefined;
+      let finalTutorialData: TutorialData | undefined ;
 
       if (!reader) {
         throw new Error('No response body');

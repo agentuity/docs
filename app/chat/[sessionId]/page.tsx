@@ -7,7 +7,7 @@ import "allotment/dist/style.css";
 import { v4 as uuidv4 } from 'uuid';
 import { ChatMessagesArea } from '../components/ChatMessagesArea';
 import { CodeEditor } from '../components/CodeEditor';
-import { Session, Message } from '../types';
+import type { Session, Message } from '../types';
 import { useSessions } from '../SessionContext';
 import { sessionService } from '../services/sessionService';
 import { Skeleton } from '@/components/ui/skeleton';

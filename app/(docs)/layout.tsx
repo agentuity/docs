@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { baseOptions } from '@/app/layout.config';
 import { source } from '@/lib/source';
 import AISearchToggle from '../../components/AISearchToggle';
-import { V1PreviewBanner } from '../../components/V1PreviewBanner';
+import { SidebarBanner } from '../../components/SidebarBanner';
 
 export default function Layout({ children }: { children: ReactNode }) {
 	return (
@@ -22,7 +22,8 @@ export default function Layout({ children }: { children: ReactNode }) {
 				},
 			}}
 			sidebar={{
-				banner: <V1PreviewBanner />,
+				tabs: false,
+				banner: <SidebarBanner />,
 			}}
 		>
 			{children}

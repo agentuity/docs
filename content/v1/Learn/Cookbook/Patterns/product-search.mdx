@@ -1,0 +1,199 @@
+---
+title: Product Search with Vector
+description: Semantic product search with metadata filtering
+---
+
+Build a product search that understands natural language queries and filters by category, price, or other attributes.
+
+## The Pattern
+
+Vector search finds semantically similar products. Combine with metadata filtering for precise results.
+
+```typescript
+import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { z } from 'zod';
+
+interface ProductMetadata {
+  name: string;
+  price: number;
+  category: string;
+  inStock: boolean;
+}
+
+const agent = createAgent({
+  metadata: {
+    name: 'Product Search',
+    description: 'Semantic search for products',
+  },
+  schema: {
+    input: z.object({
+      query: z.string().describe('Natural language search query'),
+      category: z.string().optional().describe('Filter by category'),
+      maxPrice: z.number().optional().describe('Maximum price filter'),
+      limit: z.number().min(1).max(50).default(10),
+    }),
+    output: z.object({
+      products: z.array(z.object({
+        id: z.string(),
+        name: z.string(),
+        description: z.string(),
+        price: z.number(),
+        category: z.string(),
+        relevance: z.number(),
+      })),
+      total: z.number(),
+    }),
+  },
+  handler: async (ctx: AgentContext, input) => {
+    ctx.logger.info('Searching products', {
+      query: input.query,
+      category: input.category,
+      maxPrice: input.maxPrice,
+    });
+
+    // Search with semantic similarity
+    const results = await ctx.vector.search<ProductMetadata>('products', {
+      query: input.query,
+      limit: input.limit * 2, // Fetch extra for filtering
+      similarity: 0.6,
+    });
+
+    // Apply metadata filters
+    let filtered = results;
+
+    if (input.category) {
+      filtered = filtered.filter(r =>
+        r.metadata?.category?.toLowerCase() === input.category?.toLowerCase()
+      );
+    }
+
+    if (input.maxPrice) {
+      filtered = filtered.filter(r =>
+        (r.metadata?.price ?? Infinity) <= input.maxPrice!
+      );
+    }
+
+    // Only show in-stock items
+    filtered = filtered.filter(r => r.metadata?.inStock !== false);
+
+    // Limit to requested count
+    const products = filtered.slice(0, input.limit).map(r => ({
+      id: r.key,
+      name: r.metadata?.name || 'Unknown',
+      description: r.document || '',
+      price: r.metadata?.price || 0,
+      category: r.metadata?.category || 'Uncategorized',
+      relevance: r.similarity,
+    }));
+
+    ctx.logger.info('Search complete', {
+      found: results.length,
+      afterFilters: products.length,
+    });
+
+    return {
+      products,
+      total: products.length,
+    };
+  },
+});
+
+export default agent;
+```
+
+## Indexing Products
+
+Add products to the vector database:
+
+```typescript
+// src/agents/product-indexer/agent.ts
+import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const ProductSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  price: z.number(),
+  category: z.string(),
+  inStock: z.boolean().default(true),
+});
+
+const agent = createAgent({
+  schema: {
+    input: z.object({
+      products: z.array(ProductSchema),
+    }),
+    output: z.object({
+      indexed: z.number(),
+    }),
+  },
+  handler: async (ctx: AgentContext, input) => {
+    for (const product of input.products) {
+      // Use description as the searchable document
+      await ctx.vector.upsert('products', {
+        key: product.id,
+        document: `${product.name}. ${product.description}`,
+        metadata: {
+          name: product.name,
+          price: product.price,
+          category: product.category,
+          inStock: product.inStock,
+        },
+      });
+    }
+
+    return { indexed: input.products.length };
+  },
+});
+
+export default agent;
+```
+
+## Route with Query Parameters
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.get('/search', async (c) => {
+  const query = c.req.query('q') || '';
+  const category = c.req.query('category');
+  const maxPrice = c.req.query('maxPrice');
+  const limit = parseInt(c.req.query('limit') || '10');
+
+  const result = await c.agent.productSearch.run({
+    query,
+    category,
+    maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+    limit,
+  });
+
+  return c.json(result);
+});
+
+export default router;
+```
+
+## Example Usage
+
+```bash
+# Natural language search
+curl "http://localhost:3500/products/search?q=comfortable%20office%20chair"
+
+# With filters
+curl "http://localhost:3500/products/search?q=laptop&category=electronics&maxPrice=1000"
+```
+
+## Key Points
+
+- **Semantic search** finds products by meaning, not just keywords
+- **Metadata filtering** narrows results by category, price, stock
+- **Over-fetch then filter** for accurate result counts
+- **Document field** should include searchable text (name + description)
+
+## See Also
+
+- [Vector Storage](/v1/Build/Storage/vector) for all vector operations
+- [Build a RAG Agent](/v1/Learn/Cookbook/Tutorials/rag-agent) for question-answering

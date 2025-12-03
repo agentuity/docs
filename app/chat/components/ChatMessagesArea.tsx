@@ -3,7 +3,7 @@
 import React, { useRef, useEffect,useState } from 'react';
 import { ChatMessageComponent } from './ChatMessage';
 import { ChatInput } from './ChatInput';
-import { Session } from '../types';
+import type { Session } from '../types';
 
 export interface ChatMessagesAreaProps {
     session: Session
