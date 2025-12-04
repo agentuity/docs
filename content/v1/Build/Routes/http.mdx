@@ -5,8 +5,8 @@ description: Define GET, POST, and other HTTP endpoints with createRouter()
 
 Routes define how your application responds to HTTP requests. Built on [Hono](https://hono.dev), the router provides a familiar Express-like API with full TypeScript support.
 
-<Callout type="info" title="Infrastructure as Code">
-Routes are defined in your codebase (`route.ts` files) and automatically discovered by the SDK. Changes are tracked in Git, reviewed in pull requests, and deployed with your code. No UI configuration required.
+<Callout type="info" title="Works in agents and APIs">
+These examples show agent patterns, but the same code works in standalone API routes (`src/apis/*/route.ts`).
 </Callout>
 
 ## Basic Routes
@@ -29,6 +29,10 @@ router.post('/process', async (c) => {
 
 export default router;
 ```
+
+<Callout type="info" title="Automatic Response Conversion">
+Return values are automatically converted: `string` → text response, `object` → JSON, `ReadableStream` → streamed response. You can also use explicit methods (`c.json()`, `c.text()`) for more control.
+</Callout>
 
 ## HTTP Methods
 
@@ -58,6 +62,19 @@ router.get('/posts/:year/:month/:slug', async (c) => {
 });
 ```
 
+### Wildcard Parameters
+
+For paths with variable depth, use regex patterns:
+
+```typescript
+router.get('/files/:bucket/:key{.*}', async (c) => {
+  const bucket = c.req.param('bucket');
+  const key = c.req.param('key'); // Captures "path/to/file.txt"
+  return c.json({ bucket, key });
+});
+// GET /files/uploads/images/photo.jpg → { bucket: "uploads", key: "images/photo.jpg" }
+```
+
 ## Query Parameters
 
 Access query strings with `c.req.query()`:
@@ -81,7 +98,7 @@ Invoke agents from routes using `c.agent`:
 router.post('/chat', async (c) => {
   const { message } = await c.req.json();
 
-  const response = await c.agent.chatAgent.run({ message });
+  const response = await c.agent.assistant.run({ message });
 
   return c.json(response);
 });
@@ -198,9 +215,87 @@ router.get('/users/:id', getUserById);
 router.get('/users/me', getCurrentUser); // Never reached
 ```
 
+### Use middleware for cross-cutting concerns
+
+Apply middleware to all routes with `router.use()`:
+
+```typescript
+router.use(loggingMiddleware);
+router.use(authMiddleware);
+
+router.get('/protected', handler); // Both middlewares apply
+```
+
+For authentication patterns, rate limiting, and more, see [Middleware](/docs/v1/Build/Routes/middleware).
+
+### Handle errors gracefully
+
+Return appropriate status codes when things go wrong:
+
+```typescript
+router.post('/process', async (c) => {
+  try {
+    const body = await c.req.json();
+    const result = await c.agent.processor.run(body);
+    return c.json(result);
+  } catch (error) {
+    c.var.logger.error('Processing failed', { error });
+    return c.json({ error: 'Processing failed' }, 500);
+  }
+});
+```
+
+## Streaming Responses
+
+Use `router.stream()` to return a `ReadableStream` directly to the client without buffering:
+
+```typescript
+router.stream('/chat', async (c) => {
+  const body = await c.req.json();
+  return c.agent.chatAgent.run(body); // Returns a ReadableStream
+});
+```
+
+### Creating Custom Streams
+
+Return any `ReadableStream` for custom streaming:
+
+```typescript
+router.stream('/events', (c) => {
+  return new ReadableStream({
+    start(controller) {
+      controller.enqueue('data: event 1\n\n');
+      controller.enqueue('data: event 2\n\n');
+      controller.close();
+    }
+  });
+});
+```
+
+### With Middleware
+
+Stream routes support middleware:
+
+```typescript
+router.stream('/protected', authMiddleware, async (c) => {
+  return c.agent.streamAgent.run({ userId: c.var.userId });
+});
+```
+
+### Stream vs SSE vs WebSocket
+
+| Type | Direction | Format | Use Case |
+|------|-----------|--------|----------|
+| `router.stream()` | Server → Client | Raw bytes | LLM responses, file downloads |
+| `router.sse()` | Server → Client | SSE events | Progress updates, notifications |
+| `router.websocket()` | Bidirectional | Messages | Chat, collaboration |
+
+Use `router.stream()` for raw streaming (like AI SDK `textStream`). Use `router.sse()` when you need named events or auto-reconnection. See [Streaming Responses](/docs/v1/Build/Agents/streaming-responses) for the full guide on streaming agents.
+
 ## Next Steps
 
-- [Scheduled Jobs (Cron)](/Build/Routes-Triggers/cron): Run tasks on a schedule
-- [Email Handling](/Build/Routes-Triggers/email): Process incoming emails
-- [WebSockets](/Build/Routes-Triggers/websockets): Real-time bidirectional communication
-- [Server-Sent Events](/Build/Routes-Triggers/sse): Stream updates to clients
+- [Middleware](/docs/v1/Build/Routes/middleware): Authentication, rate limiting, logging
+- [Scheduled Jobs (Cron)](/docs/v1/Build/Routes/cron): Run tasks on a schedule
+- [Email Handling](/docs/v1/Build/Routes/email): Process incoming emails
+- [WebSockets](/docs/v1/Build/Routes/websockets): Real-time bidirectional communication
+- [Server-Sent Events](/docs/v1/Build/Routes/sse): Stream updates to clients

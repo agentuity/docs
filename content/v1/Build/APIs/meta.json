@@ -1,9 +1,7 @@
 {
 	"title": "APIs",
 	"pages": [
-		"creating-api-routes",
-		"when-to-use-apis",
-		"middleware-auth",
+		"when-to-use",
 		"calling-agents"
 	]
 }

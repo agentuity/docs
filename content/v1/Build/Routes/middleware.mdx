@@ -1,9 +1,17 @@
 ---
-title: Adding Auth & Middleware
-description: Add authentication, validation, and request processing to API routes
+title: Middleware & Authentication
+description: Add authentication, validation, and request processing to your routes
 ---
 
 Agentuity routes are built on [Hono](https://hono.dev), giving you access to Hono's middleware system. Use middleware to add authentication, logging, CORS, rate limiting, and other shared request processing.
+
+<Callout type="info" title="Works in agents and APIs">
+Middleware works on all routes, whether in agent directories (`src/agents/*/route.ts`) or API directories (`src/apis/*/route.ts`). The patterns below apply to both.
+</Callout>
+
+<Callout type="warning" title="Middleware Compatibility">
+Middleware is supported on: HTTP routes, WebSocket, SSE, Email, and Stream routes. SMS and Cron routes do not support middleware.
+</Callout>
 
 ## Basic Middleware
 
@@ -322,6 +330,5 @@ export default router;
 
 ## Next Steps
 
-- [Creating API Routes](/Build/APIs/creating-api-routes): Complete routing reference
-- [Calling Agents from APIs](/Build/APIs/calling-agents): Invoke agents from API routes
-- [HTTP Routes](/Build/Routes-Triggers/http-routes): Routes in agent directories
+- [HTTP Routes](/docs/v1/Build/Routes/http): Complete routing reference
+- [Calling Agents from APIs](/docs/v1/Build/APIs/calling-agents): Invoke agents from API routes

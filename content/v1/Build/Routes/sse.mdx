@@ -5,6 +5,10 @@ description: Stream updates from server to client with router.sse()
 
 Server-Sent Events (SSE) provide efficient one-way streaming from server to client over HTTP. Use them for progress indicators, live feeds, notifications, and LLM response streaming.
 
+<Callout type="info" title="Works in agents and APIs">
+This routing method works in both agent directories (`src/agents/*/route.ts`) and API directories (`src/apis/*/route.ts`). Examples below show agent patterns, but the same code works in standalone API routes.
+</Callout>
+
 ## Basic Example
 
 ```typescript
@@ -41,6 +45,34 @@ router.sse('/path', (c) => async (stream) => {
   stream.onAbort(() => { /* cleanup */ });
   stream.close();
 });
+```
+
+## With Middleware
+
+Apply authentication or logging before streaming:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { createMiddleware } from 'hono/factory';
+
+const router = createRouter();
+
+const authMiddleware = createMiddleware(async (c, next) => {
+  const apiKey = c.req.header('X-API-Key');
+  if (!apiKey) {
+    return c.json({ error: 'API key required' }, 401);
+  }
+  await next();
+});
+
+router.sse('/events', authMiddleware, (c) => async (stream) => {
+  await stream.writeSSE({ event: 'connected', data: 'Authenticated!' });
+
+  // Stream events...
+  stream.close();
+});
+
+export default router;
 ```
 
 ## Two Write APIs
@@ -205,10 +237,36 @@ curl -N https://your-project.agentuity.cloud/agent-name
 | Browser support | Native EventSource | Native WebSocket |
 | Best for | Progress, feeds, LLM streaming | Chat, collaboration |
 
-Use SSE when you only need to push data **from server to client**. Use [WebSockets](/Build/Routes-Triggers/websockets) when you need **bidirectional** communication.
+Use SSE when you only need to push data **from server to client**. Use [WebSockets](/docs/v1/Build/Routes/websockets) when you need **bidirectional** communication.
+
+## Standalone Usage
+
+SSE handlers work without agents. This example streams build logs from storage:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.sse('/builds/:id/logs', (c) => async (stream) => {
+  const buildId = c.req.param('id');
+  const logs = await c.kv.get<string[]>('builds', `${buildId}:logs`);
+
+  if (logs.exists) {
+    for (const line of logs.data) {
+      await stream.writeSSE({ event: 'log', data: line });
+    }
+  }
+
+  await stream.writeSSE({ event: 'complete', data: 'Build finished' });
+  stream.close();
+});
+
+export default router;
+```
 
 ## Next Steps
 
-- [WebSockets](/Build/Routes-Triggers/websockets): Bidirectional real-time communication
-- [HTTP Routes](/Build/Routes-Triggers/http-routes): Standard request/response endpoints
-- [React Hooks](/Build/Frontend/react-hooks): Connect from React with `useAgentEventStream`
+- [WebSockets](/docs/v1/Build/Routes/websockets): Bidirectional real-time communication
+- [HTTP Routes](/docs/v1/Build/Routes/http): Standard request/response endpoints
+- [React Hooks](/docs/v1/Build/Frontend/react-hooks): Connect from React with `useAgentEventStream`

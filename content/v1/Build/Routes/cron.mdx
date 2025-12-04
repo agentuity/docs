@@ -5,6 +5,10 @@ description: Run tasks on a schedule with router.cron()
 
 Schedule recurring tasks using cron expressions. Schedules are defined in code, deployed with your agents, and automatically provisioned.
 
+<Callout type="info" title="Works in agents and APIs">
+This routing method works in both agent directories (`src/agents/*/route.ts`) and API directories (`src/apis/*/route.ts`). Examples below show agent patterns, but the same code works in standalone API routes.
+</Callout>
+
 ## Basic Example
 
 ```typescript
@@ -112,8 +116,32 @@ async function cronHandler(c) {
 - **Handle errors gracefully** so one failure doesn't break the schedule
 - **Keep jobs idempotent** when possible, in case of retries
 
+## Standalone Usage
+
+Cron jobs work without agents. This example clears expired cache entries hourly:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.cron('0 * * * *', async (c) => {
+  const allKeys = await c.kv.getKeys('cache');
+  const expiredKeys = allKeys.filter(key => key.startsWith('temp-'));
+
+  for (const key of expiredKeys) {
+    await c.kv.delete('cache', key);
+  }
+
+  c.var.logger.info('Cache cleanup completed', { deleted: expiredKeys.length });
+  return c.text('OK');
+});
+
+export default router;
+```
+
 ## Next Steps
 
-- [HTTP Routes](/Build/Routes-Triggers/http-routes): Standard request/response endpoints
-- [Email Handling](/Build/Routes-Triggers/email): Process incoming emails
-- [Key-Value Storage](/Build/Storage/key-value): Store job results
+- [HTTP Routes](/docs/v1/Build/Routes/http): Standard request/response endpoints
+- [Email Handling](/docs/v1/Build/Routes/email): Process incoming emails
+- [Key-Value Storage](/docs/v1/Build/Storage/key-value): Store job results

@@ -5,6 +5,10 @@ description: Real-time bidirectional communication with router.websocket()
 
 WebSockets enable persistent, bidirectional connections between client and server. Use them for chat interfaces, live dashboards, collaborative tools, and any scenario requiring real-time two-way communication.
 
+<Callout type="info" title="Works in agents and APIs">
+This routing method works in both agent directories (`src/agents/*/route.ts`) and API directories (`src/apis/*/route.ts`). Examples below show agent patterns, but the same code works in standalone API routes.
+</Callout>
+
 ## Basic Example
 
 ```typescript
@@ -54,6 +58,44 @@ router.websocket('/path', (c) => (ws) => {
 | `onOpen` | Connection established | Send welcome message, initialize state |
 | `onMessage` | Client sends data | Process messages, call agents |
 | `onClose` | Connection ends | Clean up resources |
+
+## With Middleware
+
+Apply authentication or logging before the WebSocket upgrade:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { createMiddleware } from 'hono/factory';
+
+const router = createRouter();
+
+const authMiddleware = createMiddleware(async (c, next) => {
+  const token = c.req.query('token');
+  if (!token) {
+    return c.text('Unauthorized', 401);
+  }
+  c.set('userId', await validateToken(token));
+  await next();
+});
+
+router.websocket('/chat', authMiddleware, (c) => (ws) => {
+  const userId = c.var.userId;
+
+  ws.onOpen(() => {
+    ws.send(`Welcome, user ${userId}!`);
+  });
+
+  ws.onMessage(async (event) => {
+    const response = await c.agent.chat.run({
+      userId,
+      message: event.data as string,
+    });
+    ws.send(response);
+  });
+});
+
+export default router;
+```
 
 ## Server Push
 
@@ -168,10 +210,34 @@ ws.onclose = () => {
 | Progress updates | | ✓ | |
 | Request/response API | | | ✓ |
 
-Use WebSockets when you need **bidirectional** communication. For **server-to-client only** streaming, consider [Server-Sent Events](/Build/Routes-Triggers/sse).
+Use WebSockets when you need **bidirectional** communication. For **server-to-client only** streaming, consider [Server-Sent Events](/docs/v1/Build/Routes/sse).
+
+## Standalone Usage
+
+WebSocket handlers work without agents. This example broadcasts system metrics to connected clients:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.websocket('/metrics', (c) => (ws) => {
+  const interval = setInterval(() => {
+    ws.send(JSON.stringify({
+      cpu: Math.random() * 100,
+      memory: Math.random() * 100,
+      timestamp: Date.now(),
+    }));
+  }, 5000);
+
+  ws.onClose(() => clearInterval(interval));
+});
+
+export default router;
+```
 
 ## Next Steps
 
-- [Server-Sent Events](/Build/Routes-Triggers/sse): One-way streaming from server to client
-- [HTTP Routes](/Build/Routes-Triggers/http-routes): Standard request/response endpoints
-- [React Hooks](/Build/Frontend/react-hooks): Connect from React with `useAgentWebsocket`
+- [Server-Sent Events](/docs/v1/Build/Routes/sse): One-way streaming from server to client
+- [HTTP Routes](/docs/v1/Build/Routes/http): Standard request/response endpoints
+- [React Hooks](/docs/v1/Build/Frontend/react-hooks): Connect from React with `useAgentWebsocket`

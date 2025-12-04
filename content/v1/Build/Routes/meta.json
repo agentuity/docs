@@ -1,7 +1,9 @@
 {
-	"title": "Routes & Triggers",
+	"title": "Routes",
 	"pages": [
-		"http-routes",
+		"index",
+		"http",
+		"middleware",
 		"cron",
 		"email",
 		"sms",

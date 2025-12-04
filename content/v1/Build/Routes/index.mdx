@@ -1,0 +1,177 @@
+---
+title: Routing Overview
+description: Define how requests reach your code
+---
+
+Routes define how requests reach your application, whether HTTP calls, scheduled jobs, incoming emails, or SMS messages. Built on [Hono](https://hono.dev), the router provides a familiar API with full TypeScript support.
+
+<Callout type="info" title="Infrastructure as Code">
+Routes are defined in your codebase and automatically discovered. Changes are tracked in Git, reviewed in PRs, and deployed with your code. No UI configuration required.
+</Callout>
+
+## Where Routes Live
+
+Routes go in `route.ts` files. There are two directory patterns:
+
+| Directory | Files | Purpose |
+|-----------|-------|---------|
+| `src/agents/*/` | `agent.ts` + `route.ts` | Routes paired with an agent |
+| `src/apis/*/` | Just `route.ts` | Standalone routes (can still call agents via `c.agent.*`) |
+
+Agent directories pair routes with an agent: `agent.ts` defines the handler, `route.ts` exposes it over HTTP. API directories are routes-only but can still call any agent via `c.agent.*`.
+
+<Callout type="tip" title="API routes can call agents">
+Even standalone API routes have full access to your agents:
+
+```typescript
+// src/apis/webhook/route.ts
+router.post('/slack', async (c) => {
+  const payload = await c.req.json();
+  const result = await c.agent.slackHandler.run(payload);
+  return c.json(result);
+});
+```
+</Callout>
+
+Routes are automatically mounted based on their directory:
+- `src/agents/chat/route.ts` → `/agent/chat`
+- `src/apis/health/route.ts` → `/api/health`
+
+For the full project layout, see [Project Structure](/docs/v1/Get-Started/project-structure).
+
+## Route Types
+
+| Type | Method | Use case |
+|------|--------|----------|
+| [HTTP](/docs/v1/Build/Routes/http) | `router.get()`, `router.post()`, `router.stream()` | REST APIs, webhooks, LLM streaming |
+| [Middleware](/docs/v1/Build/Routes/middleware) | Hono middleware | Auth, logging, validation |
+| [Cron](/docs/v1/Build/Routes/cron) | `router.cron()` | Scheduled tasks |
+| [Email](/docs/v1/Build/Routes/email) | `router.email()` | Process incoming emails |
+| [SMS](/docs/v1/Build/Routes/sms) | `router.sms()` | Process incoming SMS |
+| [WebSocket](/docs/v1/Build/Routes/websockets) | `router.websocket()` | Real-time bidirectional |
+| [SSE](/docs/v1/Build/Routes/sse) | `router.sse()` | Server-sent events |
+
+## Quick Examples
+
+### HTTP
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+// Works in both agents and APIs
+router.get('/health', (c) => {
+  return c.json({ status: 'ok', timestamp: Date.now() });
+});
+
+// Agent routes can call c.agent.*
+router.post('/chat', async (c) => {
+  const { message } = await c.req.json();
+  const result = await c.agent.assistant.run({ message });
+  return c.json(result);
+});
+
+export default router;
+```
+
+### Cron
+
+```typescript
+router.cron('0 9 * * *', async (c) => {
+  await c.agent.reportGenerator.run({ type: 'daily' });
+  return c.text('OK');
+});
+```
+
+### Email
+
+```typescript
+router.email('support@myapp.com', async (email, c) => {
+  const result = await c.agent.emailHandler.run({
+    from: email.fromEmail(),
+    subject: email.subject(),
+    body: email.text(),
+  });
+  return c.text('Processed');
+});
+```
+
+### SMS
+
+```typescript
+router.sms({ number: '+15551234567' }, async (c) => {
+  const formData = await c.req.parseBody();
+  const reply = await c.agent.smsResponder.run({
+    message: formData.Body as string,
+    from: formData.From as string
+  });
+  return c.text(reply); // Sent as SMS reply
+});
+```
+
+### WebSocket
+
+```typescript
+router.websocket('/chat', (c) => (ws) => {
+  ws.onMessage(async (event) => {
+    const response = await c.agent.assistant.run(event.data);
+    ws.send(response);
+  });
+});
+```
+
+### SSE
+
+```typescript
+router.sse('/stream', (c) => async (stream) => {
+  for (let i = 0; i < 5; i++) {
+    await stream.writeSSE({ data: `Message ${i}` });
+  }
+  stream.close();
+});
+```
+
+## Context Access
+
+All route handlers have access to the same context:
+
+```typescript
+router.post('/', async (c) => {
+  // Request data
+  const body = await c.req.json();
+  const header = c.req.header('Authorization');
+
+  // Logging and session
+  c.var.logger.info('Processing request');
+  const sessionId = c.var.sessionId;
+
+  // Thread and session state
+  c.var.thread.state.set('topic', body.topic);
+  const userId = c.var.session.state.get('userId');
+
+  // Storage
+  await c.kv.set('cache', 'key', data);
+  const results = await c.vector.search('docs', { query: 'search term' });
+  await c.objectstore.put('files', 'file.txt', content);
+
+  // Durable streams
+  const stream = await c.stream.create('export', { contentType: 'text/csv' });
+
+  // Call agents
+  const result = await c.agent.myAgent.run(body);
+
+  // Background tasks
+  c.waitUntil(async () => {
+    await c.agent.analytics.run({ event: 'request' });
+  });
+
+  return c.json(result);
+});
+```
+
+## Next Steps
+
+- [HTTP Routes](/docs/v1/Build/Routes/http) - REST endpoints, parameters, validation
+- [Middleware](/docs/v1/Build/Routes/middleware) - Authentication, logging, CORS
+- [When to Use APIs](/docs/v1/Build/APIs/when-to-use) - Choosing between agents and lightweight routes

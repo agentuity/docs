@@ -5,6 +5,10 @@ description: Process incoming text messages with router.sms()
 
 Handle incoming SMS messages sent to a phone number. Phone numbers are configured in code and integrated with Twilio automatically when deployed.
 
+<Callout type="info" title="Works in agents and APIs">
+This routing method works in both agent directories (`src/agents/*/route.ts`) and API directories (`src/apis/*/route.ts`). Examples below show agent patterns, but the same code works in standalone API routes.
+</Callout>
+
 ## Basic Example
 
 ```typescript
@@ -18,7 +22,7 @@ router.sms({ number: '+1234567890' }, async (c) => {
   const from = formData['From'] as string;
   const body = formData['Body'] as string;
 
-  const reply = await c.agent.smsBot.run({
+  const reply = await c.agent.smsResponder.run({
     sender: from,
     message: body,
   });
@@ -60,7 +64,7 @@ router.sms({ number: '+1234567890' }, async (c) => {
 
 ## Full Example
 
-An SMS bot that handles commands and provides help:
+An SMS handler that processes commands:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
@@ -114,8 +118,30 @@ The text you return from the handler is automatically sent as an SMS reply to th
 return c.text('Thanks for your message!');
 ```
 
+## Standalone Usage
+
+SMS handlers work without agents. This example sends an auto-reply based on keywords:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.sms({ number: '+1234567890' }, async (c) => {
+  const formData = await c.req.parseBody();
+  const body = (formData['Body'] as string).toLowerCase();
+
+  if (body.includes('hours')) {
+    return c.text('We are open Mon-Fri 9am-5pm EST.');
+  }
+  return c.text('Thanks for your message! Reply HOURS for business hours.');
+});
+
+export default router;
+```
+
 ## Next Steps
 
-- [Email Handling](/Build/Routes-Triggers/email): Process incoming emails
-- [WebSockets](/Build/Routes-Triggers/websockets): Real-time bidirectional communication
-- [HTTP Routes](/Build/Routes-Triggers/http-routes): Standard API endpoints
+- [Email Handling](/docs/v1/Build/Routes/email): Process incoming emails
+- [WebSockets](/docs/v1/Build/Routes/websockets): Real-time bidirectional communication
+- [HTTP Routes](/docs/v1/Build/Routes/http): Standard API endpoints
