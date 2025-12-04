@@ -121,31 +121,44 @@ router.post('/webhook', async (c) => {
 
 ## Request Validation
 
-Use `zValidator` middleware for type-safe validation:
+Use `agent.validator()` for type-safe request validation with full TypeScript support:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
-import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
+import agent from './agent';
 
 const router = createRouter();
 
-const createUserSchema = z.object({
-  email: z.string().email(),
-  name: z.string().min(1),
+// Validates using agent's input schema
+router.post('/users', agent.validator(), async (c) => {
+  const data = c.req.valid('json'); // Fully typed from agent schema
+  const user = await c.agent.userCreator.run(data);
+  return c.json(user);
 });
-
-router.post('/users',
-  zValidator('json', createUserSchema),
-  async (c) => {
-    const data = c.req.valid('json'); // Typed as { email: string, name: string }
-    const user = await c.agent.userCreator.run(data);
-    return c.json(user);
-  }
-);
 
 export default router;
 ```
+
+For custom validation (different from the agent's schema), pass a schema override:
+
+```typescript
+import { z } from 'zod';
+
+router.post('/custom',
+  agent.validator({ input: z.object({ email: z.string().email() }) }),
+  async (c) => {
+    const data = c.req.valid('json'); // Typed as { email: string }
+    return c.json(data);
+  }
+);
+```
+
+<Callout type="info" title="Validator Overloads">
+`agent.validator()` supports three signatures:
+- `agent.validator()` — Uses agent's input/output schemas
+- `agent.validator({ output: schema })` — Output-only validation (GET-compatible)
+- `agent.validator({ input: schema, output?: schema })` — Custom schemas
+</Callout>
 
 ## Request Context
 
@@ -183,13 +196,10 @@ c.var.logger.info('message'); // Logging
 Always validate request bodies, especially for public endpoints:
 
 ```typescript
-router.post('/api',
-  zValidator('json', inputSchema),
-  async (c) => {
-    const data = c.req.valid('json');
-    // data is guaranteed valid
-  }
-);
+router.post('/api', agent.validator(), async (c) => {
+  const data = c.req.valid('json');
+  // data is guaranteed valid and fully typed
+});
 ```
 
 ### Use structured logging

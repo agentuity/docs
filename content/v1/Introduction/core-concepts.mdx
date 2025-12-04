@@ -40,20 +40,20 @@ The route file imports the agent and invokes it via `ctx.agent.agentName.run(inp
 
 For type safety, it's recommended to add a schema. This enables IDE autocomplete and automatic input validation.
 
-v1 supports any [StandardSchema](https://github.com/standard-schema/standard-schema)-compatible library, including Zod, Valibot, and ArkType. Here's an example with Zod:
+v1 supports any [StandardSchema](https://github.com/standard-schema/standard-schema)-compatible library, including Zod, Valibot, and ArkType. Here's an example using the built-in `@agentuity/schema`:
 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const agent = createAgent({
   schema: {
-    input: z.object({
-      name: z.string(),
-      age: z.number().optional()
+    input: s.object({
+      name: s.string(),
+      age: s.optional(s.number())
     }),
-    output: z.object({
-      greeting: z.string()
+    output: s.object({
+      greeting: s.string()
     })
   },
   handler: async (ctx, input) => {

@@ -13,7 +13,7 @@ Thread state stores conversation history automatically. Each browser session get
 import { createAgent, type AgentContext } from '@agentuity/runtime';
 import { streamText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -26,8 +26,8 @@ const agent = createAgent({
     description: 'Conversational agent with memory',
   },
   schema: {
-    input: z.object({
-      message: z.string(),
+    input: s.object({
+      message: s.string(),
     }),
     stream: true,
   },

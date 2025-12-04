@@ -11,12 +11,12 @@ Track individual agent execution with `started`, `completed`, and `errored` even
 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const agent = createAgent({
   schema: {
-    input: z.object({ task: z.string() }),
-    output: z.object({ result: z.string() }),
+    input: s.object({ task: s.string() }),
+    output: s.object({ result: s.string() }),
   },
   handler: async (ctx, input) => {
     ctx.logger.info('Processing task', { task: input.task });

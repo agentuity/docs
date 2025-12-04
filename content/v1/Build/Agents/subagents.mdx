@@ -58,7 +58,7 @@ Parent agents coordinate subagents and provide shared logic:
 ```typescript
 // team/agent.ts
 import { createAgent } from '@agentuity/runtime';
-import { z } from 'zod';
+import * as v from 'valibot';
 
 const agent = createAgent({
   metadata: {
@@ -66,13 +66,13 @@ const agent = createAgent({
     description: 'Coordinates team operations',
   },
   schema: {
-    input: z.object({
-      action: z.enum(['info', 'stats']),
+    input: v.object({
+      action: v.picklist(['info', 'stats']),
     }),
-    output: z.object({
-      message: z.string(),
-      memberCount: z.number().optional(),
-      taskCount: z.number().optional(),
+    output: v.object({
+      message: v.string(),
+      memberCount: v.optional(v.number()),
+      taskCount: v.optional(v.number()),
     }),
   },
   handler: async (ctx, input) => {
@@ -104,7 +104,7 @@ Subagents are regular agents in subdirectories:
 ```typescript
 // team/members/agent.ts
 import { createAgent } from '@agentuity/runtime';
-import { z } from 'zod';
+import * as v from 'valibot';
 
 const agent = createAgent({
   metadata: {
@@ -112,13 +112,13 @@ const agent = createAgent({
     description: 'Manages team members',
   },
   schema: {
-    input: z.object({
-      action: z.enum(['list', 'add', 'remove', 'count']),
-      name: z.string().optional(),
+    input: v.object({
+      action: v.picklist(['list', 'add', 'remove', 'count']),
+      name: v.optional(v.string()),
     }),
-    output: z.object({
-      members: z.array(z.string()),
-      count: z.number().optional(),
+    output: v.object({
+      members: v.array(v.string()),
+      count: v.optional(v.number()),
     }),
   },
   handler: async (ctx, input) => {
@@ -222,16 +222,18 @@ Use the parent for centralized validation:
 
 ```typescript
 // team/agent.ts - Parent validates permissions
+import * as v from 'valibot';
+
 const teamAgent = createAgent({
   schema: {
-    input: z.object({
-      userId: z.string(),
-      teamId: z.string(),
-      requiredRole: z.enum(['member', 'admin']).optional(),
+    input: v.object({
+      userId: v.string(),
+      teamId: v.string(),
+      requiredRole: v.optional(v.picklist(['member', 'admin'])),
     }),
-    output: z.object({
-      authorized: z.boolean(),
-      userRole: z.string(),
+    output: v.object({
+      authorized: v.boolean(),
+      userRole: v.string(),
     }),
   },
   handler: async (ctx, input) => {
@@ -294,8 +296,7 @@ Subagent routes:  /team/members, /team/members/add
 ```typescript
 // team/members/route.ts
 import { createRouter } from '@agentuity/runtime';
-import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
+import agent from './agent';
 
 const router = createRouter();
 
@@ -306,18 +307,14 @@ router.get('/', async (c) => {
 });
 
 // POST /team/members/add
-router.post(
-  '/add',
-  zValidator('json', z.object({ name: z.string() })),
-  async (c) => {
-    const data = c.req.valid('json');
-    const result = await c.agent.team.members.run({
-      action: 'add',
-      name: data.name,
-    });
-    return c.json(result);
-  }
-);
+router.post('/add', agent.validator(), async (c) => {
+  const data = c.req.valid('json');
+  const result = await c.agent.team.members.run({
+    action: 'add',
+    name: data.name,
+  });
+  return c.json(result);
+});
 
 export default router;
 ```

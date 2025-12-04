@@ -21,15 +21,15 @@ Agentuity provides three state scopes for managing data across requests:
 
 ```typescript
 import { createAgent, type AgentContext } from '@agentuity/runtime';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const agent = createAgent({
   schema: {
-    input: z.object({ message: z.string() }),
-    output: z.object({
-      response: z.string(),
-      requestTime: z.number(),
-      messageCount: z.number(),
+    input: s.object({ message: s.string() }),
+    output: s.object({
+      response: s.string(),
+      requestTime: s.number(),
+      messageCount: s.number(),
     }),
   },
   handler: async (ctx: AgentContext, input) => {
@@ -90,7 +90,7 @@ Thread state (`ctx.thread.state`) persists across multiple requests within a con
 import { createAgent, type AgentContext } from '@agentuity/runtime';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { z } from 'zod';
+import * as v from 'valibot';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -99,8 +99,8 @@ interface Message {
 
 const agent = createAgent({
   schema: {
-    input: z.object({ message: z.string() }),
-    output: z.string(),
+    input: v.object({ message: v.string() }),
+    output: v.string(),
   },
   handler: async (ctx: AgentContext, input) => {
     // Initialize on first request
@@ -199,13 +199,13 @@ In-memory state is lost on server restart. For durability, combine state managem
 import { createAgent, type AgentContext } from '@agentuity/runtime';
 import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { z } from 'zod';
+import * as v from 'valibot';
 
 type Message = { role: 'user' | 'assistant'; content: string };
 
 const agent = createAgent({
   schema: {
-    input: z.object({ message: z.string() }),
+    input: v.object({ message: v.string() }),
     stream: true,
   },
   handler: async (ctx: AgentContext, input) => {

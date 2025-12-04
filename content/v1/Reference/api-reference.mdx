@@ -150,11 +150,55 @@ Returns an `Agent` object with the following properties:
 - `createEval(config: EvalConfig): Eval`: Create quality evaluations for this agent
 - `addEventListener(eventName, callback)`: Attach lifecycle event listeners
 - `removeEventListener(eventName, callback)`: Remove event listeners
+- `validator(options?)`: Route validation middleware (see below)
 - `inputSchema` (conditional): Present if input schema is defined
 - `outputSchema` (conditional): Present if output schema is defined
 - `stream` (conditional): Present if streaming is enabled
 
 **Note**: To call agents from other agents, use the agent registry: `ctx.agent.agentName.run(input)` (see [Agent Communication](#agent-communication)).
+
+### agent.validator()
+
+Creates Hono middleware for type-safe request validation using the agent's schema.
+
+**Signatures**
+
+```typescript
+agent.validator(): MiddlewareHandler
+agent.validator(options: { output: Schema }): MiddlewareHandler
+agent.validator(options: { input: Schema; output?: Schema }): MiddlewareHandler
+```
+
+**Options**
+- No options: Uses agent's input/output schemas
+- `{ output: Schema }`: Output-only validation (useful for GET routes)
+- `{ input: Schema, output?: Schema }`: Custom schema override
+
+**Example**
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import agent from './agent';
+
+const router = createRouter();
+
+// Use agent's schema
+router.post('/', agent.validator(), async (c) => {
+  const data = c.req.valid('json'); // Fully typed
+  return c.json(data);
+});
+
+// Custom schema override
+router.post('/custom',
+  agent.validator({ input: z.object({ custom: z.string() }) }),
+  async (c) => {
+    const data = c.req.valid('json');
+    return c.json(data);
+  }
+);
+```
+
+Returns 400 Bad Request with validation error details if input validation fails.
 
 **Example**
 

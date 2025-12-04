@@ -30,12 +30,12 @@ The AI Gateway works automatically—whether you use the Vercel AI SDK, provider
 import { createAgent } from '@agentuity/runtime';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const agent = createAgent({
   schema: {
-    input: z.object({ prompt: z.string() }),
-    output: z.object({ response: z.string() }),
+    input: s.object({ prompt: s.string() }),
+    output: s.object({ response: s.string() }),
   },
   handler: async (ctx, input) => {
     // Requests route through AI Gateway automatically
@@ -94,14 +94,14 @@ You can also use provider SDKs directly. The AI Gateway routes these requests au
 ```typescript
 import { createAgent } from '@agentuity/runtime';
 import Anthropic from '@anthropic-ai/sdk';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const client = new Anthropic();
 
 const agent = createAgent({
   schema: {
-    input: z.object({ prompt: z.string() }),
-    output: z.object({ response: z.string() }),
+    input: s.object({ prompt: s.string() }),
+    output: s.object({ response: s.string() }),
   },
   handler: async (ctx, input) => {
     const result = await client.messages.create({

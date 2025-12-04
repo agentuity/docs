@@ -142,17 +142,17 @@ LLM-powered endpoints benefit from schemas and evals:
 import { createAgent } from '@agentuity/runtime';
 import { generateText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const agent = createAgent({
   schema: {
-    input: z.object({
-      message: z.string().min(1),
-      userId: z.string(),
+    input: s.object({
+      message: s.string().min(1),
+      userId: s.string(),
     }),
-    output: z.object({
-      response: z.string(),
-      tokensUsed: z.number(),
+    output: s.object({
+      response: s.string(),
+      tokensUsed: s.number(),
     }),
   },
   handler: async (ctx, input) => {

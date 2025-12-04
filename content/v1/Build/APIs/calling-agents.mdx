@@ -130,8 +130,10 @@ Combine authentication, validation, and multiple agent calls in a single API fil
 ```typescript
 import { createRouter } from '@agentuity/runtime';
 import { createMiddleware } from 'hono/factory';
-import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
+import chatAgent from '../agents/chat/agent';
+import summarizerAgent from '../agents/summarizer/agent';
+import sentimentAgent from '../agents/sentiment/agent';
 
 const router = createRouter();
 
@@ -154,60 +156,42 @@ const authMiddleware = createMiddleware(async (c, next) => {
 // Apply auth to all routes
 router.use('/*', authMiddleware);
 
-// Chat endpoint
-const chatSchema = z.object({
-  message: z.string().min(1),
-  conversationId: z.string().optional(),
-});
+// Chat endpoint - uses chatAgent's schema
+router.post('/chat', chatAgent.validator(), async (c) => {
+  const userId = c.var.userId;
+  const { message, conversationId } = c.req.valid('json');
 
-router.post('/chat',
-  zValidator('json', chatSchema),
-  async (c) => {
-    const userId = c.var.userId;
-    const { message, conversationId } = c.req.valid('json');
+  const result = await c.agent.chat.run({
+    message,
+    userId,
+    conversationId,
+  });
 
-    const result = await c.agent.chat.run({
-      message,
-      userId,
-      conversationId,
+  // Track usage in background
+  c.waitUntil(async () => {
+    await c.kv.set('usage', `${userId}:${Date.now()}`, {
+      endpoint: 'chat',
+      tokens: result.tokensUsed,
     });
+  });
 
-    // Track usage in background
-    c.waitUntil(async () => {
-      await c.kv.set('usage', `${userId}:${Date.now()}`, {
-        endpoint: 'chat',
-        tokens: result.tokensUsed,
-      });
-    });
-
-    return c.json(result);
-  }
-);
-
-// Summarization endpoint
-const summarizeSchema = z.object({
-  content: z.string().min(10),
-  maxLength: z.number().optional().default(200),
+  return c.json(result);
 });
 
-router.post('/summarize',
-  zValidator('json', summarizeSchema),
-  async (c) => {
-    const { content, maxLength } = c.req.valid('json');
+// Summarization endpoint - uses summarizerAgent's schema
+router.post('/summarize', summarizerAgent.validator(), async (c) => {
+  const { content, maxLength } = c.req.valid('json');
 
-    const result = await c.agent.summarizer.run({ content, maxLength });
+  const result = await c.agent.summarizer.run({ content, maxLength });
 
-    return c.json(result);
-  }
-);
-
-// Multi-agent analysis endpoint
-const analyzeSchema = z.object({
-  content: z.string().min(1),
+  return c.json(result);
 });
 
+// Multi-agent analysis - uses custom schema (different from any single agent)
 router.post('/analyze',
-  zValidator('json', analyzeSchema),
+  sentimentAgent.validator({
+    input: s.object({ content: s.string().min(1) }),
+  }),
   async (c) => {
     const { content } = c.req.valid('json');
 
@@ -229,6 +213,10 @@ router.post('/analyze',
 export default router;
 ```
 
+<Callout type="info" title="Validator Pattern">
+Import the agent you're calling and use `agent.validator()` for its schema, or pass a custom schema with `agent.validator({ input: customSchema })` when the API input differs from the agent's schema.
+</Callout>
+
 ## Type Safety
 
 If your agents have schemas, TypeScript provides full type checking:
@@ -237,8 +225,8 @@ If your agents have schemas, TypeScript provides full type checking:
 // Agent with schema (src/agents/chat/agent.ts)
 const chatAgent = createAgent({
   schema: {
-    input: z.object({ message: z.string() }),
-    output: z.object({ response: z.string(), tokensUsed: z.number() }),
+    input: s.object({ message: s.string() }),
+    output: s.object({ response: s.string(), tokensUsed: s.number() }),
   },
   handler: async (ctx, input) => { ... },
 });

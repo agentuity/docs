@@ -1,17 +1,80 @@
 ---
-title: Using Other Schema Libraries
-description: Using Valibot and ArkType as alternatives to Zod
+title: Schema Libraries
+description: Choose from built-in, Zod, Valibot, or ArkType for validation
 ---
 
-Agentuity uses the [StandardSchema](https://github.com/standard-schema/standard-schema) interface for validation, which means you can use any compatible library. While we recommend Zod for most projects, Valibot and ArkType are solid alternatives with different trade-offs.
+Agentuity uses the [StandardSchema](https://github.com/standard-schema/standard-schema) interface for validation, which means you can use any compatible library.
 
 ## Choosing a Library
 
-| Library | Bundle Size | Performance | Syntax | Best For |
-|---------|-------------|-------------|--------|----------|
-| [Zod](https://zod.dev) | ~13.5 kB | Baseline | Method chaining | Most projects (largest ecosystem) |
-| [Valibot](https://valibot.dev) | ~1-2 kB | ~2x faster | Modular pipes | Bundle-sensitive apps |
-| [ArkType](https://arktype.io) | Lightweight | ~20x faster | TypeScript-like | Performance-critical apps |
+| Library | Bundle Size | Syntax | Best For |
+|---------|-------------|--------|----------|
+| `@agentuity/schema` | ~2 kB | Simple builder | Quick prototyping, minimal deps |
+| [Zod](https://zod.dev) | ~13.5 kB | Method chaining | Most projects (largest ecosystem) |
+| [Valibot](https://valibot.dev) | ~1-2 kB | Modular pipes | Bundle-sensitive apps |
+| [ArkType](https://arktype.io) | ~5 kB | TypeScript-like | Performance-critical apps |
+
+## Using @agentuity/schema
+
+The built-in schema library provides simple validation with zero external dependencies.
+
+### Basic Schema
+
+```typescript
+import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { s } from '@agentuity/schema';
+
+const agent = createAgent({
+  schema: {
+    input: s.object({
+      email: s.string(),
+      age: s.number(),
+      role: s.string(),
+    }),
+    output: s.object({
+      success: s.boolean(),
+      userId: s.string(),
+    }),
+  },
+  handler: async (ctx: AgentContext, input) => {
+    ctx.logger.info('Processing user', { email: input.email });
+    return {
+      success: true,
+      userId: crypto.randomUUID(),
+    };
+  },
+});
+
+export default agent;
+```
+
+### Common Patterns
+
+```typescript
+import { s } from '@agentuity/schema';
+
+// Primitives
+s.string()                    // Any string
+s.number()                    // Any number
+s.boolean()                   // Boolean
+s.null()                      // Null value
+
+// Objects and arrays
+s.object({ name: s.string() })    // Object shape
+s.array(s.string())               // Array of strings
+
+// Optional and nullable
+s.optional(s.string())            // string | undefined
+s.nullable(s.string())            // string | null
+
+// Unions and literals
+s.union(s.string(), s.number())   // string | number
+s.literal('active')               // Exact value
+```
+
+<Callout type="info" title="When to Use">
+Use `@agentuity/schema` for simple validation needs. For advanced features like email validation, string length constraints, or complex transformations, consider Zod or Valibot.
+</Callout>
 
 ## Using Valibot
 
@@ -178,6 +241,10 @@ type({
 Schemas are interchangeable in `createAgent()`. The same agent structure works with any StandardSchema library:
 
 ```typescript
+// With @agentuity/schema (built-in)
+import { s } from '@agentuity/schema';
+const schema = { input: s.object({ name: s.string() }) };
+
 // With Zod
 import { z } from 'zod';
 const schema = { input: z.object({ name: z.string() }) };

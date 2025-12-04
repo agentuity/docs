@@ -46,12 +46,12 @@ This separation keeps concerns clear—agents focus on logic, routes handle HTTP
 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const agent = createAgent({
   schema: {
-    input: z.object({ message: z.string() }),
-    output: z.object({ response: z.string() }),
+    input: s.object({ message: s.string() }),
+    output: s.object({ response: s.string() }),
   },
   handler: async (ctx, input) => {
     return { response: `Echo: ${input.message}` };

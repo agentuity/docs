@@ -28,7 +28,38 @@ The handler receives two parameters:
 
 ## Adding Schema Validation
 
-Define input and output schemas for type safety and runtime validation using [Zod](https://zod.dev):
+Define input and output schemas for type safety and runtime validation. Agentuity includes a lightweight built-in schema library:
+
+```typescript
+import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { s } from '@agentuity/schema';
+
+const agent = createAgent({
+  schema: {
+    input: s.object({
+      email: s.string(),
+      message: s.string(),
+    }),
+    output: s.object({
+      success: s.boolean(),
+      id: s.string(),
+    }),
+  },
+  handler: async (ctx: AgentContext, input) => {
+    // input is typed as { email: string, message: string }
+    ctx.logger.info('Received message', { from: input.email });
+
+    return {
+      success: true,
+      id: crypto.randomUUID(),
+    };
+  },
+});
+
+export default agent;
+```
+
+You can also use [Zod](https://zod.dev) for more advanced validation:
 
 ```typescript
 import { createAgent, type AgentContext } from '@agentuity/runtime';
@@ -46,7 +77,6 @@ const agent = createAgent({
     }),
   },
   handler: async (ctx: AgentContext, input) => {
-    // input is typed as { email: string, message: string }
     ctx.logger.info('Received message', { from: input.email });
 
     return {
@@ -64,8 +94,13 @@ export default agent;
 - Output is validated before returning to the caller
 - Invalid data throws an error with details about what failed
 
-<Callout type="info" title="Other Validation Libraries">
-Agentuity supports any library implementing StandardSchema, including [Valibot](https://valibot.dev) and [ArkType](https://arktype.io). See [Schema Libraries](/Build/Agents/schema-libraries) for examples with alternative libraries.
+<Callout type="info" title="Schema Library Options">
+- **`@agentuity/schema`** — Lightweight, built-in, zero dependencies
+- **[Zod](https://zod.dev)** — Popular, feature-rich, great ecosystem
+- **[Valibot](https://valibot.dev)** — Tiny bundle size, tree-shakeable
+- **[ArkType](https://arktype.io)** — TypeScript-native syntax
+
+All implement [StandardSchema](https://github.com/standard-schema/standard-schema). See [Schema Libraries](/v1/Build/Agents/schema-libraries) for detailed examples.
 </Callout>
 
 ### Type Inference

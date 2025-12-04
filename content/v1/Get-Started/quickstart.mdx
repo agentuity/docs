@@ -13,12 +13,12 @@ Create `src/agents/chat/agent.ts`:
 import { createAgent, type AgentContext } from '@agentuity/runtime';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const agent = createAgent({
   schema: {
-    input: z.object({ message: z.string() }),
-    output: z.object({ response: z.string() }),
+    input: s.object({ message: s.string() }),
+    output: s.object({ response: s.string() }),
   },
   handler: async (ctx: AgentContext, input) => {
     ctx.logger.info('Received message', { message: input.message });
@@ -85,11 +85,11 @@ For real-time responses, return a stream instead:
 import { createAgent, type AgentContext } from '@agentuity/runtime';
 import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const agent = createAgent({
   schema: {
-    input: z.object({ message: z.string() }),
+    input: s.object({ message: s.string() }),
     stream: true,
   },
   handler: async (ctx: AgentContext, input) => {

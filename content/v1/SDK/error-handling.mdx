@@ -26,13 +26,13 @@ Throw errors directly in your handler when validation or business logic fails:
 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const agent = createAgent({
   schema: {
-    input: z.object({
-      operation: z.enum(['create', 'update', 'delete']),
-      data: z.any()
+    input: s.object({
+      operation: s.enum(['create', 'update', 'delete']),
+      data: s.any()
     })
   },
   handler: async (ctx, input) => {

@@ -47,11 +47,11 @@ Enable streaming by setting `stream: true` in your schema and returning a `textS
 import { createAgent } from '@agentuity/runtime';
 import { streamText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const agent = createAgent({
   schema: {
-    input: z.object({ message: z.string() }),
+    input: s.object({ message: s.string() }),
     stream: true,
   },
   handler: async (ctx, input) => {

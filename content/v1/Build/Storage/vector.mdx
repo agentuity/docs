@@ -190,14 +190,14 @@ Search for relevant context and generate an informed response:
 import { createAgent } from '@agentuity/runtime';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const ragAgent = createAgent({
   schema: {
-    input: z.object({ question: z.string() }),
-    output: z.object({
-      answer: z.string(),
-      sources: z.array(z.string()),
+    input: s.object({ question: s.string() }),
+    output: s.object({
+      answer: s.string(),
+      sources: s.array(s.string()),
     }),
   },
   handler: async (ctx, input) => {

@@ -132,21 +132,18 @@ export default agent;
 <Step>
 ## Create the Route
 
-The route exposes your agent over HTTP. We use `zValidator` to validate incoming requests before passing them to the agent.
+The route exposes your agent over HTTP. Use `agent.validator()` for type-safe validation using the agent's schema.
 
 Here's the code for `src/agents/knowledge/route.ts`:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
-import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
+import agent from './agent';
 
 const router = createRouter();
 
-// Query endpoint
-router.post('/', zValidator('json', z.object({
-  question: z.string().min(1),
-})), async (c) => {
+// Query endpoint - validates using agent's input schema
+router.post('/', agent.validator(), async (c) => {
   const { question } = c.req.valid('json');
   const result = await c.agent.knowledge.run({ question });
   return c.json(result);

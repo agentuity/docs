@@ -11,12 +11,12 @@ Call other agents using `ctx.agent` in your handler:
 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const coordinator = createAgent({
   schema: {
-    input: z.object({ text: z.string() }),
-    output: z.object({ result: z.string() }),
+    input: s.object({ text: s.string() }),
+    output: s.object({ result: s.string() }),
   },
   handler: async (ctx, input) => {
     // Call another agent by name
@@ -45,12 +45,12 @@ Process data through a series of agents where each step depends on the previous 
 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const pipeline = createAgent({
   schema: {
-    input: z.object({ rawData: z.string() }),
-    output: z.object({ processed: z.any() }),
+    input: s.object({ rawData: s.string() }),
+    output: s.object({ processed: s.any() }),
   },
   handler: async (ctx, input) => {
     // Each step depends on the previous result
@@ -81,12 +81,12 @@ Run multiple agents simultaneously when their operations are independent:
 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const searchAgent = createAgent({
   schema: {
-    input: z.object({ query: z.string() }),
-    output: z.object({ results: z.array(z.any()) }),
+    input: s.object({ query: s.string() }),
+    output: s.object({ results: s.array(s.any()) }),
   },
   handler: async (ctx, input) => {
     // Execute all searches in parallel
@@ -113,12 +113,12 @@ Use `ctx.waitUntil()` for fire-and-forget operations that continue after returni
 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const processor = createAgent({
   schema: {
-    input: z.object({ data: z.any() }),
-    output: z.object({ status: z.string(), id: z.string() }),
+    input: s.object({ data: s.any() }),
+    output: s.object({ status: s.string(), id: s.string() }),
   },
   handler: async (ctx, input) => {
     const id = crypto.randomUUID();
@@ -183,12 +183,12 @@ An orchestrator is a coordinator agent that delegates work to specialized agents
 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const orchestrator = createAgent({
   schema: {
-    input: z.object({ topic: z.string() }),
-    output: z.object({ content: z.string(), score: z.number() }),
+    input: s.object({ topic: s.string() }),
+    output: s.object({ content: s.string(), score: s.number() }),
   },
   handler: async (ctx, input) => {
     // Step 1: Generate content
@@ -221,12 +221,12 @@ Call public agents using standard HTTP:
 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const agent = createAgent({
   schema: {
-    input: z.object({ query: z.string() }),
-    output: z.object({ result: z.string() }),
+    input: s.object({ query: s.string() }),
+    output: s.object({ result: s.string() }),
   },
   handler: async (ctx, input) => {
     try {

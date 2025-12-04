@@ -150,59 +150,69 @@ For other auth providers, check if they have Hono middleware available, or use J
 
 ## Request Validation
 
-Use `zValidator` for type-safe request validation:
+Use `agent.validator()` for type-safe request validation:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
-import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
+import agent from './agent';
 
 const router = createRouter();
 
-const createItemSchema = z.object({
+// Validates using agent's input schema
+router.post('/items', agent.validator(), async (c) => {
+  const data = c.req.valid('json'); // Fully typed from schema
+  await c.kv.set('items', crypto.randomUUID(), data);
+  return c.json({ created: true, item: data });
+});
+
+export default router;
+```
+
+### Custom Schema Override
+
+Pass a schema to override the agent's default:
+
+```typescript
+import { z } from 'zod';
+
+const customSchema = z.object({
   name: z.string().min(1).max(100),
   price: z.number().positive(),
   category: z.enum(['electronics', 'clothing', 'food']),
 });
 
-router.post('/items',
-  zValidator('json', createItemSchema),
+router.post('/custom',
+  agent.validator({ input: customSchema }),
   async (c) => {
-    // data is typed as { name: string, price: number, category: string }
     const data = c.req.valid('json');
-
-    await c.kv.set('items', crypto.randomUUID(), data);
-
-    return c.json({ created: true, item: data });
+    return c.json(data);
   }
 );
-
-export default router;
 ```
 
-### Validating Multiple Sources
+### With Valibot
+
+The validator works with any [StandardSchema](https://github.com/standard-schema/standard-schema)-compatible library:
 
 ```typescript
-const querySchema = z.object({
-  page: z.coerce.number().default(1),
-  limit: z.coerce.number().default(10),
+import * as v from 'valibot';
+
+const itemSchema = v.object({
+  name: v.pipe(v.string(), v.minLength(1), v.maxLength(100)),
+  price: v.pipe(v.number(), v.minValue(0)),
+  category: v.picklist(['electronics', 'clothing', 'food']),
 });
 
-const headerSchema = z.object({
-  'x-api-version': z.string().optional(),
-});
-
-router.get('/items',
-  zValidator('query', querySchema),
-  zValidator('header', headerSchema),
+router.post('/items',
+  agent.validator({ input: itemSchema }),
   async (c) => {
-    const { page, limit } = c.req.valid('query');
-    const headers = c.req.valid('header');
-
-    return c.json({ page, limit, apiVersion: headers['x-api-version'] });
+    const data = c.req.valid('json');
+    return c.json(data);
   }
 );
 ```
+
+See [Schema Libraries](/v1/Build/Agents/schema-libraries) for more on Valibot and ArkType.
 
 ## Route-Level Middleware
 
@@ -236,8 +246,7 @@ Chain multiple middleware for complex requirements:
 ```typescript
 import { createRouter } from '@agentuity/runtime';
 import { createMiddleware } from 'hono/factory';
-import { zValidator } from '@hono/zod-validator';
-import { z } from 'zod';
+import agent from './agent';
 
 const router = createRouter();
 
@@ -265,15 +274,11 @@ const authMiddleware = createMiddleware(async (c, next) => {
   await next();
 });
 
-const inputSchema = z.object({
-  message: z.string().min(1),
-});
-
 // Chain: rate limit → auth → validation → handler
 router.post('/message',
   rateLimiter,
   authMiddleware,
-  zValidator('json', inputSchema),
+  agent.validator(),
   async (c) => {
     const userId = c.var.userId;
     const { message } = c.req.valid('json');

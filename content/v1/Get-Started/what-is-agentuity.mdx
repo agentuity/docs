@@ -11,12 +11,12 @@ Here's a basic example:
 import { createAgent } from '@agentuity/runtime';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const agent = createAgent({
   schema: {
-    input: z.object({ message: z.string() }),
-    output: z.object({ response: z.string() }),
+    input: s.object({ message: s.string() }),
+    output: s.object({ response: s.string() }),
   },
   handler: async (ctx, input) => {
     const { text } = await generateText({

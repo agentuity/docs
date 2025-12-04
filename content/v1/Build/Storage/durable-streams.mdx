@@ -199,7 +199,7 @@ Buffer and evaluate content in real-time using an LLM-as-a-judge pattern:
 import { generateObject, streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { groq } from '@ai-sdk/groq';
-import { z } from 'zod';
+import { s } from '@agentuity/schema';
 
 const agent = createAgent({
   handler: async (ctx, input) => {
@@ -249,9 +249,9 @@ const agent = createAgent({
 async function moderateContent(text: string): Promise<boolean> {
   const { object } = await generateObject({
     model: groq('openai/gpt-oss-20b'),
-    schema: z.object({
-      safe: z.boolean(),
-      reason: z.string().optional(),
+    schema: s.object({
+      safe: s.boolean(),
+      reason: s.optional(s.string()),
     }),
     prompt: `Is this content appropriate? Respond with safe=true if appropriate, safe=false if it contains harmful content.\n\nContent: "${text}"`,
   });
