@@ -226,7 +226,7 @@ router.use(authMiddleware);
 router.get('/protected', handler); // Both middlewares apply
 ```
 
-For authentication patterns, rate limiting, and more, see [Middleware](/docs/v1/Build/Routes/middleware).
+For authentication patterns, rate limiting, and more, see [Middleware](/v1/Build/Routes/middleware).
 
 ### Handle errors gracefully
 
@@ -290,12 +290,12 @@ router.stream('/protected', authMiddleware, async (c) => {
 | `router.sse()` | Server → Client | SSE events | Progress updates, notifications |
 | `router.websocket()` | Bidirectional | Messages | Chat, collaboration |
 
-Use `router.stream()` for raw streaming (like AI SDK `textStream`). Use `router.sse()` when you need named events or auto-reconnection. See [Streaming Responses](/docs/v1/Build/Agents/streaming-responses) for the full guide on streaming agents.
+Use `router.stream()` for raw streaming (like AI SDK `textStream`). Use `router.sse()` when you need named events or auto-reconnection. See [Streaming Responses](/v1/Build/Agents/streaming-responses) for the full guide on streaming agents.
 
 ## Next Steps
 
-- [Middleware](/docs/v1/Build/Routes/middleware): Authentication, rate limiting, logging
-- [Scheduled Jobs (Cron)](/docs/v1/Build/Routes/cron): Run tasks on a schedule
-- [Email Handling](/docs/v1/Build/Routes/email): Process incoming emails
-- [WebSockets](/docs/v1/Build/Routes/websockets): Real-time bidirectional communication
-- [Server-Sent Events](/docs/v1/Build/Routes/sse): Stream updates to clients
+- [Middleware](/v1/Build/Routes/middleware): Authentication, rate limiting, logging
+- [Scheduled Jobs (Cron)](/v1/Build/Routes/cron): Run tasks on a schedule
+- [Email Handling](/v1/Build/Routes/email): Process incoming emails
+- [WebSockets](/v1/Build/Routes/websockets): Real-time bidirectional communication
+- [Server-Sent Events](/v1/Build/Routes/sse): Stream updates to clients

@@ -37,19 +37,19 @@ Routes are automatically mounted based on their directory:
 - `src/agents/chat/route.ts` → `/agent/chat`
 - `src/apis/health/route.ts` → `/api/health`
 
-For the full project layout, see [Project Structure](/docs/v1/Get-Started/project-structure).
+For the full project layout, see [Project Structure](/v1/Get-Started/project-structure).
 
 ## Route Types
 
 | Type | Method | Use case |
 |------|--------|----------|
-| [HTTP](/docs/v1/Build/Routes/http) | `router.get()`, `router.post()`, `router.stream()` | REST APIs, webhooks, LLM streaming |
-| [Middleware](/docs/v1/Build/Routes/middleware) | Hono middleware | Auth, logging, validation |
-| [Cron](/docs/v1/Build/Routes/cron) | `router.cron()` | Scheduled tasks |
-| [Email](/docs/v1/Build/Routes/email) | `router.email()` | Process incoming emails |
-| [SMS](/docs/v1/Build/Routes/sms) | `router.sms()` | Process incoming SMS |
-| [WebSocket](/docs/v1/Build/Routes/websockets) | `router.websocket()` | Real-time bidirectional |
-| [SSE](/docs/v1/Build/Routes/sse) | `router.sse()` | Server-sent events |
+| [HTTP](/v1/Build/Routes/http) | `router.get()`, `router.post()`, `router.stream()` | REST APIs, webhooks, LLM streaming |
+| [Middleware](/v1/Build/Routes/middleware) | Hono middleware | Auth, logging, validation |
+| [Cron](/v1/Build/Routes/cron) | `router.cron()` | Scheduled tasks |
+| [Email](/v1/Build/Routes/email) | `router.email()` | Process incoming emails |
+| [SMS](/v1/Build/Routes/sms) | `router.sms()` | Process incoming SMS |
+| [WebSocket](/v1/Build/Routes/websockets) | `router.websocket()` | Real-time bidirectional |
+| [SSE](/v1/Build/Routes/sse) | `router.sse()` | Server-sent events |
 
 ## Quick Examples
 
@@ -172,6 +172,6 @@ router.post('/', async (c) => {
 
 ## Next Steps
 
-- [HTTP Routes](/docs/v1/Build/Routes/http) - REST endpoints, parameters, validation
-- [Middleware](/docs/v1/Build/Routes/middleware) - Authentication, logging, CORS
-- [When to Use APIs](/docs/v1/Build/APIs/when-to-use) - Choosing between agents and lightweight routes
+- [HTTP Routes](/v1/Build/Routes/http) - REST endpoints, parameters, validation
+- [Middleware](/v1/Build/Routes/middleware) - Authentication, logging, CORS
+- [When to Use APIs](/v1/Build/APIs/when-to-use) - Choosing between agents and lightweight routes
