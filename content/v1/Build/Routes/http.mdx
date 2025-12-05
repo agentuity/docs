@@ -142,10 +142,10 @@ export default router;
 For custom validation (different from the agent's schema), pass a schema override:
 
 ```typescript
-import { z } from 'zod';
+import { type } from 'arktype';
 
 router.post('/custom',
-  agent.validator({ input: z.object({ email: z.string().email() }) }),
+  agent.validator({ input: type({ email: 'string.email' }) }),
   async (c) => {
     const data = c.req.valid('json'); // Typed as { email: string }
     return c.json(data);

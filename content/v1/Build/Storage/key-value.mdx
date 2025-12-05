@@ -80,11 +80,15 @@ const agent = createAgent({
 Use generics for type-safe data access:
 
 ```typescript
-interface UserPreferences {
-  theme: 'light' | 'dark';
-  language: string;
-  notifications: boolean;
-}
+import { type } from 'arktype';
+
+const UserPreferences = type({
+  theme: "'light' | 'dark'",
+  language: 'string',
+  notifications: 'boolean',
+});
+
+type UserPreferences = typeof UserPreferences.infer;
 
 const agent = createAgent({
   handler: async (ctx, input) => {
