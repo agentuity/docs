@@ -12,7 +12,8 @@ Durable streams provide streaming storage for large data exports, audit logs, an
 | **Durable Streams** | Large exports, audit logs, streaming data, batch processing |
 | [Key-Value](/Build/Storage/key-value) | Fast lookups, caching, configuration |
 | [Vector](/Build/Storage/vector) | Semantic search, embeddings, RAG |
-| [Object](/Build/Storage/object) | Files, images, documents, media |
+| [Object (S3)](/Build/Storage/object) | Files, images, documents, media |
+| [Database](/Build/Storage/database) | Structured data, complex queries, transactions |
 
 **Use streams when you need to:**
 - Export large datasets incrementally
@@ -279,6 +280,6 @@ async function moderateContent(text: string): Promise<boolean> {
 
 - [Key-Value Storage](/Build/Storage/key-value): Fast caching and configuration
 - [Vector Storage](/Build/Storage/vector): Semantic search and embeddings
-- [Object Storage](/Build/Storage/object): File and media storage
-- [Custom Storage](/Build/Storage/custom): Bring your own storage implementations
+- [Object Storage (S3)](/Build/Storage/object): File and media storage
+- [Database](/Build/Storage/database): Relational data with queries and transactions
 - [Streaming Responses](/Build/Agents/streaming-responses): HTTP streaming patterns

@@ -4,8 +4,9 @@
     "getting-started",
     "development",
     "deployment",
+    "storage",
+    "configuration",
     "debugging",
-    "data-management",
     "ai-commands"
   ]
 }

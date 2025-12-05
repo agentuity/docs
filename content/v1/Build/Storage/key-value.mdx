@@ -11,7 +11,8 @@ Key-value ("KV") storage provides fast data access for agents. Use it for cachin
 |--------------|----------|
 | **Key-Value** | Fast lookups, caching, configuration, rate limits |
 | [Vector](/Build/Storage/vector) | Semantic search, embeddings, RAG |
-| [Object](/Build/Storage/object) | Files, images, documents, media |
+| [Object (S3)](/Build/Storage/object) | Files, images, documents, media |
+| [Database](/Build/Storage/database) | Structured data, complex queries, transactions |
 | [Durable Streams](/Build/Storage/durable-streams) | Large exports, audit logs, real-time data |
 
 <Callout type="info" title="KV vs Built-in State">
@@ -206,7 +207,7 @@ export default router;
 ## Next Steps
 
 - [Vector Storage](/Build/Storage/vector): Semantic search and embeddings
-- [Object Storage](/Build/Storage/object): File and media storage
+- [Object Storage (S3)](/Build/Storage/object): File and media storage
+- [Database](/Build/Storage/database): Relational data with queries and transactions
 - [Durable Streams](/Build/Storage/durable-streams): Large data exports
-- [Custom Storage](/Build/Storage/custom): Bring your own storage implementations
 - [State Management](/Build/Agents/state-management): Built-in request/thread/session state

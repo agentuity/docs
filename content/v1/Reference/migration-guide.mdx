@@ -28,6 +28,8 @@ v1 introduces several major improvements:
 - **Session & Thread Management**: Better conversational state handling
 - **Subagents**: Organize complex agents with parent-child relationships
 - **React Package**: Build UIs for your agents with `@agentuity/react`
+- **Database Support**: SQL queries via Bun's native `sql` tagged template literals
+- **Native S3 Storage**: Fast file storage via Bun's native S3 APIs (replaces `ctx.objectstore`)
 
 <Callout type="info">
 **Workbench:** v0's "DevMode" is being rebranded to "Workbench", to better support agent development both locally and in production. The v0 `welcome()` function pattern for suggested prompts has been removed as part of this redesign.
@@ -438,6 +440,89 @@ if (result.exists) {
 
 await ctx.kv.delete('cache', 'key');
 ```
+
+#### Object Storage → Bun S3
+
+Object storage has been replaced with Bun's native S3 APIs for better performance and simpler code:
+
+**v0/Early v1:**
+```typescript
+// Store file
+await context.objectstore.put('uploads', 'hello.txt', data, {
+  contentType: 'text/plain',
+});
+
+// Get file
+const result = await context.objectstore.get('uploads', 'hello.txt');
+if (result.exists) {
+  const text = new TextDecoder().decode(result.data);
+}
+
+// Create public URL
+const url = await context.objectstore.createPublicURL('uploads', 'file.pdf', {
+  expiresDuration: 3600000,
+});
+
+// Delete file
+await context.objectstore.delete('uploads', 'hello.txt');
+```
+
+**v1 (Bun S3):**
+```typescript
+import { s3 } from "bun";
+
+// Store file
+const file = s3.file("uploads/hello.txt");
+await file.write("Hello, World!", { type: "text/plain" });
+
+// Get file
+if (await file.exists()) {
+  const text = await file.text();
+}
+
+// Presign URL (synchronous, no network request)
+const url = s3.presign("uploads/file.pdf", {
+  expiresIn: 3600, // seconds, not milliseconds
+});
+
+// Delete file
+await file.delete();
+```
+
+**Key Changes:**
+1. Import `s3` from `"bun"` instead of using `ctx.objectstore`
+2. Use `s3.file(path)` to create a lazy file reference
+3. `presign()` takes seconds, not milliseconds, and is synchronous
+4. File operations are methods on the file object: `file.write()`, `file.text()`, `file.delete()`
+5. Credentials are auto-injected via environment variables
+
+<Callout type="info" title="Credential Auto-Injection">
+Agentuity automatically injects S3 credentials (`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_ENDPOINT`) during development and deployment.
+</Callout>
+
+#### Database Support (NEW in v1)
+
+v1 adds SQL database support via Bun's native SQL APIs:
+
+```typescript
+import { sql } from "bun";
+
+// Query with automatic parameter escaping (prevents SQL injection)
+const users = await sql`SELECT * FROM users WHERE active = ${true}`;
+
+// Insert data
+await sql`INSERT INTO users (name, email) VALUES (${"Alice"}, ${"alice@example.com"})`;
+
+// Transactions
+await sql.begin(async (tx) => {
+  await tx`UPDATE accounts SET balance = balance - ${amount} WHERE id = ${fromId}`;
+  await tx`UPDATE accounts SET balance = balance + ${amount} WHERE id = ${toId}`;
+});
+```
+
+<Callout type="info" title="Credential Auto-Injection">
+Agentuity automatically injects `DATABASE_URL` during development and deployment.
+</Callout>
 
 ---
 

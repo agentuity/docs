@@ -11,7 +11,8 @@ Vector storage enables semantic search, allowing agents to find information by *
 |--------------|----------|
 | **Vector** | Semantic search, embeddings, RAG, recommendations |
 | [Key-Value](/Build/Storage/key-value) | Fast lookups, caching, configuration |
-| [Object](/Build/Storage/object) | Files, images, documents, media |
+| [Object (S3)](/Build/Storage/object) | Files, images, documents, media |
+| [Database](/Build/Storage/database) | Structured data, complex queries, transactions |
 | [Durable Streams](/Build/Storage/durable-streams) | Large exports, audit logs |
 
 ## Upserting Documents
@@ -250,7 +251,7 @@ const ragAgent = createAgent({
 ## Next Steps
 
 - [Key-Value Storage](/Build/Storage/key-value): Fast caching and configuration
-- [Object Storage](/Build/Storage/object): File and media storage
+- [Object Storage (S3)](/Build/Storage/object): File and media storage
+- [Database](/Build/Storage/database): Relational data with queries and transactions
 - [Durable Streams](/Build/Storage/durable-streams): Streaming large data exports
-- [Custom Storage](/Build/Storage/custom): Bring your own storage implementations
 - [Evaluations](/Build/Agents/evaluations): Quality checks for RAG systems

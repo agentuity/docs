@@ -1,189 +1,392 @@
 ---
-title: Object Storage
-description: Durable file storage for documents, images, and binary content
+title: Object Storage (S3)
+description: Durable file storage using Bun's native S3 APIs
 ---
 
-Object storage provides durable file storage for agents. Use it for documents, images, media, and any binary content that needs to persist.
+Object storage provides durable file storage for documents, images, media, and binary content. Agentuity uses Bun's native S3 APIs for fast, efficient file operations.
 
 ## When to Use Object Storage
 
 | Storage Type | Best For |
 |--------------|----------|
-| **Object** | Files, images, documents, media, backups |
+| **Object (S3)** | Files, images, documents, media, backups |
 | [Key-Value](/Build/Storage/key-value) | Fast lookups, caching, configuration |
 | [Vector](/Build/Storage/vector) | Semantic search, embeddings, RAG |
 | [Durable Streams](/Build/Storage/durable-streams) | Large exports, audit logs |
 
-## Storing Objects
+<Callout type="info" title="Credentials Auto-Injected">
+Agentuity automatically injects S3 credentials (`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_ENDPOINT`) during development and deployment. No manual configuration required.
+</Callout>
 
-Access object storage through `ctx.objectstore` in agents or `c.objectstore` in routes. Buckets are auto-created on first use.
+## Basic Operations
+
+Use `Bun.s3` or import `s3` from `"bun"` to interact with S3 storage:
+
+```typescript
+import { s3 } from "bun";
+
+// Create a lazy reference to a file
+const file = s3.file("documents/report.pdf");
+
+// Write content
+await file.write("Hello, World!");
+
+// Read content
+const text = await file.text();
+const json = await file.json();
+const bytes = await file.bytes();
+
+// Check if file exists
+const exists = await file.exists();
+
+// Delete file
+await file.delete();
+```
+
+## Writing Files
 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
+import { s3 } from "bun";
 
 const agent = createAgent({
   handler: async (ctx, input) => {
-    // Store text file
-    const textData = new TextEncoder().encode('Hello, World!');
-    await ctx.objectstore.put('uploads', 'hello.txt', textData, {
-      contentType: 'text/plain',
+    // Write a string
+    const textFile = s3.file("notes/readme.txt");
+    await textFile.write("Hello, World!");
+
+    // Write JSON with content type
+    const jsonFile = s3.file("data/config.json");
+    await jsonFile.write(JSON.stringify({ theme: "dark", lang: "en" }), {
+      type: "application/json",
     });
 
-    // Store with full options
-    await ctx.objectstore.put('documents', 'report.pdf', pdfData, {
-      contentType: 'application/pdf',
-      contentDisposition: 'attachment; filename="report.pdf"',
-      cacheControl: 'max-age=3600',
-      metadata: {
-        'uploaded-by': input.userId,
-        'processed': 'false',
-      },
-    });
+    // Write binary data
+    const imageFile = s3.file(`uploads/${input.userId}/avatar.png`);
+    await imageFile.write(input.imageBuffer);
 
+    // Write from a Response or fetch result
+    const response = await fetch("https://example.com/data.json");
+    const fetchedFile = s3.file("external/data.json");
+    await fetchedFile.write(response);
+
+    ctx.logger.info("Files uploaded successfully");
     return { success: true };
   },
 });
 ```
 
-**Supported data types**: `Uint8Array`, `ArrayBuffer`, `ReadableStream`
-
-## Retrieving Objects
+## Reading Files
 
 ```typescript
+import { createAgent } from '@agentuity/runtime';
+import { s3 } from "bun";
+
 const agent = createAgent({
   handler: async (ctx, input) => {
-    const result = await ctx.objectstore.get('uploads', 'hello.txt');
+    const file = s3.file("documents/report.json");
 
-    if (result.exists) {
-      // Data is Uint8Array, convert to text if needed
-      const text = new TextDecoder().decode(result.data);
-      ctx.logger.info('File content', {
-        size: result.data.byteLength,
-        contentType: result.contentType,
-      });
-      return { content: text };
+    // Check existence before reading
+    if (!(await file.exists())) {
+      return { error: "File not found" };
     }
 
-    return { error: 'File not found' };
+    // Read as text
+    const text = await file.text();
+
+    // Read as JSON (parsed automatically)
+    const data = await file.json();
+
+    // Read as binary
+    const bytes = await file.bytes();
+    const buffer = await file.arrayBuffer();
+
+    // Stream large files
+    const stream = file.stream();
+    for await (const chunk of stream) {
+      ctx.logger.debug("Received chunk", { size: chunk.length });
+    }
+
+    return { data };
   },
 });
 ```
 
-## Public URLs
+### Partial Reads
 
-Generate time-limited signed URLs for sharing files:
+Read specific byte ranges for large files:
 
 ```typescript
+import { s3 } from "bun";
+
+const file = s3.file("large-file.bin");
+
+// Read only the first 1KB
+const partial = file.slice(0, 1024);
+const header = await partial.bytes();
+
+// Read a middle section
+const section = file.slice(1024, 2048);
+const sectionText = await section.text();
+```
+
+## Presigning URLs
+
+Generate time-limited signed URLs for direct client uploads or downloads:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { s3 } from "bun";
+
 const agent = createAgent({
   handler: async (ctx, input) => {
-    // Create URL valid for 1 hour
-    const url = await ctx.objectstore.createPublicURL('documents', 'report.pdf', {
-      expiresDuration: 3600000,  // milliseconds
+    // Generate download URL (GET, default)
+    const downloadUrl = s3.presign(`uploads/${input.fileId}`, {
+      expiresIn: 3600, // 1 hour in seconds
     });
 
-    return { downloadUrl: url };
+    // Generate upload URL (PUT)
+    const uploadUrl = s3.presign(`uploads/${input.userId}/new-file.pdf`, {
+      method: "PUT",
+      expiresIn: 900, // 15 minutes
+      type: "application/pdf",
+    });
+
+    // Public-read URL with ACL
+    const publicUrl = s3.presign(`public/${input.fileId}`, {
+      acl: "public-read",
+      expiresIn: 86400, // 24 hours
+    });
+
+    return { downloadUrl, uploadUrl, publicUrl };
   },
 });
 ```
 
 <Callout type="warn" title="URL Expiration">
-Always use time-limited URLs for sensitive data. The minimum expiration is 1 minute (60000ms), and the default is 1 hour.
+Always use time-limited URLs for sensitive data. Presigned URLs are generated synchronously with no network request required.
 </Callout>
 
-## Deleting Objects
+### Presign Options
+
+| Option | Description |
+|--------|-------------|
+| `expiresIn` | Seconds until URL expires (default: 86400 / 24 hours) |
+| `method` | HTTP method: `GET`, `PUT`, `DELETE`, `HEAD`, `POST` |
+| `type` | Content-Type header for uploads |
+| `acl` | Access control: `public-read`, `private`, `authenticated-read`, etc. |
+
+## File Metadata
+
+Get file metadata without downloading the content:
 
 ```typescript
-const agent = createAgent({
-  handler: async (ctx, input) => {
-    // Returns true if deleted, false if not found
-    const deleted = await ctx.objectstore.delete('uploads', 'temp-file.txt');
+import { s3, S3Client } from "bun";
 
-    if (deleted) {
-      ctx.logger.info('File deleted');
-    }
+const file = s3.file("documents/report.pdf");
 
-    return { deleted };
-  },
-});
+// Get metadata
+const stat = await file.stat();
+console.log(stat);
+// {
+//   etag: "\"7a30b741503c0b461cc14157e2df4ad8\"",
+//   lastModified: 2025-01-07T00:19:10.000Z,
+//   size: 1024,
+//   type: "application/pdf",
+// }
+
+// Check size directly
+const size = await S3Client.size("documents/report.pdf");
 ```
 
-## Listing and Metadata
+## Listing Files
+
+List objects in a bucket with optional filtering:
 
 ```typescript
+import { S3Client } from "bun";
+
+// List up to 1000 objects
+const allObjects = await S3Client.list(null);
+
+// List with prefix filter
+const uploads = await S3Client.list({
+  prefix: "uploads/",
+  maxKeys: 100,
+});
+
+// Paginate through results
+if (uploads.isTruncated) {
+  const nextPage = await S3Client.list({
+    prefix: "uploads/",
+    startAfter: uploads.contents?.at(-1)?.key,
+  });
+}
+```
+
+## Streaming Large Files
+
+Handle large files efficiently with streaming:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { s3 } from "bun";
+
 const agent = createAgent({
   handler: async (ctx, input) => {
-    // List all buckets
-    const buckets = await ctx.objectstore.listBuckets();
+    const file = s3.file("exports/large-data.csv");
 
-    // List objects in a bucket with optional filtering
-    const objects = await ctx.objectstore.listObjects('uploads', {
-      prefix: 'users/',  // filter by prefix
-      limit: 100,        // max results
+    // Stream write with automatic multipart handling
+    const writer = file.writer({
+      retry: 3,           // Retry on network errors
+      queueSize: 10,      // Parallel upload parts
+      partSize: 5 * 1024 * 1024, // 5MB chunks
     });
 
-    // Get object metadata without downloading content
-    const metadata = await ctx.objectstore.headObject('uploads', 'large-file.zip');
+    for (const chunk of generateDataChunks()) {
+      writer.write(chunk);
+      await writer.flush();
+    }
+    await writer.end();
 
-    return { buckets, objects, metadata };
+    ctx.logger.info("Large file uploaded", {
+      bytes: writer.bytesWritten,
+    });
+
+    return { success: true };
   },
 });
+
+function* generateDataChunks() {
+  // Generate CSV data in chunks
+  yield "id,name,email\n";
+  for (let i = 0; i < 100000; i++) {
+    yield `${i},User ${i},user${i}@example.com\n`;
+  }
+}
 ```
 
 ## Using in Routes
 
-Routes have the same access via `c.objectstore`:
+Routes can use S3 for file uploads and downloads:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import { s3 } from "bun";
 
 const router = createRouter();
 
 // File upload endpoint
 router.post('/upload/:filename', async (c) => {
   const filename = c.req.param('filename');
-  const contentType = c.req.header('content-type') || 'application/octet-stream';
+  const file = s3.file(`uploads/${filename}`);
 
   const arrayBuffer = await c.req.arrayBuffer();
-  const data = new Uint8Array(arrayBuffer);
-
-  await c.objectstore.put('uploads', filename, data, { contentType });
+  await file.write(new Uint8Array(arrayBuffer), {
+    type: c.req.header('content-type') || 'application/octet-stream',
+  });
 
   return c.json({
     success: true,
-    size: data.byteLength,
+    url: file.presign({ expiresIn: 3600 }),
   });
 });
 
-// File download endpoint
+// File download with redirect to presigned URL
 router.get('/download/:filename', async (c) => {
   const filename = c.req.param('filename');
-  const result = await c.objectstore.get('uploads', filename);
+  const file = s3.file(`uploads/${filename}`);
 
-  if (!result.exists) {
+  if (!(await file.exists())) {
     return c.json({ error: 'File not found' }, 404);
   }
 
-  return c.body(result.data, {
-    headers: {
-      'content-type': result.contentType,
-      'content-disposition': `attachment; filename="${filename}"`,
-    },
-  });
+  // Redirect to presigned URL
+  return new Response(file);
 });
 
 export default router;
 ```
 
+<Callout type="tip" title="Efficient Downloads">
+When you pass an `S3File` to `new Response()`, Bun automatically returns a 302 redirect to a presigned URL. This saves bandwidth by having clients download directly from S3.
+</Callout>
+
+## Custom S3 Clients
+
+For multiple buckets or non-Agentuity S3 services:
+
+```typescript
+import { S3Client } from "bun";
+
+// Cloudflare R2
+const r2 = new S3Client({
+  accessKeyId: process.env.R2_ACCESS_KEY,
+  secretAccessKey: process.env.R2_SECRET_KEY,
+  bucket: "my-bucket",
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+});
+
+const file = r2.file("data.json");
+await file.write(JSON.stringify({ key: "value" }));
+
+// AWS S3
+const aws = new S3Client({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  bucket: "my-bucket",
+  region: "us-east-1",
+});
+
+// DigitalOcean Spaces
+const spaces = new S3Client({
+  accessKeyId: process.env.DO_ACCESS_KEY,
+  secretAccessKey: process.env.DO_SECRET_KEY,
+  bucket: "my-bucket",
+  endpoint: "https://nyc3.digitaloceanspaces.com",
+});
+```
+
+## Error Handling
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { s3 } from "bun";
+
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    const file = s3.file(`uploads/${input.fileId}`);
+
+    try {
+      const data = await file.json();
+      return { data };
+    } catch (error) {
+      if (error.name === "S3Error") {
+        ctx.logger.error("S3 operation failed", { error: error.message });
+        return { error: "Storage error" };
+      }
+      throw error;
+    }
+  },
+});
+```
+
+Common error codes:
+- `ERR_S3_MISSING_CREDENTIALS` - Missing access keys
+- `ERR_S3_INVALID_PATH` - Invalid file path
+- `ERR_S3_INVALID_ENDPOINT` - Invalid S3 endpoint URL
+
 ## Best Practices
 
 - **Organize with paths**: Use hierarchical keys like `users/{userId}/avatar.jpg`
-- **Set content types**: Specify MIME types like `image/jpeg`, `application/pdf`, `text/plain` for proper browser handling. If omitted, defaults to `application/octet-stream`
-- **Use short-lived URLs**: For sensitive data, use minimal expiration times
-- **Store metadata**: Use the metadata option to track upload info, processing status, etc.
+- **Set content types**: Specify MIME types for proper browser handling
+- **Use presigned URLs**: Avoid proxying large files through your agents
+- **Stream large files**: Use `file.writer()` and `file.stream()` for files over 5MB
+- **Check existence**: Always verify files exist before reading to handle missing files gracefully
 
 ## Next Steps
 
 - [Key-Value Storage](/Build/Storage/key-value): Fast caching and configuration
+- [Database](/Build/Storage/database): Relational data with Bun's SQL support
 - [Vector Storage](/Build/Storage/vector): Semantic search and embeddings
 - [Durable Streams](/Build/Storage/durable-streams): Streaming large data exports
-- [Custom Storage](/Build/Storage/custom): Bring your own storage implementations

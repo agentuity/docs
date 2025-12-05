@@ -1,0 +1,404 @@
+---
+title: Database
+description: Relational database storage using Bun's native SQL APIs
+---
+
+Database storage provides relational database capabilities using Bun's native SQL APIs. Use it for structured data that benefits from queries, joins, and transactions.
+
+## When to Use Database Storage
+
+| Storage Type | Best For |
+|--------------|----------|
+| **Database** | Structured data, complex queries, transactions, relational data |
+| [Key-Value](/Build/Storage/key-value) | Fast lookups, caching, configuration |
+| [Vector](/Build/Storage/vector) | Semantic search, embeddings, RAG |
+| [Object (S3)](/Build/Storage/object) | Files, images, documents, media |
+| [Durable Streams](/Build/Storage/durable-streams) | Large exports, audit logs |
+
+<Callout type="info" title="Credentials Auto-Injected">
+Agentuity automatically injects database credentials (`DATABASE_URL`) during development and deployment. No manual configuration required.
+</Callout>
+
+## Basic Operations
+
+Use the `sql` tagged template literal from Bun for type-safe, injection-proof queries:
+
+```typescript
+import { sql } from "bun";
+
+// Query with automatic parameter escaping
+const users = await sql`SELECT * FROM users WHERE active = ${true}`;
+
+// Insert data
+await sql`INSERT INTO users (name, email) VALUES (${"Alice"}, ${"alice@example.com"})`;
+
+// Update data
+await sql`UPDATE users SET active = ${false} WHERE id = ${userId}`;
+
+// Delete data
+await sql`DELETE FROM users WHERE id = ${userId}`;
+```
+
+<Callout type="warn" title="SQL Injection Prevention">
+Always use template literal parameters (`${value}`) for dynamic values. Never concatenate strings into queries.
+</Callout>
+
+## Querying Data
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { sql } from "bun";
+
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    // Basic query
+    const users = await sql`SELECT * FROM users LIMIT 10`;
+
+    // Query with parameters
+    const user = await sql`
+      SELECT * FROM users
+      WHERE id = ${input.userId}
+    `;
+
+    // Query with multiple conditions
+    const filtered = await sql`
+      SELECT * FROM users
+      WHERE active = ${true}
+      AND created_at > ${input.since}
+      ORDER BY created_at DESC
+    `;
+
+    ctx.logger.info("Query results", { count: users.length });
+    return { users, user: user[0], filtered };
+  },
+});
+```
+
+### Dynamic Queries
+
+Build conditional queries safely:
+
+```typescript
+import { sql } from "bun";
+
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    const { minAge, maxAge, active } = input;
+
+    // Dynamic WHERE conditions
+    const users = await sql`
+      SELECT * FROM users
+      WHERE 1=1
+      ${minAge ? sql`AND age >= ${minAge}` : sql``}
+      ${maxAge ? sql`AND age <= ${maxAge}` : sql``}
+      ${active !== undefined ? sql`AND active = ${active}` : sql``}
+    `;
+
+    return { users };
+  },
+});
+```
+
+## Inserting Data
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { sql } from "bun";
+
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    // Single insert
+    const result = await sql`
+      INSERT INTO users (name, email, created_at)
+      VALUES (${input.name}, ${input.email}, ${new Date()})
+      RETURNING id
+    `;
+    const newUserId = result[0].id;
+
+    // Bulk insert with array
+    const newUsers = [
+      { name: "Alice", email: "alice@example.com" },
+      { name: "Bob", email: "bob@example.com" },
+    ];
+    await sql`INSERT INTO users ${sql(newUsers)}`;
+
+    ctx.logger.info("Users created", { userId: newUserId });
+    return { userId: newUserId };
+  },
+});
+```
+
+## Transactions
+
+Use transactions for operations that must succeed or fail together:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { sql } from "bun";
+
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    const { fromAccount, toAccount, amount } = input;
+
+    try {
+      // Begin transaction
+      const result = await sql.begin(async (tx) => {
+        // Debit from source account
+        await tx`
+          UPDATE accounts
+          SET balance = balance - ${amount}
+          WHERE id = ${fromAccount}
+        `;
+
+        // Credit to destination account
+        await tx`
+          UPDATE accounts
+          SET balance = balance + ${amount}
+          WHERE id = ${toAccount}
+        `;
+
+        // Record the transfer
+        await tx`
+          INSERT INTO transfers (from_account, to_account, amount, created_at)
+          VALUES (${fromAccount}, ${toAccount}, ${amount}, ${new Date()})
+          RETURNING id
+        `;
+
+        return { success: true };
+      });
+
+      ctx.logger.info("Transfer completed", { fromAccount, toAccount, amount });
+      return result;
+    } catch (error) {
+      // Transaction automatically rolled back on error
+      ctx.logger.error("Transfer failed", { error: error.message });
+      return { error: "Transfer failed" };
+    }
+  },
+});
+```
+
+### Savepoints
+
+Use savepoints for partial rollbacks within a transaction:
+
+```typescript
+import { sql } from "bun";
+
+await sql.begin(async (tx) => {
+  await tx`INSERT INTO orders (customer_id) VALUES (${customerId})`;
+
+  // Create savepoint
+  await tx.savepoint(async (sp) => {
+    await sp`INSERT INTO order_items (order_id, product_id) VALUES (${orderId}, ${productId})`;
+
+    // If this fails, only this savepoint rolls back
+    if (outOfStock) {
+      throw new Error("Product out of stock");
+    }
+  });
+
+  // Order still exists even if savepoint rolled back
+  await tx`UPDATE orders SET status = ${"pending"} WHERE id = ${orderId}`;
+});
+```
+
+## Working with Arrays
+
+PostgreSQL array operations:
+
+```typescript
+import { sql } from "bun";
+
+// Insert array values
+await sql`
+  INSERT INTO products (name, tags)
+  VALUES (${"Widget"}, ${sql.array(["electronics", "gadgets"])})
+`;
+
+// Query with array contains
+const products = await sql`
+  SELECT * FROM products
+  WHERE ${"electronics"} = ANY(tags)
+`;
+
+// Query with array overlap
+const tagged = await sql`
+  SELECT * FROM products
+  WHERE tags && ${sql.array(["sale", "featured"])}
+`;
+```
+
+## Result Formats
+
+```typescript
+import { sql } from "bun";
+
+// Default: array of objects
+const users = await sql`SELECT id, name FROM users`;
+// [{ id: 1, name: "Alice" }, { id: 2, name: "Bob" }]
+
+// Values only (array of arrays)
+const values = await sql`SELECT id, name FROM users`.values();
+// [[1, "Alice"], [2, "Bob"]]
+
+// Single column shorthand
+const ids = await sql`SELECT id FROM users`.then(rows => rows.map(r => r.id));
+// [1, 2, 3]
+```
+
+## Using in Routes
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { sql } from "bun";
+
+const router = createRouter();
+
+router.get('/users', async (c) => {
+  const limit = parseInt(c.req.query('limit') || '10');
+  const offset = parseInt(c.req.query('offset') || '0');
+
+  const users = await sql`
+    SELECT id, name, email, created_at
+    FROM users
+    ORDER BY created_at DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `;
+
+  const [{ count }] = await sql`SELECT COUNT(*) as count FROM users`;
+
+  return c.json({ users, total: Number(count), limit, offset });
+});
+
+router.get('/users/:id', async (c) => {
+  const id = c.req.param('id');
+  const users = await sql`SELECT * FROM users WHERE id = ${id}`;
+
+  if (users.length === 0) {
+    return c.json({ error: 'User not found' }, 404);
+  }
+
+  return c.json({ user: users[0] });
+});
+
+router.post('/users', async (c) => {
+  const body = await c.req.json();
+
+  const result = await sql`
+    INSERT INTO users (name, email)
+    VALUES (${body.name}, ${body.email})
+    RETURNING id, name, email, created_at
+  `;
+
+  return c.json({ user: result[0] }, 201);
+});
+
+export default router;
+```
+
+## Custom Database Connections
+
+For multiple databases or non-default configurations:
+
+```typescript
+import { SQL } from "bun";
+
+// PostgreSQL with explicit connection
+const postgres = new SQL({
+  url: process.env.POSTGRES_URL,
+  max: 20,              // Max connections in pool
+  idleTimeout: 30,      // Close idle connections after 30s
+  connectionTimeout: 10, // Connection timeout in seconds
+});
+
+// MySQL connection
+const mysql = new SQL("mysql://user:pass@localhost:3306/mydb");
+
+// SQLite (file-based)
+const sqlite = new SQL("sqlite://data/app.db");
+
+// SQLite (in-memory)
+const memoryDb = new SQL("sqlite://:memory:");
+
+// Use specific connection
+const users = await postgres`SELECT * FROM users`;
+const products = await mysql`SELECT * FROM products`;
+```
+
+## Error Handling
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { sql, SQL } from "bun";
+
+const agent = createAgent({
+  handler: async (ctx, input) => {
+    try {
+      const result = await sql`
+        INSERT INTO users (email) VALUES (${input.email})
+        RETURNING id
+      `;
+      return { userId: result[0].id };
+    } catch (error) {
+      if (error instanceof SQL.PostgresError) {
+        // Handle PostgreSQL-specific errors
+        if (error.code === "23505") {
+          // Unique violation
+          ctx.logger.warn("Duplicate email", { email: input.email });
+          return { error: "Email already exists" };
+        }
+      }
+      ctx.logger.error("Database error", { error: error.message });
+      throw error;
+    }
+  },
+});
+```
+
+Common PostgreSQL error codes:
+- `23505` - Unique constraint violation
+- `23503` - Foreign key violation
+- `42P01` - Table does not exist
+- `42703` - Column does not exist
+
+## Connection Configuration
+
+Environment variables for auto-configuration:
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | Full connection string (auto-detected) |
+| `POSTGRES_URL` | PostgreSQL connection string |
+| `MYSQL_URL` | MySQL connection string |
+| `PGHOST`, `PGPORT`, `PGDATABASE` | Individual PostgreSQL settings |
+| `PGUSERNAME`, `PGPASSWORD` | PostgreSQL credentials |
+
+Connection pool options:
+
+```typescript
+import { SQL } from "bun";
+
+const db = new SQL({
+  url: process.env.DATABASE_URL,
+  max: 10,                // Maximum connections
+  idleTimeout: 30,        // Seconds before closing idle connection
+  maxLifetime: 3600,      // Maximum connection lifetime in seconds
+  connectionTimeout: 10,  // Connection timeout in seconds
+});
+```
+
+## Best Practices
+
+- **Use parameterized queries**: Always use `${value}` for dynamic values, never string concatenation
+- **Use transactions**: Wrap related operations in `sql.begin()` to ensure data consistency
+- **Handle errors gracefully**: Catch specific error codes for user-friendly messages
+- **Limit query results**: Always use `LIMIT` for potentially large result sets
+- **Index frequently queried columns**: Ensure proper indexes exist for WHERE clause columns
+
+## Next Steps
+
+- [Key-Value Storage](/Build/Storage/key-value): Fast caching and session data
+- [Object Storage (S3)](/Build/Storage/object): File and media storage
+- [Vector Storage](/Build/Storage/vector): Semantic search and embeddings
+- [Durable Streams](/Build/Storage/durable-streams): Streaming large data exports

@@ -1,0 +1,368 @@
+---
+title: Storage Commands
+description: Manage Key-Value, S3, Vector, Database, and Stream storage from the CLI.
+---
+
+These CLI commands help you inspect and manage cloud storage during development and debugging.
+
+<Callout type="info" title="Cloud Prefix Required">
+All storage commands require the `cloud` prefix. For example: `agentuity cloud kv get ...`
+</Callout>
+
+## Key-Value Storage
+
+Inspect and manage key-value data organized into namespaces.
+
+### Interactive REPL
+
+Start an interactive session for faster exploration:
+
+```bash
+agentuity cloud kv repl
+```
+
+In the REPL, use commands like `set`, `get`, `delete`, `keys`, and `stats`:
+
+```
+> set cache user:123 '{"name":"Alice"}'
+> get cache user:123
+> keys cache
+> stats
+```
+
+### Get a Value
+
+```bash
+agentuity cloud kv get production user:123
+agentuity cloud kv get cache session:abc
+```
+
+### Set a Value
+
+```bash
+# Store JSON data
+agentuity cloud kv set production user:123 '{"name":"Alice","email":"alice@example.com"}'
+
+# Set with TTL (expires after 1 hour)
+agentuity cloud kv set cache session:abc "session-data" --ttl 3600
+```
+
+### Delete a Key
+
+```bash
+agentuity cloud kv delete production user:123
+agentuity cloud kv rm cache session:abc  # Using alias
+```
+
+### List Keys
+
+```bash
+agentuity cloud kv keys production
+agentuity cloud kv ls cache  # Using alias
+```
+
+### Search Keys
+
+```bash
+agentuity cloud kv search production user
+agentuity cloud kv search cache session
+```
+
+### View Statistics
+
+```bash
+# Stats for all namespaces
+agentuity cloud kv stats
+
+# Stats for specific namespace
+agentuity cloud kv stats production
+```
+
+### Namespace Management
+
+A namespace is a logical container that groups related keys together. For example, you might use `cache` for temporary data, `users` for user profiles, and `sessions` for session state.
+
+```bash
+# List all namespaces
+agentuity cloud kv list-namespaces
+agentuity cloud kv ns  # Using alias
+
+# Create a namespace
+agentuity cloud kv create-namespace staging
+
+# Delete a namespace and all its keys
+agentuity cloud kv delete-namespace old-cache
+```
+
+<Callout type="info" title="SDK Access">
+For programmatic access in agents, use `ctx.kv`:
+
+```typescript
+await ctx.kv.set('cache', 'user:123', data);
+const value = await ctx.kv.get('cache', 'user:123');
+```
+
+See [Key-Value Storage](/v1/Build/Storage/key-value) for details.
+</Callout>
+
+## S3 Storage
+
+Manage S3-compatible storage resources for file uploads and downloads.
+
+### Create Storage Resource
+
+```bash
+agentuity cloud s3 create --name my-storage
+```
+
+### List Storage Resources
+
+```bash
+agentuity cloud s3 list
+```
+
+### Upload a File
+
+```bash
+agentuity cloud s3 upload ./local-file.pdf
+```
+
+### Download a File
+
+```bash
+agentuity cloud s3 download <file-id> --output ./downloaded-file.pdf
+```
+
+### Get Storage Details
+
+```bash
+agentuity cloud s3 get <storage-id>
+```
+
+### Delete Storage Resource
+
+```bash
+agentuity cloud s3 delete <storage-id>
+```
+
+<Callout type="info" title="SDK Access">
+For programmatic access, use Bun's native S3 APIs:
+
+```typescript
+import { s3 } from "bun";
+
+const file = s3.file("path/to/file.pdf");
+await file.write(buffer);
+const url = s3.presign("path/to/file.pdf", { expiresIn: 3600 });
+```
+
+See [Object Storage (S3)](/v1/Build/Storage/object) for details.
+</Callout>
+
+## Object Storage (Legacy)
+
+The `cloud obj` commands provide bucket-based object management. For new projects, consider using `cloud s3` instead.
+
+### Interactive REPL
+
+```bash
+agentuity cloud obj repl
+```
+
+### Upload a File
+
+```bash
+# Upload from file path
+agentuity cloud obj put uploads images/logo.png @./logo.png
+
+# Store JSON directly
+agentuity cloud obj put assets config.json '{"api":"https://api.example.com"}'
+
+# With custom content type
+agentuity cloud obj put backups db.sql @~/backup.sql --content-type application/sql
+```
+
+### Download a File
+
+```bash
+agentuity cloud obj get uploads images/logo.png
+agentuity cloud obj get assets config.json
+```
+
+### Delete a File
+
+```bash
+agentuity cloud obj delete uploads old-image.png
+```
+
+### Generate Public URL
+
+```bash
+# Permanent URL
+agentuity cloud obj url uploads images/logo.png
+
+# Temporary URL (expires in 1 hour)
+agentuity cloud obj url uploads private-doc.pdf --expires 3600
+
+# 5-minute presigned URL
+agentuity cloud obj presigned backups db.sql --expires 300
+```
+
+### List Buckets and Files
+
+```bash
+agentuity cloud obj list-buckets
+agentuity cloud obj list-keys uploads
+agentuity cloud obj ls assets  # Using alias
+```
+
+## Vector Storage
+
+Search and inspect vector embeddings.
+
+### Search by Similarity
+
+```bash
+# Basic search
+agentuity cloud vector search products "comfortable office chair"
+
+# Limit results
+agentuity cloud vector search docs "API documentation" --limit 5
+
+# Set minimum similarity threshold
+agentuity cloud vector search products "ergonomic" --similarity 0.8
+
+# Filter by metadata
+agentuity cloud vector search embeddings "neural networks" --metadata category=ai
+```
+
+### Get Vector by ID
+
+```bash
+agentuity cloud vec get <vector-id>
+```
+
+### Delete a Vector
+
+```bash
+agentuity cloud vec delete <vector-id>
+```
+
+<Callout type="info" title="SDK Access">
+For programmatic access, use `ctx.vector`:
+
+```typescript
+const results = await ctx.vector.search('products', {
+  query: 'comfortable chair',
+  limit: 10
+});
+```
+
+See [Vector Storage](/v1/Build/Storage/vector) for details.
+</Callout>
+
+## Database
+
+Manage database resources and run SQL queries.
+
+### List Databases
+
+```bash
+agentuity cloud db list
+```
+
+### Create a Database
+
+```bash
+agentuity cloud db create --name my-database
+```
+
+### Get Database Details
+
+```bash
+agentuity cloud db get <database-id>
+```
+
+### Run SQL Queries
+
+Execute SQL queries directly from the CLI:
+
+```bash
+# Simple query
+agentuity cloud db sql "SELECT * FROM users LIMIT 10"
+
+# Query with filtering
+agentuity cloud db sql "SELECT name, email FROM users WHERE active = true"
+
+# Insert data
+agentuity cloud db sql "INSERT INTO users (name, email) VALUES ('Alice', 'alice@example.com')"
+```
+
+### View Database Logs
+
+```bash
+agentuity cloud db logs <database-id>
+```
+
+### Delete a Database
+
+```bash
+agentuity cloud db delete <database-id>
+```
+
+<Callout type="info" title="SDK Access">
+For programmatic access, use Bun's native SQL APIs:
+
+```typescript
+import { sql } from "bun";
+
+const users = await sql`SELECT * FROM users WHERE active = ${true}`;
+await sql`INSERT INTO users (name, email) VALUES (${"Alice"}, ${"alice@example.com"})`;
+```
+
+See [Database](/v1/Build/Storage/database) for details.
+</Callout>
+
+## Streams
+
+List and manage durable event streams.
+
+### List Streams
+
+```bash
+agentuity cloud stream list
+```
+
+### Get Stream Details
+
+```bash
+agentuity cloud stream get <stream-id>
+```
+
+### Delete a Stream
+
+```bash
+agentuity cloud stream delete <stream-id>
+```
+
+<Callout type="info" title="SDK Access">
+For programmatic access, use `ctx.stream`:
+
+```typescript
+const stream = await ctx.stream.create('export', {
+  contentType: 'text/csv',
+});
+await stream.write('data');
+await stream.close();
+```
+
+See [Durable Streams](/v1/Build/Storage/durable-streams) for details.
+</Callout>
+
+## Next Steps
+
+- [Configuration Commands](/v1/Reference/CLI/configuration): Manage environment variables, secrets, and API keys
+- [Key-Value Storage](/v1/Build/Storage/key-value): Programmatic KV access in agents
+- [Object Storage (S3)](/v1/Build/Storage/object): File storage with Bun S3
+- [Database](/v1/Build/Storage/database): SQL queries with Bun SQL
+- [Vector Storage](/v1/Build/Storage/vector): Semantic search in agents
