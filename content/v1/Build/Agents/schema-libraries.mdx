@@ -24,7 +24,7 @@ The built-in schema library provides simple validation with zero external depend
 import { createAgent, type AgentContext } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 
-const agent = createAgent({
+const agent = createAgent('UserProcessor', {
   schema: {
     input: s.object({
       email: s.string(),
@@ -101,7 +101,7 @@ const OutputSchema = v.object({
   userId: v.string(),
 });
 
-const agent = createAgent({
+const agent = createAgent('UserProcessor', {
   schema: {
     input: InputSchema,
     output: OutputSchema,
@@ -178,7 +178,7 @@ const OutputSchema = type({
   userId: 'string',
 });
 
-const agent = createAgent({
+const agent = createAgent('UserProcessor', {
   schema: {
     input: InputSchema,
     output: OutputSchema,
@@ -258,10 +258,10 @@ import { type } from 'arktype';
 const schema = { input: type({ name: 'string' }) };
 
 // All work the same way in createAgent()
-createAgent({ schema, handler: async (ctx, input) => { ... } });
+createAgent('MyAgent', { schema, handler: async (ctx, input) => { ... } });
 ```
 
 ## Next Steps
 
-- [Creating Agents](/Build/Agents/creating-agents): Full guide to agent creation with Zod examples
-- [Using the AI SDK](/Build/Agents/ai-sdk-integration): Add LLM capabilities to your agents
+- [Creating Agents](/v1/Build/Agents/creating-agents): Full guide to agent creation with Zod examples
+- [Using the AI SDK](/v1/Build/Agents/ai-sdk-integration): Add LLM capabilities to your agents

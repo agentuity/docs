@@ -20,11 +20,8 @@ interface Message {
   content: string;
 }
 
-const agent = createAgent({
-  metadata: {
-    name: 'Chat Agent',
-    description: 'Conversational agent with memory',
-  },
+const agent = createAgent('Chat Agent', {
+  description: 'Conversational agent with memory',
   schema: {
     input: s.object({
       message: s.string(),
@@ -77,12 +74,13 @@ export default agent;
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import chatAgent from '@agent/chat';
 
 const router = createRouter();
 
 router.post('/', async (c) => {
   const { message } = await c.req.json();
-  return c.agent.chat.run({ message });
+  return chatAgent.run({ message });
 });
 
 // Reset conversation

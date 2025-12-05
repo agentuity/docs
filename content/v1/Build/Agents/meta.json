@@ -8,7 +8,6 @@
 		"streaming-responses",
 		"state-management",
 		"calling-other-agents",
-		"subagents",
 		"evaluations",
 		"events-lifecycle"
 	]

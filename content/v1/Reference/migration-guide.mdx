@@ -14,7 +14,7 @@ This guide will help you migrate your existing v0 agents to v1, understand the b
 ## What's New in v1?
 
 <Callout type="success" title="No More Manual Agent Registration">
-In v0, agents had to be created via the CLI (`agentuity agent create`) to register them with unique IDs in the cloud. In v1, just create a folder in `src/agents/` with `agent.ts` and `route.ts` — agents are auto-discovered and registered on deploy. No CLI commands or manual registration required.
+In v0, agents had to be created via the CLI (`agentuity agent create`) to register them with unique IDs in the cloud. In v1, just create a folder in `src/agent/` with `agent.ts` — agents are auto-discovered and registered on deploy. No CLI commands or manual registration required.
 </Callout>
 
 v1 introduces several major improvements:
@@ -24,9 +24,8 @@ v1 introduces several major improvements:
 - **Type-Safe Schemas**: Built-in support for Zod, Valibot, ArkType, and other StandardSchema libraries
 - **Evaluation Framework**: Automatically test and validate agent outputs
 - **Event System**: Integrate with agent lifecycle events for monitoring and analytics
-- **Advanced Routing**: Native support for WebSocket, SSE, email, cron, and SMS
+- **Advanced Routing**: Native support for WebSocket, SSE, email, cron, and SMS in `src/api/`
 - **Session & Thread Management**: Better conversational state handling
-- **Subagents**: Organize complex agents with parent-child relationships
 - **React Package**: Build UIs for your agents with `@agentuity/react`
 - **Database Support**: SQL queries via Bun's native `sql` tagged template literals
 - **Native S3 Storage**: Fast file storage via Bun's native S3 APIs (replaces `ctx.objectstore`)
@@ -115,12 +114,12 @@ import { AgentHandler } from '@agentuity/sdk';
 
 const handler: AgentHandler = async (request, response, context) => {
   const data = await request.data.json();
-  
+
   context.logger.info('Processing request', data);
-  
-  return response.json({ 
+
+  return response.json({
     message: 'Hello from my agent!',
-    data: data 
+    data: data
   });
 };
 
@@ -129,16 +128,14 @@ export default handler;
 
 **v1:**
 ```typescript
-import { createAgent, createRouter } from '@agentuity/runtime';
+// src/agent/my-agent/agent.ts
+import { createAgent } from '@agentuity/runtime';
 
-const agent = createAgent({
-  metadata: {
-    name: 'My Agent',
-    description: 'A simple agent'
-  },
+const agent = createAgent('My Agent', {
+  description: 'A simple agent',
   handler: async (ctx, input) => {
     ctx.logger.info('Processing request', input);
-    
+
     return {
       message: 'Hello from my agent!',
       data: input
@@ -146,26 +143,22 @@ const agent = createAgent({
   }
 });
 
-const router = createRouter();
-router.post('/my-agent', agent.handler);
-
-export default router;
+export default agent;
 ```
 
 **Key Changes:**
 1. Import from `@agentuity/runtime` instead of `@agentuity/sdk`
-2. Use `createAgent()` instead of a plain function
+2. Use `createAgent('Name', { ... })` with the name as the first argument
 3. Handler receives `(ctx, input)` instead of `(request, response, context)`
 4. Return values directly instead of using `response.json()`
-5. Use `createRouter()` to define HTTP endpoints and register your agent
-6. Export the router instead of the handler
+5. Export the agent (routes are defined separately in `src/api/`)
 
 **File Structure Change:**
-In v0, agents were typically single files. In v1, each agent has two files:
-- **`agent.ts`** - Contains the `createAgent()` call with your handler logic
-- **`route.ts`** - Contains the `createRouter()` call that defines HTTP endpoints and calls your agent
+In v0, agents were typically single files. In v1, agents and routes are separated:
+- **`src/agent/my-agent/agent.ts`** - Contains the `createAgent()` call with your handler logic
+- **`src/api/index.ts`** - Contains all HTTP routes that import and call agents
 
-The route file imports the agent and invokes it via `ctx.agent.name.run(input)`. This separation keeps HTTP routing concerns separate from agent business logic, making agents reusable across different routes and other agents.
+Routes import agents and call them via `agent.run(input)`. This separation keeps HTTP routing concerns separate from agent core logic, making agents reusable across different routes.
 
 ---
 
@@ -174,11 +167,12 @@ The route file imports the agent and invokes it via `ctx.agent.name.run(input)`.
 v1 introduces optional schema validation for type safety:
 
 ```typescript
-// src/agents/typed-agent/agent.ts
+// src/agent/typed-agent/agent.ts
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('Typed Agent', {
+  description: 'An agent with type-safe inputs and outputs',
   schema: {
     input: z.object({
       message: z.string(),
@@ -189,13 +183,9 @@ const agent = createAgent({
       timestamp: z.number()
     })
   },
-  metadata: {
-    name: 'Typed Agent',
-    description: 'An agent with type-safe inputs and outputs'
-  },
   handler: async (ctx, input) => {
     // input is fully typed as { message: string, count?: number }
-    
+
     return {
       response: `Received: ${input.message}`,
       timestamp: Date.now()
@@ -208,12 +198,18 @@ export default agent;
 ```
 
 ```typescript
-// src/agents/typed-agent/route.ts
+// src/api/index.ts - All routes are consolidated here
 import { createRouter } from '@agentuity/runtime';
-import agent from './agent';
+import typedAgent from '@agent/typed-agent';
 
 const router = createRouter();
-router.post('/typed-agent', agent.handler);
+
+// Routes are mounted at /api/* automatically
+router.post('/typed-agent', typedAgent.validator(), async (c) => {
+  const data = c.req.valid('json');
+  const result = await typedAgent.run(data);
+  return c.json(result);
+});
 
 export default router;
 ```
@@ -237,10 +233,10 @@ The context object has several changes and additions.
 const handler: AgentHandler = async (request, response, context) => {
   // Access run ID
   const id = context.runId;
-  
+
   // Access services
   await context.kv.set('cache', 'key', data);
-  
+
   // Access logger
   context.logger.info('Message');
 };
@@ -248,40 +244,34 @@ const handler: AgentHandler = async (request, response, context) => {
 
 **v1:**
 ```typescript
-const agent = createAgent({
-  handler: async (ctx) => {
+const agent = createAgent('My Agent', {
+  handler: async (ctx, input) => {
     // runId renamed to sessionId
     const id = ctx.sessionId;
-    
+
     // Services work the same way
     await ctx.kv.set('cache', 'key', data);
-    
+
     // Logger unchanged
     ctx.logger.info('Message');
-    
-    // NEW: Access to all agents
-    const result = await ctx.agent.otherAgent.run({ input: 'data' });
-    
-    // NEW: Current agent reference
-    ctx.logger.info('Current agent:', { name: ctx.current?.metadata.name });
-    
+
     // NEW: State management
     ctx.state.set('myKey', 'myValue');
-    
+
     // NEW: Session and thread objects
     ctx.logger.info('Session:', ctx.session);
     ctx.logger.info('Thread:', ctx.thread);
+
+    return { result: 'done' };
   }
 });
 ```
 
 **Key Changes:**
 - `context.runId` → `ctx.sessionId`
-- New `ctx.agent` for accessing other agents
-- New `ctx.current` for current agent metadata
-- New `ctx.parent` for parent agent (in subagents)
 - New `ctx.state` for temporary state storage
 - New `ctx.session` and `ctx.thread` for conversation management
+- Agent-to-agent communication uses imports (see Step 7)
 
 ---
 
@@ -336,7 +326,7 @@ export default router;
 
 **v1 (Agent with Schema):**
 ```typescript
-const agent = createAgent({
+const agent = createAgent('My Agent', {
   schema: {
     input: z.object({ message: z.string() })
   },
@@ -344,7 +334,7 @@ const agent = createAgent({
     // Input is automatically parsed and validated
     // No need to call request.data.json()
     ctx.logger.info('Input message:', { message: input.message });
-    
+
     return { response: 'ok' };
   }
 });
@@ -377,30 +367,30 @@ const handler: AgentHandler = async (request, response, context) => {
 
 **v1:**
 ```typescript
-const agent = createAgent({
-  handler: async (ctx) => {
+const agent = createAgent('My Agent', {
+  handler: async (ctx, input) => {
     // JSON response - just return an object
     return { message: 'Hello' };
-    
-    // Text response - return string (set content-type manually if needed)
+
+    // Text response - return a string
     return 'Hello';
-    
-    // For more control, use Hono's response helpers
-    return ctx.text('Hello');
-    return ctx.json({ message: 'Hello' });
-    return ctx.body(buffer);
-    
-    // Empty response
-    return ctx.body(null);
   }
+});
+
+// For more control over responses, use routes in src/api/index.ts:
+router.get('/hello', async (c) => {
+  const result = await myAgent.run({ name: 'World' });
+  return c.json(result);      // JSON response
+  return c.text('Hello');     // Text response
+  return c.body(buffer);      // Binary response
 });
 ```
 
 **Key Changes:**
-1. No `response` object - return values directly
+1. No `response` object - return values directly from agent handler
 2. Objects are automatically JSON-serialized
-3. Use Hono context methods for advanced responses
-4. For typed responses, define `outputSchema`
+3. Use Hono context methods in routes for advanced responses
+4. For typed responses, define output schema
 
 ---
 
@@ -528,52 +518,58 @@ Agentuity automatically injects `DATABASE_URL` during development and deployment
 
 ### Step 7: Update Agent-to-Agent Communication
 
-Agent-to-agent communication has been simplified and made type-safe in v1.
+Agent-to-agent communication uses direct imports in v1.
 
 **v0:**
 ```typescript
 const handler: AgentHandler = async (request, response, context) => {
   // Get agent by ID
   const agent = await context.getAgent({ id: 'agent_123' });
-  
+
   // Or by name
-  const agent = await context.getAgent({ 
+  const agent = await context.getAgent({
     name: 'other-agent',
-    projectId: 'proj_123' 
+    projectId: 'proj_123'
   });
-  
+
   // Run the agent
   const result = await agent.run({
     data: JSON.stringify({ message: 'Hello' }),
     contentType: 'application/json'
   });
-  
+
   const output = await result.data.json();
 };
 ```
 
 **v1:**
 ```typescript
-const agent = createAgent({
-  handler: async (ctx) => {
-    // Access agents directly by name - much simpler!
-    const result = await ctx.agent.otherAgent.run({
+// src/agent/coordinator/agent.ts
+import { createAgent } from '@agentuity/runtime';
+import otherAgent from '@agent/other-agent';
+
+const agent = createAgent('Coordinator', {
+  handler: async (ctx, input) => {
+    // Import and call agents directly
+    const result = await otherAgent.run({
       message: 'Hello'
     });
-    
+
     // Result is automatically typed if the agent has a schema
-    ctx.logger.info('Agent response:', { response: result.response });
-    
+    ctx.logger.info('Agent response:', { response: result });
+
     return result;
   }
 });
+
+export default agent;
 ```
 
 **Key Changes:**
-1. `ctx.agent.otherAgent.run()` instead of `getAgent()`
-2. No need to JSON-stringify data
-3. Type-safe when using schemas
-4. Subagents accessible via `ctx.agent.parent.child.run()`
+1. Import agents using `import agent from '@agent/agent-name'`
+2. Call directly with `agent.run(input)`
+3. No need to JSON-stringify data
+4. Type-safe when using schemas
 
 ---
 
@@ -687,7 +683,7 @@ Evaluations allow you to automatically test agent outputs for quality, accuracy,
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('QA Agent', {
   schema: {
     input: z.object({ question: z.string() }),
     output: z.object({ answer: z.string() })
@@ -698,38 +694,26 @@ const agent = createAgent({
   }
 });
 
-// Add an evaluation
-agent.createEval({
-  metadata: {
-    name: 'answer-quality',
-    description: 'Checks if answer is relevant and complete'
-  },
+// Add an evaluation - name is the first argument
+agent.createEval('answer-quality', {
+  description: 'Checks if answer is relevant and complete',
   handler: async (ctx, input, output) => {
     // Evaluate the output
     const isRelevant = await checkRelevance(input.question, output.answer);
     const isComplete = output.answer.length > 50;
-    
-    if (isRelevant && isComplete) {
-      return {
-        success: true,
-        score: 0.95,
-        metadata: { 
-          relevant: isRelevant,
-          complete: isComplete 
-        }
-      };
-    } else {
-      return {
-        success: true,
-        score: 0.5,
-        metadata: { 
-          relevant: isRelevant,
-          complete: isComplete 
-        }
-      };
-    }
+
+    return {
+      success: true,
+      score: isRelevant && isComplete ? 0.95 : 0.5,
+      metadata: {
+        relevant: isRelevant,
+        complete: isComplete
+      }
+    };
   }
 });
+
+export default agent;
 ```
 
 **When to use evaluations:**
@@ -747,7 +731,7 @@ Integrate with agent lifecycle events for monitoring and analytics.
 ```typescript
 import { createAgent, createApp } from '@agentuity/runtime';
 
-const agent = createAgent({
+const agent = createAgent('My Agent', {
   handler: async (ctx, input) => {
     return { result: 'success' };
   }
@@ -755,41 +739,37 @@ const agent = createAgent({
 
 // Agent-level events
 agent.addEventListener('started', async (event, agent, ctx) => {
-  ctx.logger.info('Agent started', { agentName: agent.metadata.name });
+  ctx.logger.info('Agent started');
 });
 
 agent.addEventListener('completed', async (event, agent, ctx) => {
-  ctx.logger.info('Agent completed', { 
-    agentName: agent.metadata.name,
-    sessionId: ctx.sessionId 
-  });
+  ctx.logger.info('Agent completed', { sessionId: ctx.sessionId });
 });
 
 agent.addEventListener('errored', async (event, agent, ctx, error) => {
-  ctx.logger.error('Agent errored', { 
-    agentName: agent.metadata.name,
-    error: error.message 
-  });
+  ctx.logger.error('Agent errored', { error: error.message });
 });
 
-// App-level events
+export default agent;
+```
+
+```typescript
+// app.ts - App-level events
+import { createApp } from '@agentuity/runtime';
+
 const app = createApp();
 
 app.addEventListener('agent.started', async (agent, ctx) => {
   // Track all agent starts
-  await analytics.track('agent_started', {
-    agent: agent.metadata.name,
-    session: ctx.sessionId
-  });
+  await analytics.track('agent_started', { session: ctx.sessionId });
 });
 
 app.addEventListener('agent.completed', async (agent, ctx) => {
   // Track all agent completions
-  await analytics.track('agent_completed', {
-    agent: agent.metadata.name,
-    session: ctx.sessionId
-  });
+  await analytics.track('agent_completed', { session: ctx.sessionId });
 });
+
+export default app;
 ```
 
 ---
@@ -799,26 +779,28 @@ app.addEventListener('agent.completed', async (agent, ctx) => {
 v1 introduces explicit session and thread management for conversational agents.
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('Chat Agent', {
   handler: async (ctx, input) => {
     // Access session info
     ctx.logger.info('Session info:', {
       sessionId: ctx.sessionId,
       session: ctx.session
     });
-    
+
     // Access thread for conversation history
     ctx.logger.info('Thread:', ctx.thread);
-    
+
     // Store conversation state
     ctx.state.set('lastUserMessage', input.message);
-    ctx.state.set('conversationTurn', 
+    ctx.state.set('conversationTurn',
       (ctx.state.get('conversationTurn') as number || 0) + 1
     );
-    
+
     return { response: 'Message received' };
   }
 });
+
+export default agent;
 ```
 
 **Use cases:**
@@ -826,65 +808,6 @@ const agent = createAgent({
 - Maintaining context across requests
 - User preference storage
 - Conversation history tracking
-
----
-
-### Creating Subagents (NEW in v1)
-
-Organize complex agents with parent-child relationships.
-
-**Project Structure:**
-```
-src/agents/
-  ├── email-agent/
-  │   ├── index.ts          (parent agent)
-  │   └── email-agent.parser/
-  │       └── index.ts      (subagent)
-```
-
-**Parent Agent:**
-```typescript
-// src/agents/email-agent/index.ts
-import { createAgent } from '@agentuity/runtime';
-
-export const emailAgent = createAgent({
-  metadata: {
-    name: 'Email Agent',
-    description: 'Processes incoming emails'
-  },
-  handler: async (ctx, input) => {
-    // Use subagent for parsing
-    const parsed = await ctx.agent.emailAgent.parser.run({
-      rawEmail: input.email
-    });
-    
-    // Process parsed data
-    return { status: 'processed', data: parsed };
-  }
-});
-```
-
-**Subagent:**
-```typescript
-// src/agents/email-agent/email-agent.parser/index.ts
-import { createAgent } from '@agentuity/runtime';
-
-export const parserAgent = createAgent({
-  metadata: {
-    name: 'Email Parser',
-    description: 'Parses email structure'
-  },
-  handler: async (ctx, input) => {
-    // Access parent if needed
-    ctx.logger.info('Parent agent:', { parent: ctx.parent?.metadata.name });
-    
-    // Parse email
-    const parsed = parseEmailStructure(input.rawEmail);
-    
-    return parsed;
-  }
-});
-```
 
 ---
 
@@ -904,12 +827,13 @@ const handler: AgentHandler = async (request, response, context) => {
 export default handler;
 ```
 
-**v1:**
+**v1 (agent file):**
 ```typescript
-import { createAgent, createRouter } from '@agentuity/runtime';
+// src/agent/greeter/agent.ts
+import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('Greeter', {
   schema: {
     input: z.object({ name: z.string() }),
     output: z.object({ greeting: z.string() })
@@ -919,8 +843,22 @@ const agent = createAgent({
   }
 });
 
+export default agent;
+```
+
+**v1 (routes file):**
+```typescript
+// src/api/index.ts
+import { createRouter } from '@agentuity/runtime';
+import greeter from '@agent/greeter';
+
 const router = createRouter();
-router.post('/greet', agent.handler);
+
+router.post('/greet', greeter.validator(), async (c) => {
+  const data = c.req.valid('json');
+  const result = await greeter.run(data);
+  return c.json(result);
+});
 
 export default router;
 ```
@@ -935,26 +873,27 @@ import { AgentHandler } from '@agentuity/sdk';
 
 const handler: AgentHandler = async (request, response, context) => {
   const { userId, data } = await request.data.json();
-  
+
   // Store data
   await context.kv.set('user-data', userId, data);
-  
+
   // Retrieve data
   const result = await context.kv.get('user-data', userId);
   const storedData = result.exists ? await result.data.json() : null;
-  
+
   return response.json({ stored: storedData });
 };
 
 export default handler;
 ```
 
-**v1:**
+**v1 (agent file):**
 ```typescript
-import { createAgent, createRouter } from '@agentuity/runtime';
+// src/agent/storage-agent/agent.ts
+import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('Storage Agent', {
   schema: {
     input: z.object({
       userId: z.string(),
@@ -964,17 +903,31 @@ const agent = createAgent({
   handler: async (ctx, input) => {
     // Store data (same API!)
     await ctx.kv.set('user-data', input.userId, input.data);
-    
+
     // Retrieve data (same API!)
     const result = await ctx.kv.get('user-data', input.userId);
     const storedData = result.exists ? await result.data.json() : null;
-    
+
     return { stored: storedData };
   }
 });
 
+export default agent;
+```
+
+**v1 (routes file):**
+```typescript
+// src/api/index.ts
+import { createRouter } from '@agentuity/runtime';
+import storageAgent from '@agent/storage-agent';
+
 const router = createRouter();
-router.post('/store', agent.handler);
+
+router.post('/store', storageAgent.validator(), async (c) => {
+  const data = c.req.valid('json');
+  const result = await storageAgent.run(data);
+  return c.json(result);
+});
 
 export default router;
 ```
@@ -989,7 +942,7 @@ import { AgentHandler } from '@agentuity/sdk';
 
 const handler: AgentHandler = async (request, response, context) => {
   const input = await request.data.json();
-  
+
   // Call first agent
   const agent1 = await context.getAgent({ name: 'processor' });
   const result1 = await agent1.run({
@@ -997,7 +950,7 @@ const handler: AgentHandler = async (request, response, context) => {
     contentType: 'application/json'
   });
   const processed = await result1.data.json();
-  
+
   // Call second agent
   const agent2 = await context.getAgent({ name: 'validator' });
   const result2 = await agent2.run({
@@ -1005,31 +958,48 @@ const handler: AgentHandler = async (request, response, context) => {
     contentType: 'application/json'
   });
   const validated = await result2.data.json();
-  
+
   return response.json(validated);
 };
 
 export default handler;
 ```
 
-**v1:**
+**v1 (agent file):**
 ```typescript
-import { createAgent, createRouter } from '@agentuity/runtime';
+// src/agent/workflow/agent.ts
+import { createAgent } from '@agentuity/runtime';
+import processor from '@agent/processor';
+import validator from '@agent/validator';
 
-const agent = createAgent({
+const agent = createAgent('Workflow', {
   handler: async (ctx, input) => {
-    // Call first agent (much simpler!)
-    const processed = await ctx.agent.processor.run(input);
-    
+    // Import and call agents directly
+    const processed = await processor.run(input);
+
     // Call second agent
-    const validated = await ctx.agent.validator.run(processed);
-    
+    const validated = await validator.run(processed);
+
     return validated;
   }
 });
 
+export default agent;
+```
+
+**v1 (routes file):**
+```typescript
+// src/api/index.ts
+import { createRouter } from '@agentuity/runtime';
+import workflow from '@agent/workflow';
+
 const router = createRouter();
-router.post('/workflow', agent.handler);
+
+router.post('/workflow', async (c) => {
+  const data = await c.req.json();
+  const result = await workflow.run(data);
+  return c.json(result);
+});
 
 export default router;
 ```
@@ -1066,14 +1036,20 @@ import { ... } from '@agentuity/runtime';
 
 #### Issue 3: "Handler is not a function"
 
-**Cause**: You're exporting the agent directly instead of the router.
+**Cause**: You're not exporting the agent correctly.
 
-**Solution**: Make sure you export the router:
+**Solution**: Export the agent from `agent.ts` and import it in your routes:
 ```typescript
-const router = createRouter();
-router.post('/agent', agent.handler);
+// src/agent/my-agent/agent.ts
+const agent = createAgent('My Agent', { ... });
+export default agent;
 
-export default router; // Not 'agent' or 'handler'
+// src/api/index.ts
+import myAgent from '@agent/my-agent';
+router.post('/my-agent', async (c) => {
+  const result = await myAgent.run(await c.req.json());
+  return c.json(result);
+});
 ```
 
 ---
@@ -1084,7 +1060,7 @@ export default router; // Not 'agent' or 'handler'
 
 **Solution**: Check your schema definition and ensure incoming data matches:
 ```typescript
-const agent = createAgent({
+const agent = createAgent('My Agent', {
   schema: {
     input: z.object({
       message: z.string(),
@@ -1100,19 +1076,17 @@ const agent = createAgent({
 
 ---
 
-#### Issue 5: "Cannot access other agents"
+#### Issue 5: "Cannot find agent" or import errors
 
-**Cause**: Agents aren't properly registered with the router.
+**Cause**: Agent import path is incorrect.
 
-**Solution**: Ensure all agents are registered:
+**Solution**: Use the `@agent/` alias to import agents:
 ```typescript
-const router = createRouter();
+// Correct - use @agent/ alias
+import myAgent from '@agent/my-agent';
 
-// Register each agent
-router.post('/agent1', agent1.handler);
-router.post('/agent2', agent2.handler);
-
-// Now they can access each other via ctx.agent
+// The alias maps to src/agent/
+// So @agent/my-agent resolves to src/agent/my-agent/agent.ts
 ```
 
 ---
@@ -1121,8 +1095,8 @@ router.post('/agent2', agent2.handler);
 
 If you encounter issues not covered in this guide:
 
-1. **Check the Documentation**: Visit the [v1 API Reference](/SDKs/javascript/api-reference) for detailed information
-2. **Review Examples**: Browse the [Examples](/Examples) section for working code
+1. **Check the Documentation**: Visit the [v1 API Reference](/v1/SDKs/javascript/api-reference) for detailed information
+2. **Review Examples**: Browse the [Examples](/v1/Examples) section for working code
 3. **Community Support**: Join our [Discord community](https://discord.gg/agentuity) for help
 4. **Report Issues**: Open an issue on [GitHub](https://github.com/agentuity/sdk) if you find bugs
 
@@ -1132,8 +1106,7 @@ If you encounter issues not covered in this guide:
 
 After migrating your agents:
 
-1. **Add Schema Validation**: Improve type safety with [Schema Validation](/SDKs/javascript/schema-validation)
-2. **Implement Evaluations**: Ensure quality with the [Evaluation Framework](/SDKs/javascript/evaluations)
-3. **Use Advanced Routing**: Explore [WebSocket, SSE, and other routes](/Guides/routing-triggers)
-4. **Add Event Listeners**: Monitor your agents with [Events](/SDKs/javascript/events)
-5. **Organize with Subagents**: Structure complex agents with [Subagents](/SDKs/javascript/subagents)
+1. **Add Schema Validation**: Improve type safety with [Schema Validation](/v1/Build/Routes/http)
+2. **Implement Evaluations**: Ensure quality with [Evaluations](/v1/Build/Agents/evaluations)
+3. **Use Advanced Routing**: Explore [WebSocket](/v1/Build/Routes/websockets), [SSE](/v1/Build/Routes/sse), and [other routes](/v1/Build/Routes)
+4. **Add Event Listeners**: Monitor your agents with [Events & Lifecycle](/v1/Build/Agents/events-lifecycle)

@@ -32,7 +32,7 @@ import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { s } from '@agentuity/schema';
 
-const agent = createAgent({
+const agent = createAgent('TextGenerator', {
   schema: {
     input: s.object({ prompt: s.string() }),
     output: s.object({ response: s.string() }),
@@ -98,7 +98,7 @@ import { s } from '@agentuity/schema';
 
 const client = new Anthropic();
 
-const agent = createAgent({
+const agent = createAgent('AnthropicChat', {
   schema: {
     input: s.object({ prompt: s.string() }),
     output: s.object({ response: s.string() }),
@@ -172,6 +172,6 @@ We recommend using the AI Gateway for most projects.
 
 ## Next Steps
 
-- [Using the AI SDK](/Build/Agents/ai-sdk-integration): Structured output, tool calling, and multi-turn conversations
-- [Returning Streaming Responses](/Build/Agents/streaming-responses): Real-time chat UIs and progress indicators
-- [Logging](/Build/Observability/logging): Debug requests and track LLM performance
+- [Using the AI SDK](/v1/Build/Agents/ai-sdk-integration): Structured output, tool calling, and multi-turn conversations
+- [Returning Streaming Responses](/v1/Build/Agents/streaming-responses): Real-time chat UIs and progress indicators
+- [Logging](/v1/Build/Observability/logging): Debug requests and track LLM performance

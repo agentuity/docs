@@ -17,19 +17,16 @@ Agents are created using the `createAgent()` function from `@agentuity/runtime`.
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('ChatAgent', {
+  description: 'Processes chat messages',
   schema: {
     input: z.object({ message: z.string() }),
-    output: z.object({ response: z.string() })
-  },
-  metadata: {
-    name: 'Chat Agent',
-    description: 'Processes chat messages'
+    output: z.object({ response: z.string() }),
   },
   handler: async (ctx, input) => {
     // Input is already validated and typed
     return { response: `You said: ${input.message}` };
-  }
+  },
 });
 ```
 
@@ -46,29 +43,29 @@ The SDK supports the StandardSchema interface, which works with Zod, Valibot, an
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('UserRegistration', {
   schema: {
     input: z.object({
       email: z.string().email(),
-      age: z.number().min(18)
+      age: z.number().min(18),
     }),
     output: z.object({
       userId: z.string(),
-      verified: z.boolean()
-    })
+      verified: z.boolean(),
+    }),
   },
   handler: async (ctx, input) => {
     // input.email and input.age are fully typed
     // Return type is also validated
     return {
       userId: 'user-123',
-      verified: true
+      verified: true,
     };
-  }
+  },
 });
 ```
 
-For type safety, it's recommended to add schemas to all agents. See the [Schema Validation](/Guides/schema-validation) guide for detailed patterns.
+For type safety, it's recommended to add schemas to all agents. See the [Schema Validation](/v1/Guides/schema-validation) guide for detailed patterns.
 
 ### Two-File Pattern
 
@@ -81,29 +78,29 @@ Each agent consists of two files in your project:
 // src/agents/chat/agent.ts
 import { createAgent } from '@agentuity/runtime';
 
-export const chatAgent = createAgent({
+export const chatAgent = createAgent('ChatAgent', {
   schema: { /* ... */ },
-  handler: async (ctx, input) => { /* ... */ }
+  handler: async (ctx, input) => { /* ... */ },
 });
 ```
 
 ```typescript
-// src/agents/chat/route.ts
+// src/api/index.ts
 import { createRouter } from '@agentuity/runtime';
-import { chatAgent } from './agent';
+import chatAgent from '@agent/chat';
 
 const router = createRouter();
 
-router.post('/chat', async (c) => {
-  const input = await c.req.json();
-  const result = await c.agent.chatAgent.run(input);
+router.post('/chat', chatAgent.validator(), async (c) => {
+  const input = c.req.valid('json');
+  const result = await chatAgent.run(input);
   return c.json(result);
 });
 
 export default router;
 ```
 
-The bundler auto-discovers both files based on the directory structure. For more details on project structure, see the [Architecture](/Introduction/architecture) guide.
+Routes are defined in `src/api/index.ts` and import agents via the `@agent/` path alias. For more details on project structure, see the [Architecture](/v1/Introduction/architecture) guide.
 
 ### Handler Signature
 
@@ -133,19 +130,19 @@ The SDK provides automatic validation and type safety for inputs and outputs thr
 When a schema is defined, the SDK validates input before calling your handler:
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('SearchAgent', {
   schema: {
     input: z.object({
       query: z.string().min(1),
-      filters: z.array(z.string()).optional()
-    })
+      filters: z.array(z.string()).optional(),
+    }),
   },
   handler: async (ctx, input) => {
     // input is validated and typed
     // TypeScript knows: input.query is string
     // TypeScript knows: input.filters is string[] | undefined
     return { results: [] };
-  }
+  },
 });
 ```
 
@@ -156,20 +153,20 @@ Invalid input results in an error response before the handler executes.
 Output schemas ensure your agent returns the expected data structure:
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('StatusAgent', {
   schema: {
     output: z.object({
       status: z.enum(['success', 'error']),
-      data: z.any()
-    })
+      data: z.any(),
+    }),
   },
   handler: async (ctx, input) => {
     // Return must match output schema
     return {
       status: 'success',
-      data: { /* ... */ }
+      data: { /* ... */ },
     };
-  }
+  },
 });
 ```
 
@@ -181,23 +178,23 @@ For streaming responses (like LLM output), set `stream: true` in the schema:
 import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 
-const agent = createAgent({
+const agent = createAgent('StreamingAgent', {
   schema: {
     input: z.object({ prompt: z.string() }),
-    stream: true
+    stream: true,
   },
   handler: async (ctx, input) => {
     const { textStream } = streamText({
       model: openai('gpt-5-mini'),
-      prompt: input.prompt
+      prompt: input.prompt,
     });
 
     return textStream;
-  }
+  },
 });
 ```
 
-See the [Schema Validation](/Guides/schema-validation) guide for advanced patterns including union types, transforms, and custom validation.
+See the [Schema Validation](/v1/Guides/schema-validation) guide for advanced patterns including union types, transforms, and custom validation.
 
 ## Agent Context (ctx)
 
@@ -219,25 +216,20 @@ handler: async (ctx, input) => {
 }
 ```
 
-### Agent System
+### Calling Other Agents
 
-Call other agents in your project or access agent references:
+Import and call other agents directly:
 
 ```typescript
+import enrichmentAgent from '@agent/enrichment';
+
 handler: async (ctx, input) => {
   // Call another agent (type-safe)
-  const result = await ctx.agent.enrichmentAgent.run({
-    text: input.data
+  const result = await enrichmentAgent.run({
+    text: input.data,
   });
 
-  // Reference to current agent
-  const self = ctx.current;
-
-  // Parent agent reference (in subagents)
-  const parent = ctx.parent;
-  if (parent) {
-    const parentResult = await parent.run(input);
-  }
+  return result;
 }
 ```
 
@@ -268,7 +260,7 @@ handler: async (ctx, input) => {
 | `ctx.thread.state` | Up to 1 hour | Conversation history |
 | `ctx.session.state` | Spans threads | User preferences, settings |
 
-See the [Sessions and Threads](/Guides/sessions-threads) guide for detailed state management patterns.
+See the [Sessions and Threads](/v1/Guides/sessions-threads) guide for detailed state management patterns.
 
 ### Storage
 
@@ -287,10 +279,10 @@ handler: async (ctx, input) => {
     similarity: 0.7
   });
 
-  // Object storage
-  await ctx.objectstore.put('uploads', 'file.pdf', fileData, {
-    contentType: 'application/pdf'
-  });
+  // Object storage (Bun S3)
+  // import { s3 } from "bun";
+  const file = s3.file('uploads/file.pdf');
+  await file.write(fileData, { type: 'application/pdf' });
 
   // Stream storage
   const stream = await ctx.stream.create('export', {
@@ -305,7 +297,7 @@ Each storage system provides specific capabilities:
 - **Object Storage**: File storage with public URL generation
 - **Stream**: Large data exports and real-time streaming
 
-See the [API Reference](/SDK/api-reference) for complete storage API documentation.
+See the [API Reference](/v1/SDK/api-reference) for complete storage API documentation.
 
 ### Observability
 
@@ -344,7 +336,7 @@ handler: async (ctx, input) => {
 }
 ```
 
-Use `waitUntil()` for non-blocking operations like logging, analytics, and cleanup tasks. See the [API Reference](/SDK/api-reference) for the complete context API.
+Use `waitUntil()` for non-blocking operations like logging, analytics, and cleanup tasks. See the [API Reference](/v1/SDK/api-reference) for the complete context API.
 
 ## Routing and Triggers
 
@@ -363,9 +355,10 @@ router.get('/status', async (c) => {
   return c.json({ status: 'ok' });
 });
 
-router.post('/chat', async (c) => {
-  const input = await c.req.json();
-  const result = await c.agent.chatAgent.run(input);
+// import chatAgent from '@agent/chat';
+router.post('/chat', chatAgent.validator(), async (c) => {
+  const input = c.req.valid('json');
+  const result = await chatAgent.run(input);
   return c.json(result);
 });
 
@@ -381,28 +374,33 @@ export default router;
 The router provides methods for event-driven and scheduled triggers:
 
 ```typescript
+import emailAgent from '@agent/email';
+import dailyReportAgent from '@agent/daily-report';
+import smsAgent from '@agent/sms';
+import chatAgent from '@agent/chat';
+
 // Email handling
 router.email('support@example.com', async (email, c) => {
-  const result = await c.agent.emailAgent.run({
+  const result = await emailAgent.run({
     from: email.fromEmail() || 'unknown',
     subject: email.subject() || 'no subject',
-    body: email.text() || email.html() || ''
+    body: email.text() || email.html() || '',
   });
   return c.json(result);
 });
 
 // Scheduled cron jobs
 router.cron('0 9 * * *', async (c) => {
-  await c.agent.dailyReportAgent.run({ date: new Date() });
+  await dailyReportAgent.run({ date: new Date() });
   return c.json({ scheduled: true });
 });
 
 // SMS handling
 router.sms({ number: '+1234567890' }, async (c) => {
   const sms = c.req.sms;
-  const result = await c.agent.smsAgent.run({
+  const result = await smsAgent.run({
     from: sms.from,
-    message: sms.body
+    message: sms.body,
   });
   return c.json(result);
 });
@@ -410,12 +408,12 @@ router.sms({ number: '+1234567890' }, async (c) => {
 // WebSocket connections
 router.websocket('/chat', {
   onOpen: (c, ws) => {
-    console.log('Connection opened');
+    c.var.logger.info('Connection opened');
   },
   onMessage: async (c, ws, message) => {
-    const result = await c.agent.chatAgent.run({ message });
+    const result = await chatAgent.run({ message });
     ws.send(JSON.stringify(result));
-  }
+  },
 });
 
 // Server-Sent Events
@@ -431,41 +429,47 @@ router.sse('/stream', async (c) => {
 
 Trigger configuration (cron schedules, email addresses, phone numbers) is now defined in code rather than through the UI. This provides version control and type safety for your triggers.
 
-For detailed routing patterns, WebSocket handling, and middleware, see the [Routing & Triggers](/Guides/routing-triggers) guide.
+For detailed routing patterns, WebSocket handling, and middleware, see the [Routing & Triggers](/v1/Guides/routing-triggers) guide.
 
 ## Agent Communication
 
-Agents can call other agents in the same project using type-safe references through the context object.
+Import agents directly and call them with full type safety.
 
-### Calling Other Agents
-
-Use `ctx.agent.agentName.run()` to invoke another agent:
+### Basic Agent Calls
 
 ```typescript
-const coordinatorAgent = createAgent({
+import { createAgent } from '@agentuity/runtime';
+import enrichmentAgent from '@agent/enrichment';
+
+const coordinator = createAgent('Coordinator', {
   handler: async (ctx, input) => {
     // Call another agent
-    const enriched = await ctx.agent.enrichmentAgent.run({
-      text: input.rawData
+    const enriched = await enrichmentAgent.run({
+      text: input.rawData,
     });
 
-    // Use the result
     return { processed: enriched };
-  }
+  },
 });
+
+export default coordinator;
 ```
 
-When both agents have schemas, the call is fully type-safe. TypeScript will validate the input type and infer the output type.
+When both agents have schemas, TypeScript validates the input type and infers the output type.
 
 ### Sequential vs Parallel Execution
 
 Execute agents sequentially when each depends on the previous result:
 
 ```typescript
+import validator from '@agent/validator';
+import enricher from '@agent/enricher';
+import analyzer from '@agent/analyzer';
+
 handler: async (ctx, input) => {
-  const step1 = await ctx.agent.validator.run(input);
-  const step2 = await ctx.agent.enricher.run(step1);
-  const step3 = await ctx.agent.analyzer.run(step2);
+  const step1 = await validator.run(input);
+  const step2 = await enricher.run(step1);
+  const step3 = await analyzer.run(step2);
 
   return step3;
 }
@@ -474,32 +478,20 @@ handler: async (ctx, input) => {
 Execute agents in parallel when operations are independent:
 
 ```typescript
+import webSearch from '@agent/web-search';
+import database from '@agent/database';
+import cache from '@agent/cache';
+
 handler: async (ctx, input) => {
   const [webResults, dbResults, cacheResults] = await Promise.all([
-    ctx.agent.webSearch.run(input),
-    ctx.agent.database.run(input),
-    ctx.agent.cache.run(input)
+    webSearch.run(input),
+    database.run(input),
+    cache.run(input),
   ]);
 
   return { webResults, dbResults, cacheResults };
 }
 ```
-
-### Subagent Communication
-
-Access subagents using the nested path syntax:
-
-```typescript
-// Call a subagent from anywhere
-const result = await ctx.agent.team.members.run({
-  action: 'list'
-});
-
-// From a subagent, access the parent
-const parentResult = await ctx.parent.run(input);
-```
-
-Subagents organize related agents into parent-child hierarchies with one level of nesting. For detailed patterns and limitations, see the [Subagents](/Guides/subagents) guide.
 
 <Callout type="info">
 Agent calls execute within the same session context, sharing the same `sessionId` and state scopes. This enables coordinated workflows across multiple agents.
@@ -507,9 +499,9 @@ Agent calls execute within the same session context, sharing the same `sessionId
 
 ## Next Steps
 
-- [Schema Validation](/Guides/schema-validation): Advanced schema patterns and validation
-- [Routing & Triggers](/Guides/routing-triggers): HTTP methods, WebSocket, SSE, and specialized routes
-- [Sessions and Threads](/Guides/sessions-threads): State management patterns
-- [Evaluations](/Guides/evaluations): Automated quality testing
-- [Events](/Guides/events): Lifecycle hooks and monitoring
-- [API Reference](/SDK/api-reference): Complete API documentation
+- [Schema Validation](/v1/Guides/schema-validation): Advanced schema patterns and validation
+- [Routing & Triggers](/v1/Guides/routing-triggers): HTTP methods, WebSocket, SSE, and specialized routes
+- [Sessions and Threads](/v1/Guides/sessions-threads): State management patterns
+- [Evaluations](/v1/Guides/evaluations): Automated quality testing
+- [Events](/v1/Guides/events): Lifecycle hooks and monitoring
+- [API Reference](/v1/SDK/api-reference): Complete API documentation

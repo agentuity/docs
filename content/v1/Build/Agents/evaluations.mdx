@@ -15,7 +15,7 @@ Attach an eval to any agent using `createEval()`:
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('QA Agent', {
   schema: {
     input: z.object({ question: z.string() }),
     output: z.object({ answer: z.string(), confidence: z.number() }),
@@ -27,11 +27,9 @@ const agent = createAgent({
 });
 
 // Score eval: returns 0-1 quality score
-agent.createEval({
-  metadata: {
-    name: 'confidence-check',
-    description: 'Scores output based on confidence level',
-  },
+// Name is the first argument
+agent.createEval('confidence-check', {
+  description: 'Scores output based on confidence level',
   handler: async (ctx, input, output) => {
     return {
       success: true,
@@ -58,8 +56,8 @@ import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 
 // Programmatic: pattern matching
-agent.createEval({
-  metadata: { name: 'pii-check' },
+agent.createEval('pii-check', {
+  description: 'Detects PII patterns in output',
   handler: async (ctx, input, output) => {
     const ssnPattern = /\b\d{3}-\d{2}-\d{4}\b/;
     const hasPII = ssnPattern.test(output.answer);
@@ -73,8 +71,8 @@ agent.createEval({
 });
 
 // LLM-based: subjective judgment
-agent.createEval({
-  metadata: { name: 'is-helpful' },
+agent.createEval('is-helpful', {
+  description: 'Uses LLM to judge helpfulness',
   handler: async (ctx, input, output) => {
     const { object } = await generateObject({
       model: openai('gpt-5-nano'),
@@ -108,11 +106,8 @@ import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 
-agent.createEval({
-  metadata: {
-    name: 'relevance-score',
-    description: 'Scores how relevant the answer is to the question',
-  },
+agent.createEval('relevance-score', {
+  description: 'Scores how relevant the answer is to the question',
   handler: async (ctx, input, output) => {
     const { object } = await generateObject({
       model: openai('gpt-5-nano'),
@@ -147,7 +142,7 @@ import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 
-const ragAgent = createAgent({
+const ragAgent = createAgent('RAG Agent', {
   schema: {
     input: z.object({ question: z.string() }),
     output: z.object({ answer: z.string(), sources: z.array(z.string()) }),
@@ -166,11 +161,8 @@ const ragAgent = createAgent({
   },
 });
 
-ragAgent.createEval({
-  metadata: {
-    name: 'hallucination-check',
-    description: 'Detects claims not supported by sources',
-  },
+ragAgent.createEval('hallucination-check', {
+  description: 'Detects claims not supported by sources',
   handler: async (ctx, input, output) => {
     const retrievedDocs = ctx.state.get('retrievedDocs') as string[];
 
@@ -211,7 +203,7 @@ Data stored in `ctx.state` during agent execution persists to eval handlers. Use
 </Callout>
 
 <Callout type="tip" title="Built-in Evals vs Custom Agent Chaining">
-Built-in evals (`agent.createEval()`) are designed for automated background monitoring of a single agent's output. For user-facing comparison reports or cross-model evaluations (like comparing GPT vs Claude outputs), use custom agent chaining with `generateObject` instead. See [Learning/Examples](/Learn/Examples) for advanced patterns.
+Built-in evals (`agent.createEval()`) are designed for automated background monitoring of a single agent's output. For user-facing comparison reports or cross-model evaluations (like comparing GPT vs Claude outputs), use custom agent chaining with `generateObject` instead. See [Learning/Examples](/v1/Learn/Examples) for advanced patterns.
 </Callout>
 
 ## Multiple Evals
@@ -224,8 +216,8 @@ import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 
 // Eval 1: Is the response relevant?
-agent.createEval({
-  metadata: { name: 'relevance' },
+agent.createEval('relevance', {
+  description: 'Scores response relevance',
   handler: async (ctx, input, output) => {
     const { object } = await generateObject({
       model: openai('gpt-5-nano'),
@@ -240,8 +232,8 @@ agent.createEval({
 });
 
 // Eval 2: Is it concise?
-agent.createEval({
-  metadata: { name: 'conciseness' },
+agent.createEval('conciseness', {
+  description: 'Scores response conciseness',
   handler: async (ctx, input, output) => {
     const { object } = await generateObject({
       model: openai('gpt-5-nano'),
@@ -256,8 +248,8 @@ agent.createEval({
 });
 
 // Eval 3: Compliance check (programmatic)
-agent.createEval({
-  metadata: { name: 'no-pii' },
+agent.createEval('no-pii', {
+  description: 'Checks for PII patterns',
   handler: async (ctx, input, output) => {
     const patterns = [/\b\d{3}-\d{2}-\d{4}\b/, /\b\d{16}\b/]; // SSN, credit card
     const hasPII = patterns.some((p) => p.test(output.answer));
@@ -273,8 +265,8 @@ Errors in one eval don't affect others. Each runs independently.
 Return `success: false` when an eval can't complete:
 
 ```typescript
-agent.createEval({
-  metadata: { name: 'external-validation' },
+agent.createEval('external-validation', {
+  description: 'Validates output via external API',
   handler: async (ctx, input, output) => {
     try {
       const response = await fetch('https://api.example.com/validate', {
@@ -301,6 +293,6 @@ Eval errors are logged but don't affect agent responses.
 
 ## Next Steps
 
-- [Events & Lifecycle](/Build/Agents/events-lifecycle): Monitor agent execution with lifecycle hooks
-- [State Management](/Build/Agents/state-management): Share data between handlers and evals
-- [Calling Other Agents](/Build/Agents/calling-other-agents): Build multi-agent workflows
+- [Events & Lifecycle](/v1/Build/Agents/events-lifecycle): Monitor agent execution with lifecycle hooks
+- [State Management](/v1/Build/Agents/state-management): Share data between handlers and evals
+- [Calling Other Agents](/v1/Build/Agents/calling-other-agents): Build multi-agent workflows

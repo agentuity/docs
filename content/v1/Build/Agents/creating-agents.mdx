@@ -7,12 +7,12 @@ Each agent encapsulates a handler function, input/output validation, and metadat
 
 ## Basic Agent
 
-Create an agent with `createAgent()` and a handler function:
+Create an agent with `createAgent()`, providing a name and handler function:
 
 ```typescript
 import { createAgent, type AgentContext } from '@agentuity/runtime';
 
-const agent = createAgent({
+const agent = createAgent('Greeter', {
   handler: async (ctx: AgentContext, input) => {
     ctx.logger.info('Processing request', { input });
     return { message: 'Hello from agent!' };
@@ -34,7 +34,7 @@ Define input and output schemas for type safety and runtime validation. Agentuit
 import { createAgent, type AgentContext } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 
-const agent = createAgent({
+const agent = createAgent('Contact Form', {
   schema: {
     input: s.object({
       email: s.string(),
@@ -65,7 +65,7 @@ You can also use [Zod](https://zod.dev) for more advanced validation:
 import { createAgent, type AgentContext } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('Contact Form', {
   schema: {
     input: z.object({
       email: z.string().email(),
@@ -108,7 +108,7 @@ All implement [StandardSchema](https://github.com/standard-schema/standard-schem
 TypeScript automatically infers types from your schemas:
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('Search', {
   schema: {
     input: z.object({
       query: z.string(),
@@ -190,10 +190,6 @@ handler: async (ctx, input) => {
   // Identifiers
   ctx.sessionId;      // Unique per request (sess_...)
   ctx.thread.id;      // Conversation context (thrd_...)
-  ctx.agentName;      // Current agent name
-
-  // Call other agents
-  const result = await ctx.agent.otherAgent.run({ query: input.query });
 
   // State management
   ctx.state.set('key', value);           // Request-scoped (cleared after response)
@@ -203,7 +199,6 @@ handler: async (ctx, input) => {
   // Storage
   await ctx.kv.set('bucket', 'key', data);
   await ctx.vector.search('namespace', { query: 'text' });
-  await ctx.objectstore.put('bucket', 'file.txt', buffer);
 
   // Background tasks
   ctx.waitUntil(async () => {
@@ -214,22 +209,21 @@ handler: async (ctx, input) => {
 }
 ```
 
-For detailed state management patterns, see [Managing State](/Build/Agents/state-management).
+For detailed state management patterns, see [Managing State](/v1/Build/Agents/state-management).
 
-## Agent Metadata
+## Agent Name and Description
 
-Every agent requires metadata with a name and description:
+Every agent requires a name (first argument) and can include an optional description:
 
 ```typescript
-const agent = createAgent({
-  metadata: {
-    name: 'Email Processor',
-    description: 'Processes incoming emails and extracts key information',
-  },
+const agent = createAgent('Email Processor', {
+  description: 'Processes incoming emails and extracts key information',
   schema: { ... },
   handler: async (ctx, input) => { ... },
 });
 ```
+
+The name is used for identification in logs, the Workbench, and the Agentuity console. The description helps document what the agent does.
 
 ## Adding Test Prompts
 
@@ -268,11 +262,13 @@ The `prompts` array provides quick-test options in the Workbench UI.
 - **Keep handlers focused**: Move complex logic to helper functions
 
 ```typescript
+import processor from '@agent/processor';
+
 // Good: Clear, focused handler
 handler: async (ctx, input) => {
   try {
     const enriched = await enrichData(input.data);
-    const result = await ctx.agent.processor.run(enriched);
+    const result = await processor.run(enriched);
     return { success: true, result };
   } catch (error) {
     ctx.logger.error('Processing failed', { error });
@@ -283,6 +279,6 @@ handler: async (ctx, input) => {
 
 ## Next Steps
 
-- [Using the AI SDK](/Build/Agents/ai-sdk-integration): Add LLM capabilities with generateText and streamText
-- [Managing State](/Build/Agents/state-management): Persist data across requests with thread and session state
-- [Calling Other Agents](/Build/Agents/calling-other-agents): Build multi-agent workflows
+- [Using the AI SDK](/v1/Build/Agents/ai-sdk-integration): Add LLM capabilities with generateText and streamText
+- [Managing State](/v1/Build/Agents/state-management): Persist data across requests with thread and session state
+- [Calling Other Agents](/v1/Build/Agents/calling-other-agents): Build multi-agent workflows

@@ -5,14 +5,15 @@ description: Real-time bidirectional communication with router.websocket()
 
 WebSockets enable persistent, bidirectional connections between client and server. Use them for chat interfaces, live dashboards, collaborative tools, and any scenario requiring real-time two-way communication.
 
-<Callout type="info" title="Works in agents and APIs">
-This routing method works in both agent directories (`src/agents/*/route.ts`) and API directories (`src/apis/*/route.ts`). Examples below show agent patterns, but the same code works in standalone API routes.
+<Callout type="info" title="Routes Location">
+All routes live in `src/api/`. Import agents you need and call them directly.
 </Callout>
 
 ## Basic Example
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import chatAgent from '@agent/chat';
 
 const router = createRouter();
 
@@ -24,7 +25,7 @@ router.websocket('/chat', (c) => (ws) => {
 
   ws.onMessage(async (event) => {
     const message = event.data as string;
-    const response = await c.agent.chatAgent.run({ message });
+    const response = await chatAgent.run({ message });
     ws.send(response);
   });
 
@@ -78,6 +79,8 @@ const authMiddleware = createMiddleware(async (c, next) => {
   await next();
 });
 
+import chat from '@agent/chat';
+
 router.websocket('/chat', authMiddleware, (c) => (ws) => {
   const userId = c.var.userId;
 
@@ -86,7 +89,7 @@ router.websocket('/chat', authMiddleware, (c) => (ws) => {
   });
 
   ws.onMessage(async (event) => {
-    const response = await c.agent.chat.run({
+    const response = await chat.run({
       userId,
       message: event.data as string,
     });
@@ -129,6 +132,7 @@ A real-time echo server with heartbeat:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import echoAgent from '@agent/echo';
 
 const router = createRouter();
 
@@ -149,7 +153,7 @@ router.websocket('/', (c) => (ws) => {
       const message = event.data as string;
       c.var.logger.info('Message received', { message });
 
-      const response = await c.agent.echoAgent.run(message);
+      const response = await echoAgent.run(message);
       ws.send(response);
     } catch (error) {
       c.var.logger.error('Message processing failed', { error });

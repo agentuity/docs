@@ -28,12 +28,12 @@ Throw errors directly in your handler when validation or business logic fails:
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 
-const agent = createAgent({
+const agent = createAgent('OperationHandler', {
   schema: {
     input: s.object({
       operation: s.enum(['create', 'update', 'delete']),
-      data: s.any()
-    })
+      data: s.any(),
+    }),
   },
   handler: async (ctx, input) => {
     // Throw errors when business logic fails
@@ -48,7 +48,7 @@ const agent = createAgent({
     }
 
     return { success: true };
-  }
+  },
 });
 ```
 
@@ -59,17 +59,23 @@ The SDK catches the error and returns an appropriate error response. No manual e
 When agents call other agents, errors propagate automatically:
 
 ```typescript
-const coordinatorAgent = createAgent({
+import { createAgent } from '@agentuity/runtime';
+import validatorAgent from '@agent/validator';
+import enrichmentAgent from '@agent/enrichment';
+
+const coordinator = createAgent('Coordinator', {
   handler: async (ctx, input) => {
     // If validatorAgent throws an error, it propagates here
-    const validation = await ctx.agent.validatorAgent.run(input);
+    const validation = await validatorAgent.run(input);
 
     // If enrichmentAgent throws an error, it propagates here
-    const enriched = await ctx.agent.enrichmentAgent.run(validation);
+    const enriched = await enrichmentAgent.run(validation);
 
     return enriched;
-  }
+  },
 });
+
+export default coordinator;
 ```
 
 This allows critical operations to *fail fast*. If validation fails, downstream operations don't execute.
@@ -79,24 +85,29 @@ This allows critical operations to *fail fast*. If validation fails, downstream 
 For optional operations, use try-catch to handle errors gracefully:
 
 ```typescript
-const agent = createAgent({
+import { createAgent } from '@agentuity/runtime';
+import enrichmentAgent from '@agent/enrichment';
+
+const agent = createAgent('Processor', {
   handler: async (ctx, input) => {
     let enrichedData = input.data;
 
     // Try optional enrichment, but continue if it fails
     try {
-      enrichedData = await ctx.agent.enrichmentAgent.run(input);
+      enrichedData = await enrichmentAgent.run(input);
     } catch (error) {
       ctx.logger.warn('Enrichment failed, using original data', {
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
       // Continue with original data
     }
 
     // Process with enriched data (or fallback to original)
     return processData(enrichedData);
-  }
+  },
 });
+
+export default agent;
 ```
 
 This pattern is useful for:
@@ -124,7 +135,7 @@ class AuthorizationError extends Error {
   }
 }
 
-const agent = createAgent({
+const agent = createAgent('UserLookup', {
   handler: async (ctx, input) => {
     const user = await getUser(input.userId);
 
@@ -137,7 +148,7 @@ const agent = createAgent({
     }
 
     return { success: true };
-  }
+  },
 });
 ```
 
@@ -151,23 +162,24 @@ Routes wrap agent calls in try-catch blocks to return HTTP responses with approp
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import processingAgent from '@agent/processing';
 
 const router = createRouter();
 
-router.post('/process', async (c) => {
+router.post('/process', processingAgent.validator(), async (c) => {
   try {
-    const input = await c.req.json();
-    const result = await c.agent.processingAgent.run(input);
+    const input = c.req.valid('json');
+    const result = await processingAgent.run(input);
 
     return c.json({
       success: true,
-      data: result
+      data: result,
     });
   } catch (error) {
     return c.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       500
     );
@@ -182,14 +194,16 @@ export default router;
 Use appropriate status codes to indicate the type of error:
 
 ```typescript
+import userAgent from '@agent/user';
+
 router.post('/users/:id', async (c) => {
   try {
     const userId = c.req.param('id');
     const input = await c.req.json();
 
-    const result = await c.agent.userAgent.run({
+    const result = await userAgent.run({
       userId,
-      ...input
+      ...input,
     });
 
     return c.json({ success: true, data: result });
@@ -221,10 +235,11 @@ When using custom error classes, check the error type in routes:
 
 ```typescript
 import { ResourceNotFoundError, AuthorizationError } from './errors';
+import actionAgent from '@agent/action';
 
-router.post('/action', async (c) => {
+router.post('/action', actionAgent.validator(), async (c) => {
   try {
-    const result = await c.agent.actionAgent.run(await c.req.json());
+    const result = await actionAgent.run(c.req.valid('json'));
     return c.json({ success: true, data: result });
   } catch (error) {
     if (error instanceof ResourceNotFoundError) {
@@ -251,13 +266,13 @@ The SDK automatically validates input and output against schemas before and afte
 Invalid input results in an error response before the handler executes:
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('UserValidator', {
   schema: {
     input: z.object({
       email: z.string().email(),
       age: z.number().min(18),
-      role: z.enum(['user', 'admin'])
-    })
+      role: z.enum(['user', 'admin']),
+    }),
   },
   handler: async (ctx, input) => {
     // If we reach this point, input is guaranteed to be valid
@@ -266,7 +281,7 @@ const agent = createAgent({
     // - input.role is either 'user' or 'admin'
 
     return { success: true };
-  }
+  },
 });
 ```
 
@@ -277,23 +292,23 @@ When validation fails, the SDK returns an error response with details about whic
 The SDK also validates output to ensure type safety:
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('OutputExample', {
   schema: {
     output: z.object({
       status: z.enum(['success', 'error']),
-      data: z.any().optional()
-    })
+      data: z.any().optional(),
+    }),
   },
   handler: async (ctx, input) => {
     // This return value is validated
     return {
       status: 'success',
-      data: { result: 'completed' }
+      data: { result: 'completed' },
     };
 
     // This would cause a validation error:
     // return { status: 'invalid' };
-  }
+  },
 });
 ```
 
@@ -306,7 +321,7 @@ Storage operations can fail due to network issues, timeouts, or service unavaila
 ### Key-Value Storage
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('CacheFallback', {
   handler: async (ctx, input) => {
     try {
       const cached = await ctx.kv.get('cache', input.key);
@@ -316,7 +331,7 @@ const agent = createAgent({
       }
     } catch (error) {
       ctx.logger.warn('Cache lookup failed, falling back to database', {
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
     }
 
@@ -331,63 +346,67 @@ const agent = createAgent({
     }
 
     return { source: 'database', data };
-  }
+  },
 });
 ```
 
 ### Vector Storage
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('SearchFallback', {
   handler: async (ctx, input) => {
     try {
       const results = await ctx.vector.search('products', {
         query: input.searchTerm,
         limit: 5,
-        similarity: 0.7
+        similarity: 0.7,
       });
 
       return { results };
     } catch (error) {
       ctx.logger.error('Vector search failed', {
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
 
       // Fall back to keyword search
       const fallbackResults = await keywordSearch(input.searchTerm);
       return { results: fallbackResults, fallback: true };
     }
-  }
+  },
 });
 ```
 
-### Object Storage
+### Object Storage (Bun S3)
 
 ```typescript
-const agent = createAgent({
+import { createAgent } from '@agentuity/runtime';
+import { s3 } from 'bun';
+
+const agent = createAgent('FileUploader', {
   handler: async (ctx, input) => {
     try {
-      await ctx.objectstore.put('uploads', input.filename, input.data, {
-        contentType: input.contentType
-      });
+      const file = s3.file(`uploads/${input.filename}`);
+      await file.write(input.data, { type: input.contentType });
 
-      const url = await ctx.objectstore.createPublicURL(
-        'uploads',
-        input.filename,
-        3600000 // 1 hour
-      );
+      // Presign URL for download (1 hour)
+      const url = s3.presign(`uploads/${input.filename}`, {
+        expiresIn: 3600,
+        method: 'GET',
+      });
 
       return { success: true, url };
     } catch (error) {
       ctx.logger.error('Failed to upload file', {
         filename: input.filename,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
 
       throw new Error('File upload failed. Please try again.');
     }
-  }
+  },
 });
+
+export default agent;
 ```
 
 ## Error Monitoring
@@ -401,15 +420,12 @@ Listen to the `errored` event to track when agents fail:
 ```typescript
 import { createAgent } from '@agentuity/runtime';
 
-const agent = createAgent({
-  metadata: {
-    name: 'Processing Agent',
-    description: 'Processes user data'
-  },
+const agent = createAgent('ProcessingAgent', {
+  description: 'Processes user data',
   handler: async (ctx, input) => {
     // Handler logic
     return { success: true };
-  }
+  },
 });
 
 // Listen for errors
@@ -419,14 +435,14 @@ agent.addEventListener('errored', (event, agent, ctx, error) => {
     agentName: agent.metadata.name,
     sessionId: ctx.sessionId,
     error: error.message,
-    stack: error.stack
+    stack: error.stack,
   });
 
   // Send to error tracking service
   trackError({
     agent: agent.metadata.name,
     session: ctx.sessionId,
-    error: error.message
+    error: error.message,
   });
 });
 ```
@@ -436,7 +452,7 @@ The `errored` event provides access to:
 - The execution context
 - The error that was thrown
 
-This enables centralized error logging, alerting, and tracking across all agents. For comprehensive event handling patterns, see the [Events](/Guides/events) guide.
+This enables centralized error logging, alerting, and tracking across all agents. For comprehensive event handling patterns, see the [Events](/v1/Guides/events) guide.
 
 ## Debugging Techniques
 
@@ -445,7 +461,7 @@ This enables centralized error logging, alerting, and tracking across all agents
 Use the logger to track execution flow and identify issues:
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('StepProcessor', {
   handler: async (ctx, input) => {
     ctx.logger.info('Processing started', { input });
 
@@ -460,12 +476,12 @@ const agent = createAgent({
     } catch (error) {
       ctx.logger.error('Processing failed', {
         error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
+        stack: error instanceof Error ? error.stack : undefined,
       });
 
       throw error;
     }
-  }
+  },
 });
 ```
 
@@ -480,7 +496,7 @@ Log levels:
 Use tracing to debug complex workflows:
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('TracedProcessor', {
   handler: async (ctx, input) => {
     const span = ctx.tracer.startSpan('process-data');
 
@@ -491,7 +507,7 @@ const agent = createAgent({
       const result = await processData(input);
 
       span.addEvent('processing-completed', {
-        resultSize: JSON.stringify(result).length
+        resultSize: JSON.stringify(result).length,
       });
 
       return result;
@@ -501,7 +517,7 @@ const agent = createAgent({
     } finally {
       span.end();
     }
-  }
+  },
 });
 ```
 
@@ -599,12 +615,12 @@ test('throws error when required field is missing', async () => {
 
 // Test error propagation
 test('propagates errors from called agents', async () => {
-  // Mock subagent to throw error
-  mockAgent.run.mockRejectedValue(new Error('Subagent failed'));
+  // Mock called agent to throw error
+  mockAgent.run.mockRejectedValue(new Error('Called agent failed'));
 
   await expect(
     coordinatorAgent.run(input)
-  ).rejects.toThrow('Subagent failed');
+  ).rejects.toThrow('Called agent failed');
 });
 
 // Test graceful degradation
@@ -620,7 +636,7 @@ Testing error scenarios ensures your agents handle failures gracefully.
 
 ## Next Steps
 
-- [Schema Validation](/Guides/schema-validation): Define schemas to validate input and output automatically
-- [Events](/Guides/events): Monitor agent lifecycle and handle errors with event listeners
-- [Routing & Triggers](/Guides/routing-triggers): Create routes that handle HTTP requests and responses
-- [API Reference](/SDK/api-reference): Complete API documentation for context, storage, and utilities
+- [Schema Validation](/v1/Guides/schema-validation): Define schemas to validate input and output automatically
+- [Events](/v1/Guides/events): Monitor agent lifecycle and handle errors with event listeners
+- [Routing & Triggers](/v1/Guides/routing-triggers): Create routes that handle HTTP requests and responses
+- [API Reference](/v1/SDK/api-reference): Complete API documentation for context, storage, and utilities

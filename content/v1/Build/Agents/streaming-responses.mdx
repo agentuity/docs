@@ -14,9 +14,11 @@ Agentuity supports two streaming patterns:
 Uses `router.stream()` for direct streaming to the HTTP client. Data flows through and is not stored. Use this for real-time chat responses.
 
 ```typescript
-// In route.ts
+// In src/api/index.ts
+import chatAgent from '@agent/chat';
+
 router.stream('/', async (c) => {
-  return await c.agent.chat.run({ message: '...' });
+  return await chatAgent.run({ message: '...' });
 });
 ```
 
@@ -33,7 +35,7 @@ await stream.write('data');
 await stream.close();
 ```
 
-This page focuses on ephemeral streaming with the AI SDK. For persistent streaming patterns, see the [Storage documentation](/Build/Storage/durable-streams).
+This page focuses on ephemeral streaming with the AI SDK. For persistent streaming patterns, see the [Storage documentation](/v1/Build/Storage/durable-streams).
 
 <Callout type="info" title="Two Parts to Streaming">
 Streaming requires both: `schema.stream: true` in your agent (so the handler returns a stream) and `router.stream()` in your route (so the response is streamed to the client).
@@ -49,7 +51,7 @@ import { streamText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { s } from '@agentuity/schema';
 
-const agent = createAgent({
+const agent = createAgent('ChatStream', {
   schema: {
     input: s.object({ message: s.string() }),
     stream: true,
@@ -72,13 +74,15 @@ export default agent;
 Use `router.stream()` to handle streaming responses:
 
 ```typescript
+// src/api/index.ts
 import { createRouter } from '@agentuity/runtime';
+import chatAgent from '@agent/chat';
 
 const router = createRouter();
 
-router.stream('/', async (c) => {
-  const body = await c.req.json();
-  return c.agent.chat.run(body);
+router.stream('/chat', chatAgent.validator(), async (c) => {
+  const body = c.req.valid('json');
+  return chatAgent.run(body);
 });
 
 export default router;
@@ -138,7 +142,7 @@ function Chat() {
 }
 ```
 
-For streaming with React, see [Frontend Hooks](/Build/Frontend/react-hooks).
+For streaming with React, see [Frontend Hooks](/v1/Build/Frontend/react-hooks).
 
 ## Streaming with System Prompts
 
@@ -219,6 +223,6 @@ Errors in streaming are part of the stream, not thrown exceptions. Always provid
 
 ## Next Steps
 
-- [Using the AI SDK](/Build/Agents/ai-sdk-integration): Structured output and non-streaming responses
-- [State Management](/Build/Agents/state-management): Multi-turn conversations with memory
-- [Server-Sent Events](/Build/Routes/sse): Server-push updates without polling
+- [Using the AI SDK](/v1/Build/Agents/ai-sdk-integration): Structured output and non-streaming responses
+- [State Management](/v1/Build/Agents/state-management): Multi-turn conversations with memory
+- [Server-Sent Events](/v1/Build/Routes/sse): Server-push updates without polling

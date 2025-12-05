@@ -23,9 +23,10 @@ A question-answering agent that:
 ## Project Structure
 
 ```
-src/agents/knowledge/
-├── agent.ts    # RAG agent logic
-└── route.ts    # HTTP endpoint
+src/agent/knowledge/
+└── agent.ts    # RAG agent logic
+src/api/
+└── index.ts    # HTTP endpoint
 ```
 
 <Steps>
@@ -40,7 +41,7 @@ When a user asks a question, the agent needs to:
 3. Generate an answer using the LLM with that context
 4. Return the answer with source citations
 
-Here's the code for `src/agents/knowledge/agent.ts`:
+Here's the code for `src/agent/knowledge/agent.ts`:
 
 ```typescript
 import { createAgent, type AgentContext } from '@agentuity/runtime';
@@ -48,11 +49,8 @@ import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 
-const agent = createAgent({
-  metadata: {
-    name: 'Knowledge Agent',
-    description: 'Answers questions using a knowledge base',
-  },
+const agent = createAgent('Knowledge Agent', {
+  description: 'Answers questions using a knowledge base',
   schema: {
     input: z.object({
       question: z.string().describe('The question to answer'),
@@ -134,18 +132,18 @@ export default agent;
 
 The route exposes your agent over HTTP. Use `agent.validator()` for type-safe validation using the agent's schema.
 
-Here's the code for `src/agents/knowledge/route.ts`:
+Here's the code for `src/api/index.ts`:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
-import agent from './agent';
+import knowledgeAgent from '@agent/knowledge';
 
 const router = createRouter();
 
 // Query endpoint - validates using agent's input schema
-router.post('/', agent.validator(), async (c) => {
+router.post('/knowledge', knowledgeAgent.validator(), async (c) => {
   const { question } = c.req.valid('json');
-  const result = await c.agent.knowledge.run({ question });
+  const result = await knowledgeAgent.run({ question });
   return c.json(result);
 });
 
@@ -165,7 +163,7 @@ Before you can query your knowledge base, you need to populate it. A separate in
 2. Storing each document in the vector database with metadata
 3. Returning the count and IDs of indexed documents
 
-Here's the code for `src/agents/indexer/agent.ts`:
+Here's the code for `src/agent/indexer/agent.ts`:
 
 ```typescript
 import { createAgent, type AgentContext } from '@agentuity/runtime';
@@ -178,11 +176,8 @@ const DocumentSchema = z.object({
   category: z.string().optional(),
 });
 
-const agent = createAgent({
-  metadata: {
-    name: 'Document Indexer',
-    description: 'Indexes documents into the knowledge base',
-  },
+const agent = createAgent('Document Indexer', {
+  description: 'Indexes documents into the knowledge base',
   schema: {
     input: z.object({
       documents: z.array(DocumentSchema),
@@ -283,17 +278,14 @@ Expected response:
 Here's the complete RAG agent with all features:
 
 ```typescript
-// src/agents/knowledge/agent.ts
+// src/agent/knowledge/agent.ts
 import { createAgent, type AgentContext } from '@agentuity/runtime';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 
-const agent = createAgent({
-  metadata: {
-    name: 'Knowledge Agent',
-    description: 'Answers questions using a knowledge base',
-  },
+const agent = createAgent('Knowledge Agent', {
+  description: 'Answers questions using a knowledge base',
   schema: {
     input: z.object({
       question: z.string().describe('The question to answer'),

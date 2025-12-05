@@ -10,10 +10,10 @@ Database storage provides relational database capabilities using Bun's native SQ
 | Storage Type | Best For |
 |--------------|----------|
 | **Database** | Structured data, complex queries, transactions, relational data |
-| [Key-Value](/Build/Storage/key-value) | Fast lookups, caching, configuration |
-| [Vector](/Build/Storage/vector) | Semantic search, embeddings, RAG |
-| [Object (S3)](/Build/Storage/object) | Files, images, documents, media |
-| [Durable Streams](/Build/Storage/durable-streams) | Large exports, audit logs |
+| [Key-Value](/v1/Build/Storage/key-value) | Fast lookups, caching, configuration |
+| [Vector](/v1/Build/Storage/vector) | Semantic search, embeddings, RAG |
+| [Object (S3)](/v1/Build/Storage/object) | Files, images, documents, media |
+| [Durable Streams](/v1/Build/Storage/durable-streams) | Large exports, audit logs |
 
 <Callout type="info" title="Credentials Auto-Injected">
 Agentuity automatically injects database credentials (`DATABASE_URL`) during development and deployment. No manual configuration required.
@@ -49,7 +49,7 @@ Always use template literal parameters (`${value}`) for dynamic values. Never co
 import { createAgent } from '@agentuity/runtime';
 import { sql } from "bun";
 
-const agent = createAgent({
+const agent = createAgent('UserQuery', {
   handler: async (ctx, input) => {
     // Basic query
     const users = await sql`SELECT * FROM users LIMIT 10`;
@@ -81,7 +81,7 @@ Build conditional queries safely:
 ```typescript
 import { sql } from "bun";
 
-const agent = createAgent({
+const agent = createAgent('UserFilter', {
   handler: async (ctx, input) => {
     const { minAge, maxAge, active } = input;
 
@@ -105,7 +105,7 @@ const agent = createAgent({
 import { createAgent } from '@agentuity/runtime';
 import { sql } from "bun";
 
-const agent = createAgent({
+const agent = createAgent('UserCreator', {
   handler: async (ctx, input) => {
     // Single insert
     const result = await sql`
@@ -136,7 +136,7 @@ Use transactions for operations that must succeed or fail together:
 import { createAgent } from '@agentuity/runtime';
 import { sql } from "bun";
 
-const agent = createAgent({
+const agent = createAgent('MoneyTransfer', {
   handler: async (ctx, input) => {
     const { fromAccount, toAccount, amount } = input;
 
@@ -332,7 +332,7 @@ const products = await mysql`SELECT * FROM products`;
 import { createAgent } from '@agentuity/runtime';
 import { sql, SQL } from "bun";
 
-const agent = createAgent({
+const agent = createAgent('UserRegistration', {
   handler: async (ctx, input) => {
     try {
       const result = await sql`
@@ -398,7 +398,7 @@ const db = new SQL({
 
 ## Next Steps
 
-- [Key-Value Storage](/Build/Storage/key-value): Fast caching and session data
-- [Object Storage (S3)](/Build/Storage/object): File and media storage
-- [Vector Storage](/Build/Storage/vector): Semantic search and embeddings
-- [Durable Streams](/Build/Storage/durable-streams): Streaming large data exports
+- [Key-Value Storage](/v1/Build/Storage/key-value): Fast caching and session data
+- [Object Storage (S3)](/v1/Build/Storage/object): File and media storage
+- [Vector Storage](/v1/Build/Storage/vector): Semantic search and embeddings
+- [Durable Streams](/v1/Build/Storage/durable-streams): Streaming large data exports

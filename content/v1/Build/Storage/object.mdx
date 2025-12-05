@@ -10,9 +10,9 @@ Object storage provides durable file storage for documents, images, media, and b
 | Storage Type | Best For |
 |--------------|----------|
 | **Object (S3)** | Files, images, documents, media, backups |
-| [Key-Value](/Build/Storage/key-value) | Fast lookups, caching, configuration |
-| [Vector](/Build/Storage/vector) | Semantic search, embeddings, RAG |
-| [Durable Streams](/Build/Storage/durable-streams) | Large exports, audit logs |
+| [Key-Value](/v1/Build/Storage/key-value) | Fast lookups, caching, configuration |
+| [Vector](/v1/Build/Storage/vector) | Semantic search, embeddings, RAG |
+| [Durable Streams](/v1/Build/Storage/durable-streams) | Large exports, audit logs |
 
 <Callout type="info" title="Credentials Auto-Injected">
 Agentuity automatically injects S3 credentials (`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_ENDPOINT`) during development and deployment. No manual configuration required.
@@ -49,7 +49,7 @@ await file.delete();
 import { createAgent } from '@agentuity/runtime';
 import { s3 } from "bun";
 
-const agent = createAgent({
+const agent = createAgent('FileWriter', {
   handler: async (ctx, input) => {
     // Write a string
     const textFile = s3.file("notes/readme.txt");
@@ -82,7 +82,7 @@ const agent = createAgent({
 import { createAgent } from '@agentuity/runtime';
 import { s3 } from "bun";
 
-const agent = createAgent({
+const agent = createAgent('FileReader', {
   handler: async (ctx, input) => {
     const file = s3.file("documents/report.json");
 
@@ -138,7 +138,7 @@ Generate time-limited signed URLs for direct client uploads or downloads:
 import { createAgent } from '@agentuity/runtime';
 import { s3 } from "bun";
 
-const agent = createAgent({
+const agent = createAgent('URLGenerator', {
   handler: async (ctx, input) => {
     // Generate download URL (GET, default)
     const downloadUrl = s3.presign(`uploads/${input.fileId}`, {
@@ -232,7 +232,7 @@ Handle large files efficiently with streaming:
 import { createAgent } from '@agentuity/runtime';
 import { s3 } from "bun";
 
-const agent = createAgent({
+const agent = createAgent('LargeFileExporter', {
   handler: async (ctx, input) => {
     const file = s3.file("exports/large-data.csv");
 
@@ -353,7 +353,7 @@ const spaces = new S3Client({
 import { createAgent } from '@agentuity/runtime';
 import { s3 } from "bun";
 
-const agent = createAgent({
+const agent = createAgent('FileHandler', {
   handler: async (ctx, input) => {
     const file = s3.file(`uploads/${input.fileId}`);
 
@@ -386,7 +386,7 @@ Common error codes:
 
 ## Next Steps
 
-- [Key-Value Storage](/Build/Storage/key-value): Fast caching and configuration
-- [Database](/Build/Storage/database): Relational data with Bun's SQL support
-- [Vector Storage](/Build/Storage/vector): Semantic search and embeddings
-- [Durable Streams](/Build/Storage/durable-streams): Streaming large data exports
+- [Key-Value Storage](/v1/Build/Storage/key-value): Fast caching and configuration
+- [Database](/v1/Build/Storage/database): Relational data with Bun's SQL support
+- [Vector Storage](/v1/Build/Storage/vector): Semantic search and embeddings
+- [Durable Streams](/v1/Build/Storage/durable-streams): Streaming large data exports

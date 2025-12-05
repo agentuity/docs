@@ -10,10 +10,10 @@ Key-value ("KV") storage provides fast data access for agents. Use it for cachin
 | Storage Type | Best For |
 |--------------|----------|
 | **Key-Value** | Fast lookups, caching, configuration, rate limits |
-| [Vector](/Build/Storage/vector) | Semantic search, embeddings, RAG |
-| [Object (S3)](/Build/Storage/object) | Files, images, documents, media |
-| [Database](/Build/Storage/database) | Structured data, complex queries, transactions |
-| [Durable Streams](/Build/Storage/durable-streams) | Large exports, audit logs, real-time data |
+| [Vector](/v1/Build/Storage/vector) | Semantic search, embeddings, RAG |
+| [Object (S3)](/v1/Build/Storage/object) | Files, images, documents, media |
+| [Database](/v1/Build/Storage/database) | Structured data, complex queries, transactions |
+| [Durable Streams](/v1/Build/Storage/durable-streams) | Large exports, audit logs, real-time data |
 
 <Callout type="info" title="KV vs Built-in State">
 Use built-in state (`ctx.state`, `ctx.thread.state`, `ctx.session.state`) for data tied to active requests and conversations. Use KV when you need custom TTL, *persistent data across sessions*, or *shared state across agents*.
@@ -28,7 +28,7 @@ Access key-value storage through `ctx.kv` in agents or `c.kv` in routes. Buckets
 ```typescript
 import { createAgent } from '@agentuity/runtime';
 
-const agent = createAgent({
+const agent = createAgent('CacheManager', {
   handler: async (ctx, input) => {
     // Store with optional TTL (minimum 60 seconds)
     await ctx.kv.set('cache', 'api-response', responseData, {
@@ -50,7 +50,7 @@ const agent = createAgent({
 ### Retrieving Data
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('CacheRetriever', {
   handler: async (ctx, input) => {
     const result = await ctx.kv.get('cache', 'api-response');
 
@@ -68,7 +68,7 @@ const agent = createAgent({
 ### Deleting Data
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('SessionCleaner', {
   handler: async (ctx, input) => {
     await ctx.kv.delete('sessions', input.sessionId);
     return { deleted: true };
@@ -91,7 +91,7 @@ const UserPreferences = type({
 
 type UserPreferences = typeof UserPreferences.infer;
 
-const agent = createAgent({
+const agent = createAgent('PreferenceLoader', {
   handler: async (ctx, input) => {
     const result = await ctx.kv.get<UserPreferences>('prefs', input.userId);
 
@@ -109,7 +109,7 @@ const agent = createAgent({
 ## Additional Methods
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('StorageExplorer', {
   handler: async (ctx, input) => {
     // Search keys by keyword
     const matches = await ctx.kv.search('cache', 'user-');
@@ -147,7 +147,7 @@ interface UserSession {
   preferences: { theme: string };
 }
 
-const agent = createAgent({
+const agent = createAgent('SessionManager', {
   handler: async (ctx, input) => {
     const sessionKey = `session:${input.token}`;
 
@@ -206,8 +206,8 @@ export default router;
 
 ## Next Steps
 
-- [Vector Storage](/Build/Storage/vector): Semantic search and embeddings
-- [Object Storage (S3)](/Build/Storage/object): File and media storage
-- [Database](/Build/Storage/database): Relational data with queries and transactions
-- [Durable Streams](/Build/Storage/durable-streams): Large data exports
-- [State Management](/Build/Agents/state-management): Built-in request/thread/session state
+- [Vector Storage](/v1/Build/Storage/vector): Semantic search and embeddings
+- [Object Storage (S3)](/v1/Build/Storage/object): File and media storage
+- [Database](/v1/Build/Storage/database): Relational data with queries and transactions
+- [Durable Streams](/v1/Build/Storage/durable-streams): Large data exports
+- [State Management](/v1/Build/Agents/state-management): Built-in request/thread/session state

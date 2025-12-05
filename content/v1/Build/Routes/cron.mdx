@@ -5,21 +5,22 @@ description: Run tasks on a schedule with router.cron()
 
 Schedule recurring tasks using cron expressions. Schedules are defined in code, deployed with your agents, and automatically provisioned.
 
-<Callout type="info" title="Works in agents and APIs">
-This routing method works in both agent directories (`src/agents/*/route.ts`) and API directories (`src/apis/*/route.ts`). Examples below show agent patterns, but the same code works in standalone API routes.
+<Callout type="info" title="Routes Location">
+All routes live in `src/api/`. Import agents you need and call them directly.
 </Callout>
 
 ## Basic Example
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import reportGenerator from '@agent/report-generator';
 
 const router = createRouter();
 
 router.cron('0 9 * * *', async (c) => { // runs daily at 9am
   c.var.logger.info('Daily report starting');
 
-  const report = await c.agent.reportGenerator.run({
+  const report = await reportGenerator.run({
     type: 'daily',
     date: new Date().toISOString(),
   });
@@ -62,6 +63,7 @@ A health check that monitors external services and stores results:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import healthChecker from '@agent/health-checker';
 
 const router = createRouter();
 
@@ -70,7 +72,7 @@ router.cron('*/5 * * * *', async (c) => { // runs every 5 minutes
   c.var.logger.info('Health check starting');
 
   try {
-    const status = await c.agent.healthChecker.run({
+    const status = await healthChecker.run({
       services: ['api', 'database', 'cache'],
     });
 
@@ -96,6 +98,8 @@ export default router;
 Cron jobs only trigger in deployed environments. For local testing, add a manual POST route:
 
 ```typescript
+import dailyReport from '@agent/daily-report';
+
 router.cron('0 9 * * *', cronHandler);
 
 // Manual trigger for local development
@@ -104,7 +108,7 @@ router.post('/trigger', async (c) => {
 });
 
 async function cronHandler(c) {
-  const result = await c.agent.dailyReport.run({ date: new Date() });
+  const result = await dailyReport.run({ date: new Date() });
   return c.json(result);
 }
 ```

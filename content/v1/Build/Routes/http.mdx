@@ -5,8 +5,8 @@ description: Define GET, POST, and other HTTP endpoints with createRouter()
 
 Routes define how your application responds to HTTP requests. Built on [Hono](https://hono.dev), the router provides a familiar Express-like API with full TypeScript support.
 
-<Callout type="info" title="Works in agents and APIs">
-These examples show agent patterns, but the same code works in standalone API routes (`src/apis/*/route.ts`).
+<Callout type="info" title="Routes Location">
+All routes live in `src/api/`. Import agents you need and call them directly.
 </Callout>
 
 ## Basic Routes
@@ -92,27 +92,34 @@ router.get('/search', async (c) => {
 
 ## Calling Agents
 
-Invoke agents from routes using `c.agent`:
+Import and call agents directly:
 
 ```typescript
+import { createRouter } from '@agentuity/runtime';
+import assistant from '@agent/assistant';
+
+const router = createRouter();
+
 router.post('/chat', async (c) => {
   const { message } = await c.req.json();
-
-  const response = await c.agent.assistant.run({ message });
-
+  const response = await assistant.run({ message });
   return c.json(response);
 });
+
+export default router;
 ```
 
 For background processing, use `c.waitUntil()`:
 
 ```typescript
+import webhookProcessor from '@agent/webhook-processor';
+
 router.post('/webhook', async (c) => {
   const payload = await c.req.json();
 
   // Process in background, respond immediately
   c.waitUntil(async () => {
-    await c.agent.webhookProcessor.run(payload);
+    await webhookProcessor.run(payload);
   });
 
   return c.json({ status: 'accepted' });
@@ -125,14 +132,14 @@ Use `agent.validator()` for type-safe request validation with full TypeScript su
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
-import agent from './agent';
+import userCreator from '@agent/user-creator';
 
 const router = createRouter();
 
 // Validates using agent's input schema
-router.post('/users', agent.validator(), async (c) => {
+router.post('/users', userCreator.validator(), async (c) => {
   const data = c.req.valid('json'); // Fully typed from agent schema
-  const user = await c.agent.userCreator.run(data);
+  const user = await userCreator.run(data);
   return c.json(user);
 });
 
@@ -143,9 +150,10 @@ For custom validation (different from the agent's schema), pass a schema overrid
 
 ```typescript
 import { type } from 'arktype';
+import userCreator from '@agent/user-creator';
 
 router.post('/custom',
-  agent.validator({ input: type({ email: 'string.email' }) }),
+  userCreator.validator({ input: type({ email: 'string.email' }) }),
   async (c) => {
     const data = c.req.valid('json'); // Typed as { email: string }
     return c.json(data);
@@ -183,7 +191,10 @@ c.redirect('/other');      // Redirect
 
 **Agentuity services:**
 ```typescript
-c.agent.myAgent.run(input);   // Call an agent
+// Import agents at the top of your file
+import myAgent from '@agent/my-agent';
+await myAgent.run(input);     // Call an agent
+
 c.kv.get('bucket', 'key');    // Key-value storage
 c.vector.search('ns', opts);  // Vector search
 c.var.logger.info('message'); // Logging
@@ -243,10 +254,12 @@ For authentication patterns, rate limiting, and more, see [Middleware](/v1/Build
 Return appropriate status codes when things go wrong:
 
 ```typescript
+import processor from '@agent/processor';
+
 router.post('/process', async (c) => {
   try {
     const body = await c.req.json();
-    const result = await c.agent.processor.run(body);
+    const result = await processor.run(body);
     return c.json(result);
   } catch (error) {
     c.var.logger.error('Processing failed', { error });
@@ -260,9 +273,11 @@ router.post('/process', async (c) => {
 Use `router.stream()` to return a `ReadableStream` directly to the client without buffering:
 
 ```typescript
+import chatAgent from '@agent/chat';
+
 router.stream('/chat', async (c) => {
   const body = await c.req.json();
-  return c.agent.chatAgent.run(body); // Returns a ReadableStream
+  return chatAgent.run(body); // Returns a ReadableStream
 });
 ```
 
@@ -287,8 +302,10 @@ router.stream('/events', (c) => {
 Stream routes support middleware:
 
 ```typescript
+import streamAgent from '@agent/stream';
+
 router.stream('/protected', authMiddleware, async (c) => {
-  return c.agent.streamAgent.run({ userId: c.var.userId });
+  return streamAgent.run({ userId: c.var.userId });
 });
 ```
 

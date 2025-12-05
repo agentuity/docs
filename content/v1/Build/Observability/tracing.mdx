@@ -15,7 +15,7 @@ import { SpanStatusCode } from '@opentelemetry/api';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 
-const agent = createAgent({
+const agent = createAgent('TracingExample', {
   handler: async (ctx, input) => {
     return ctx.tracer.startActiveSpan('generate-response', async (span) => {
       try {
@@ -148,6 +148,8 @@ import { SpanStatusCode } from '@opentelemetry/api';
 
 const router = createRouter();
 
+// import notificationSender from '@agent/notification-sender';
+
 router.post('/customers/:id/notify', async (c) => {
   return c.var.tracer.startActiveSpan('send-notification', async (span) => {
     try {
@@ -158,7 +160,7 @@ router.post('/customers/:id/notify', async (c) => {
       span.setAttribute('notificationType', body.type);
       span.setAttribute('channel', body.channel);
 
-      const result = await c.agent.notificationSender.run({
+      const result = await notificationSender.run({
         customerId,
         ...body,
       });
@@ -185,7 +187,7 @@ View traces for a session using the CLI:
 agentuity cloud session get sess_abc123xyz
 ```
 
-Traces are also visible in the Agentuity Console, showing the full span hierarchy with timing. See [CLI Reference](/Reference/CLI) for more trace viewing options.
+Traces are also visible in the Agentuity Console, showing the full span hierarchy with timing. See [CLI Reference](/v1/Reference/CLI) for more trace viewing options.
 
 ## When to Use Tracing
 
@@ -207,5 +209,5 @@ Traces are also visible in the Agentuity Console, showing the full span hierarch
 
 ## Next Steps
 
-- [Logging](/Build/Observability/logging): Learn structured logging patterns
-- [Sessions & Debugging](/Build/Observability/sessions-debugging): Use session IDs for debugging
+- [Logging](/v1/Build/Observability/logging): Learn structured logging patterns
+- [Sessions & Debugging](/v1/Build/Observability/sessions-debugging): Use session IDs for debugging

@@ -1,201 +1,96 @@
 ---
-title: When to Use APIs
-description: Choose between API routes and agents for your endpoints
+title: Routes vs Agents
+description: When to use simple routes vs agents for your endpoints
 ---
 
-Both API routes (`src/apis/`) and agent routes (`src/agents/`) can handle HTTP requests. Both can do the same things; agents add structure (schemas, evals, events) while APIs stay lightweight.
+All routes live in `src/api/`. You have two options for handling requests:
+
+1. **Simple routes** - Handle HTTP directly in the route (health checks, CRUD, webhooks)
+2. **Call an agent** - Import an agent for structured processing with validation
 
 ## Quick Decision Guide
 
-| Use APIs when... | Use Agents when... |
-|------------------|-------------------|
-| Simple request/response | Structured processing with validation |
-| Health checks, status endpoints | Schema-validated input/output |
-| Webhook receivers | Need evaluations or lifecycle events |
-| Lightweight data endpoints | Building multi-agent workflows |
-| Direct HTTP control needed | Want type-safe agent-to-agent calls |
+| Handle directly in route | Create an agent |
+|--------------------------|-----------------|
+| Health checks, status endpoints | LLM-powered processing |
+| Simple CRUD operations | Schema-validated input/output |
+| Webhook signature verification | Evaluations or lifecycle events |
+| Static responses | Multi-step workflows |
 
-## Comparison
+## Simple Route Example
 
-```
-APIs (src/apis/)              Agents (src/agents/)
-├── route.ts only             ├── agent.ts (required)
-└── /api/...                  ├── route.ts (required)
-                              └── /agent/...
-```
-
-**Both have access to:**
-- All storage APIs (`kv`, `vector`, `objectstore`, `stream`)
-- Agent calling (`c.agent.myAgent.run()`)
-- Background tasks (`c.waitUntil()`)
-- Structured logging
-
-**Only agents have:**
-- Schema validation (Zod, Valibot, ArkType)
-- Evaluations (`agent.createEval()`)
-- Lifecycle events (`addEventListener`)
-- Type-safe input/output
-
-## Example: Health Check (API)
-
-A health endpoint doesn't need validation, events, or evals:
+A health endpoint doesn't need an agent:
 
 ```typescript
-// src/apis/health/route.ts
+// src/api/index.ts
 import { createRouter } from '@agentuity/runtime';
 
 const router = createRouter();
 
-router.get('/', async (c) => {
-  // Check dependencies
+router.get('/health', async (c) => {
   const dbHealthy = await checkDatabase();
-  const cacheHealthy = await checkCache();
-
-  const status = dbHealthy && cacheHealthy ? 'healthy' : 'degraded';
-  const statusCode = status === 'healthy' ? 200 : 503;
-
-  return c.json({ status, db: dbHealthy, cache: cacheHealthy }, statusCode);
+  return c.json({ status: dbHealthy ? 'healthy' : 'degraded' });
 });
 
 export default router;
 ```
 
-## Example: Webhook Receiver (API)
+## Calling an Agent
 
-Webhooks need fast responses and background processing:
+For complex logic, create an agent and call it from your route:
 
 ```typescript
-// src/apis/webhooks/stripe/route.ts
+// src/api/index.ts
 import { createRouter } from '@agentuity/runtime';
+import chat from '@agent/chat';
 
 const router = createRouter();
 
-router.post('/', async (c) => {
+router.post('/chat', chat.validator(), async (c) => {
+  const data = c.req.valid('json');
+  const result = await chat.run(data);
+  return c.json(result);
+});
+
+export default router;
+```
+
+The agent lives in `src/agent/chat/agent.ts` with its schema, handler, and optional evals.
+
+## When Agents Add Value
+
+Agents provide:
+- **Schema validation** with `agent.validator()` middleware
+- **Evaluations** to measure quality
+- **Lifecycle events** for monitoring
+- **Type safety** for agent-to-agent calls
+
+## Webhook Pattern
+
+Webhooks verify signatures in the route, then hand off to an agent:
+
+```typescript
+import paymentProcessor from '@agent/payment-processor';
+
+router.post('/webhooks/stripe', async (c) => {
   const signature = c.req.header('stripe-signature');
   const rawBody = await c.req.text();
 
-  // Verify webhook signature
   if (!verifyStripeSignature(rawBody, signature)) {
     return c.json({ error: 'Invalid signature' }, 401);
   }
 
-  const event = JSON.parse(rawBody);
-
-  // Respond immediately, process in background
+  // Respond fast, process in background
   c.waitUntil(async () => {
-    // Hand off to an agent for complex processing
-    await c.agent.paymentProcessor.run({
-      eventType: event.type,
-      data: event.data,
-    });
+    await paymentProcessor.run(JSON.parse(rawBody));
   });
 
   return c.json({ received: true });
 });
-
-export default router;
 ```
-
-<Callout type="info" title="Webhook Best Practice">
-Webhook providers (e.g., Stripe, GitHub, Slack) expect fast responses. Use `c.waitUntil()` to acknowledge immediately and process in the background.
-</Callout>
-
-## Example: Data Endpoint (API)
-
-Simple CRUD with key-value storage:
-
-```typescript
-// src/apis/settings/route.ts
-import { createRouter } from '@agentuity/runtime';
-
-const router = createRouter();
-
-router.get('/:userId', async (c) => {
-  const userId = c.req.param('userId');
-  const result = await c.kv.get('settings', userId);
-
-  if (!result.exists) {
-    return c.json({ error: 'Not found' }, 404);
-  }
-
-  return c.json(result.data);
-});
-
-router.put('/:userId', async (c) => {
-  const userId = c.req.param('userId');
-  const settings = await c.req.json();
-
-  await c.kv.set('settings', userId, settings);
-
-  return c.json({ updated: true });
-});
-
-export default router;
-```
-
-## Example: Chat Endpoint (Agent)
-
-LLM-powered endpoints benefit from schemas and evals:
-
-```typescript
-// src/agents/chat/agent.ts
-import { createAgent } from '@agentuity/runtime';
-import { generateText } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
-import { s } from '@agentuity/schema';
-
-const agent = createAgent({
-  schema: {
-    input: s.object({
-      message: s.string().min(1),
-      userId: s.string(),
-    }),
-    output: s.object({
-      response: s.string(),
-      tokensUsed: s.number(),
-    }),
-  },
-  handler: async (ctx, input) => {
-    const { text, usage } = await generateText({
-      model: anthropic('claude-sonnet-4-5'),
-      prompt: input.message,
-    });
-
-    return {
-      response: text,
-      tokensUsed: usage.totalTokens,
-    };
-  },
-});
-
-// Quality evaluation
-agent.createEval({
-  metadata: { name: 'response-quality' },
-  handler: async (ctx, input, output) => {
-    // Evaluate response quality
-    return { success: true, score: 0.9, metadata: { reason: 'Clear and helpful' } };
-  },
-});
-
-export default agent;
-```
-
-## Migrating Between APIs and Agents
-
-**API to Agent:** When you need validation, evals, or type-safe inter-agent calls.
-
-1. Create `agent.ts` with schema and handler
-2. Move route logic to agent handler
-3. Update route to call the agent
-
-**Agent to API:** When the agent overhead isn't needed.
-
-1. Create `route.ts` in `src/apis/`
-2. Move handler logic directly to route
-3. Remove agent file
 
 ## Next Steps
 
-- [HTTP Routes](/Build/Routes/http): Complete routing guide
-- [Adding Middleware](/Build/Routes/middleware): Authentication patterns
-- [Creating Agents](/Build/Agents/creating-agents): When you need schemas and evals
+- [HTTP Routes](/v1/Build/Routes/http): Complete routing guide
+- [Adding Middleware](/v1/Build/Routes/middleware): Authentication patterns
+- [Creating Agents](/v1/Build/Agents/creating-agents): When you need schemas and evals

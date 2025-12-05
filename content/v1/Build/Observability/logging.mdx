@@ -10,7 +10,7 @@ Use `ctx.logger` in agents and `c.var.logger` in routes for structured logging. 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
 
-const agent = createAgent({
+const agent = createAgent('LoggingExample', {
   handler: async (ctx, input) => {
     ctx.logger.trace('Verbose debugging info');
     ctx.logger.debug('Debug-level details');
@@ -30,7 +30,7 @@ Levels from most to least verbose: `trace` → `debug` → `info` → `warn` →
 Pass context as a second argument for searchable metadata:
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('ProductSearch', {
   handler: async (ctx, input) => {
     const startTime = Date.now();
 
@@ -55,7 +55,7 @@ This creates structured log entries you can filter and search in the Agentuity C
 Create component-scoped loggers that inherit parent context:
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('ChildLoggerExample', {
   handler: async (ctx, input) => {
     // Child logger adds context to all its messages
     const dbLogger = ctx.logger.child({
@@ -88,6 +88,8 @@ Routes access the logger via `c.var.logger`:
 ```typescript
 import { createRouter } from '@agentuity/runtime';
 
+import paymentHandler from '@agent/payment-handler';
+
 const router = createRouter();
 
 router.post('/webhooks/payments', async (c) => {
@@ -100,7 +102,7 @@ router.post('/webhooks/payments', async (c) => {
 
   const payload = await c.req.json();
 
-  const result = await c.agent.paymentHandler.run({
+  const result = await paymentHandler.run({
     event: eventType,
     customerId: payload.customer,
     amount: payload.amount,
@@ -147,7 +149,7 @@ agentuity cloud session list
 agentuity cloud session logs sess_abc123xyz
 ```
 
-Logs are also visible in the Agentuity Console session timeline. See [CLI Reference](/Reference/CLI) for more log viewing options.
+Logs are also visible in the Agentuity Console session timeline. See [CLI Reference](/v1/Reference/CLI) for more log viewing options.
 
 ## Best Practices
 
@@ -158,5 +160,5 @@ Logs are also visible in the Agentuity Console session timeline. See [CLI Refere
 
 ## Next Steps
 
-- [Tracing](/Build/Observability/tracing): Track timing and debug performance with OpenTelemetry spans
-- [Sessions & Debugging](/Build/Observability/sessions-debugging): Use session IDs to trace issues across logs and spans
+- [Tracing](/v1/Build/Observability/tracing): Track timing and debug performance with OpenTelemetry spans
+- [Sessions & Debugging](/v1/Build/Observability/sessions-debugging): Use session IDs to trace issues across logs and spans

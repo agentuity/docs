@@ -5,7 +5,7 @@ description: Generate text, structured data, and streams with the Vercel AI SDK
 
 The [Vercel AI SDK](https://ai-sdk.dev) provides a consistent API for LLM interactions with built-in streaming, structured output, and tool calling.
 
-Agentuity works with any approach—you can also use provider SDKs directly (Anthropic, OpenAI), or frameworks like Mastra and LangGraph. See [Using the AI Gateway](/Build/Agents/ai-gateway) for examples with different libraries.
+Agentuity works with any approach—you can also use provider SDKs directly (Anthropic, OpenAI), or frameworks like Mastra and LangGraph. See [Using the AI Gateway](/v1/Build/Agents/ai-gateway) for examples with different libraries.
 
 ## Installation
 
@@ -31,7 +31,7 @@ import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('TextGenerator', {
   schema: {
     input: z.object({ prompt: z.string() }),
     output: z.object({ response: z.string() }),
@@ -93,7 +93,7 @@ const SentimentSchema = z.object({
   keywords: z.array(z.string()),
 });
 
-const agent = createAgent({
+const agent = createAgent('SentimentAnalyzer', {
   schema: {
     input: z.object({ text: z.string() }),
     output: SentimentSchema,
@@ -135,7 +135,7 @@ const EventSchema = z.object({
   attendees: z.array(z.string()).describe('List of attendee names'),
 });
 
-const agent = createAgent({
+const agent = createAgent('EventExtractor', {
   schema: {
     input: z.object({ text: z.string() }),
     output: EventSchema,
@@ -166,7 +166,7 @@ import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('StreamingChat', {
   schema: {
     input: z.object({ prompt: z.string() }),
     stream: true,
@@ -184,7 +184,7 @@ const agent = createAgent({
 export default agent;
 ```
 
-For detailed streaming patterns, see [Streaming Responses](/Build/Agents/streaming-responses).
+For detailed streaming patterns, see [Streaming Responses](/v1/Build/Agents/streaming-responses).
 
 ## Provider Configuration
 
@@ -240,6 +240,6 @@ handler: async (ctx, input) => {
 
 ## Next Steps
 
-- [Using the AI Gateway](/Build/Agents/ai-gateway): Observability, cost tracking, and provider switching
-- [Returning Streaming Responses](/Build/Agents/streaming-responses): Chat UIs and long-form content generation
-- [Evaluations](/Build/Agents/evaluations): Quality checks and output validation
+- [Using the AI Gateway](/v1/Build/Agents/ai-gateway): Observability, cost tracking, and provider switching
+- [Returning Streaming Responses](/v1/Build/Agents/streaming-responses): Chat UIs and long-form content generation
+- [Evaluations](/v1/Build/Agents/evaluations): Quality checks and output validation

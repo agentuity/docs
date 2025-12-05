@@ -39,7 +39,7 @@ In v1, every agent uses a two-file structure that separates concerns:
 - Calling the agent
 - Response formatting
 
-Routes invoke agents via `c.agent.agentName.run(input)`. The SDK auto-discovers agents based on your file structure, providing type-safe calls throughout.
+Routes invoke agents via imports: `import agent from '@agent/name'; agent.run(input)`. The SDK auto-discovers agents based on your file structure, providing type-safe calls throughout.
 
 | Aspect | v0 (Single File) | v1 (Two Files) |
 |--------|------------------|----------------|
@@ -60,7 +60,7 @@ Effective agent planning involves:
 
 Agents use a reasoning loop: **Observe → Think → Act → Reflect**. This iterative approach allows agents to handle uncertainty and recover from errors.
 
-For a deep dive on agent planning patterns, see the [Agent Engineering Guide](/Guides/agent-engineering).
+For a deep dive on agent planning patterns, see the [Agent Engineering Guide](/v1/Guides/agent-engineering).
 
 ---
 
@@ -82,7 +82,7 @@ Every v1 agent separates business logic from HTTP concerns. Let's see how this w
 **What this demonstrates:**
 - Agent contains only business logic (no HTTP knowledge)
 - Routes handle HTTP concerns (parsing, calling agent, formatting)
-- Type-safe agent calls via `c.agent.taskAgent.run()`
+- Type-safe agent calls via import-based pattern
 - Schema validation happens automatically before the handler runs
 
 **Try it:**
@@ -207,9 +207,8 @@ userLogger.info('User action') // Includes userId automatically
 
 **Metadata**
 ```typescript
-c.agentName   // Current agent name
-c.sessionId   // Current session ID
-c.env         // Environment variables
+ctx.sessionId   // Current session ID
+ctx.env         // Environment variables
 ```
 
 #### When to Use What
@@ -247,7 +246,7 @@ c.env         // Environment variables
    ```
 3. Check logs to see cache behavior
 
-> **Key Insight:** The context object is your toolbox. Use `c.req` for HTTP details, `c.logger` for observability, `c.kv` for basic caching, and `c.agent` for multi-agent workflows. Each capability is designed to work together seamlessly.
+> **Key Insight:** The context object is your toolbox. Use `c.req` for HTTP details, `ctx.logger` for observability, `ctx.kv` for basic caching, and import agents for multi-agent workflows. Each capability is designed to work together seamlessly.
 
 </TutorialStep>
 
@@ -344,4 +343,4 @@ You can now build production HTTP APIs with proper routing, validation, and basi
 
 **Module 3: Specialized Routes & Triggers** - Learn cron scheduling, email/SMS triggers, WebSocket/SSE for real-time communication, and multi-trigger architecture patterns.
 
-For more details on routing patterns and best practices, see the [Routing Guide](/Guides/routing).
+For more details on routing patterns and best practices, see the [Routing Guide](/v1/Guides/routing).

@@ -12,28 +12,24 @@ Each agent in v1 is created with the `createAgent()` function. Simply define you
 ```typescript
 import { createAgent } from '@agentuity/runtime';
 
-const agent = createAgent({
-  metadata: {
-    name: 'My Agent',
-    description: 'A simple agent that greets users'
-  },
+const agent = createAgent('MyAgent', {
+  description: 'A simple agent that greets users',
   handler: async (ctx) => {
     ctx.logger.info('Agent invoked');
     return { message: 'Hello!' };
-  }
+  },
 });
 
 export default agent;
 ```
 
-Each agent lives in its own directory with two files:
+Each agent lives in its own directory under `src/agent/`:
 - **`agent.ts`** - Defines the agent logic using `createAgent()`, including schemas and the handler function
-- **`route.ts`** - Defines HTTP routes using `createRouter()` that call the agent
 
-The route file imports the agent and invokes it via `ctx.agent.agentName.run(input)`. This separation keeps HTTP routing concerns separate from agent logic.
+HTTP routes are defined separately in `src/api/index.ts`, which imports agents and calls them via `agent.run(input)`. This separation keeps HTTP routing concerns separate from agent logic.
 
 <Callout type="info">
-**Project Structure:** See the [Architecture Guide](/Introduction/architecture) for complete details on file structure, how routes and agents work together, and how the bundler discovers them.
+**Project Structure:** See the [Architecture Guide](/v1/Introduction/architecture) for complete details on file structure, how routes and agents work together, and how the bundler discovers them.
 </Callout>
 
 ## Schema Validation
@@ -46,22 +42,22 @@ v1 supports any [StandardSchema](https://github.com/standard-schema/standard-sch
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 
-const agent = createAgent({
+const agent = createAgent('Greeter', {
   schema: {
     input: s.object({
       name: s.string(),
-      age: s.optional(s.number())
+      age: s.optional(s.number()),
     }),
     output: s.object({
-      greeting: s.string()
-    })
+      greeting: s.string(),
+    }),
   },
   handler: async (ctx, input) => {
     // input is fully typed and validated!
     return {
-      greeting: `Hello ${input.name}!`
+      greeting: `Hello ${input.name}!`,
     };
-  }
+  },
 });
 ```
 
@@ -88,17 +84,17 @@ const app = createApp();
 export default app.server;
 ```
 
-Agents define their routes in `route.ts` files using `createRouter()`:
+Routes are defined in `src/api/index.ts` and import agents directly:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
-import agent from './agent';
+import myAgent from '@agent/my-agent';
 
 const router = createRouter();
 
-router.post('/', async (c) => {
-  const input = await c.req.json();
-  const result = await c.agent.myAgent.run(input);
+router.post('/my-agent', myAgent.validator(), async (c) => {
+  const input = c.req.valid('json');
+  const result = await myAgent.run(input);
   return c.json(result);
 });
 
@@ -108,7 +104,7 @@ export default router;
 Routes automatically include load balancing, monitoring, and error tracking. You can configure authentication and rate limiting per route using middleware.
 
 <Callout type="info">
-**Advanced Routing:** v1 supports WebSocket, Server-Sent Events, email, cron, and more. See the [Routing & Triggers Guide](/Guides/routing-triggers) for details.
+**Advanced Routing:** v1 supports WebSocket, Server-Sent Events, email, cron, and more. See the [Routing & Triggers Guide](/v1/Guides/routing-triggers) for details.
 </Callout>
 
 ## Agent Context
@@ -123,13 +119,12 @@ The handler receives a context object (`ctx`) with everything your agent needs:
 **Services:**
 - `ctx.kv` - Key-value storage
 - `ctx.vector` - Vector storage
-- `ctx.objectstore` - Object storage
+- `import { s3 } from "bun"` - Object storage (Bun S3)
 - `ctx.stream` - Stream storage
 
 **Agent Access:**
-- `ctx.agent` - Call other agents in your project
-- `ctx.current` - Reference to the current agent
-- `ctx.parent` - Reference to parent agent (for subagents)
+- Import agents directly: `import otherAgent from '@agent/other-agent'`
+- Call agents with: `await otherAgent.run(input)`
 
 **Observability:**
 - `ctx.logger` - Structured logging
@@ -150,14 +145,14 @@ When using schemas, v1 automatically handles parsing and validation. Without sch
 When you define an input schema, it's passed directly to your handler:
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('Echo', {
   schema: {
-    input: z.object({ message: z.string() })
+    input: z.object({ message: z.string() }),
   },
   handler: async (ctx, input) => {
     // input is already parsed and validated
     return { echo: input.message };
-  }
+  },
 });
 ```
 
@@ -209,23 +204,27 @@ router.get('/custom', (c) => {
 
 ## Agent-to-Agent Communication
 
-To call another agent, use `ctx.agent.otherAgent.run()`. This provides direct access without requiring agent IDs or lookups.
+Import other agents and call them directly:
 
 ```typescript
-const agent = createAgent({
+import { createAgent } from '@agentuity/runtime';
+import helperAgent from '@agent/helper';
+
+const agent = createAgent('Coordinator', {
   handler: async (ctx, input) => {
     // Call another agent
-    const result = await ctx.agent.helperAgent.run({
-      data: input.data
+    const result = await helperAgent.run({
+      data: input.data,
     });
 
-    // Use the result
     return {
       original: input.data,
-      processed: result
+      processed: result,
     };
-  }
+  },
 });
+
+export default agent;
 ```
 
 When both agents use schemas, the communication is fully type-safe. Your IDE will autocomplete the input structure and validate the output.
@@ -277,7 +276,7 @@ agent.addEventListener('completed', (eventName, agent, ctx) => {
 });
 ```
 
-See the [Events Guide](/SDKs/javascript/events) for complete documentation.
+See the [Events Guide](/v1/SDKs/javascript/events) for complete documentation.
 
 **Evaluations** automatically test agent outputs for quality, accuracy, or compliance. Evaluations test your complete agent logic—the actual input and output from your handler—not just external LLM API responses.
 
@@ -303,14 +302,14 @@ Evaluations run asynchronously after responses are sent, ensuring zero impact on
 - RAG metrics (hallucination detection, faithfulness)
 - Performance monitoring and optimization
 
-See the [Evaluations Guide](/SDKs/javascript/evaluations) for complete documentation.
+See the [Evaluations Guide](/v1/SDKs/javascript/evaluations) for complete documentation.
 
 ## Next Steps
 
 Now that you understand the core concepts, you can:
 
-- Explore the [Routing & Triggers Guide](/Guides/routing-triggers) for WebSocket, SSE, and specialized routes
-- Learn about [Schema Validation](/SDKs/javascript/schema-validation) in depth
-- Set up [Evaluations](/SDKs/javascript/evaluations) to test your agents
-- Use [Events](/SDKs/javascript/events) for monitoring and analytics
-- Check the [API Reference](/SDKs/javascript/api-reference) for complete documentation
+- Explore the [Routing & Triggers Guide](/v1/Guides/routing-triggers) for WebSocket, SSE, and specialized routes
+- Learn about [Schema Validation](/v1/SDKs/javascript/schema-validation) in depth
+- Set up [Evaluations](/v1/SDKs/javascript/evaluations) to test your agents
+- Use [Events](/v1/SDKs/javascript/events) for monitoring and analytics
+- Check the [API Reference](/v1/SDKs/javascript/api-reference) for complete documentation

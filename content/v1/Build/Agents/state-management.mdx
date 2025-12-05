@@ -23,7 +23,7 @@ Agentuity provides three state scopes for managing data across requests:
 import { createAgent, type AgentContext } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 
-const agent = createAgent({
+const agent = createAgent('StateDemo', {
   schema: {
     input: s.object({ message: s.string() }),
     output: s.object({
@@ -97,7 +97,7 @@ interface Message {
   content: string;
 }
 
-const agent = createAgent({
+const agent = createAgent('ConversationMemory', {
   schema: {
     input: v.object({ message: v.string() }),
     output: v.string(),
@@ -187,7 +187,7 @@ handler: async (ctx, input) => {
 }
 ```
 
-**Note:** Session state is in-memory and cleared on server restart. For durable data, use [KV storage](/Build/Storage/key-value).
+**Note:** Session state is in-memory and cleared on server restart. For durable data, use [KV storage](/v1/Build/Storage/key-value).
 
 ## Persisting to Storage
 
@@ -203,7 +203,7 @@ import * as v from 'valibot';
 
 type Message = { role: 'user' | 'assistant'; content: string };
 
-const agent = createAgent({
+const agent = createAgent('PersistentChat', {
   schema: {
     input: v.object({ message: v.string() }),
     stream: true,
@@ -306,7 +306,7 @@ ctx.session.addEventListener('completed', async (eventName, session) => {
 });
 ```
 
-For app-level event monitoring, see [Events & Lifecycle](/Build/Agents/events-lifecycle).
+For app-level event monitoring, see [Events & Lifecycle](/v1/Build/Agents/events-lifecycle).
 
 ## Thread vs Session IDs
 
@@ -348,6 +348,6 @@ if (messages.length > 50) {
 
 ## Next Steps
 
-- [Key-Value Storage](/Build/Storage/key-value): Durable data persistence with namespaces and TTL
-- [Calling Other Agents](/Build/Agents/calling-other-agents): Share state between agents in workflows
-- [Events & Lifecycle](/Build/Agents/events-lifecycle): Monitor agent execution and cleanup
+- [Key-Value Storage](/v1/Build/Storage/key-value): Durable data persistence with namespaces and TTL
+- [Calling Other Agents](/v1/Build/Agents/calling-other-agents): Share state between agents in workflows
+- [Events & Lifecycle](/v1/Build/Agents/events-lifecycle): Monitor agent execution and cleanup

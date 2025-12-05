@@ -13,7 +13,7 @@ import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { s } from '@agentuity/schema';
 
-const agent = createAgent({
+const agent = createAgent('Chat', {
   schema: {
     input: s.object({ message: s.string() }),
     output: s.object({ response: s.string() }),
@@ -37,7 +37,7 @@ This agent uses the AI SDK to call OpenAI and respond to messages. Deploy with `
 - **Routes & Triggers** — HTTP, WebSocket, SSE, cron, email, SMS
 - **Storage** — Key-value, vector, object storage, durable streams
 - **Observability** — Logging, tracing, real-time analytics
-- **[AI Gateway](/Build/Agents/ai-gateway)** — Route LLM calls through OpenAI, Anthropic, Google, and more
+- **[AI Gateway](/v1/Build/Agents/ai-gateway)** — Route LLM calls through OpenAI, Anthropic, Google, and more
 - **Evaluations** — Automated quality checks that run after each agent execution
 - **Frontend** — Deploy React apps alongside your agents
 
@@ -58,5 +58,5 @@ Infrastructure like cron schedules and email handlers are defined in code, not c
 
 ## Next Steps
 
-- [Installation](/Get-Started/installation) — Set up your environment
-- [Quickstart](/Get-Started/quickstart) — Build your first agent in 5 minutes
+- [Installation](/v1/Get-Started/installation) — Set up your environment
+- [Quickstart](/v1/Get-Started/quickstart) — Build your first agent in 5 minutes

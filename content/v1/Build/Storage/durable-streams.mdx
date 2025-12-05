@@ -10,10 +10,10 @@ Durable streams provide streaming storage for large data exports, audit logs, an
 | Storage Type | Best For |
 |--------------|----------|
 | **Durable Streams** | Large exports, audit logs, streaming data, batch processing |
-| [Key-Value](/Build/Storage/key-value) | Fast lookups, caching, configuration |
-| [Vector](/Build/Storage/vector) | Semantic search, embeddings, RAG |
-| [Object (S3)](/Build/Storage/object) | Files, images, documents, media |
-| [Database](/Build/Storage/database) | Structured data, complex queries, transactions |
+| [Key-Value](/v1/Build/Storage/key-value) | Fast lookups, caching, configuration |
+| [Vector](/v1/Build/Storage/vector) | Semantic search, embeddings, RAG |
+| [Object (S3)](/v1/Build/Storage/object) | Files, images, documents, media |
+| [Database](/v1/Build/Storage/database) | Structured data, complex queries, transactions |
 
 **Use streams when you need to:**
 - Export large datasets incrementally
@@ -26,7 +26,7 @@ Durable streams provide streaming storage for large data exports, audit logs, an
 ```typescript
 import { createAgent } from '@agentuity/runtime';
 
-const agent = createAgent({
+const agent = createAgent('StreamCreator', {
   handler: async (ctx, input) => {
     const stream = await ctx.stream.create('export', {
       contentType: 'text/csv',
@@ -55,7 +55,7 @@ const agent = createAgent({
 Write data incrementally, then close the stream:
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('CSVExporter', {
   handler: async (ctx, input) => {
     const stream = await ctx.stream.create('export', {
       contentType: 'text/csv',
@@ -90,7 +90,7 @@ Streams must be closed manually with `stream.close()`. They do not auto-close. F
 Use `ctx.waitUntil()` to write data in the background while returning immediately:
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('BackgroundExporter', {
   handler: async (ctx, input) => {
     const stream = await ctx.stream.create('report', {
       contentType: 'application/json',
@@ -117,7 +117,7 @@ const agent = createAgent({
 ## Listing and Deleting Streams
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('StreamManager', {
   handler: async (ctx, input) => {
     // List streams with optional filtering
     const result = await ctx.stream.list({
@@ -147,7 +147,7 @@ import { createAgent } from '@agentuity/runtime';
 import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 
-const agent = createAgent({
+const agent = createAgent('DualStreamWriter', {
   handler: async (ctx, input) => {
     // Create two streams
     const mainStream = await ctx.stream.create('output', {
@@ -202,7 +202,7 @@ import { openai } from '@ai-sdk/openai';
 import { groq } from '@ai-sdk/groq';
 import { s } from '@agentuity/schema';
 
-const agent = createAgent({
+const agent = createAgent('ModeratedStreamer', {
   handler: async (ctx, input) => {
     const stream = await ctx.stream.create('moderated', {
       contentType: 'text/plain',
@@ -278,8 +278,8 @@ async function moderateContent(text: string): Promise<boolean> {
 
 ## Next Steps
 
-- [Key-Value Storage](/Build/Storage/key-value): Fast caching and configuration
-- [Vector Storage](/Build/Storage/vector): Semantic search and embeddings
-- [Object Storage (S3)](/Build/Storage/object): File and media storage
-- [Database](/Build/Storage/database): Relational data with queries and transactions
-- [Streaming Responses](/Build/Agents/streaming-responses): HTTP streaming patterns
+- [Key-Value Storage](/v1/Build/Storage/key-value): Fast caching and configuration
+- [Vector Storage](/v1/Build/Storage/vector): Semantic search and embeddings
+- [Object Storage (S3)](/v1/Build/Storage/object): File and media storage
+- [Database](/v1/Build/Storage/database): Relational data with queries and transactions
+- [Streaming Responses](/v1/Build/Agents/streaming-responses): HTTP streaming patterns

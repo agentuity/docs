@@ -10,10 +10,10 @@ Vector storage enables semantic search, allowing agents to find information by *
 | Storage Type | Best For |
 |--------------|----------|
 | **Vector** | Semantic search, embeddings, RAG, recommendations |
-| [Key-Value](/Build/Storage/key-value) | Fast lookups, caching, configuration |
-| [Object (S3)](/Build/Storage/object) | Files, images, documents, media |
-| [Database](/Build/Storage/database) | Structured data, complex queries, transactions |
-| [Durable Streams](/Build/Storage/durable-streams) | Large exports, audit logs |
+| [Key-Value](/v1/Build/Storage/key-value) | Fast lookups, caching, configuration |
+| [Object (S3)](/v1/Build/Storage/object) | Files, images, documents, media |
+| [Database](/v1/Build/Storage/database) | Structured data, complex queries, transactions |
+| [Durable Streams](/v1/Build/Storage/durable-streams) | Large exports, audit logs |
 
 ## Upserting Documents
 
@@ -22,7 +22,7 @@ Store documents with automatic embedding generation. The `upsert` operation is i
 ```typescript
 import { createAgent } from '@agentuity/runtime';
 
-const agent = createAgent({
+const agent = createAgent('KnowledgeLoader', {
   handler: async (ctx, input) => {
     // Upsert with text (auto-generates embeddings)
     const results = await ctx.vector.upsert('knowledge-base',
@@ -60,7 +60,7 @@ await ctx.vector.upsert('custom-embeddings', {
 Find semantically similar documents:
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('SemanticSearch', {
   handler: async (ctx, input) => {
     const results = await ctx.vector.search('knowledge-base', {
       query: 'What is an AI agent?',
@@ -88,7 +88,7 @@ const agent = createAgent({
 Retrieve a specific vector by key without similarity search:
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('DocumentRetriever', {
   handler: async (ctx, input) => {
     const result = await ctx.vector.get('knowledge-base', 'doc-1');
 
@@ -110,7 +110,7 @@ const agent = createAgent({
 Retrieve multiple vectors efficiently:
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('BatchRetriever', {
   handler: async (ctx, input) => {
     const keys = ['doc-1', 'doc-2', 'doc-3'];
     const resultMap = await ctx.vector.getMany('knowledge-base', ...keys);
@@ -157,7 +157,7 @@ interface DocumentMetadata {
   author: string;
 }
 
-const agent = createAgent({
+const agent = createAgent('TypedVectorAgent', {
   handler: async (ctx, input) => {
     // Type-safe upsert
     await ctx.vector.upsert<DocumentMetadata>('docs', {
@@ -193,7 +193,7 @@ import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { s } from '@agentuity/schema';
 
-const ragAgent = createAgent({
+const ragAgent = createAgent('RAG', {
   schema: {
     input: s.object({ question: s.string() }),
     output: s.object({
@@ -250,8 +250,8 @@ const ragAgent = createAgent({
 
 ## Next Steps
 
-- [Key-Value Storage](/Build/Storage/key-value): Fast caching and configuration
-- [Object Storage (S3)](/Build/Storage/object): File and media storage
-- [Database](/Build/Storage/database): Relational data with queries and transactions
-- [Durable Streams](/Build/Storage/durable-streams): Streaming large data exports
-- [Evaluations](/Build/Agents/evaluations): Quality checks for RAG systems
+- [Key-Value Storage](/v1/Build/Storage/key-value): Fast caching and configuration
+- [Object Storage (S3)](/v1/Build/Storage/object): File and media storage
+- [Database](/v1/Build/Storage/database): Relational data with queries and transactions
+- [Durable Streams](/v1/Build/Storage/durable-streams): Streaming large data exports
+- [Evaluations](/v1/Build/Agents/evaluations): Quality checks for RAG systems

@@ -28,7 +28,7 @@ This makes them poorly suited for:
 ## What Exactly Is an AI Agent?
 
 <Callout type="info">
-For a comprehensive overview of agents and how they differ from traditional software, see our [What is an Agent?](/Guides/what-is-an-agent) guide.
+For a comprehensive overview of agents and how they differ from traditional software, see our [What is an Agent?](/v1/Guides/what-is-an-agent) guide.
 </Callout>
 
 An AI agent is not just another chatbot or API wrapper around an LLM. It's a fundamentally different type of software that combines a LLM with **memory, tools, and a reasoning loop**.
@@ -63,7 +63,7 @@ Think of it this way:
 ## The Paradigm Shift: From Deterministic to Non-Deterministic
 
 <Callout type="info">
-For deeper insights on this shift, read our [Agent Engineering](/Guides/agent-engineering) guide that covers thinking like an agent builder.
+For deeper insights on this shift, read our [Agent Engineering](/v1/Guides/agent-engineering) guide that covers thinking like an agent builder.
 </Callout>
 
 Traditional software engineering is built on determinism - given the same input, you always get the same output. We write explicit logic for every scenario:
@@ -134,7 +134,7 @@ But retrofitting existing infrastructure is like turning a highway into an airpo
 ## Enter Agentuity: The Agent-Native Cloud
 
 <Callout type="info">
-Learn more about the Agent-Native Cloud paradigm in our [Agent-Native Cloud](/Guides/agent-native-cloud) guide.
+Learn more about the Agent-Native Cloud paradigm in our [Agent-Native Cloud](/v1/Guides/agent-native-cloud) guide.
 </Callout>
 
 While others retrofit, Agentuity was built from day one specifically for agents. Agentuity's agent-native platform puts AI agents at the center of everything.
@@ -146,9 +146,9 @@ Instead of asking "How do we make Lambda work for agents?", we asked "What would
 Agentuity provides what agents actually need:
 
 - **Long-running processes**: Agents can think for hours, not seconds
-- **Built-in persistent memory**: [key-value](/Guides/key-value), [vector](/Guides/vector-db), and [object storage](/Guides/object-storage)
-- **Native agent-to-agent communication**: Seamless and secure [channels between agents](/Guides/agent-communication)
-- **Built-in observability**: Track agent decisions with [tracing](/Guides/agent-tracing) and OpenTelemetry integration
+- **Built-in persistent memory**: [key-value](/v1/Guides/key-value), [vector](/v1/Guides/vector-db), and [object storage](/v1/Guides/object-storage)
+- **Native agent-to-agent communication**: Seamless and secure [channels between agents](/v1/Guides/agent-communication)
+- **Built-in observability**: Track agent decisions with [tracing](/v1/Guides/agent-tracing) and OpenTelemetry integration
 - **Automatic scaling**: Based on agent workload, not request count
 - **Framework agnostic**: Run agents on any framework (LangChain, CrewAI, custom, etc.), and combine them in multi-agent projects
 - **Easily integrate with popular tools**: Including the Vercel AI SDK for streamlined AI development
@@ -160,7 +160,7 @@ The result is a platform where agents are first-class citizens, not adapted work
 ### Environment Setup
 
 <Callout type="info">
-For detailed setup instructions, see our [Getting Started Guide](/Introduction/getting-started) and [CLI Installation Guide](/CLI/installation).
+For detailed setup instructions, see our [Getting Started Guide](/v1/Introduction/getting-started) and [CLI Installation Guide](/v1/CLI/installation).
 </Callout>
 
 Before we start building, make sure you have:
@@ -193,7 +193,7 @@ agentuity auth login
 ### Local Development with DevMode
 
 <Callout type="info">
-DevMode is Agentuity's local development environment that provides instant feedback, complete observability, and a web interface for testing agents. Learn more in our [DevMode Guide](/Guides/devmode).
+DevMode is Agentuity's local development environment that provides instant feedback, complete observability, and a web interface for testing agents. Learn more in our [DevMode Guide](/v1/Guides/devmode).
 </Callout>
 
 Start DevMode to test your agents locally:
@@ -221,7 +221,10 @@ In v1, agents use a **two-file pattern**: `agent.ts` for business logic and `rou
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-export const agent = createAgent({
+export const agent = createAgent('Hello Agent', {
+  // Description helps identify your agent
+  description: 'Simple greeting agent for learning v1 basics',
+
   // Schemas validate input/output (we'll explore these in Module 6)
   schema: {
     input: z.object({
@@ -232,13 +235,7 @@ export const agent = createAgent({
     })
   },
 
-  // Metadata helps identify your agent
-  metadata: {
-    name: 'Hello Agent',
-    description: 'Simple greeting agent for learning v1 basics'
-  },
-
-  // Handler receives (c, input) - input is already parsed and validated!
+  // Handler receives (ctx, input) - input is already parsed and validated!
   handler: async (ctx, input) => {
     const name = input.name || 'World';
 
@@ -254,6 +251,7 @@ export const agent = createAgent({
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import helloAgent from '@agent/hello-agent';
 
 export const router = createRouter();
 
@@ -263,7 +261,7 @@ router.post('/greet', async (c) => {
   const body = await c.req.json();
 
   // Call the agent - type-safe!
-  const result = await c.agent.helloAgent.run(body);
+  const result = await helloAgent.run(body);
 
   // Return the result
   return c.json(result);
@@ -272,16 +270,16 @@ router.post('/greet', async (c) => {
 
 **What this demonstrates:**
 - **Two-file pattern**: `agent.ts` for logic, `route.ts` for HTTP endpoints
-- **`createAgent()`** replaces default export function from v0
+- **`createAgent('Name', {})`** replaces default export function from v0
 - **Schemas** define expected input/output types with Zod
-- **Handler signature**: `(c, input)` instead of v0's `(request, response, context)`
+- **Handler signature**: `(ctx, input)` instead of v0's `(request, response, context)`
 - **Input is pre-validated** by schema (no manual parsing needed)
 - **Direct return values** (not `response.json()`)
-- **Routes use `ctx.agent.helloAgent.run()`** for type-safe agent calls
+- **Routes import and call agents** via `import agent from '@agent/name'; agent.run()`
 
 **Try it:**
 1. Create a new project: `npx @agentuity/cli create`
-2. Add both files to `src/agents/hello-agent/`
+2. Add both files to `src/agent/hello-agent/`
 3. Start DevMode: `npx agentuity dev`
 4. Send a POST request to `/greet` with `{"name": "Alice"}`
 5. Try without a name: `{}` (uses default "World")
@@ -317,14 +315,11 @@ Add observability with `ctx.logger` to track what your agent is doing. Logs appe
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-export const agent = createAgent({
+export const agent = createAgent('Hello Agent', {
+  description: 'Greeting agent with logging',
   schema: {
     input: z.object({ name: z.string().optional() }),
     output: z.object({ message: z.string() })
-  },
-  metadata: {
-    name: 'Hello Agent',
-    description: 'Greeting agent with logging'
   },
   handler: async (ctx, input) => {
     // Log when agent starts
@@ -344,12 +339,13 @@ export const agent = createAgent({
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import helloAgent from '@agent/hello-agent';
 
 export const router = createRouter();
 
 router.post('/greet', async (c) => {
   const body = await c.req.json();
-  const result = await c.agent.helloAgent.run(body);
+  const result = await helloAgent.run(body);
   return c.json(result);
 });
 ```
@@ -390,7 +386,8 @@ We're using KV storage here to make our agent stateful. In **Module 3**, you'll 
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-export const agent = createAgent({
+export const agent = createAgent('Hello Agent', {
+  description: 'Greeting agent with memory',
   schema: {
     input: z.object({ name: z.string().optional() }),
     output: z.object({
@@ -399,22 +396,18 @@ export const agent = createAgent({
       timestamp: z.string()
     })
   },
-  metadata: {
-    name: 'Hello Agent',
-    description: 'Greeting agent with memory'
-  },
   handler: async (ctx, input) => {
     ctx.logger.info('Hello agent received a request');
 
     const name = input.name || 'World';
 
     // Get current greeting count from KV storage
-    const counterResult = await c.kv.get('stats', 'greeting_count');
+    const counterResult = await ctx.kv.get('stats', 'greeting_count');
 
     let count: number;
     if (counterResult.exists) {
       // Counter exists - increment it
-      count = await counterResult.data.json();
+      count = counterResult.data;
       count++;
     } else {
       // First time - start at 1
@@ -422,7 +415,7 @@ export const agent = createAgent({
     }
 
     // Update the counter in storage
-    await c.kv.set('stats', 'greeting_count', count);
+    await ctx.kv.set('stats', 'greeting_count', count);
 
     ctx.logger.info(`Greeting #${count} for ${name}`);
 
@@ -439,20 +432,21 @@ export const agent = createAgent({
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import helloAgent from '@agent/hello-agent';
 
 export const router = createRouter();
 
 router.post('/greet', async (c) => {
   const body = await c.req.json();
-  const result = await c.agent.helloAgent.run(body);
+  const result = await helloAgent.run(body);
   return c.json(result);
 });
 ```
 
 **What this demonstrates:**
-- `c.kv.get(bucket, key)` retrieves data
+- `ctx.kv.get(bucket, key)` retrieves data
 - `counterResult.exists` checks if data was found
-- `c.kv.set(bucket, key, value)` stores data
+- `ctx.kv.set(bucket, key, value)` stores data
 - Data persists across agent invocations
 - Agents can maintain state over time
 
@@ -473,9 +467,9 @@ router.post('/greet', async (c) => {
 **KV Storage Quick Reference**
 
 ```typescript
-    ctx.kv.get(bucket, key)           // Retrieve data
-    ctx.kv.set(bucket, key, value)    // Store data
-    ctx.kv.delete(bucket, key)        // Remove data
+ctx.kv.get(bucket, key)           // Retrieve data
+ctx.kv.set(bucket, key, value)    // Store data
+ctx.kv.delete(bucket, key)        // Remove data
 ```
 
 We'll cover TTL (auto-expiration) in Module 3!
@@ -495,7 +489,8 @@ Let's compare manual validation to schema validation to see why schemas are fund
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-export const agent = createAgent({
+export const agent = createAgent('Hello Agent', {
+  description: 'Greeting agent with manual validation',
   schema: {
     input: z.object({ name: z.string().optional() }),
     output: z.object({
@@ -503,10 +498,6 @@ export const agent = createAgent({
       greetingNumber: z.number(),
       timestamp: z.string()
     })
-  },
-  metadata: {
-    name: 'Hello Agent',
-    description: 'Greeting agent with manual validation'
   },
   handler: async (ctx, input) => {
     ctx.logger.info('Hello agent received a request');
@@ -522,12 +513,12 @@ export const agent = createAgent({
     // Get counter with error handling
     let count = 1;
     try {
-      const counterResult = await c.kv.get('stats', 'greeting_count');
+      const counterResult = await ctx.kv.get('stats', 'greeting_count');
       if (counterResult.exists) {
-        count = await counterResult.data.json();
+        count = counterResult.data;
         count++;
       }
-      await c.kv.set('stats', 'greeting_count', count);
+      await ctx.kv.set('stats', 'greeting_count', count);
     } catch (error) {
       ctx.logger.error('Storage error, using default count', { error });
       // Continue with count = 1 instead of failing
@@ -550,7 +541,8 @@ export const agent = createAgent({
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-export const agent = createAgent({
+export const agent = createAgent('Hello Agent', {
+  description: 'Greeting agent with schema validation',
   schema: {
     // Schema handles validation automatically!
     input: z.object({
@@ -562,10 +554,6 @@ export const agent = createAgent({
       timestamp: z.string()
     })
   },
-  metadata: {
-    name: 'Hello Agent',
-    description: 'Greeting agent with schema validation'
-  },
   handler: async (ctx, input) => {
     // No manual validation needed - schema rejects invalid input before handler runs
 
@@ -576,12 +564,12 @@ export const agent = createAgent({
     // Still handle storage errors gracefully
     let count = 1;
     try {
-      const counterResult = await c.kv.get('stats', 'greeting_count');
+      const counterResult = await ctx.kv.get('stats', 'greeting_count');
       if (counterResult.exists) {
-        count = await counterResult.data.json();
+        count = counterResult.data;
         count++;
       }
-      await c.kv.set('stats', 'greeting_count', count);
+      await ctx.kv.set('stats', 'greeting_count', count);
     } catch (error) {
       ctx.logger.error('Storage error, using default count', { error });
     }
@@ -601,12 +589,13 @@ export const agent = createAgent({
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import helloAgent from '@agent/hello-agent';
 
 export const router = createRouter();
 
 router.post('/greet', async (c) => {
   const body = await c.req.json();
-  const result = await c.agent.helloAgent.run(body);
+  const result = await helloAgent.run(body);
   return c.json(result);
 });
 ```

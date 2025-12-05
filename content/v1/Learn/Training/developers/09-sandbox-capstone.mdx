@@ -113,19 +113,17 @@ This sophisticated system builds on concepts from every previous module:
 The research system uses the two-file pattern for each agent:
 
 ```
-src/agents/
+src/agent/
 ├── research-orchestrator/
-│   ├── agent.ts          # Workflow coordination logic
-│   └── route.ts          # POST /research endpoint
+│   └── agent.ts          # Workflow coordination logic
 ├── deep-researcher/
-│   ├── agent.ts          # Recursive research algorithm
-│   └── route.ts          # Agent-to-agent communication
+│   └── agent.ts          # Recursive research algorithm
 ├── web-search/
-│   ├── agent.ts          # Exa API integration + filtering
-│   └── route.ts          # Search endpoint
+│   └── agent.ts          # Exa API integration + filtering
 └── report-author/
-    ├── agent.ts          # Report generation with LLM
-    └── route.ts          # Author endpoint
+    └── agent.ts          # Report generation with LLM
+src/api/
+└── index.ts              # POST /research endpoint
 ```
 
 <Callout type="info">
@@ -137,8 +135,8 @@ The code examples below demonstrate key patterns from the Deep Research system. 
 The orchestrator is the system's entry point. It receives research requests with configurable depth and breadth parameters, then coordinates the researcher and author agents sequentially using the coordination patterns from Module 6.
 
 TODO: Add v1 code example showing:
-- createAgent with input/output schemas
-- c.agent.deepResearcher.run() pattern
+- createAgent('Name', {}) with input/output schemas
+- Import-based agent calling: `import deepResearcher from '@agent/deep-researcher'; deepResearcher.run()`
 - Error handling with try/catch
 - Direct return instead of response.json()
 
@@ -148,7 +146,7 @@ TODO: Add v1 code example showing:
 // Key concepts to demonstrate:
 // 1. Schema definition with Zod (input: query/depth/breadth, output: report)
 // 2. Sequential agent coordination: researcher → author
-// 3. Type-safe agent calls via c.agent.x.run()
+// 3. Type-safe agent calls via import-based pattern
 // 4. Error handling for multi-agent workflows
 ```
 
@@ -159,18 +157,18 @@ Notice that the orchestrator manages the workflow without knowing implementation
 The researcher implements *recursive research* with controlled depth and breadth. It generates multiple search queries at each level, extracts learnings from results, and recursively explores follow-up questions - with breadth reducing by half each level to prevent exponential growth.
 
 TODO: Add v1 code example showing:
-- createAgent with Research output schema
-- Recursive function that accepts AgentContext (c)
-- c.agent.webSearch.run() within recursion
+- createAgent('Name', {}) with Research output schema
+- Recursive function that accepts AgentContext (ctx)
+- Import-based agent calling: `import webSearch from '@agent/web-search'; webSearch.run()` within recursion
 - Depth and breadth control (base cases)
 - Learning accumulation
 
 ```typescript
 // TODO: Create step2-recursive-research.ts example
 // Key concepts to demonstrate:
-// 1. Pass AgentContext (c) through recursive calls
+// 1. Pass AgentContext (ctx) through recursive calls
 // 2. Base cases: depth === 0 or max results reached
-// 3. Call c.agent.webSearch.run() for each query
+// 3. Call webSearchAgent.run() for each query (import-based)
 // 4. Accumulate results and learnings
 // 5. Reduce breadth by half each level (Math.ceil(breadth / 2))
 ```
@@ -187,7 +185,7 @@ TODO: Add v1 code example showing:
 - createAgent with search input/output schemas
 - Exa API integration
 - AI-powered relevance filtering
-- c.state for storing search metadata
+- ctx.state for storing search metadata
 - createEval for quality validation
 
 ```typescript

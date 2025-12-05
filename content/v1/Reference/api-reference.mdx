@@ -155,7 +155,7 @@ Returns an `Agent` object with the following properties:
 - `outputSchema` (conditional): Present if output schema is defined
 - `stream` (conditional): Present if streaming is enabled
 
-**Note**: To call agents from other agents, use the agent registry: `ctx.agent.agentName.run(input)` (see [Agent Communication](#agent-communication)).
+**Note**: To call agents from other agents, import them directly: `import otherAgent from '@agent/other'; otherAgent.run(input)` (see [Agent Communication](#agent-communication)).
 
 ### agent.validator()
 
@@ -206,7 +206,8 @@ Returns 400 Bad Request with validation error details if input validation fails.
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('GreetingAgent', {
+  description: 'A simple greeting agent that responds to user messages',
   schema: {
     input: z.object({
       message: z.string().min(1),
@@ -216,10 +217,6 @@ const agent = createAgent({
       response: z.string(),
       timestamp: z.number(),
     }),
-  },
-  metadata: {
-    name: 'greeting-agent',
-    description: 'A simple greeting agent that responds to user messages',
   },
   handler: async (ctx, input) => {
     // Input is automatically validated and typed
@@ -247,7 +244,7 @@ The `schema` property defines input and output validation using any library that
 // Using Zod
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('Greeter', {
   schema: {
     input: z.object({ name: z.string() }),
     output: z.object({ greeting: z.string() }),
@@ -262,7 +259,7 @@ const agent = createAgent({
 // Using Valibot
 import * as v from 'valibot';
 
-const agent = createAgent({
+const agent = createAgent('Greeter', {
   schema: {
     input: v.object({ name: v.string() }),
     output: v.object({ greeting: v.string() }),
@@ -278,14 +275,11 @@ const agent = createAgent({
 Agent metadata provides information about the agent for documentation and tooling:
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('DataProcessor', {
+  description: 'Processes and transforms user data',
   schema: {
     input: inputSchema,
     output: outputSchema,
-  },
-  metadata: {
-    name: 'data-processor',
-    description: 'Processes and transforms user data',
   },
   handler: async (ctx, input) => {
     // Agent logic
@@ -319,7 +313,7 @@ StandardSchemaV1 is a common interface that allows different validation librarie
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('UserCreator', {
   schema: {
     input: z.object({
       email: z.string().email(),
@@ -362,7 +356,7 @@ TypeScript automatically infers types from your schemas, providing full autocomp
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('SearchAgent', {
   schema: {
     input: z.object({
       query: z.string(),
@@ -400,7 +394,9 @@ const agent = createAgent({
 });
 
 // When calling the agent from another agent:
-const result = await ctx.agent.searchAgent.run({
+import searchAgent from '@agent/search';
+
+const result = await searchAgent.run({
   query: 'agentic AI',
   filters: { category: 'tech', limit: 5 },
 });
@@ -473,7 +469,7 @@ export default async (request, response, context) => {
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-export default createAgent({
+export default createAgent('Greeter', {
   schema: {
     input: z.object({ name: z.string() }),
     output: z.object({ greeting: z.string() }),
@@ -490,7 +486,7 @@ export default createAgent({
 Input validation happens automatically before the handler executes:
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('UserValidator', {
   schema: {
     input: z.object({
       email: z.string().email(),
@@ -533,7 +529,7 @@ Handlers return data directly rather than using response builder methods:
 **Simple Returns:**
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('Adder', {
   schema: {
     input: z.object({ x: z.number(), y: z.number() }),
     output: z.object({ sum: z.number() }),
@@ -547,7 +543,7 @@ const agent = createAgent({
 **Async Processing:**
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('UserFetcher', {
   schema: {
     input: z.object({ userId: z.string() }),
     output: z.object({
@@ -575,7 +571,7 @@ const agent = createAgent({
 **Error Handling:**
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('RiskyOperator', {
   schema: {
     input: z.object({ id: z.string() }),
     output: z.object({ data: z.any() }),
@@ -597,7 +593,7 @@ const agent = createAgent({
 The return value is automatically validated against the output schema:
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('ValueChecker', {
   schema: {
     input: z.object({ value: z.number() }),
     output: z.object({
@@ -635,10 +631,9 @@ interface AgentContext {
   sessionId: string;                  // Unique ID for this agent execution
   agentName?: string;                 // Name of the current agent
 
-  // Agent System
-  agent: AgentRegistry;               // Type-safe registry for calling other agents
-  current?: AgentRunner;              // Reference to the current agent
-  parent?: AgentRunner;               // Reference to parent agent (for subagents)
+  // Agent Calling (use imports instead)
+  // import otherAgent from '@agent/other-agent';
+  // await otherAgent.run(input);
 
   // State Management
   session: Session;                   // Session object for cross-request state
@@ -666,10 +661,9 @@ interface AgentContext {
 - `sessionId`: Unique identifier for this agent execution. Use for tracking and correlating logs.
 - `agentName`: The name of the currently executing agent.
 
-**Agent System:**
-- `agent`: Type-safe registry for calling other agents. Access via `ctx.agent.otherAgentName.run(input)`.
-- `current`: Reference to the current agent's runner interface.
-- `parent`: Reference to the parent agent when this agent is a subagent.
+**Agent Calling:**
+- Import agents directly: `import otherAgent from '@agent/other-agent'`
+- Call with: `await otherAgent.run(input)`
 
 **State Management:**
 - `session`: Persistent session object that spans multiple agent calls.
@@ -682,7 +676,7 @@ interface AgentContext {
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('QueryProcessor', {
   schema: {
     input: z.object({ query: z.string() }),
     output: z.object({ result: z.string() }),
@@ -697,8 +691,9 @@ const agent = createAgent({
     // Store request-scoped data
     ctx.state.set('startTime', Date.now());
 
-    // Call another agent
-    const enrichedData = await ctx.agent.enrichmentAgent.run({ text: input.query });
+    // Call another agent (import at top of file)
+    // import enrichmentAgent from '@agent/enrichment';
+    const enrichedData = await enrichmentAgent.run({ text: input.query });
 
     // Use session state
     ctx.session.state.set('queryCount',
@@ -730,7 +725,7 @@ Defers the execution of a background task until after the main response has been
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('MessageReceiver', {
   schema: {
     input: z.object({ userId: z.string(), message: z.string() }),
     output: z.object({ status: z.string(), timestamp: z.number() }),
@@ -738,7 +733,7 @@ const agent = createAgent({
   handler: async (ctx, input) => {
     const responseData = {
       status: 'received',
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     // Schedule background tasks (async functions)
@@ -1021,136 +1016,95 @@ const deletedCount4 = await ctx.vector.delete('product-descriptions', 'existing-
 ctx.logger.info(`Deleted ${deletedCount4} vector(s)`); // May be less than number of keys provided
 ```
 
-### Object Storage
+### Object Storage (Bun S3)
 
-The Object Storage API provides a way to store and retrieve objects (files, documents, media) with support for public URL generation. It is accessed through the `ctx.objectstore` object.
-
-#### get
-
-`get(bucket: string, key: string): Promise<DataResult>`
-
-Retrieves an object from the object storage.
-
-**Parameters**
-
-- `bucket`: The bucket to get the object from
-- `key`: The key of the object to get
-
-**Return Value**
-
-Returns a Promise that resolves to an `ObjectResult` object with:
-- `exists`: boolean indicating if the object was found
-- `data`: Uint8Array containing the raw object data (only present when exists is true)
-- `contentType`: the content type of the stored object
-
-**Example**
+Object storage uses Bun's native S3 APIs. Agentuity auto-injects the required credentials (`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_ENDPOINT`).
 
 ```typescript
-// Retrieve an object from object storage
-const result = await ctx.objectstore.get('user-uploads', 'profile-123.jpg');
-if (result.exists) {
-  // data is Uint8Array directly
-  ctx.logger.info(`Image size: ${result.data.byteLength} bytes`);
-} else {
-  ctx.logger.info('Image not found');
+import { s3 } from 'bun';
+```
+
+#### Reading Files
+
+```typescript
+const file = s3.file('uploads/profile-123.jpg');
+
+if (await file.exists()) {
+  const text = await file.text();       // For text files
+  const json = await file.json();       // For JSON files
+  const bytes = await file.bytes();     // For binary data
+  const blob = await file.blob();       // As Blob
 }
 ```
 
-#### put
-
-`put(bucket: string, key: string, data: DataType, params?: ObjectStorePutParams): Promise<void>`
-
-Stores an object in the object storage.
-
-**Parameters**
-
-- `bucket`: The bucket to put the object into
-- `key`: The key of the object to put
-- `data`: The data to store (can be ArrayBuffer, string, or other DataType)
-- `params` (optional): Additional parameters for the object
-  - `contentType`: Content type of the object (auto-detected if not provided)
-  - `contentEncoding`: Content encoding (e.g., 'gzip')
-  - `cacheControl`: Cache control header
-  - `contentDisposition`: Content disposition header
-  - `contentLanguage`: Content language
-  - `metadata`: Dictionary of key-value pairs for custom metadata
-
-**Example**
+#### Writing Files
 
 ```typescript
-// Store a text file
-await ctx.objectstore.put('documents', 'readme.txt', 'Hello, world!', {
-  contentType: 'text/plain'
+const file = s3.file('documents/readme.txt');
+
+// Write text
+await file.write('Hello, world!', { type: 'text/plain' });
+
+// Write JSON
+await file.write(JSON.stringify({ name: 'John' }), { type: 'application/json' });
+
+// Write binary data
+await file.write(pdfBuffer, { type: 'application/pdf' });
+```
+
+#### Deleting Files
+
+```typescript
+const file = s3.file('uploads/old-file.pdf');
+await file.delete();
+```
+
+#### Presigned URLs
+
+Generate time-limited URLs for file access (synchronous, no network required):
+
+```typescript
+// Download URL (1 hour)
+const downloadUrl = s3.presign('uploads/document.pdf', {
+  expiresIn: 3600,
+  method: 'GET',
 });
 
-// Store an object (auto-detected as application/json)
-const userData = { name: 'John', age: 30 };
-await ctx.objectstore.put('users', 'user-123.json', userData);
-
-// Store with metadata
-await ctx.objectstore.put('uploads', 'document.pdf', pdfData, {
-  contentType: 'application/pdf',
-  contentDisposition: 'attachment; filename="report.pdf"',
-  metadata: {
-    'user-id': '12345',
-    'upload-source': 'web-app'
-  }
+// Upload URL
+const uploadUrl = s3.presign('uploads/new-file.pdf', {
+  expiresIn: 3600,
+  method: 'PUT',
 });
 ```
 
-#### delete
-
-`delete(bucket: string, key: string): Promise<boolean>`
-
-Deletes an object from the object storage.
-
-**Parameters**
-
-- `bucket`: The bucket to delete the object from
-- `key`: The key of the object to delete
-
-**Return Value**
-
-Returns a Promise that resolves to a boolean indicating whether the object was deleted (true) or didn't exist (false).
-
-**Example**
+#### File Metadata
 
 ```typescript
-const wasDeleted = await ctx.objectstore.delete('user-uploads', 'old-file.pdf');
-if (wasDeleted) {
-  ctx.logger.info('File deleted successfully');
-} else {
-  ctx.logger.info('File did not exist');
-}
+const file = s3.file('uploads/document.pdf');
+const stat = await file.stat();
+// { etag, lastModified, size, type }
 ```
 
-#### createPublicURL
-
-`createPublicURL(bucket: string, key: string, expiresDuration?: number): Promise<string>`
-
-Creates a time-limited public URL for accessing an object.
-
-**Parameters**
-
-- `bucket`: The bucket containing the object
-- `key`: The key of the object
-- `expiresDuration` (optional): Duration in milliseconds until the URL expires (defaults to 1 hour, minimum 1 minute)
-
-**Return Value**
-
-Returns a Promise that resolves to a public URL string.
-
-**Example**
+#### Listing Objects
 
 ```typescript
-// Create a public URL that expires in 1 hour
-const publicUrl = await ctx.objectstore.createPublicURL(
-  'user-uploads',
-  'document.pdf',
-  3600000
-);
+import { S3Client } from 'bun';
 
-ctx.logger.info(`Download link: ${publicUrl}`);
+const objects = await S3Client.list({
+  prefix: 'uploads/',
+  maxKeys: 100,
+});
+```
+
+#### Streaming Large Files
+
+```typescript
+const file = s3.file('large-file.zip');
+const writer = file.writer({ partSize: 5 * 1024 * 1024 }); // 5MB parts
+
+writer.write(chunk1);
+writer.write(chunk2);
+await writer.end();
 ```
 
 ### Stream Storage
@@ -1187,7 +1141,7 @@ Returns a Promise that resolves to a `Stream` object with `id`, `url`, and Writa
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('UserExporter', {
   schema: {
     input: z.object({ userId: z.string() }),
     output: z.object({ streamId: z.string(), streamUrl: z.string() }),
@@ -1198,8 +1152,8 @@ const agent = createAgent({
       contentType: 'text/csv',
       metadata: {
         userId: input.userId,
-        timestamp: Date.now()
-      }
+        timestamp: Date.now(),
+      },
     });
 
     // Write data in the background
@@ -1214,7 +1168,7 @@ const agent = createAgent({
 
     return {
       streamId: stream.id,
-      streamUrl: stream.url
+      streamUrl: stream.url,
     };
   },
 });
@@ -1477,7 +1431,7 @@ Agents can communicate with each other through a type-safe registry pattern, ena
 
 ### Agent Registry
 
-The agent registry provides type-safe access to other agents in your project through the `ctx.agent` property.
+Import other agents directly and call them with full type safety.
 
 **Key Features:**
 - **Type-safe calls**: TypeScript infers input and output types from agent schemas
@@ -1488,86 +1442,76 @@ The agent registry provides type-safe access to other agents in your project thr
 **Basic Pattern:**
 
 ```typescript
+import otherAgent from '@agent/other';
+
 // Call another agent
-const result = await ctx.agent.otherAgentName.run(input);
+const result = await otherAgent.run(input);
 ```
 
-The agent registry is automatically generated based on your project's agents, providing compile-time type checking and runtime validation.
+The `@agent/` path alias provides access to all agents in your project with compile-time type checking.
 
 ### Calling Other Agents
 
-Agents can call other agents by accessing them through the context's agent registry.
+Import agents and call them directly.
 
 **Example: Simple Agent Call**
 
 ```typescript
+// src/agent/processor/agent.ts
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
+import enrichmentAgent from '@agent/enrichment';
 
-// First agent: enriches data
-const enrichmentAgent = createAgent({
-  schema: {
-    input: z.object({ text: z.string() }),
-    output: z.object({
-      text: z.string(),
-      sentiment: z.enum(['positive', 'negative', 'neutral']),
-      keywords: z.array(z.string())
-    }),
-  },
-  handler: async (ctx, input) => {
-    // Enrichment logic
-    return {
-      text: input.text,
-      sentiment: 'positive',
-      keywords: ['example', 'keywords']
-    };
-  },
-});
-
-// Second agent: uses enrichment agent
-const processorAgent = createAgent({
+const processor = createAgent('Processor', {
   schema: {
     input: z.object({ userInput: z.string() }),
     output: z.object({
       processed: z.boolean(),
       analysis: z.object({
         sentiment: z.string(),
-        keywords: z.array(z.string())
-      })
+        keywords: z.array(z.string()),
+      }),
     }),
   },
   handler: async (ctx, input) => {
     // Call the enrichment agent
-    const enriched = await ctx.agent.enrichmentAgent.run({
-      text: input.userInput
+    const enriched = await enrichmentAgent.run({
+      text: input.userInput,
     });
 
-    // TypeScript knows enriched has the shape:
-    // { text: string; sentiment: 'positive' | 'negative' | 'neutral'; keywords: string[] }
+    // TypeScript knows enriched has the shape from the agent's schema
 
     return {
       processed: true,
       analysis: {
         sentiment: enriched.sentiment,
-        keywords: enriched.keywords
-      }
+        keywords: enriched.keywords,
+      },
     };
   },
 });
+
+export default processor;
 ```
 
 **Example: Calling Multiple Agents**
 
 ```typescript
-const coordinatorAgent = createAgent({
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+import webSearchAgent from '@agent/web-search';
+import databaseAgent from '@agent/database';
+import cacheAgent from '@agent/cache';
+
+const coordinator = createAgent('Coordinator', {
   schema: {
     input: z.object({ query: z.string() }),
     output: z.object({
       results: z.array(z.any()),
       metadata: z.object({
         sources: z.number(),
-        processingTime: z.number()
-      })
+        processingTime: z.number(),
+      }),
     }),
   },
   handler: async (ctx, input) => {
@@ -1575,33 +1519,39 @@ const coordinatorAgent = createAgent({
 
     // Call multiple agents in parallel
     const [webResults, dbResults, cacheResults] = await Promise.all([
-      ctx.agent.webSearchAgent.run({ query: input.query }),
-      ctx.agent.databaseAgent.run({ query: input.query }),
-      ctx.agent.cacheAgent.run({ key: input.query })
+      webSearchAgent.run({ query: input.query }),
+      databaseAgent.run({ query: input.query }),
+      cacheAgent.run({ key: input.query }),
     ]);
 
     // Combine results
     const allResults = [
       ...webResults.items,
       ...dbResults.records,
-      ...(cacheResults.found ? [cacheResults.data] : [])
+      ...(cacheResults.found ? [cacheResults.data] : []),
     ];
 
     return {
       results: allResults,
       metadata: {
         sources: 3,
-        processingTime: Date.now() - startTime
-      }
+        processingTime: Date.now() - startTime,
+      },
     };
   },
 });
+
+export default coordinator;
 ```
 
 **Error Handling:**
 
 ```typescript
-const robustAgent = createAgent({
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+import externalService from '@agent/external-service';
+
+const robustAgent = createAgent('Robust', {
   schema: {
     input: z.object({ userId: z.string() }),
     output: z.object({ success: z.boolean(), data: z.any() }),
@@ -1609,8 +1559,8 @@ const robustAgent = createAgent({
   handler: async (ctx, input) => {
     try {
       // Try calling external agent
-      const result = await ctx.agent.externalService.run({
-        userId: input.userId
+      const result = await externalService.run({
+        userId: input.userId,
       });
 
       return { success: true, data: result };
@@ -1628,115 +1578,15 @@ const robustAgent = createAgent({
     }
   },
 });
-```
 
-### Parent and Child Agents
-
-Agents can have parent-child relationships, enabling hierarchical workflows and subagent patterns.
-
-**Accessing Parent Agent:**
-
-When an agent is called by another agent, it can access its parent through `ctx.parent`:
-
-```typescript
-const childAgent = createAgent({
-  schema: {
-    input: z.object({ task: z.string() }),
-    output: z.object({ completed: z.boolean() }),
-  },
-  handler: async (ctx, input) => {
-    // Check if this agent was called by another agent
-    if (ctx.parent) {
-      ctx.logger.info(`Called by parent agent: ${ctx.parent.metadata.name}`);
-
-      // Can access parent information but cannot call parent
-      // (to prevent circular calls)
-    }
-
-    // Process the task
-    return { completed: true };
-  },
-});
-```
-
-**Current Agent Reference:**
-
-Access the current agent's metadata through `ctx.current`:
-
-```typescript
-const selfAwareAgent = createAgent({
-  metadata: {
-    name: 'self-aware-agent',
-    description: 'Knows its own identity'
-  },
-  schema: {
-    input: z.object({ query: z.string() }),
-    output: z.object({ response: z.string() }),
-  },
-  handler: async (ctx, input) => {
-    // Access current agent's metadata
-    const myName = ctx.current?.metadata.name;
-
-    ctx.logger.info(`I am ${myName}, processing: ${input.query}`);
-
-    return {
-      response: `Processed by ${myName}`
-    };
-  },
-});
-```
-
-**Subagent Pattern Example:**
-
-```typescript
-// Manager agent that delegates work
-const managerAgent = createAgent({
-  schema: {
-    input: z.object({
-      tasks: z.array(z.object({
-        type: z.enum(['analyze', 'transform', 'validate']),
-        data: z.any()
-      }))
-    }),
-    output: z.object({
-      results: z.array(z.any()),
-      tasksCompleted: z.number()
-    }),
-  },
-  handler: async (ctx, input) => {
-    const results = [];
-
-    for (const task of input.tasks) {
-      // Delegate to appropriate subagent based on task type
-      switch (task.type) {
-        case 'analyze':
-          const analyzed = await ctx.agent.analyzerAgent.run({ data: task.data });
-          results.push(analyzed);
-          break;
-        case 'transform':
-          const transformed = await ctx.agent.transformerAgent.run({ data: task.data });
-          results.push(transformed);
-          break;
-        case 'validate':
-          const validated = await ctx.agent.validatorAgent.run({ data: task.data });
-          results.push(validated);
-          break;
-      }
-    }
-
-    return {
-      results,
-      tasksCompleted: input.tasks.length
-    };
-  },
-});
+export default robustAgent;
 ```
 
 ---
 
 ## Router & Routes
 
-The SDK provides a Hono-based routing system for creating HTTP endpoints alongside your agents. Routes are defined in `route.ts` files and provide full control over HTTP request handling.
+The SDK provides a Hono-based routing system for creating HTTP endpoints. Routes are defined in `src/api/index.ts` and provide full control over HTTP request handling.
 
 ### Creating Routes
 
@@ -1812,16 +1662,18 @@ interface RouterContext {
 **Example Usage:**
 
 ```typescript
-router.post('/process', async (c) => {
+import processor from '@agent/processor';
+
+router.post('/process', processor.validator(), async (c) => {
   // Access request
-  const body = await c.req.json();
+  const body = c.req.valid('json');
   const authHeader = c.req.header('Authorization');
 
   // Use Agentuity services
-  c.logger.info('Processing request', { body });
+  c.var.logger.info('Processing request', { body });
 
   // Call an agent
-  const result = await c.agent.processor.run({ data: body.data });
+  const result = await processor.run({ data: body.data });
 
   // Store result
   await c.kv.set('results', body.id, result);
@@ -1833,12 +1685,12 @@ router.post('/process', async (c) => {
 
 **Accessing Services:**
 
-All Agentuity storage and observability services are available in router handlers, enabling you to:
-- Call agents via `c.agent.agentName.run()`
+All Agentuity storage and observability services are available in router handlers:
+- Call agents via imports: `import agent from '@agent/name'; agent.run()`
 - Use key-value storage via `c.kv`
-- Log with `c.logger`
-- Trace with `c.tracer`
-- Store objects via `c.objectstore`
+- Log with `c.var.logger`
+- Trace with `c.var.tracer`
+- Store objects via `import { s3 } from 'bun'`
 - Search vectors via `c.vector`
 
 This unified context makes it easy to build HTTP endpoints that leverage the full Agentuity platform.
@@ -1892,15 +1744,17 @@ router.delete('/users/:id', (c) => {
 
 **Calling Agents from Routes:**
 
-Routes can call agents through the context:
+Import agents and call them directly:
 
 ```typescript
-router.post('/process', async (c) => {
-  const input = await c.req.json();
+import processorAgent from '@agent/processor';
 
-  // Call an agent
-  const result = await c.agent.processorAgent.run({
-    data: input.data
+router.post('/process', processorAgent.validator(), async (c) => {
+  const input = c.req.valid('json');
+
+  // Call the agent
+  const result = await processorAgent.run({
+    data: input.data,
   });
 
   return c.json(result);
@@ -1983,9 +1837,10 @@ router.email('support@example.com', async (email, c) => {
   }
 
   // Process email and trigger agent
-  const result = await c.agent.emailProcessor.run({
+  // import emailProcessor from '@agent/email-processor';
+  const result = await emailProcessor.run({
     sender: email.fromEmail(),
-    content: email.text() || email.html() || ''
+    content: email.text() || email.html() || '',
   });
 
   return c.json({ processed: true });
@@ -2019,9 +1874,11 @@ interface WebSocketConnection {
 **Example:**
 
 ```typescript
+import chatAgent from '@agent/chat';
+
 router.websocket('/chat', (c) => (ws) => {
   ws.onOpen((event) => {
-    c.logger.info('WebSocket connected');
+    c.var.logger.info('WebSocket connected');
     ws.send(JSON.stringify({ type: 'connected' }));
   });
 
@@ -2029,15 +1886,15 @@ router.websocket('/chat', (c) => (ws) => {
     const message = JSON.parse(event.data);
 
     // Process message with agent
-    const response = await c.agent.chatAgent.run({
-      message: message.text
+    const response = await chatAgent.run({
+      message: message.text,
     });
 
     ws.send(JSON.stringify({ type: 'response', data: response }));
   });
 
   ws.onClose((event) => {
-    c.logger.info('WebSocket disconnected');
+    c.var.logger.info('WebSocket disconnected');
   });
 });
 ```
@@ -2069,23 +1926,25 @@ interface SSEStream {
 **Example:**
 
 ```typescript
+import longRunningAgent from '@agent/long-running';
+
 router.sse('/updates', (c) => async (stream) => {
   // Send initial connection message
   await stream.write({ type: 'connected' });
 
   // Stream agent progress updates
-  const updates = await c.agent.longRunningAgent.run({ task: 'process' });
+  const updates = await longRunningAgent.run({ task: 'process' });
 
   for (const update of updates) {
     await stream.write({
       type: 'progress',
-      data: update
+      data: update,
     });
   }
 
   // Clean up on client disconnect
   stream.onAbort(() => {
-    c.logger.info('Client disconnected');
+    c.var.logger.info('Client disconnected');
   });
 });
 ```
@@ -2110,19 +1969,21 @@ type StreamHandler = (c: Context) => ReadableStream<any> | Promise<ReadableStrea
 **Example:**
 
 ```typescript
+import dataGenerator from '@agent/data-generator';
+
 router.stream('/data', async (c) => {
   // Create a readable stream
   const stream = new ReadableStream({
     async start(controller) {
       // Stream data chunks
-      const data = await c.agent.dataGenerator.run({ query: 'all' });
+      const data = await dataGenerator.run({ query: 'all' });
 
       for (const chunk of data) {
         controller.enqueue(new TextEncoder().encode(JSON.stringify(chunk) + '\n'));
       }
 
       controller.close();
-    }
+    },
   });
 
   return stream;
@@ -2161,13 +2022,16 @@ type CronHandler = (c: Context) => any | Promise<any>;
 **Example:**
 
 ```typescript
+import reportGenerator from '@agent/report-generator';
+import healthCheck from '@agent/health-check';
+
 // Run daily at 9am
 router.cron('0 9 * * *', async (c) => {
-  c.logger.info('Running daily report');
+  c.var.logger.info('Running daily report');
 
-  const report = await c.agent.reportGenerator.run({
+  const report = await reportGenerator.run({
     type: 'daily',
-    date: new Date().toISOString()
+    date: new Date().toISOString(),
   });
 
   // Send report via email or store
@@ -2178,7 +2042,7 @@ router.cron('0 9 * * *', async (c) => {
 
 // Run every 5 minutes
 router.cron('*/5 * * * *', async (c) => {
-  await c.agent.healthCheck.run({});
+  await healthCheck.run({});
   return c.json({ checked: true });
 });
 ```
@@ -2203,18 +2067,20 @@ type SMSHandler = (c: Context) => any | Promise<any>;
 **Example:**
 
 ```typescript
+import smsBot from '@agent/sms-bot';
+
 router.sms({ number: '+12345678900' }, async (c) => {
   const body = await c.req.json();
 
-  c.logger.info('SMS received', {
+  c.var.logger.info('SMS received', {
     from: body.from,
-    message: body.text
+    message: body.text,
   });
 
   // Process SMS with agent
-  const response = await c.agent.smsBot.run({
+  const response = await smsBot.run({
     sender: body.from,
-    message: body.text
+    message: body.text,
   });
 
   return c.json({ reply: response });
@@ -2299,12 +2165,12 @@ interface Session {
 **Using Session State:**
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('MessageTracker', {
   schema: {
     input: z.object({ message: z.string() }),
     output: z.object({
       response: z.string(),
-      messageCount: z.number()
+      messageCount: z.number(),
     }),
   },
   handler: async (ctx, input) => {
@@ -2319,7 +2185,7 @@ const agent = createAgent({
 
     return {
       response: `Message received`,
-      messageCount: newCount
+      messageCount: newCount,
     };
   },
 });
@@ -2352,15 +2218,15 @@ interface Thread {
 **Using Thread State:**
 
 ```typescript
-const conversationAgent = createAgent({
+const conversationAgent = createAgent('ConversationAgent', {
   schema: {
     input: z.object({
       message: z.string(),
-      userId: z.string()
+      userId: z.string(),
     }),
     output: z.object({
       reply: z.string(),
-      context: z.array(z.string())
+      context: z.array(z.string()),
     }),
   },
   handler: async (ctx, input) => {
@@ -2376,7 +2242,7 @@ const conversationAgent = createAgent({
 
     return {
       reply: `Processed message ${history.length}`,
-      context: history
+      context: history,
     };
   },
 });
@@ -2429,7 +2295,7 @@ handler: async (ctx, input) => {
 **Complete Example:**
 
 ```typescript
-const statefulAgent = createAgent({
+const statefulAgent = createAgent('StatefulAgent', {
   schema: {
     input: z.object({ action: z.string(), data: z.any() }),
     output: z.object({
@@ -2437,8 +2303,8 @@ const statefulAgent = createAgent({
       stats: z.object({
         requestDuration: z.number(),
         threadStep: z.number(),
-        sessionTotal: z.number()
-      })
+        sessionTotal: z.number(),
+      }),
     }),
   },
   handler: async (ctx, input) => {
@@ -2463,8 +2329,8 @@ const statefulAgent = createAgent({
       stats: {
         requestDuration: Date.now() - (ctx.state.get('startTime') as number),
         threadStep: threadStep + 1,
-        sessionTotal: sessionTotal + 1
-      }
+        sessionTotal: sessionTotal + 1,
+      },
     };
   },
 });
@@ -2499,19 +2365,19 @@ agent.createEval({
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('ConfidenceAgent', {
   schema: {
     input: z.object({ query: z.string() }),
     output: z.object({
       answer: z.string(),
-      confidence: z.number()
+      confidence: z.number(),
     }),
   },
   handler: async (ctx, input) => {
     // Agent logic
     return {
       answer: 'Response to ' + input.query,
-      confidence: 0.95
+      confidence: 0.95,
     };
   },
 });
@@ -2520,7 +2386,7 @@ const agent = createAgent({
 agent.createEval({
   metadata: {
     name: 'confidence-check',
-    description: 'Ensures confidence is above minimum threshold'
+    description: 'Ensures confidence is above minimum threshold',
   },
   handler: async (ctx, input, output) => {
     const passed = output.confidence >= 0.8;
@@ -2531,8 +2397,8 @@ agent.createEval({
       metadata: {
         confidence: output.confidence,
         threshold: 0.8,
-        reason: passed ? 'Confidence acceptable' : 'Confidence too low'
-      }
+        reason: passed ? 'Confidence acceptable' : 'Confidence too low',
+      },
     };
   },
 });
@@ -2642,13 +2508,13 @@ Evals run automatically after agent execution completes, using the `waitUntil()`
 **Multiple Evals Example:**
 
 ```typescript
-const comprehensiveAgent = createAgent({
+const comprehensiveAgent = createAgent('TextAnalyzer', {
   schema: {
     input: z.object({ text: z.string() }),
     output: z.object({
       summary: z.string(),
       sentiment: z.enum(['positive', 'negative', 'neutral']),
-      keywords: z.array(z.string())
+      keywords: z.array(z.string()),
     }),
   },
   handler: async (ctx, input) => {
@@ -2656,7 +2522,7 @@ const comprehensiveAgent = createAgent({
     return {
       summary: 'Summary of ' + input.text,
       sentiment: 'positive',
-      keywords: ['keyword1', 'keyword2']
+      keywords: ['keyword1', 'keyword2'],
     };
   },
 });
@@ -2758,7 +2624,7 @@ agent.addEventListener('errored', (eventName, agent, ctx, error) => {
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('TaskRunner', {
   schema: {
     input: z.object({ task: z.string() }),
     output: z.object({ result: z.string() }),
@@ -2772,7 +2638,7 @@ const agent = createAgent({
 agent.addEventListener('started', (eventName, agent, ctx) => {
   ctx.logger.info('Agent started', {
     agentName: agent.metadata.name,
-    sessionId: ctx.sessionId
+    sessionId: ctx.sessionId,
   });
 });
 
@@ -2780,7 +2646,7 @@ agent.addEventListener('started', (eventName, agent, ctx) => {
 agent.addEventListener('completed', (eventName, agent, ctx) => {
   ctx.logger.info('Agent completed', {
     agentName: agent.metadata.name,
-    sessionId: ctx.sessionId
+    sessionId: ctx.sessionId,
   });
 });
 
@@ -2789,7 +2655,7 @@ agent.addEventListener('errored', (eventName, agent, ctx, error) => {
   ctx.logger.error('Agent errored', {
     agentName: agent.metadata.name,
     sessionId: ctx.sessionId,
-    error: error.message
+    error: error.message,
   });
 });
 ```
@@ -2892,7 +2758,7 @@ agent.removeEventListener('started', handler);
 **Complete Example with Cleanup:**
 
 ```typescript
-const agent = createAgent({
+const agent = createAgent('ActionHandler', {
   schema: {
     input: z.object({ action: z.string() }),
     output: z.object({ success: z.boolean() }),
@@ -2961,7 +2827,7 @@ import emailTemplate from './templates/welcome.txt';  // string
 import getUserQuery from './queries/getUser.sql';     // string
 import logo from './assets/logo.png';            // string (base64 data URL)
 
-const agent = createAgent({
+const agent = createAgent('ReportGenerator', {
   schema: {
     input: z.object({ userId: z.string(), format: z.enum(['html', 'text']) }),
     output: z.object({ sent: z.boolean(), report: z.string() }),
@@ -3054,14 +2920,14 @@ declare module '*.txt' {
 
 For users upgrading from v0, the key architectural changes include:
 
-- **Agent definition**: Function exports → `createAgent()` API
+- **Agent definition**: Function exports → `createAgent('Name', { ... })` API
 - **Handler signature**: `(request, response, context)` → `(ctx, input)`
 - **Returns**: Explicit `response.json()` → Direct returns with schema validation
-- **Agent communication**: `context.getAgent()` → `ctx.agent.name.run()`
-- **File structure**: Single agent file → `agent.ts` + `route.ts` pattern
+- **Agent communication**: `context.getAgent()` → `import agent from '@agent/name'; agent.run()`
+- **File structure**: Single agent file → `src/agent/` for agents, `src/api/` for routes
 - **Context properties**: `runId` → `sessionId`, added `session`, `thread`, `state`
 - **Package names**: `@agentuity/sdk` → `@agentuity/runtime` (or `@agentuity/server`)
 
-For complete migration instructions, see the [Migration Guide](/migration-guide).
+For complete migration instructions, see the [Migration Guide](/v1/Reference/migration-guide).
 
 ---

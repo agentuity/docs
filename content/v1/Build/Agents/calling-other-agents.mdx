@@ -7,20 +7,21 @@ Break complex tasks into focused, reusable agents that communicate with type saf
 
 ## Basic Usage
 
-Call other agents using `ctx.agent` in your handler:
+Import and call other agents directly:
 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
+import enrichmentAgent from '@agent/enrichment';
 
-const coordinator = createAgent({
+const coordinator = createAgent('Coordinator', {
   schema: {
     input: s.object({ text: s.string() }),
     output: s.object({ result: s.string() }),
   },
   handler: async (ctx, input) => {
-    // Call another agent by name
-    const enriched = await ctx.agent.enrichmentAgent.run({
+    // Call another agent by importing it
+    const enriched = await enrichmentAgent.run({
       text: input.text,
     });
 
@@ -46,23 +47,26 @@ Process data through a series of agents where each step depends on the previous 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
+import validatorAgent from '@agent/validator';
+import enrichmentAgent from '@agent/enrichment';
+import analysisAgent from '@agent/analysis';
 
-const pipeline = createAgent({
+const pipeline = createAgent('Pipeline', {
   schema: {
     input: s.object({ rawData: s.string() }),
     output: s.object({ processed: s.any() }),
   },
   handler: async (ctx, input) => {
     // Each step depends on the previous result
-    const validated = await ctx.agent.validatorAgent.run({
+    const validated = await validatorAgent.run({
       data: input.rawData,
     });
 
-    const enriched = await ctx.agent.enrichmentAgent.run({
+    const enriched = await enrichmentAgent.run({
       data: validated.cleanData,
     });
 
-    const analyzed = await ctx.agent.analysisAgent.run({
+    const analyzed = await analysisAgent.run({
       data: enriched.enrichedData,
     });
 
@@ -82,8 +86,11 @@ Run multiple agents simultaneously when their operations are independent:
 ```typescript
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
+import webSearchAgent from '@agent/web-search';
+import databaseAgent from '@agent/database';
+import vectorSearchAgent from '@agent/vector-search';
 
-const searchAgent = createAgent({
+const searchAgent = createAgent('Search', {
   schema: {
     input: s.object({ query: s.string() }),
     output: s.object({ results: s.array(s.any()) }),
@@ -91,9 +98,9 @@ const searchAgent = createAgent({
   handler: async (ctx, input) => {
     // Execute all searches in parallel
     const [webResults, dbResults, vectorResults] = await Promise.all([
-      ctx.agent.webSearchAgent.run({ query: input.query }),
-      ctx.agent.databaseAgent.run({ query: input.query }),
-      ctx.agent.vectorSearchAgent.run({ query: input.query }),
+      webSearchAgent.run({ query: input.query }),
+      databaseAgent.run({ query: input.query }),
+      vectorSearchAgent.run({ query: input.query }),
     ]);
 
     return {
@@ -114,8 +121,9 @@ Use `ctx.waitUntil()` for fire-and-forget operations that continue after returni
 ```typescript
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
+import analyticsAgent from '@agent/analytics';
 
-const processor = createAgent({
+const processor = createAgent('Processor', {
   schema: {
     input: s.object({ data: s.any() }),
     output: s.object({ status: s.string(), id: s.string() }),
@@ -125,7 +133,7 @@ const processor = createAgent({
 
     // Start background processing
     ctx.waitUntil(async () => {
-      await ctx.agent.analyticsAgent.run({
+      await analyticsAgent.run({
         event: 'processed',
         data: input.data,
       });
@@ -149,6 +157,10 @@ Use `ctx.waitUntil()` for analytics, logging, notifications, or any operation wh
 Use an LLM to classify intent and route to the appropriate agent:
 
 ```typescript
+import supportAgent from '@agent/support';
+import salesAgent from '@agent/sales';
+import technicalAgent from '@agent/technical';
+
 handler: async (ctx, input) => {
   // Classify with a fast model, using Groq (via AI Gateway)
   const { object: intent } = await generateObject({
@@ -162,11 +174,11 @@ handler: async (ctx, input) => {
   // Route based on classification
   switch (intent.agentType) {
     case 'support':
-      return ctx.agent.supportAgent.run(input);
+      return supportAgent.run(input);
     case 'sales':
-      return ctx.agent.salesAgent.run(input);
+      return salesAgent.run(input);
     case 'technical':
-      return ctx.agent.technicalAgent.run(input);
+      return technicalAgent.run(input);
   }
 }
 ```
@@ -184,18 +196,20 @@ An orchestrator is a coordinator agent that delegates work to specialized agents
 ```typescript
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
+import writerAgent from '@agent/writer';
+import evaluatorAgent from '@agent/evaluator';
 
-const orchestrator = createAgent({
+const orchestrator = createAgent('Orchestrator', {
   schema: {
     input: s.object({ topic: s.string() }),
     output: s.object({ content: s.string(), score: s.number() }),
   },
   handler: async (ctx, input) => {
     // Step 1: Generate content
-    const draft = await ctx.agent.writerAgent.run({ prompt: input.topic });
+    const draft = await writerAgent.run({ prompt: input.topic });
 
     // Step 2: Evaluate quality
-    const evaluation = await ctx.agent.evaluatorAgent.run({
+    const evaluation = await evaluatorAgent.run({
       content: draft.text,
     });
 
@@ -208,13 +222,13 @@ export default orchestrator;
 ```
 
 <Callout type="info" title="Common Pattern">
-The orchestrator pattern is common in AI workflows where you want to separate concerns (generation, evaluation, formatting) into focused agents. You'll see this pattern in many of our [multi-agent examples](/Learn/Examples).
+The orchestrator pattern is common in AI workflows where you want to separate concerns (generation, evaluation, formatting) into focused agents. You'll see this pattern in many of our [multi-agent examples](/v1/Learn/Examples).
 </Callout>
 
 ## Public Agents
 
 <Callout type="warning" title="Cross-Project Limitation">
-Agent-to-agent calls via `ctx.agent` only work within the same project. To call agents in other projects or organizations, use `fetch()` with the agent's public URL.
+Agent imports only work within the same project. To call agents in other projects or organizations, use `fetch()` with the agent's public URL.
 </Callout>
 
 Call public agents using standard HTTP:
@@ -223,7 +237,7 @@ Call public agents using standard HTTP:
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 
-const agent = createAgent({
+const agent = createAgent('External Caller', {
   schema: {
     input: s.object({ query: s.string() }),
     output: s.object({ result: s.string() }),
@@ -262,13 +276,16 @@ export default agent;
 By default, errors propagate through the call chain:
 
 ```typescript
-const agent = createAgent({
+import validatorAgent from '@agent/validator';
+import processorAgent from '@agent/processor';
+
+const pipeline = createAgent('Pipeline', {
   handler: async (ctx, input) => {
     // If validatorAgent throws, execution stops here
-    const validated = await ctx.agent.validatorAgent.run(input);
+    const validated = await validatorAgent.run(input);
 
     // This never executes if validation fails
-    const processed = await ctx.agent.processorAgent.run(validated);
+    const processed = await processorAgent.run(validated);
 
     return processed;
   },
@@ -282,13 +299,16 @@ This is the recommended pattern for critical operations where later steps cannot
 For optional operations, catch errors and continue:
 
 ```typescript
-const agent = createAgent({
+import enrichmentAgent from '@agent/enrichment';
+import processorAgent from '@agent/processor';
+
+const resilientProcessor = createAgent('Resilient Processor', {
   handler: async (ctx, input) => {
     let enrichedData = input.data;
 
     // Try to enrich, but continue if it fails
     try {
-      const enrichment = await ctx.agent.enrichmentAgent.run({
+      const enrichment = await enrichmentAgent.run({
         data: input.data,
       });
       enrichedData = enrichment.data;
@@ -299,7 +319,7 @@ const agent = createAgent({
     }
 
     // Process with enriched data (or original if enrichment failed)
-    return await ctx.agent.processorAgent.run({ data: enrichedData });
+    return await processorAgent.run({ data: enrichedData });
   },
 });
 ```
@@ -309,6 +329,8 @@ const agent = createAgent({
 Implement retry logic for unreliable operations:
 
 ```typescript
+import externalServiceAgent from '@agent/external-service';
+
 async function callWithRetry<T>(
   fn: () => Promise<T>,
   maxRetries: number = 3,
@@ -328,10 +350,10 @@ async function callWithRetry<T>(
   throw new Error('Retry failed');
 }
 
-const agent = createAgent({
+const retryHandler = createAgent('Retry Handler', {
   handler: async (ctx, input) => {
     const result = await callWithRetry(() =>
-      ctx.agent.externalServiceAgent.run(input)
+      externalServiceAgent.run(input)
     );
     return result;
   },
@@ -343,10 +365,12 @@ const agent = createAgent({
 Handle mixed success/failure results with `Promise.allSettled()`:
 
 ```typescript
-const agent = createAgent({
+import processingAgent from '@agent/processing';
+
+const batchProcessor = createAgent('Batch Processor', {
   handler: async (ctx, input) => {
     const results = await Promise.allSettled(
-      input.items.map((item) => ctx.agent.processingAgent.run({ item }))
+      input.items.map((item) => processingAgent.run({ item }))
     );
 
     const successful = results
@@ -374,12 +398,12 @@ Each agent should have a single, well-defined responsibility:
 
 ```typescript
 // Good: focused agents
-const validatorAgent = createAgent({ /* validates data */ });
-const enrichmentAgent = createAgent({ /* enriches data */ });
-const analysisAgent = createAgent({ /* analyzes data */ });
+const validatorAgent = createAgent('Validator', { /* validates data */ });
+const enrichmentAgent = createAgent('Enrichment', { /* enriches data */ });
+const analysisAgent = createAgent('Analysis', { /* analyzes data */ });
 
 // Bad: monolithic agent
-const megaAgent = createAgent({
+const megaAgent = createAgent('MegaAgent', {
   handler: async (ctx, input) => {
     // Validates, enriches, analyzes all in one place
   },
@@ -390,11 +414,13 @@ Focused agents are easier to test, reuse, and maintain.
 
 ### Use Schemas for Type Safety
 
-Define schemas on all agents for type-safe communication. See [Creating Agents](/Build/Agents/creating-agents) to learn more about using schemas.
+Define schemas on all agents for type-safe communication. See [Creating Agents](/v1/Build/Agents/creating-agents) to learn more about using schemas.
 
 ```typescript
+import sourceAgent from '@agent/source';
+
 // Source agent with output schema
-const sourceAgent = createAgent({
+const source = createAgent('Source', {
   schema: {
     output: z.object({
       data: z.string(),
@@ -410,9 +436,9 @@ const sourceAgent = createAgent({
 });
 
 // Consumer agent - TypeScript validates the connection
-const consumerAgent = createAgent({
+const consumer = createAgent('Consumer', {
   handler: async (ctx, input) => {
-    const result = await ctx.agent.sourceAgent.run({});
+    const result = await source.run({});
     // TypeScript knows result.data and result.metadata.timestamp exist
     return { processed: result.data };
   },
@@ -424,13 +450,15 @@ const consumerAgent = createAgent({
 Agent calls share the same session context:
 
 ```typescript
-const coordinator = createAgent({
+import processingAgent from '@agent/processing';
+
+const coordinator = createAgent('Coordinator', {
   handler: async (ctx, input) => {
     // Store data in thread state
     ctx.thread.state.set('userId', input.userId);
 
     // Called agents can access the same thread state
-    const result = await ctx.agent.processingAgent.run(input);
+    const result = await processingAgent.run(input);
 
     // All agents share sessionId
     ctx.logger.info('Processing complete', { sessionId: ctx.sessionId });
@@ -451,6 +479,11 @@ import { createAgent } from '@agentuity/runtime';
 import { generateObject } from 'ai';
 import { groq } from '@ai-sdk/groq';
 import { z } from 'zod';
+import supportAgent from '@agent/support';
+import salesAgent from '@agent/sales';
+import billingAgent from '@agent/billing';
+import generalAgent from '@agent/general';
+import analyticsAgent from '@agent/analytics';
 
 const IntentSchema = z.object({
   agentType: z.enum(['support', 'sales', 'billing', 'general']),
@@ -458,7 +491,7 @@ const IntentSchema = z.object({
   reasoning: z.string(),
 });
 
-const router = createAgent({
+const router = createAgent('Customer Router', {
   schema: {
     input: z.object({ message: z.string() }),
     output: z.object({
@@ -498,7 +531,7 @@ const router = createAgent({
     try {
       switch (intent.agentType) {
         case 'support':
-          const supportResult = await ctx.agent.supportAgent.run({
+          const supportResult = await supportAgent.run({
             message: input.message,
             context: intent.reasoning,
           });
@@ -507,7 +540,7 @@ const router = createAgent({
           break;
 
         case 'sales':
-          const salesResult = await ctx.agent.salesAgent.run({
+          const salesResult = await salesAgent.run({
             message: input.message,
             context: intent.reasoning,
           });
@@ -516,7 +549,7 @@ const router = createAgent({
           break;
 
         case 'billing':
-          const billingResult = await ctx.agent.billingAgent.run({
+          const billingResult = await billingAgent.run({
             message: input.message,
             context: intent.reasoning,
           });
@@ -525,7 +558,7 @@ const router = createAgent({
           break;
 
         default:
-          const generalResult = await ctx.agent.generalAgent.run({
+          const generalResult = await generalAgent.run({
             message: input.message,
           });
           response = generalResult.response;
@@ -539,7 +572,7 @@ const router = createAgent({
 
     // Log analytics in background (doesn't block response)
     ctx.waitUntil(async () => {
-      await ctx.agent.analyticsAgent.run({
+      await analyticsAgent.run({
         event: 'customer_interaction',
         intent: intent.agentType,
         confidence: intent.confidence,
@@ -557,11 +590,10 @@ export default router;
 
 This example combines several patterns:
 - Use an LLM to classify intent and route to specialist agents
-- Handle failures gracefully — fallback to general agent if classification fails, friendly error message if specialists fail
+- Handle failures gracefully: fallback to general agent if classification fails, friendly error message if specialists fail
 - Log analytics in the background with `waitUntil()` so the response isn't delayed
 
 ## Next Steps
 
-- [Subagents](/Build/Agents/subagents): Organize related agents into parent-child hierarchies
-- [State Management](/Build/Agents/state-management): Share data across agent calls with thread and session state
-- [Evaluations](/Build/Agents/evaluations): Add quality checks to your agent workflows
+- [State Management](/v1/Build/Agents/state-management): Share data across agent calls with thread and session state
+- [Evaluations](/v1/Build/Agents/evaluations): Add quality checks to your agent workflows

@@ -20,11 +20,8 @@ interface ProductMetadata {
   inStock: boolean;
 }
 
-const agent = createAgent({
-  metadata: {
-    name: 'Product Search',
-    description: 'Semantic search for products',
-  },
+const agent = createAgent('Product Search', {
+  description: 'Semantic search for products',
   schema: {
     input: z.object({
       query: z.string().describe('Natural language search query'),
@@ -106,7 +103,7 @@ export default agent;
 Add products to the vector database:
 
 ```typescript
-// src/agents/product-indexer/agent.ts
+// src/agent/product-indexer/agent.ts
 import { createAgent, type AgentContext } from '@agentuity/runtime';
 import { z } from 'zod';
 
@@ -119,7 +116,7 @@ const ProductSchema = z.object({
   inStock: z.boolean().default(true),
 });
 
-const agent = createAgent({
+const agent = createAgent('ProductIndexer', {
   schema: {
     input: z.object({
       products: z.array(ProductSchema),
@@ -154,6 +151,7 @@ export default agent;
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import productSearch from '@agent/product-search';
 
 const router = createRouter();
 
@@ -163,7 +161,7 @@ router.get('/search', async (c) => {
   const maxPrice = c.req.query('maxPrice');
   const limit = parseInt(c.req.query('limit') || '10');
 
-  const result = await c.agent.productSearch.run({
+  const result = await productSearch.run({
     query,
     category,
     maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
@@ -206,11 +204,8 @@ interface ProductMetadata {
   feedback: string;
 }
 
-const agent = createAgent({
-  metadata: {
-    name: 'Product Advisor',
-    description: 'Semantic search with AI recommendations',
-  },
+const agent = createAgent('Product Advisor', {
+  description: 'Semantic search with AI recommendations',
   schema: {
     input: s.object({
       query: s.string(),

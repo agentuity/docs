@@ -5,14 +5,15 @@ description: Process incoming emails with router.email()
 
 Handle incoming emails sent to a specific address. Email addresses are defined in code and automatically provisioned when deployed.
 
-<Callout type="info" title="Works in agents and APIs">
-This routing method works in both agent directories (`src/agents/*/route.ts`) and API directories (`src/apis/*/route.ts`). Examples below show agent patterns, but the same code works in standalone API routes.
+<Callout type="info" title="Routes Location">
+All routes live in `src/api/`. Import agents you need and call them directly.
 </Callout>
 
 ## Basic Example
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import supportAgent from '@agent/support';
 
 const router = createRouter();
 
@@ -22,7 +23,7 @@ router.email('support@example.com', async (email, c) => {
     subject: email.subject(),
   });
 
-  const response = await c.agent.supportAgent.run({
+  const response = await supportAgent.run({
     sender: email.fromEmail() || 'unknown',
     subject: email.subject() || 'No Subject',
     body: email.text() || '',
@@ -108,6 +109,7 @@ A support inbox that categorizes and routes emails:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import supportRouter from '@agent/support-router';
 
 const router = createRouter();
 
@@ -119,7 +121,7 @@ router.email('support@myapp.com', async (email, c) => {
 
   try {
     // Classify and process the email
-    const result = await c.agent.supportRouter.run({
+    const result = await supportRouter.run({
       from,
       subject,
       body,

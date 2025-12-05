@@ -13,7 +13,7 @@ Track individual agent execution with `started`, `completed`, and `errored` even
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 
-const agent = createAgent({
+const agent = createAgent('TaskProcessor', {
   schema: {
     input: s.object({ task: s.string() }),
     output: s.object({ result: s.string() }),
@@ -150,10 +150,10 @@ agent.addEventListener('completed', (event, agent, ctx) => {
 | **Blocking** | Synchronous | Background (`waitUntil`) |
 | **Output** | Logs, metrics | Pass/fail, scores |
 
-Use events for observability. Use [evaluations](/Build/Agents/evaluations) for output quality checks.
+Use events for observability. Use [evaluations](/v1/Build/Agents/evaluations) for output quality checks.
 
 ## Next Steps
 
-- [Evaluations](/Build/Agents/evaluations): Automated quality testing for agent outputs
-- [State Management](/Build/Agents/state-management): Thread and session state patterns
-- [Calling Other Agents](/Build/Agents/calling-other-agents): Multi-agent coordination
+- [Evaluations](/v1/Build/Agents/evaluations): Automated quality testing for agent outputs
+- [State Management](/v1/Build/Agents/state-management): Thread and session state patterns
+- [Calling Other Agents](/v1/Build/Agents/calling-other-agents): Multi-agent coordination

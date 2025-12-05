@@ -6,7 +6,7 @@ description: Understand how Agentuity projects are organized
 Agentuity projects follow a convention-based structure that enables automatic discovery and deployment.
 
 <Callout type="success" title="Just Add a Folder">
-Creating a new agent is as simple as adding a folder to `src/agents/` with `agent.ts` and `route.ts`. No CLI commands, no manual registration — agents are auto-discovered and registered when you deploy.
+Creating a new agent is as simple as adding a folder to `src/agent/` with an `agent.ts` file. No CLI commands, no manual registration: agents are auto-discovered both locally and when deployed.
 </Callout>
 
 ## Directory Layout
@@ -18,29 +18,27 @@ my-project/
 ├── package.json          # Dependencies
 ├── app.ts                # App entry point
 └── src/
-    ├── agents/           # Agent code (required)
+    ├── agent/            # Agent code (required)
     │   └── chat/
-    │       ├── agent.ts  # Business logic
-    │       └── route.ts  # HTTP routing
-    ├── apis/             # Pure HTTP endpoints (optional)
-    │   └── health/
-    │       └── route.ts
+    │       └── agent.ts  # Business logic
+    ├── api/              # HTTP routes (optional)
+    │   └── index.ts      # All routes, imports agents
     └── web/              # Frontend code (scaffolded by default)
         └── App.tsx
 ```
 
-Agent names come from their directory. `src/agents/chat/` creates an agent accessible as `c.agent.chat`.
+Agent names come from their directory. `src/agent/chat/` creates an agent you can import and call from your routes.
 
-## The Two-File Pattern
+## Agents and Routes
 
-Every agent has two files. Both are required for agents. For HTTP-only endpoints without agent logic, use `src/apis/` with just a `route.ts`.
+Agents and routes are separate concerns in Agentuity:
 
-| File | Purpose | Creates |
-|------|---------|---------|
-| `agent.ts` | Business logic, schemas, metadata | `createAgent()` |
-| `route.ts` | HTTP endpoints, triggers | `createRouter()` |
+| Concept | Location | Purpose |
+|---------|----------|---------|
+| **Agents** | `src/agent/` | Core logic, schemas, validation |
+| **Routes** | `src/api/` | HTTP endpoints, triggers (cron, email, SMS) |
 
-This separation keeps concerns clear—agents focus on logic, routes handle HTTP.
+Agents contain your core logic with schema validation and lifecycle hooks. Routes define how agents get invoked (HTTP, cron, webhooks, etc.). This separation keeps concerns clear: agents don't know how they're called, and routes handle all transport.
 
 ### agent.ts
 
@@ -48,7 +46,7 @@ This separation keeps concerns clear—agents focus on logic, routes handle HTTP
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 
-const agent = createAgent({
+const agent = createAgent('Chat', {
   schema: {
     input: s.object({ message: s.string() }),
     output: s.object({ response: s.string() }),
@@ -61,35 +59,38 @@ const agent = createAgent({
 export default agent;
 ```
 
-### route.ts
+### src/api/index.ts
+
+Routes import agents directly and call them:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import chat from '@agent/chat';
 
 const router = createRouter();
 
-router.post('/', async (c) => {
-  const body = await c.req.json();
-  const result = await c.agent.chat.run(body);
+router.post('/chat', chat.validator(), async (c) => {
+  const data = c.req.valid('json');
+  const result = await chat.run(data);
   return c.json(result);
 });
 
 export default router;
 ```
 
-The route calls the agent via `c.agent.<name>.run()`. The name comes from the directory, so `src/agents/chat/` becomes `c.agent.chat`, for example.
+The `chat.validator()` middleware validates the request body against the agent's input schema and provides type-safe access via `c.req.valid('json')`.
 
-## APIs vs Agents
+## When to Use Agents vs Direct Routes
 
-| | Agents (`src/agents/`) | APIs (`src/apis/`) |
+| | Agents | Direct Routes (no agent) |
 |---|---|---|
-| **Files** | `agent.ts` + `route.ts` | Just `route.ts` |
-| **Schema validation** | Built-in | Manual |
+| **Location** | `src/agent/` | `src/api/` |
+| **Schema validation** | Built-in with `agent.validator()` | Manual |
 | **Events & Evals** | Yes | No |
 | **Storage access** | Full | Full |
-| **Best for** | Core business logic | Health checks, webhooks, simple endpoints |
+| **Best for** | Validated workflows, LLM processing | Health checks, webhooks, simple endpoints |
 
-Use APIs when you need a lightweight HTTP endpoint without the agent overhead.
+Use simple routes (without calling an agent) for lightweight endpoints like health checks. For structured processing with validation, create an agent and call it from your route.
 
 ## Frontend (`src/web/`)
 
@@ -97,16 +98,16 @@ Place frontend code in `src/web/` to deploy alongside your agents. The CLI bundl
 
 React is currently supported via `@agentuity/react`, with a framework-agnostic approach that enables support for Next.js, Svelte, and others.
 
-```typescript
+```tsx
 // src/web/App.tsx
-import { useAgent } from '@agentuity/react';
+import { useAPI } from '@agentuity/react';
 
 function App() {
-  const { data, run, running } = useAgent('chat');
+  const { data, invoke, isLoading } = useAPI('POST /api/chat');
 
   return (
-    <button onClick={() => run({ message: 'Hello' })}>
-      {running ? 'Loading...' : 'Send'}
+    <button onClick={() => invoke({ message: 'Hello' })}>
+      {isLoading ? 'Loading...' : 'Send'}
     </button>
   );
 }
@@ -118,6 +119,6 @@ You can also deploy your frontend elsewhere (e.g.,Vercel, Netlify) and call your
 
 ## Next Steps
 
-- [App Configuration](/Get-Started/app-configuration) — Configure `app.ts` and `agentuity.json`
-- [Creating Agents](/Build/Agents/creating-agents) — Deep dive into agent creation
-- [HTTP Routes](/Build/Routes/http) — Learn about routing options
+- [App Configuration](/v1/Get-Started/app-configuration) — Configure `app.ts` and `agentuity.json`
+- [Creating Agents](/v1/Build/Agents/creating-agents) — Deep dive into agent creation
+- [Routes](/v1/Build/Routes) — Learn about HTTP, cron, email, and other triggers

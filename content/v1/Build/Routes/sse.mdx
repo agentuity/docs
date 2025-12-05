@@ -5,8 +5,8 @@ description: Stream updates from server to client with router.sse()
 
 Server-Sent Events (SSE) provide efficient one-way streaming from server to client over HTTP. Use them for progress indicators, live feeds, notifications, and LLM response streaming.
 
-<Callout type="info" title="Works in agents and APIs">
-This routing method works in both agent directories (`src/agents/*/route.ts`) and API directories (`src/apis/*/route.ts`). Examples below show agent patterns, but the same code works in standalone API routes.
+<Callout type="info" title="Routes Location">
+All routes live in `src/api/`. Import agents you need and call them directly.
 </Callout>
 
 ## Basic Example

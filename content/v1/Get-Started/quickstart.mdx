@@ -7,7 +7,7 @@ This guide walks you through creating a simple chat agent that uses OpenAI to ge
 
 ## 1. Create the Agent
 
-Create `src/agents/chat/agent.ts`:
+Create `src/agent/chat/agent.ts`:
 
 ```typescript
 import { createAgent, type AgentContext } from '@agentuity/runtime';
@@ -15,7 +15,7 @@ import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { s } from '@agentuity/schema';
 
-const agent = createAgent({
+const agent = createAgent('Chat', {
   schema: {
     input: s.object({ message: s.string() }),
     output: s.object({ response: s.string() }),
@@ -37,16 +37,17 @@ export default agent;
 
 ## 2. Add a Route
 
-Create `src/agents/chat/route.ts`:
+Create `src/api/index.ts`:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import chat from '@agent/chat';
 
 const router = createRouter();
 
-router.post('/', async (c) => {
-  const body = await c.req.json();
-  const result = await c.agent.chat.run(body);
+router.post('/chat', chat.validator(), async (c) => {
+  const data = c.req.valid('json');
+  const result = await chat.run(data);
   return c.json(result);
 });
 
@@ -87,7 +88,7 @@ import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { s } from '@agentuity/schema';
 
-const agent = createAgent({
+const agent = createAgent('Chat', {
   schema: {
     input: s.object({ message: s.string() }),
     stream: true,
@@ -109,12 +110,13 @@ Update the route to use the streaming endpoint:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import chat from '@agent/chat';
 
 const router = createRouter();
 
-router.stream('/', async (c) => {
+router.stream('/chat', async (c) => {
   const body = await c.req.json();
-  return c.agent.chat.run(body);
+  return chat.run(body);
 });
 
 export default router;
@@ -134,11 +136,11 @@ Your agent is now live with a public URL.
 
 **Build something more:**
 
-- [Build a multi-agent system](/Build/Agents/calling-other-agents) — Routing, RAG, workflows
-- [Add a React frontend](/Build/Frontend/react-hooks) — Call your agent from the web
-- [Persist data](/Build/Agents/state-management) — Use thread and session state
+- [Build a multi-agent system](/v1/Build/Agents/calling-other-agents) — Routing, RAG, workflows
+- [Add a React frontend](/v1/Build/Frontend/react-hooks) — Call your agent from the web
+- [Persist data](/v1/Build/Agents/state-management) — Use thread and session state
 
 **Understand the platform:**
 
-- [Project Structure](/Get-Started/project-structure) — The two-file pattern
-- [App Configuration](/Get-Started/app-configuration) — Configure your project
+- [Project Structure](/v1/Get-Started/project-structure) — The two-file pattern
+- [App Configuration](/v1/Get-Started/app-configuration) — Configure your project

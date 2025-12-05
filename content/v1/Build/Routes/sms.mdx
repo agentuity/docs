@@ -5,14 +5,15 @@ description: Process incoming text messages with router.sms()
 
 Handle incoming SMS messages sent to a phone number. Phone numbers are configured in code and integrated with Twilio automatically when deployed.
 
-<Callout type="info" title="Works in agents and APIs">
-This routing method works in both agent directories (`src/agents/*/route.ts`) and API directories (`src/apis/*/route.ts`). Examples below show agent patterns, but the same code works in standalone API routes.
+<Callout type="info" title="Routes Location">
+All routes live in `src/api/`. Import agents you need and call them directly.
 </Callout>
 
 ## Basic Example
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import smsResponder from '@agent/sms-responder';
 
 const router = createRouter();
 
@@ -22,7 +23,7 @@ router.sms({ number: '+1234567890' }, async (c) => {
   const from = formData['From'] as string;
   const body = formData['Body'] as string;
 
-  const reply = await c.agent.smsResponder.run({
+  const reply = await smsResponder.run({
     sender: from,
     message: body,
   });
@@ -39,6 +40,8 @@ export default router;
 Twilio sends webhooks in form-encoded format by default, but can also send JSON:
 
 ```typescript
+import smsHandler from '@agent/sms-handler';
+
 router.sms({ number: '+1234567890' }, async (c) => {
   let from = 'unknown';
   let body = '';
@@ -57,7 +60,7 @@ router.sms({ number: '+1234567890' }, async (c) => {
     body = data.Body || data.message;
   }
 
-  const reply = await c.agent.smsHandler.run({ from, body });
+  const reply = await smsHandler.run({ from, body });
   return c.text(reply);
 });
 ```
@@ -68,6 +71,8 @@ An SMS handler that processes commands:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import statusChecker from '@agent/status-checker';
+import balanceChecker from '@agent/balance-checker';
 
 const router = createRouter();
 
@@ -85,12 +90,12 @@ router.sms({ number: '+1234567890' }, async (c) => {
     }
 
     if (body === 'status') {
-      const status = await c.agent.statusChecker.run({ userId: from });
+      const status = await statusChecker.run({ userId: from });
       return c.text(`Your status: ${status.message}`);
     }
 
     if (body === 'balance') {
-      const balance = await c.agent.balanceChecker.run({ phone: from });
+      const balance = await balanceChecker.run({ phone: from });
       return c.text(`Balance: $${balance.amount}`);
     }
 

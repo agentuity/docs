@@ -11,33 +11,32 @@ Routes are defined in your codebase and automatically discovered. Changes are tr
 
 ## Where Routes Live
 
-Routes go in `route.ts` files. There are two directory patterns:
+All routes live in `src/api/`. Agents and routes are separate concerns:
 
-| Directory | Files | Purpose |
-|-----------|-------|---------|
-| `src/agents/*/` | `agent.ts` + `route.ts` | Routes paired with an agent |
-| `src/apis/*/` | Just `route.ts` | Standalone routes (can still call agents via `c.agent.*`) |
+| Directory | Purpose |
+|-----------|---------|
+| `src/agent/*/` | Agent logic (no routes here) |
+| `src/api/` | All routes: HTTP, cron, email, SMS, etc. |
 
-Agent directories pair routes with an agent: `agent.ts` defines the handler, `route.ts` exposes it over HTTP. API directories are routes-only but can still call any agent via `c.agent.*`.
-
-<Callout type="tip" title="API routes can call agents">
-Even standalone API routes have full access to your agents:
+Routes import and call agents directly:
 
 ```typescript
-// src/apis/webhook/route.ts
+// src/api/index.ts
+import { createRouter } from '@agentuity/runtime';
+import slackHandler from '@agent/slack-handler';
+
+const router = createRouter();
+
 router.post('/slack', async (c) => {
   const payload = await c.req.json();
-  const result = await c.agent.slackHandler.run(payload);
+  const result = await slackHandler.run(payload);
   return c.json(result);
 });
+
+export default router;
 ```
-</Callout>
 
-Routes are automatically mounted based on their directory:
-- `src/agents/chat/route.ts` → `/agent/chat`
-- `src/apis/health/route.ts` → `/api/health`
-
-For the full project layout, see [Project Structure](/v1/Get-Started/project-structure).
+Routes in `src/api/` are automatically mounted at `/api`. For the full project layout, see [Project Structure](/v1/Get-Started/project-structure).
 
 ## Route Types
 
@@ -57,18 +56,17 @@ For the full project layout, see [Project Structure](/v1/Get-Started/project-str
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import assistant from '@agent/assistant';
 
 const router = createRouter();
 
-// Works in both agents and APIs
 router.get('/health', (c) => {
   return c.json({ status: 'ok', timestamp: Date.now() });
 });
 
-// Agent routes can call c.agent.*
-router.post('/chat', async (c) => {
-  const { message } = await c.req.json();
-  const result = await c.agent.assistant.run({ message });
+router.post('/chat', assistant.validator(), async (c) => {
+  const data = c.req.valid('json');
+  const result = await assistant.run(data);
   return c.json(result);
 });
 
@@ -78,8 +76,10 @@ export default router;
 ### Cron
 
 ```typescript
+import reportGenerator from '@agent/report-generator';
+
 router.cron('0 9 * * *', async (c) => {
-  await c.agent.reportGenerator.run({ type: 'daily' });
+  await reportGenerator.run({ type: 'daily' });
   return c.text('OK');
 });
 ```
@@ -87,8 +87,10 @@ router.cron('0 9 * * *', async (c) => {
 ### Email
 
 ```typescript
+import emailHandler from '@agent/email-handler';
+
 router.email('support@myapp.com', async (email, c) => {
-  const result = await c.agent.emailHandler.run({
+  const result = await emailHandler.run({
     from: email.fromEmail(),
     subject: email.subject(),
     body: email.text(),
@@ -100,9 +102,11 @@ router.email('support@myapp.com', async (email, c) => {
 ### SMS
 
 ```typescript
+import smsResponder from '@agent/sms-responder';
+
 router.sms({ number: '+15551234567' }, async (c) => {
   const formData = await c.req.parseBody();
-  const reply = await c.agent.smsResponder.run({
+  const reply = await smsResponder.run({
     message: formData.Body as string,
     from: formData.From as string
   });
@@ -113,9 +117,11 @@ router.sms({ number: '+15551234567' }, async (c) => {
 ### WebSocket
 
 ```typescript
+import assistant from '@agent/assistant';
+
 router.websocket('/chat', (c) => (ws) => {
   ws.onMessage(async (event) => {
-    const response = await c.agent.assistant.run(event.data);
+    const response = await assistant.run(event.data);
     ws.send(response);
   });
 });
@@ -137,6 +143,9 @@ router.sse('/stream', (c) => async (stream) => {
 All route handlers have access to the same context:
 
 ```typescript
+import myAgent from '@agent/my-agent';
+import analytics from '@agent/analytics';
+
 router.post('/', async (c) => {
   // Request data
   const body = await c.req.json();
@@ -153,17 +162,16 @@ router.post('/', async (c) => {
   // Storage
   await c.kv.set('cache', 'key', data);
   const results = await c.vector.search('docs', { query: 'search term' });
-  await c.objectstore.put('files', 'file.txt', content);
 
   // Durable streams
   const stream = await c.stream.create('export', { contentType: 'text/csv' });
 
-  // Call agents
-  const result = await c.agent.myAgent.run(body);
+  // Call agents (import them at the top of your file)
+  const result = await myAgent.run(body);
 
   // Background tasks
   c.waitUntil(async () => {
-    await c.agent.analytics.run({ event: 'request' });
+    await analytics.run({ event: 'request' });
   });
 
   return c.json(result);

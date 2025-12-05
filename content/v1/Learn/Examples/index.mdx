@@ -14,7 +14,7 @@ Here's a basic agent that processes requests and returns responses:
 ```typescript
 import { createAgent } from '@agentuity/runtime';
 
-const agent = createAgent({
+const agent = createAgent('Hello', {
   handler: async (ctx, input) => {
     ctx.logger.info('Received request');
 
@@ -42,7 +42,7 @@ This example demonstrates schema validation for runtime type safety and automati
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('UserRegistration', {
   schema: {
     input: z.object({
       email: z.string().email(),
@@ -72,7 +72,7 @@ export default agent;
 - TypeScript provides full autocomplete
 
 <Callout type="info">
-For advanced schema validation patterns including custom validation rules, transformations, error handling, and using alternative libraries like Valibot or ArkType, see the [Schema Validation Guide](/Guides/schema-validation).
+For advanced schema validation patterns including custom validation rules, transformations, error handling, and using alternative libraries like Valibot or ArkType, see the [Schema Validation Guide](/v1/Guides/schema-validation).
 </Callout>
 
 ### Agent with Structured Logging
@@ -82,7 +82,7 @@ This example demonstrates structured logging for monitoring and debugging:
 ```typescript
 import { createAgent } from '@agentuity/runtime';
 
-const agent = createAgent({
+const agent = createAgent('LoggingExample', {
   handler: async (ctx, input) => {
     // Different log levels
     ctx.logger.info('Processing request', {
@@ -138,7 +138,7 @@ This example demonstrates how to use the key-value storage API for data persiste
 import { createAgent } from '@agentuity/runtime';
 import * as v from 'valibot';
 
-const agent = createAgent({
+const agent = createAgent('PreferenceManager', {
   schema: {
     input: v.object({
       action: v.union([
@@ -211,7 +211,7 @@ const ProductType = type({
   category: 'string'
 });
 
-const agent = createAgent({
+const agent = createAgent('ProductCatalog', {
   schema: {
     input: type({
       action: '"index"|"search"|"delete"',
@@ -245,7 +245,7 @@ const agent = createAgent({
         }
       }));
 
-      const ids = await c.vector.upsert('products', ...documents);
+      const ids = await ctx.vector.upsert('products', ...documents);
 
       return {
         message: `Indexed ${ids.length} products`,
@@ -258,7 +258,7 @@ const agent = createAgent({
         throw new Error('Query is required');
       }
 
-      const results = await c.vector.search('products', {
+      const results = await ctx.vector.search('products', {
         query,
         limit: 5,
         similarity: 0.7
@@ -283,7 +283,7 @@ const agent = createAgent({
     }
 
     const productIds = products.map(p => p.id);
-    const deletedCount = await c.vector.delete('products', ...productIds);
+    const deletedCount = await ctx.vector.delete('products', ...productIds);
 
     return {
       message: `Deleted ${deletedCount} product(s)`,
@@ -307,9 +307,10 @@ Using object storage for files and generating public access URLs:
 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
+import { s3 } from 'bun';
 import * as v from 'valibot';
 
-const agent = createAgent({
+const agent = createAgent('FileManager', {
   schema: {
     input: v.object({
       action: v.union([
@@ -333,13 +334,8 @@ const agent = createAgent({
     const { action, filename, data, expiresIn } = input;
 
     if (action === 'upload') {
-      await c.objectstore.put('documents', filename, data, {
-        contentType: 'application/pdf',
-        metadata: {
-          uploadedBy: c.sessionId,
-          uploadedAt: new Date().toISOString()
-        }
-      });
+      const file = s3.file(`documents/${filename}`);
+      await file.write(data);
 
       return {
         success: true,
@@ -348,9 +344,10 @@ const agent = createAgent({
     }
 
     if (action === 'download') {
-      const result = await c.objectstore.get('documents', filename);
+      const file = s3.file(`documents/${filename}`);
+      const exists = await file.exists();
 
-      if (!result.exists) {
+      if (!exists) {
         return {
           success: false,
           message: 'File not found'
@@ -359,16 +356,14 @@ const agent = createAgent({
 
       return {
         success: true,
-        data: result.data
+        data: await file.text()
       };
     }
 
     if (action === 'share') {
-      const url = await c.objectstore.createPublicURL(
-        'documents',
-        filename,
-        expiresIn || 3600000 // Default 1 hour
-      );
+      const url = s3.presign(`documents/${filename}`, {
+        expiresIn: Math.floor((expiresIn || 3600000) / 1000), // Convert to seconds
+      });
 
       return {
         success: true,
@@ -378,11 +373,12 @@ const agent = createAgent({
     }
 
     // Delete
-    const deleted = await c.objectstore.delete('documents', filename);
+    const file = s3.file(`documents/${filename}`);
+    await file.delete();
 
     return {
-      success: deleted,
-      message: deleted ? 'File deleted' : 'File not found'
+      success: true,
+      message: 'File deleted'
     };
   }
 });
@@ -402,24 +398,28 @@ Calling other agents to build workflows:
 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
+import enrichmentAgent from '@agent/enrichment';
+import analyzerAgent from '@agent/analyzer';
+import categorizerAgent from '@agent/categorizer';
+import processorAgent from '@agent/processor';
 
-const agent = createAgent({
+const agent = createAgent('Workflow', {
   handler: async (ctx, input) => {
     ctx.logger.info('Starting multi-agent workflow');
 
     // Call enrichment agent
-    const enriched = await c.agent.enrichmentAgent.run({
+    const enriched = await enrichmentAgent.run({
       text: input.text
     });
 
     // Call multiple agents in parallel
     const [analyzed, categorized] = await Promise.all([
-      c.agent.analyzerAgent.run({ data: enriched }),
-      c.agent.categorizerAgent.run({ data: enriched })
+      analyzerAgent.run({ data: enriched }),
+      categorizerAgent.run({ data: enriched })
     ]);
 
     // Call final processing agent with combined results
-    const final = await c.agent.processorAgent.run({
+    const final = await processorAgent.run({
       analyzed,
       categorized,
       original: input
@@ -436,7 +436,7 @@ export default agent;
 ```
 
 **Key Points:**
-- Access agents via `c.agent.agentName.run()`
+- Import and call agents: `import agent from '@agent/name'; agent.run()`
 - Type-safe when agents have schemas
 - Supports parallel execution with `Promise.all()`
 - Results automatically validated against output schemas
@@ -451,7 +451,7 @@ import { z } from 'zod';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 
-const agent = createAgent({
+const agent = createAgent('RAG', {
   schema: {
     input: z.object({
       question: z.string()
@@ -464,7 +464,7 @@ const agent = createAgent({
   },
   handler: async (ctx, input) => {
     // Search vector database for relevant context
-    const results = await c.vector.search('knowledge-base', {
+    const results = await ctx.vector.search('knowledge-base', {
       query: input.question,
       limit: 3,
       similarity: 0.7
@@ -539,7 +539,7 @@ class ResourceNotFoundError extends Error {
   }
 }
 
-const agent = createAgent({
+const agent = createAgent('ResourceProcessor', {
   schema: {
     input: z.object({
       resourceId: z.string()
@@ -594,17 +594,17 @@ const agent = createAgent({
 
 // Helper functions
 async function lookupResource(resourceId: string, ctx: any) {
-  const result = await c.kv.get('resources', resourceId);
+  const result = await ctx.kv.get('resources', resourceId);
 
   if (!result.exists) {
     throw new ResourceNotFoundError(resourceId);
   }
 
-  return await result.data.json();
+  return result.data;
 }
 
 async function processResource(resource: any, ctx: any) {
-  c.logger.debug('Processing resource', resource);
+  ctx.logger.debug('Processing resource', resource);
 
   return {
     id: resource.id,
@@ -632,7 +632,7 @@ Managing state at three different scopes:
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('StateManager', {
   schema: {
     input: z.object({
       message: z.string(),
@@ -649,29 +649,29 @@ const agent = createAgent({
   },
   handler: async (ctx, input) => {
     // Request-scoped state (cleared after request)
-    c.state.set('startTime', Date.now());
+    ctx.state.set('startTime', Date.now());
 
     // Thread-scoped state (conversation context)
     if (input.resetThread) {
-      await c.thread.destroy();
+      await ctx.thread.destroy();
     }
 
-    const threadMessages = (c.thread.state.get('messageCount') as number) || 0;
-    c.thread.state.set('messageCount', threadMessages + 1);
+    const threadMessages = (ctx.thread.state.get('messageCount') as number) || 0;
+    ctx.thread.state.set('messageCount', threadMessages + 1);
 
-    const messages = (c.thread.state.get('messages') as string[]) || [];
+    const messages = (ctx.thread.state.get('messages') as string[]) || [];
     messages.push(input.message);
-    c.thread.state.set('messages', messages);
+    ctx.thread.state.set('messages', messages);
 
     // Session-scoped state (user-level, spans threads)
-    const sessionTotal = (c.session.state.get('totalRequests') as number) || 0;
-    c.session.state.set('totalRequests', sessionTotal + 1);
-    c.session.state.set('lastActive', Date.now());
+    const sessionTotal = (ctx.session.state.get('totalRequests') as number) || 0;
+    ctx.session.state.set('totalRequests', sessionTotal + 1);
+    ctx.session.state.set('lastActive', Date.now());
 
     return {
       response: `Processed message ${threadMessages + 1} in this conversation`,
       stats: {
-        requestDuration: Date.now() - (c.state.get('startTime') as number),
+        requestDuration: Date.now() - (ctx.state.get('startTime') as number),
         threadMessages: threadMessages + 1,
         sessionTotal: sessionTotal + 1
       }
@@ -696,7 +696,7 @@ Monitoring agent execution with events:
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('TaskProcessor', {
   schema: {
     input: z.object({ task: z.string() }),
     output: z.object({ result: z.string() })
@@ -713,23 +713,20 @@ const agent = createAgent({
 
 // Agent lifecycle events
 agent.addEventListener('started', (eventName, agent, ctx) => {
-  c.logger.info('Agent started', {
-    agentName: agent.metadata.name,
-    sessionId: c.sessionId
+  ctx.logger.info('Agent started', {
+    sessionId: ctx.sessionId
   });
 });
 
 agent.addEventListener('completed', (eventName, agent, ctx) => {
-  c.logger.info('Agent completed successfully', {
-    agentName: agent.metadata.name,
-    sessionId: c.sessionId
+  ctx.logger.info('Agent completed successfully', {
+    sessionId: ctx.sessionId
   });
 });
 
 agent.addEventListener('errored', (eventName, agent, ctx, error) => {
-  c.logger.error('Agent failed', {
-    agentName: agent.metadata.name,
-    sessionId: c.sessionId,
+  ctx.logger.error('Agent failed', {
+    sessionId: ctx.sessionId,
     error: error.message
   });
 });
@@ -747,15 +744,13 @@ const app = createApp();
 // Track all agent executions
 app.addEventListener('agent.started', (eventName, agent, ctx) => {
   app.logger.info('Agent execution started', {
-    agent: agent.metadata.name,
-    session: c.sessionId
+    session: ctx.sessionId
   });
 });
 
 app.addEventListener('agent.completed', (eventName, agent, ctx) => {
   app.logger.info('Agent execution completed', {
-    agent: agent.metadata.name,
-    session: c.sessionId
+    session: ctx.sessionId
   });
 });
 
@@ -775,8 +770,12 @@ Orchestrating complex workflows with conditional logic:
 ```typescript
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
+import searchAgent from '@agent/search';
+import deepAnalyzer from '@agent/deep-analyzer';
+import basicAnalyzer from '@agent/basic-analyzer';
+import recommendationEngine from '@agent/recommendation-engine';
 
-const agent = createAgent({
+const agent = createAgent('ResearchWorkflow', {
   schema: {
     input: z.object({
       query: z.string(),
@@ -794,25 +793,25 @@ const agent = createAgent({
     ctx.logger.info(`Starting workflow: ${input.query}`);
 
     // Step 1: Search for relevant information
-    const searchResults = await c.agent.searchAgent.run({
+    const searchResults = await searchAgent.run({
       query: input.query,
       limit: 10
     });
 
     // Step 2: Analyze results (conditional based on depth)
     const analysis = input.analysisDepth === 'deep'
-      ? await c.agent.deepAnalyzer.run({
+      ? await deepAnalyzer.run({
           data: searchResults,
           includeDetails: true
         })
-      : await c.agent.basicAnalyzer.run({
+      : await basicAnalyzer.run({
           data: searchResults
         });
 
     // Step 3: Generate recommendations (optional)
     let recommendations;
     if (input.includeRecommendations) {
-      const recResponse = await c.agent.recommendationEngine.run({
+      const recResponse = await recommendationEngine.run({
         analysis,
         context: input.query
       });
@@ -856,7 +855,7 @@ import { z } from 'zod';
 import { openai } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 
-const agent = createAgent({
+const agent = createAgent('BackgroundStreamer', {
   schema: {
     input: z.object({
       action: z.enum(['stream-with-background', 'multi-step-stream']),
@@ -879,17 +878,17 @@ const agent = createAgent({
 
     if (action === 'stream-with-background') {
       // Create a stream for the LLM response
-      const stream = await c.stream.create('llm-response', {
+      const stream = await ctx.stream.create('llm-response', {
         contentType: 'text/plain',
         metadata: {
-          userId: userId || c.sessionId,
+          userId: userId || ctx.sessionId,
           model: 'gpt-5-nano',
           type: 'llm-generation'
         }
       });
 
       // Background task for streaming LLM response
-      c.waitUntil(async () => {
+      ctx.waitUntil(async () => {
         const { textStream } = streamText({
           model: openai('gpt-5-nano'),
           prompt: prompt || 'Tell me a short story'
@@ -900,7 +899,7 @@ const agent = createAgent({
 
       // Background task for analytics
       if (includeAnalytics && userId) {
-        c.waitUntil(async () => {
+        ctx.waitUntil(async () => {
           await logRequestAnalytics(userId, {
             action: 'stream_created',
             streamId: stream.id,
@@ -911,7 +910,7 @@ const agent = createAgent({
 
       // Background task for user activity tracking
       if (userId) {
-        c.waitUntil(async () => {
+        ctx.waitUntil(async () => {
           await updateUserActivity(userId, 'llm_stream_request');
         });
       }
@@ -925,15 +924,15 @@ const agent = createAgent({
     }
 
     if (action === 'multi-step-stream') {
-      const progressStream = await c.stream.create('progress', {
+      const progressStream = await ctx.stream.create('progress', {
         contentType: 'application/json',
         metadata: {
           type: 'multi-step-progress',
-          userId: userId || c.sessionId
+          userId: userId || ctx.sessionId
         }
       });
 
-      c.waitUntil(async () => {
+      ctx.waitUntil(async () => {
         try {
           const steps = [
             { name: 'Analyzing input', duration: 1000 },
@@ -1004,12 +1003,13 @@ Handling incoming emails with automatic parsing:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import emailProcessor from '@agent/email-processor';
 
 const router = createRouter();
 
 router.email('support@example.com', async (email, c) => {
   // Process email with agent
-  const result = await c.agent.emailProcessor.run({
+  const result = await emailProcessor.run({
     sender: email.fromEmail() || 'unknown',
     subject: email.subject() || 'no subject',
     content: email.text() || email.html() || ''
@@ -1035,6 +1035,7 @@ Creating WebSocket endpoints for bidirectional communication:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import chatAgent from '@agent/chat';
 
 const router = createRouter();
 
@@ -1047,7 +1048,7 @@ router.websocket('/chat', (c) => (ws) => {
     const message = JSON.parse(event.data);
 
     // Process with agent
-    const response = await c.agent.chatAgent.run({
+    const response = await chatAgent.run({
       message: message.text
     });
 
@@ -1076,24 +1077,27 @@ Scheduling recurring tasks with cron syntax:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import reportGenerator from '@agent/report-generator';
+import notificationAgent from '@agent/notification';
+import healthCheck from '@agent/health-check';
 
 const router = createRouter();
 
 // Daily report at 9 AM
 router.cron('0 9 * * *', async (c) => {
-  c.logger.info('Running daily report generation');
+  ctx.logger.info('Running daily report generation');
 
-  const report = await c.agent.reportGenerator.run({
+  const report = await reportGenerator.run({
     type: 'daily',
     date: new Date().toISOString(),
     includeMetrics: true
   });
 
   // Store report
-  await c.kv.set('reports', `daily-${Date.now()}`, report);
+  await ctx.kv.set('reports', `daily-${Date.now()}`, report);
 
   // Send notification
-  await c.agent.notificationAgent.run({
+  await notificationAgent.run({
     type: 'email',
     subject: 'Daily Report Ready',
     recipients: ['admin@example.com'],
@@ -1105,7 +1109,7 @@ router.cron('0 9 * * *', async (c) => {
 
 // Health check every 5 minutes
 router.cron('*/5 * * * *', async (c) => {
-  const health = await c.agent.healthCheck.run({});
+  const health = await healthCheck.run({});
 
   if (health.status !== 'ok') {
     ctx.logger.warn('Health check failed', { status: health.status });
@@ -1140,6 +1144,7 @@ Streaming progress updates to clients:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
+import processor from '@agent/processor';
 
 const router = createRouter();
 
@@ -1148,7 +1153,7 @@ router.sse('/updates', (c) => async (stream) => {
   await stream.write({ type: 'connected' });
 
   // Process task and send updates
-  const updates = await c.agent.processor.run({ task: 'process' });
+  const updates = await processor.run({ task: 'process' });
 
   for (const update of updates) {
     await stream.write({
@@ -1174,7 +1179,7 @@ export default router;
 - Use for progress tracking, live updates
 
 <Callout type="info">
-For complete routing documentation including HTTP methods, route parameters, query strings, validation with zValidator, and additional route types like Stream and SMS, see the [Routing & Triggers Guide](/Guides/routing-triggers).
+For complete routing documentation including HTTP methods, route parameters, query strings, validation with zValidator, and additional route types like Stream and SMS, see the [Routing & Triggers Guide](/v1/Guides/routing-triggers).
 </Callout>
 
 ## Advanced Patterns
@@ -1187,7 +1192,7 @@ Automatically testing agent outputs for quality:
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-const agent = createAgent({
+const agent = createAgent('QueryProcessor', {
   schema: {
     input: z.object({ query: z.string() }),
     output: z.object({
@@ -1207,11 +1212,8 @@ const agent = createAgent({
 });
 
 // Basic evaluation: confidence threshold check
-agent.createEval({
-  metadata: {
-    name: 'confidence-check',
-    description: 'Ensures confidence score meets minimum threshold'
-  },
+agent.createEval('confidence-check', {
+  description: 'Ensures confidence score meets minimum threshold',
   handler: async (ctx, input, output) => {
     const passed = output.confidence >= 0.8;
 
@@ -1242,7 +1244,7 @@ export default agent;
 - Pass/fail pattern with metadata
 
 <Callout type="info">
-For comprehensive evaluation patterns including LLM-as-judge, hallucination detection, RAG quality metrics (contextual relevancy, answer relevancy, faithfulness), and A/B testing, see the [Evaluations Guide](/Guides/evaluations).
+For comprehensive evaluation patterns including LLM-as-judge, hallucination detection, RAG quality metrics (contextual relevancy, answer relevancy, faithfulness), and A/B testing, see the [Evaluations Guide](/v1/Guides/evaluations).
 </Callout>
 
 ### Telemetry & Distributed Tracing
@@ -1253,16 +1255,15 @@ Using OpenTelemetry for observability:
 import { createAgent } from '@agentuity/runtime';
 import { SpanStatusCode } from '@opentelemetry/api';
 
-const agent = createAgent({
+const agent = createAgent('TracedProcessor', {
   handler: async (ctx, input) => {
-    return c.tracer.startActiveSpan('process-request', async (span) => {
+    return ctx.tracer.startActiveSpan('process-request', async (span) => {
       try {
         // Add attributes to the span
         span.setAttribute('data.type', typeof input);
-        span.setAttribute('agent.name', c.agentName || 'unknown');
 
         // Create a child span for data processing
-        return await c.tracer.startActiveSpan('process-data', async (childSpan) => {
+        return await ctx.tracer.startActiveSpan('process-data', async (childSpan) => {
           try {
             // Add event to the span
             childSpan.addEvent('processing-started', {
@@ -1344,7 +1345,7 @@ import { z } from 'zod';
 import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 
-const agent = createAgent({
+const agent = createAgent('OpenAIStreamer', {
   schema: {
     input: z.object({
       prompt: z.string()
@@ -1381,8 +1382,9 @@ Calling another agent and streaming its response:
 ```typescript
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
+import historyExpert from '@agent/history-expert';
 
-const agent = createAgent({
+const agent = createAgent('StreamingRouter', {
   schema: {
     input: z.object({
       question: z.string()
@@ -1391,7 +1393,7 @@ const agent = createAgent({
   },
   handler: async (ctx, input) => {
     // Call the expert agent and stream its response
-    const response = await c.agent.historyExpert.run({
+    const response = await historyExpert.run({
       question: input.question
     });
 

@@ -7,7 +7,7 @@ Agents need more than automatic state management. They need explicit control ove
 
 ## Storage vs State
 
-Module 4 taught you how to use **managed state scopes** (`c.state`, `c.thread.state`, `c.session.state`) with automatic lifecycle handling. This module teaches you how to use **manual storage APIs** for explicit control.
+Module 4 taught you how to use **managed state scopes** (`ctx.state`, `ctx.thread.state`, `ctx.session.state`) with automatic lifecycle handling. This module teaches you how to use **manual storage APIs** for explicit control.
 
 | Aspect | State (Module 4) | Storage (Module 5) |
 |--------|------------------|-------------------|
@@ -35,7 +35,7 @@ Module 4 taught you how to use **managed state scopes** (`c.state`, `c.thread.st
 
 The SDK provides three storage APIs, each optimized for different data patterns:
 
-### Key-Value Storage (`c.kv`)
+### Key-Value Storage (`ctx.kv`)
 Fast exact-match lookups for structured data. Use TTL for auto-expiring cache, or omit TTL for permanent storage.
 
 **Use cases:**
@@ -44,7 +44,7 @@ Fast exact-match lookups for structured data. Use TTL for auto-expiring cache, o
 - Feature flags and configuration
 - Rate limiting counters
 
-### Vector Storage (`c.vector`)
+### Vector Storage (`ctx.vector`)
 Semantic similarity search using embeddings. Finds information by meaning rather than keywords.
 
 **Use cases:**
@@ -53,8 +53,8 @@ Semantic similarity search using embeddings. Finds information by meaning rather
 - RAG (Retrieval-Augmented Generation) systems
 - Long-term agent memory across sessions
 
-### Object Storage (`c.objectstore`)
-Binary file storage with public URL generation for documents, images, and media.
+### Object Storage (Bun S3)
+Binary file storage with public URL generation for documents, images, and media. Use `import { s3 } from "bun"` for S3-compatible object storage.
 
 **Use cases:**
 - User-uploaded files
@@ -189,7 +189,7 @@ Vector storage enables semantic search—finding information by meaning rather t
 ]} />
 
 **What this demonstrates:**
-- **Variadic upsert pattern**: `await c.vector.upsert(bucket, ...array)`
+- **Variadic upsert pattern**: `await ctx.vector.upsert(bucket, ...array)`
 - Two approaches: spread array (dynamic) or individual parameters (static)
 - Semantic search with query text and similarity threshold
 - Automatic embedding generation from document text
@@ -200,10 +200,10 @@ Vector storage enables semantic search—finding information by meaning rather t
 ```typescript
 // Option 1: Spread array (recommended for dynamic data)
 const documents = [{ key: 'doc1', document: 'text', metadata: {...} }, ...];
-await c.vector.upsert(bucket, ...documents);
+await ctx.vector.upsert(bucket, ...documents);
 
 // Option 2: Individual parameters (good for static data)
-await c.vector.upsert(
+await ctx.vector.upsert(
   bucket,
   { key: 'doc1', document: 'text1', metadata: {...} },
   { key: 'doc2', document: 'text2', metadata: {...} }
@@ -302,10 +302,10 @@ Files and media need different storage than structured data. Object storage hand
 ]} />
 
 **What this demonstrates:**
-- Storing text/binary files with `c.objectstore.put()`
-- Retrieving files with `c.objectstore.get()`
-- Creating temporary public URLs (expires in 1 hour)
-- File cleanup with `c.objectstore.delete()`
+- Storing text/binary files with Bun S3
+- Retrieving files with `s3.file(path)`
+- Creating temporary public URLs with `s3.presign()` (configurable expiration)
+- File cleanup with `file.delete()`
 
 **Try it:**
 1. Upload and retrieve a file:
@@ -358,7 +358,7 @@ By the end of this module, you should understand:
    - Automatic deserialization of stored values
 
 4. **Vector Storage Patterns:**
-   - Variadic upsert: `await c.vector.upsert(bucket, ...documents)`
+   - Variadic upsert: `await ctx.vector.upsert(bucket, ...documents)`
    - Semantic search with similarity thresholds
    - Metadata filtering for targeted results
 
@@ -373,9 +373,9 @@ Choose the right storage API for your data type and access pattern. Combine mult
 
 ## What's Next?
 
-**Module 6: Agent Collaboration** - Learn `c.agent.other.run()` for multi-agent workflows, parallel execution, and orchestration patterns.
+**Module 6: Agent Collaboration** - Learn import-based agent calling for multi-agent workflows, parallel execution, and orchestration patterns.
 
 For more details on storage APIs, see:
-- [Key-Value Storage Guide](/Guides/key-value-storage)
-- [Vector Storage Guide](/Guides/vector-storage)
-- [Object Storage Guide](/Guides/object-storage)
+- [Key-Value Storage Guide](/v1/Guides/key-value-storage)
+- [Vector Storage Guide](/v1/Guides/vector-storage)
+- [Object Storage Guide](/v1/Guides/object-storage)
