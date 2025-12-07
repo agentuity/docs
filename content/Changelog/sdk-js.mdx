@@ -7,6 +7,18 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 This page documents the release history of the [Agentuity JavaScript SDK](https://github.com/agentuity/sdk-js).
 
+## v0.0.158
+
+<Callout type="info">
+  Released: December 7, 2025
+</Callout>
+
+**Changes**
+
+- **Fixed**: Preserve Authorization headers in fetch instrumentation - OpenTelemetry fetch instrumentation was overwriting existing headers when adding trace context, causing issues with third-party SDKs that set Authorization headers ([PR #208](https://github.com/agentuity/sdk-js/pull/208))
+- **Added**: SMS sending endpoint via `context.sms.send()` with Twilio-based SMS sending, OpenTelemetry tracing, and improved error handling ([PR #207](https://github.com/agentuity/sdk-js/pull/207))
+- **Changed**: Moved email send functionality to context - Email APIs now use request/context-based async signatures returning `Promise<string>`, with centralized MIME construction and OpenTelemetry spans ([PR #206](https://github.com/agentuity/sdk-js/pull/206))
+
 ## v0.0.156
 
 <Callout type="info">
