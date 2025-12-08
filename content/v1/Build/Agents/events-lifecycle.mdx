@@ -68,7 +68,7 @@ Monitor all agents globally by registering listeners in `app.ts`:
 ```typescript
 import { createApp } from '@agentuity/runtime';
 
-const app = createApp();
+const app = await createApp();
 
 // Track all agent executions
 app.addEventListener('agent.started', (event, agent, ctx) => {
@@ -92,8 +92,6 @@ app.addEventListener('agent.errored', (event, agent, ctx, error) => {
     sessionId: ctx.sessionId,
   });
 });
-
-export default app.server;
 ```
 
 ### Available App Events
@@ -107,6 +105,53 @@ export default app.server;
 | `session.completed` | Session ends |
 | `thread.created` | New thread created |
 | `thread.destroyed` | Thread expired or destroyed |
+
+## App Lifecycle Hooks
+
+Use `setup` and `shutdown` hooks to initialize resources and manage typed app state:
+
+```typescript
+import { createApp } from '@agentuity/runtime';
+
+const { server, logger } = await createApp({
+  setup: async () => {
+    // Initialize resources when the app starts
+    const dbClient = await connectToDatabase();
+
+    // Return typed app state - available in all agents via ctx.app
+    return {
+      db: dbClient,
+      startedAt: new Date(),
+    };
+  },
+  shutdown: async (state) => {
+    // Cleanup when the app shuts down
+    // state is typed from setup's return value
+    await state.db.close();
+    logger.info('App ran for:', Date.now() - state.startedAt.getTime(), 'ms');
+  },
+});
+```
+
+Access app state in any agent handler:
+
+```typescript
+const agent = createAgent('DataFetcher', {
+  handler: async (ctx, input) => {
+    // ctx.app is fully typed from setup's return value
+    const results = await ctx.app.db.query('SELECT * FROM users');
+    return { users: results };
+  },
+});
+```
+
+<Callout type="tip" title="Use Cases">
+Common uses for app lifecycle hooks:
+- Database connection pools
+- Cache initialization
+- External service clients
+- Metrics/telemetry setup
+</Callout>
 
 ## Shared State
 
