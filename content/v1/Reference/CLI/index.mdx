@@ -8,12 +8,12 @@ The Agentuity CLI is your primary interface for building and managing agents. Cr
 ## Installation
 
 ```bash
-# Using Bun (recommended)
-bun add -g @agentuity/cli
-
-# Using npm
-npm install -g @agentuity/cli
+curl -sSL https://v1.agentuity.sh | sh
 ```
+
+<Callout type="info" title="Alternative: Install via Bun">
+If you prefer package managers: `bun add -g @agentuity/cli`
+</Callout>
 
 See [Getting Started](/v1/Reference/CLI/getting-started) for authentication and first steps.
 
@@ -27,7 +27,7 @@ See [Getting Started](/v1/Reference/CLI/getting-started) for authentication and 
 | [Storage](/v1/Reference/CLI/storage) | `cloud kv`, `cloud vector`, `cloud object` | Manage KV, vector, and object storage |
 | [Configuration](/v1/Reference/CLI/configuration) | `env`, `sdk-key` | Manage environment and SDK keys |
 | [Debugging](/v1/Reference/CLI/debugging) | `cloud ssh`, `cloud session` | SSH access, session inspection |
-| [AI Commands](/v1/Reference/CLI/ai-commands) | `ask` | AI-powered assistance |
+| [AI Commands](/v1/Reference/CLI/ai-commands) | `ai` | AI coding agent utilities |
 
 ## Quick Reference
 

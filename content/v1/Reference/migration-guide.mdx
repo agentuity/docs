@@ -1,15 +1,11 @@
 ---
 title: Migrating from v0 to v1
-description: A comprehensive guide to migrating your Agentuity agents from v0 to v1
+description: Guide to migrating your Agentuity agents from v0 to v1
 ---
 
-Agentuity v1 represents a significant evolution of the platform, introducing new capabilities for building AI agents with improved type safety, better developer experience, and powerful new features like evaluations and advanced routing.
+v0 support is ending. We recommend migrating to v1 for new features and continued updates.
 
-This guide will help you migrate your existing v0 agents to v1, understand the breaking changes, and take advantage of the new features.
-
-<Callout type="info">
-**Migration Timeline:** We recommend migrating to v1 as soon as possible. v0 will continue to be supported until [DATE], but all new features and improvements will only be available in v1.
-</Callout>
+This guide covers the breaking changes and how to update your agents.
 
 ## What's New in v1?
 
@@ -17,18 +13,13 @@ This guide will help you migrate your existing v0 agents to v1, understand the b
 In v0, agents had to be created via the CLI (`agentuity agent create`) to register them with unique IDs in the cloud. In v1, just create a folder in `src/agent/` with `agent.ts` — agents are auto-discovered and registered on deploy. No CLI commands or manual registration required.
 </Callout>
 
-v1 introduces several major improvements:
+Key improvements in v1:
 
-- **Auto-Discovery**: Create agents by adding folders — no CLI registration needed
-- **Modern Architecture**: Built on Hono, a fast and lightweight web framework
-- **Type-Safe Schemas**: Built-in support for Zod, Valibot, ArkType, and other StandardSchema libraries
-- **Evaluation Framework**: Automatically test and validate agent outputs
-- **Event System**: Integrate with agent lifecycle events for monitoring and analytics
-- **Advanced Routing**: Native support for WebSocket, SSE, email, cron, and SMS in `src/api/`
-- **Session & Thread Management**: Better conversational state handling
-- **React Package**: Build UIs for your agents with `@agentuity/react`
-- **Database Support**: SQL queries via Bun's native `sql` tagged template literals
-- **Native S3 Storage**: Fast file storage via Bun's native S3 APIs (replaces `ctx.objectstore`)
+- **Auto-Discovery**: Create agents by adding folders, no CLI registration needed
+- **Type-Safe Schemas**: Built-in support for Zod, Valibot, ArkType, and StandardSchema libraries
+- **Advanced Routing**: Native WebSocket, SSE, email, cron, and SMS routes
+- **Bun Runtime**: Native S3 storage and SQL database support
+- **Evaluations & Events**: Test agent outputs and monitor lifecycle
 
 <Callout type="info">
 **Workbench:** v0's "DevMode" is being rebranded to "Workbench", to better support agent development both locally and in production. The v0 `welcome()` function pattern for suggested prompts has been removed as part of this redesign.
@@ -49,56 +40,27 @@ These changes require code modifications in all agents:
 5. **Language Support**: v1 is TypeScript-only, optimized for Bun runtime
 6. **Trigger Configuration**: Cron schedules, email addresses, and SMS numbers are now configured in code (via `router.cron()`, `router.email()`, `router.sms()`) rather than in the cloud console UI
 
-### Medium Impact Changes
-
-These changes may affect some agents:
-
-1. **Agent Registration**: Manual registration required with app router
-2. **Trigger Types**: Additional trigger types available
-3. **Service APIs**: Some method signatures updated
-
-### Low Impact Changes
-
-These are additions that don't break existing code:
-
-1. **Schema Validation**: Optional but recommended
-2. **Evaluations**: Optional quality checking framework
-3. **Event Listeners**: Optional lifecycle hooks
-
 ---
 
 ## Step-by-Step Migration
 
-### Step 1: Update Package Dependencies
+### Step 1: Create a Fresh v1 Project
 
-First, update your `package.json` to use the new v1 packages:
+v1 has a different project structure, so we recommend creating a new project and migrating your agent code.
 
-**v0:**
-```json
-{
-  "dependencies": {
-    "@agentuity/sdk": "^0.x.x"
-  }
-}
-```
+Install the v1 CLI:
 
-**v1:**
-```json
-{
-  "dependencies": {
-    "@agentuity/runtime": "^1.x.x"
-  }
-}
-```
-
-Then install:
 ```bash
-npm install
+curl -sSL https://v1.agentuity.sh | sh
 ```
 
-<Callout type="warn">
-**Important**: v1 uses a monorepo structure. The primary package you'll use is `@agentuity/runtime`, which includes everything you need for agent development.
-</Callout>
+Create a new v1 project:
+
+```bash
+agentuity create
+```
+
+This sets up the correct project structure with all dependencies. You'll migrate your agent logic into this new project using the patterns in the following steps.
 
 ---
 
@@ -162,7 +124,7 @@ Routes import agents and call them via `agent.run(input)`. This separation keeps
 
 ---
 
-#### Agent with Schema Validation (NEW in v1)
+#### Agent with Schema Validation
 
 v1 introduces optional schema validation for type safety:
 
@@ -397,39 +359,8 @@ router.get('/hello', async (c) => {
 ### Step 6: Update Service Usage
 
 <Callout type="success">
-**Good News**: Service APIs (KV, Vector, ObjectStore, Stream) remain largely unchanged between v0 and v1. Your existing service code should work with minimal modifications.
+KV and Vector storage APIs are unchanged.
 </Callout>
-
-#### Key-Value Storage
-
-**v0:**
-```typescript
-// Set with TTL
-await context.kv.set('cache', 'key', data, { ttl: 3600 });
-
-// Get
-const result = await context.kv.get('cache', 'key');
-if (result.exists) {
-  const value = await result.data.json();
-}
-
-// Delete
-await context.kv.delete('cache', 'key');
-```
-
-**v1:**
-```typescript
-// Services work the same way!
-// TTL is in seconds (minimum 60)
-await ctx.kv.set('cache', 'key', data, { ttl: 3600 });
-
-const result = await ctx.kv.get('cache', 'key');
-if (result.exists) {
-  const value = await result.data.json();
-}
-
-await ctx.kv.delete('cache', 'key');
-```
 
 #### Object Storage → Bun S3
 
@@ -490,7 +421,7 @@ await file.delete();
 Agentuity automatically injects S3 credentials (`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_ENDPOINT`) during development and deployment.
 </Callout>
 
-#### Database Support (NEW in v1)
+#### Database Support
 
 v1 adds SQL database support via Bun's native SQL APIs:
 
@@ -573,442 +504,45 @@ export default agent;
 
 ---
 
-## Advanced Migration Topics
+## Other v1 Features
 
-Now that you've covered the essential migration steps, the following sections explore advanced features and patterns available in v1. These are optional enhancements that can improve your agents' capabilities, but aren't required for basic functionality.
+These features are optional but can improve your agents.
 
-### Migrating to Advanced Routing
+### Specialized Routes
 
-v1 introduces specialized route types for different use cases.
+v1 adds native email and cron routes. See [Routes documentation](/v1/Build/Routes) for WebSocket and SSE.
 
-#### Email Routes
-
-**v0 (Webhook approach):**
+**Email:**
 ```typescript
-const handler: AgentHandler = async (request, response, context) => {
-  // Parse email manually
-  const emailData = await request.data.text();
-  // ... manual RFC822 parsing
-};
-```
-
-**v1 (Native email route):**
-```typescript
-import { createRouter } from '@agentuity/runtime';
-
-const router = createRouter();
-
 router.email('support@example.com', async (email, ctx) => {
-  // Email is automatically parsed
-  ctx.logger.info('Email received:', {
-    from: email.fromEmail(),
-    subject: email.subject()
-  });
-  
-  // Access email properties
-  const textBody = email.text();
-  const htmlBody = email.html();
-  const attachments = email.attachments();
-  
-  // Note: Email reply functionality is coming soon
-  
+  ctx.logger.info('Email from:', email.fromEmail());
   return { status: 'processed' };
 });
-
-export default router;
 ```
 
-#### WebSocket Routes (NEW)
-
-```typescript
-router.websocket('/chat', (ctx) => (ws) => {
-  ws.onOpen((event) => {
-    ctx.logger.info('Client connected');
-    ws.send('Welcome!');
-  });
-  
-  ws.onMessage(async (event) => {
-    const message = event.data;
-    ctx.logger.info('Received:', message);
-    
-    // Process with agent logic
-    const response = await processMessage(message);
-    ws.send(response);
-  });
-  
-  ws.onClose((event) => {
-    ctx.logger.info('Client disconnected');
-  });
-});
-```
-
-#### Server-Sent Events (NEW)
-
-```typescript
-router.sse('/updates', (ctx) => async (stream) => {
-  // Send updates to client
-  await stream.write({ event: 'started', data: 'Processing...' });
-  
-  // Do work
-  const result = await longRunningTask();
-  
-  await stream.write({ event: 'progress', data: '50%' });
-  
-  // Final result
-  await stream.write({ event: 'complete', data: result });
-});
-```
-
-#### Cron Routes (NEW)
-
+**Cron:**
 ```typescript
 router.cron('0 0 * * *', async (ctx) => {
-  // Runs daily at midnight
-  ctx.logger.info('Running daily job');
-  
-  const report = await generateDailyReport();
-  await ctx.kv.set('reports', 'daily-latest', report);
-  
+  ctx.logger.info('Daily job running');
   return { status: 'completed' };
 });
 ```
 
----
+### Evaluations
 
-### Adding Evaluations (NEW in v1)
+Test agent outputs automatically with `agent.createEval()`. See [Evaluations](/v1/Build/Agents/evaluations).
 
-Evaluations allow you to automatically test agent outputs for quality, accuracy, or compliance.
+### Event Listeners
 
-```typescript
-import { createAgent } from '@agentuity/runtime';
-import { z } from 'zod';
+Monitor agent lifecycle with `agent.addEventListener('started' | 'completed' | 'errored', ...)`. See [Events](/v1/Build/Agents/events-lifecycle).
 
-const agent = createAgent('QA Agent', {
-  schema: {
-    input: z.object({ question: z.string() }),
-    output: z.object({ answer: z.string() })
-  },
-  handler: async (ctx, input) => {
-    const answer = await generateAnswer(input.question);
-    return { answer };
-  }
-});
+### Sessions and Threads
 
-// Add an evaluation - name is the first argument
-agent.createEval('answer-quality', {
-  description: 'Checks if answer is relevant and complete',
-  handler: async (ctx, input, output) => {
-    // Evaluate the output
-    const isRelevant = await checkRelevance(input.question, output.answer);
-    const isComplete = output.answer.length > 50;
-
-    return {
-      success: true,
-      score: isRelevant && isComplete ? 0.95 : 0.5,
-      metadata: {
-        relevant: isRelevant,
-        complete: isComplete
-      }
-    };
-  }
-});
-
-export default agent;
-```
-
-**When to use evaluations:**
-- Quality checking (accuracy, relevance, completeness)
-- Compliance validation (PII detection, content policy)
-- Performance monitoring (response time, token usage)
-- A/B testing (comparing different approaches)
-
----
-
-### Using Event Listeners (NEW in v1)
-
-Integrate with agent lifecycle events for monitoring and analytics.
-
-```typescript
-import { createAgent, createApp } from '@agentuity/runtime';
-
-const agent = createAgent('My Agent', {
-  handler: async (ctx, input) => {
-    return { result: 'success' };
-  }
-});
-
-// Agent-level events
-agent.addEventListener('started', async (event, agent, ctx) => {
-  ctx.logger.info('Agent started');
-});
-
-agent.addEventListener('completed', async (event, agent, ctx) => {
-  ctx.logger.info('Agent completed', { sessionId: ctx.sessionId });
-});
-
-agent.addEventListener('errored', async (event, agent, ctx, error) => {
-  ctx.logger.error('Agent errored', { error: error.message });
-});
-
-export default agent;
-```
-
-```typescript
-// app.ts - App-level events
-import { createApp } from '@agentuity/runtime';
-
-const app = createApp();
-
-app.addEventListener('agent.started', async (agent, ctx) => {
-  // Track all agent starts
-  await analytics.track('agent_started', { session: ctx.sessionId });
-});
-
-app.addEventListener('agent.completed', async (agent, ctx) => {
-  // Track all agent completions
-  await analytics.track('agent_completed', { session: ctx.sessionId });
-});
-
-export default app;
-```
-
----
-
-### Working with Sessions and Threads (NEW in v1)
-
-v1 introduces explicit session and thread management for conversational agents.
-
-```typescript
-const agent = createAgent('Chat Agent', {
-  handler: async (ctx, input) => {
-    // Access session info
-    ctx.logger.info('Session info:', {
-      sessionId: ctx.sessionId,
-      session: ctx.session
-    });
-
-    // Access thread for conversation history
-    ctx.logger.info('Thread:', ctx.thread);
-
-    // Store conversation state
-    ctx.state.set('lastUserMessage', input.message);
-    ctx.state.set('conversationTurn',
-      (ctx.state.get('conversationTurn') as number || 0) + 1
-    );
-
-    return { response: 'Message received' };
-  }
-});
-
-export default agent;
-```
-
-**Use cases:**
-- Multi-turn conversations
-- Maintaining context across requests
-- User preference storage
-- Conversation history tracking
-
----
-
-## Common Migration Patterns
-
-### Pattern 1: Simple REST API Agent
-
-**v0:**
-```typescript
-import { AgentHandler } from '@agentuity/sdk';
-
-const handler: AgentHandler = async (request, response, context) => {
-  const { name } = await request.data.json();
-  return response.json({ greeting: `Hello, ${name}!` });
-};
-
-export default handler;
-```
-
-**v1 (agent file):**
-```typescript
-// src/agent/greeter/agent.ts
-import { createAgent } from '@agentuity/runtime';
-import { z } from 'zod';
-
-const agent = createAgent('Greeter', {
-  schema: {
-    input: z.object({ name: z.string() }),
-    output: z.object({ greeting: z.string() })
-  },
-  handler: async (ctx, input) => {
-    return { greeting: `Hello, ${input.name}!` };
-  }
-});
-
-export default agent;
-```
-
-**v1 (routes file):**
-```typescript
-// src/api/index.ts
-import { createRouter } from '@agentuity/runtime';
-import greeter from '@agent/greeter';
-
-const router = createRouter();
-
-router.post('/greet', greeter.validator(), async (c) => {
-  const data = c.req.valid('json');
-  const result = await greeter.run(data);
-  return c.json(result);
-});
-
-export default router;
-```
-
----
-
-### Pattern 2: Agent with Storage
-
-**v0:**
-```typescript
-import { AgentHandler } from '@agentuity/sdk';
-
-const handler: AgentHandler = async (request, response, context) => {
-  const { userId, data } = await request.data.json();
-
-  // Store data
-  await context.kv.set('user-data', userId, data);
-
-  // Retrieve data
-  const result = await context.kv.get('user-data', userId);
-  const storedData = result.exists ? await result.data.json() : null;
-
-  return response.json({ stored: storedData });
-};
-
-export default handler;
-```
-
-**v1 (agent file):**
-```typescript
-// src/agent/storage-agent/agent.ts
-import { createAgent } from '@agentuity/runtime';
-import { z } from 'zod';
-
-const agent = createAgent('Storage Agent', {
-  schema: {
-    input: z.object({
-      userId: z.string(),
-      data: z.record(z.unknown())
-    })
-  },
-  handler: async (ctx, input) => {
-    // Store data (same API!)
-    await ctx.kv.set('user-data', input.userId, input.data);
-
-    // Retrieve data (same API!)
-    const result = await ctx.kv.get('user-data', input.userId);
-    const storedData = result.exists ? await result.data.json() : null;
-
-    return { stored: storedData };
-  }
-});
-
-export default agent;
-```
-
-**v1 (routes file):**
-```typescript
-// src/api/index.ts
-import { createRouter } from '@agentuity/runtime';
-import storageAgent from '@agent/storage-agent';
-
-const router = createRouter();
-
-router.post('/store', storageAgent.validator(), async (c) => {
-  const data = c.req.valid('json');
-  const result = await storageAgent.run(data);
-  return c.json(result);
-});
-
-export default router;
-```
-
----
-
-### Pattern 3: Multi-Agent Workflow
-
-**v0:**
-```typescript
-import { AgentHandler } from '@agentuity/sdk';
-
-const handler: AgentHandler = async (request, response, context) => {
-  const input = await request.data.json();
-
-  // Call first agent
-  const agent1 = await context.getAgent({ name: 'processor' });
-  const result1 = await agent1.run({
-    data: JSON.stringify(input),
-    contentType: 'application/json'
-  });
-  const processed = await result1.data.json();
-
-  // Call second agent
-  const agent2 = await context.getAgent({ name: 'validator' });
-  const result2 = await agent2.run({
-    data: JSON.stringify(processed),
-    contentType: 'application/json'
-  });
-  const validated = await result2.data.json();
-
-  return response.json(validated);
-};
-
-export default handler;
-```
-
-**v1 (agent file):**
-```typescript
-// src/agent/workflow/agent.ts
-import { createAgent } from '@agentuity/runtime';
-import processor from '@agent/processor';
-import validator from '@agent/validator';
-
-const agent = createAgent('Workflow', {
-  handler: async (ctx, input) => {
-    // Import and call agents directly
-    const processed = await processor.run(input);
-
-    // Call second agent
-    const validated = await validator.run(processed);
-
-    return validated;
-  }
-});
-
-export default agent;
-```
-
-**v1 (routes file):**
-```typescript
-// src/api/index.ts
-import { createRouter } from '@agentuity/runtime';
-import workflow from '@agent/workflow';
-
-const router = createRouter();
-
-router.post('/workflow', async (c) => {
-  const data = await c.req.json();
-  const result = await workflow.run(data);
-  return c.json(result);
-});
-
-export default router;
-```
+Manage conversational state with `ctx.session` and `ctx.thread`. See [State Management](/v1/Build/Agents/state-management).
 
 ---
 
 ## Troubleshooting
-
-### Common Migration Issues
 
 #### Issue 1: "Cannot find module '@agentuity/sdk'"
 
@@ -1095,8 +629,8 @@ import myAgent from '@agent/my-agent';
 
 If you encounter issues not covered in this guide:
 
-1. **Check the Documentation**: Visit the [v1 API Reference](/v1/SDKs/javascript/api-reference) for detailed information
-2. **Review Examples**: Browse the [Examples](/v1/Examples) section for working code
+1. **Check the Documentation**: Visit the [API Reference](/v1/Reference/api-reference) for detailed information
+2. **Review Examples**: Browse the [Examples](/v1/Learn/Examples) section for working code
 3. **Community Support**: Join our [Discord community](https://discord.gg/agentuity) for help
 4. **Report Issues**: Open an issue on [GitHub](https://github.com/agentuity/sdk) if you find bugs
 

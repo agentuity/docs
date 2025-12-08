@@ -171,17 +171,11 @@ Before we start building, make sure you have:
 Install the Agentuity CLI:
 
 ```bash
-# NPM (if you have Node.js)
-npm install -g @agentuity/cli
-
-# Bun (if you have Bun)
-bun install -g @agentuity/cli
-
-# macOS (Homebrew)
-brew tap agentuity/tap && brew install agentuity
-
 # Universal installer (Windows/Linux/macOS)
-curl -fsS https://agentuity.sh | sh
+curl -sSL https://v1.agentuity.sh | sh
+
+# Alternative: Install via Bun
+bun add -g @agentuity/cli
 
 # Verify installation
 agentuity --version
