@@ -61,14 +61,14 @@ interface App {
 // app.ts
 import { createApp } from '@agentuity/runtime';
 
-// Create the application instance
-const app = createApp();
+// Create the application instance (async)
+const { server, logger } = await createApp();
 
 // The application will automatically discover and mount agents
 // from the agents directory specified in your agentuity.json
 
 // Access application properties
-app.logger.info(`Server running at ${app.server.url}`);
+logger.info(`Server running at ${server.url}`);
 ```
 
 **With Configuration**
@@ -76,7 +76,7 @@ app.logger.info(`Server running at ${app.server.url}`);
 ```typescript
 import { createApp } from '@agentuity/runtime';
 
-const app = createApp({
+const { server, logger } = await createApp({
   // Custom CORS settings
   cors: {
     origin: ['https://example.com'],
@@ -102,12 +102,14 @@ Agentuity applications access configuration and secrets through standard Node.js
 
 ```typescript
 // app.ts
+import { createApp } from '@agentuity/runtime';
+
 if (!process.env.AGENTUITY_SDK_KEY) {
   console.error('Missing AGENTUITY_SDK_KEY environment variable');
   process.exit(1);
 }
 
-const app = createApp();
+const { server, logger } = await createApp();
 
 // Access other environment variables
 const apiEndpoint = process.env.API_ENDPOINT || 'https://api.example.com';
@@ -1676,7 +1678,7 @@ router.post('/process', processor.validator(), async (c) => {
   const result = await processor.run({ data: body.data });
 
   // Store result
-  await c.kv.set('results', body.id, result);
+  await c.var.kv.set('results', body.id, result);
 
   // Return response
   return c.json({ success: true, result });
@@ -1687,11 +1689,11 @@ router.post('/process', processor.validator(), async (c) => {
 
 All Agentuity storage and observability services are available in router handlers:
 - Call agents via imports: `import agent from '@agent/name'; agent.run()`
-- Use key-value storage via `c.kv`
+- Use key-value storage via `c.var.kv`
 - Log with `c.var.logger`
 - Trace with `c.var.tracer`
 - Store objects via `import { s3 } from 'bun'`
-- Search vectors via `c.vector`
+- Search vectors via `c.var.vector`
 
 This unified context makes it easy to build HTTP endpoints that leverage the full Agentuity platform.
 
@@ -2035,7 +2037,7 @@ router.cron('0 9 * * *', async (c) => {
   });
 
   // Send report via email or store
-  await c.kv.set('reports', `daily-${Date.now()}`, report);
+  await c.var.kv.set('reports', `daily-${Date.now()}`, report);
 
   return c.json({ success: true });
 });

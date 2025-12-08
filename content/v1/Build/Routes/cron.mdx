@@ -25,7 +25,7 @@ router.cron('0 9 * * *', async (c) => { // runs daily at 9am
     date: new Date().toISOString(),
   });
 
-  await c.kv.set('reports', `daily-${Date.now()}`, report);
+  await c.var.kv.set('reports', `daily-${Date.now()}`, report);
 
   return c.text('OK');
 });
@@ -76,7 +76,7 @@ router.cron('*/5 * * * *', async (c) => { // runs every 5 minutes
       services: ['api', 'database', 'cache'],
     });
 
-    await c.kv.set('monitoring', 'latest-health', {
+    await c.var.kv.set('monitoring', 'latest-health', {
       ...status,
       checkedAt: new Date().toISOString(),
       durationMs: Date.now() - startTime,
@@ -116,7 +116,7 @@ async function cronHandler(c) {
 ## Best Practices
 
 - **Log job start and completion** for debugging scheduled tasks
-- **Use `c.kv` or `c.objectstore`** to persist results for later inspection
+- **Use `c.var.kv` or object storage** to persist results for later inspection
 - **Handle errors gracefully** so one failure doesn't break the schedule
 - **Keep jobs idempotent** when possible, in case of retries
 
@@ -130,11 +130,11 @@ import { createRouter } from '@agentuity/runtime';
 const router = createRouter();
 
 router.cron('0 * * * *', async (c) => {
-  const allKeys = await c.kv.getKeys('cache');
+  const allKeys = await c.var.kv.getKeys('cache');
   const expiredKeys = allKeys.filter(key => key.startsWith('temp-'));
 
   for (const key of expiredKeys) {
-    await c.kv.delete('cache', key);
+    await c.var.kv.delete('cache', key);
   }
 
   c.var.logger.info('Cache cleanup completed', { deleted: expiredKeys.length });

@@ -99,7 +99,7 @@ Use `router.stream()` for streaming agents. Regular `router.post()` works but ma
 Read the stream using the Fetch API:
 
 ```typescript
-const response = await fetch('http://localhost:3500/chat', {
+const response = await fetch('http://localhost:3500/api/chat', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ message: 'Tell me a story' }),
@@ -120,21 +120,21 @@ while (reader) {
 
 ### With React
 
-Use the `useAgent` hook from `@agentuity/react`:
+Use the `useAPI` hook from `@agentuity/react`:
 
 ```tsx
-import { useAgent } from '@agentuity/react';
+import { useAPI } from '@agentuity/react';
 
 function Chat() {
-  const { data, running, run } = useAgent('chat');
+  const { data, isLoading, invoke } = useAPI('POST /api/chat');
 
   const handleSubmit = async (message: string) => {
-    await run({ message });
+    await invoke({ message });
   };
 
   return (
     <div>
-      {running && <p>Generating...</p>}
+      {isLoading && <p>Generating...</p>}
       {data && <p>{data}</p>}
       <button onClick={() => handleSubmit('Hello!')}>Send</button>
     </div>

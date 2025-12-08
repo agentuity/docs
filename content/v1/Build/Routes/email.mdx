@@ -129,7 +129,7 @@ router.email('support@myapp.com', async (email, c) => {
     });
 
     // Store for audit trail
-    await c.kv.set('emails', `${Date.now()}-${from}`, {
+    await c.var.kv.set('emails', `${Date.now()}-${from}`, {
       from,
       subject,
       processedAt: new Date().toISOString(),
@@ -162,7 +162,7 @@ const router = createRouter();
 
 router.email('archive@example.com', async (email, c) => {
   const key = `${Date.now()}-${email.fromEmail()}`;
-  await c.kv.set('archive', key, {
+  await c.var.kv.set('archive', key, {
     from: email.fromEmail(),
     subject: email.subject(),
     body: email.text(),

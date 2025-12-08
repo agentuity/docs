@@ -21,7 +21,7 @@ Use built-in state (`ctx.state`, `ctx.thread.state`, `ctx.session.state`) for da
 
 ## Basic Operations
 
-Access key-value storage through `ctx.kv` in agents or `c.kv` in routes. Buckets are auto-created on first use.
+Access key-value storage through `ctx.kv` in agents or `c.var.kv` in routes. Buckets are auto-created on first use.
 
 ### Storing Data
 
@@ -176,7 +176,7 @@ const agent = createAgent('SessionManager', {
 
 ## Using in Routes
 
-Routes have the same KV access via `c.kv`:
+Routes have the same KV access via `c.var.kv`:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
@@ -185,7 +185,7 @@ const router = createRouter();
 
 router.get('/session/:id', async (c) => {
   const sessionId = c.req.param('id');
-  const result = await c.kv.get('sessions', sessionId);
+  const result = await c.var.kv.get('sessions', sessionId);
 
   if (!result.exists) {
     return c.json({ error: 'Session not found' }, 404);

@@ -18,21 +18,24 @@ The difference is in the execution: agents communicate through type-safe calls w
 
 ## Agent Communication in v1
 
-Agents communicate via direct, type-safe calls through the context object. The SDK auto-discovers all agents in your project and provides typed access.
+Agents communicate via direct imports. Import an agent and call its `run()` method with type-safe input.
 
 **Basic Pattern:**
 ```typescript
-// Inside any agent handler
-const result = await c.agent.enrichmentAgent.run({
+// Import the agent
+import enrichmentAgent from '@agent/enrichment-agent';
+
+// Inside any agent handler or route
+const result = await enrichmentAgent.run({
   text: input.data
 });
 ```
 
 **Key features:**
-- **Auto-discovery**: No manual agent lookup or configuration
+- **Direct imports**: `import agent from '@agent/name'`
 - **Type safety**: Full TypeScript inference when schemas are defined
 - **Schema validation**: Input and output automatically validated
-- **Simple syntax**: Direct property access, no lookup APIs
+- **Simple syntax**: Import and call `agent.run()`
 
 ### Conditional Routing in Routes
 
@@ -40,15 +43,18 @@ Routes can analyze requests and conditionally call different agents based on the
 
 ```typescript
 // route.ts - routes handle conditional logic
+import urgentProcessor from '@agent/urgent-processor';
+import standardProcessor from '@agent/standard-processor';
+
 router.post('/process', async (c) => {
   const body = await c.req.json();
 
   // Choose agent based on request type
   if (body.type === 'urgent') {
-    return c.json(await c.agent.urgentProcessor.run(body));
+    return c.json(await urgentProcessor.run(body));
   }
 
-  return c.json(await c.agent.standardProcessor.run(body));
+  return c.json(await standardProcessor.run(body));
 });
 ```
 
@@ -73,8 +79,8 @@ The foundation of multi-agent systems is simple: one agent calls another. This s
 ]} />
 
 **What this demonstrates:**
-- Type-safe agent calls via `c.agent.enricher.run()`
-- Auto-discovery (no agent lookup needed)
+- Type-safe agent calls via `import enricher from '@agent/enricher'; enricher.run()`
+- Direct imports (no context lookup needed)
 - Schema validation on both input and output
 - AI-powered enrichment using `generateObject` with structured schemas
 - KV storage for tracking interaction history
@@ -92,7 +98,7 @@ The foundation of multi-agent systems is simple: one agent calls another. This s
 3. Check logs to see both agents executing
 4. Notice the enriched response with AI-powered sentiment analysis and confidence scores
 
-> **Key Insight:** Agent calls are direct property access with full type safety. The SDK discovers all agents automatically and validates all inputs and outputs through schemas. Use specialist agents for AI-powered processing like the enricher's sentiment analysis.
+> **Key Insight:** Agent calls use direct imports with full type safety. Import any agent with `import agent from '@agent/name'` and call `agent.run()`. The SDK validates all inputs and outputs through schemas. Use specialist agents for AI-powered processing like the enricher's sentiment analysis.
 
 </TutorialStep>
 

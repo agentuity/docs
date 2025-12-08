@@ -46,7 +46,7 @@ User-level data that persists across multiple threads and conversations. Stored 
 - User-specific context
 
 <Callout type="info">
-**State vs Storage:** This module focuses on **managed state scopes** with automatic lifecycle handling. Module 5 covers **storage APIs** (`c.kv`, `c.vector`, `c.objectstore`) for explicit control over data persistence, custom TTL, and shared data *across agents*.
+**State vs Storage:** This module focuses on **managed state scopes** with automatic lifecycle handling. Module 5 covers **storage APIs** (`ctx.kv`, `ctx.vector`, object storage) for explicit control over data persistence, custom TTL, and shared data *across agents*.
 </Callout>
 
 ---
@@ -286,6 +286,6 @@ Agentuity manages state automatically - you just choose the right scope for your
 
 ## What's Next?
 
-**Module 5: Storage APIs** - Learn `c.kv`, `c.vector`, and `c.objectstore` for explicit storage control, custom TTL, shared data across agents, and persistence beyond in-memory state.
+**Module 5: Storage APIs** - Learn `ctx.kv`, `ctx.vector`, and object storage for explicit storage control, custom TTL, shared data across agents, and persistence beyond in-memory state.
 
 For more details on state management patterns and lifecycle handling, see the [Sessions & Threads Guide](/v1/Guides/sessions-threads).

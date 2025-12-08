@@ -183,7 +183,7 @@ const authMiddleware = createMiddleware(async (c, next) => {
     return c.json({ error: 'API key required' }, 401);
   }
 
-  const keyData = await c.kv.get('api-keys', apiKey);
+  const keyData = await c.var.kv.get('api-keys', apiKey);
   if (!keyData.exists) {
     return c.json({ error: 'Invalid API key' }, 401);
   }
@@ -207,7 +207,7 @@ router.post('/chat', chat.validator(), async (c) => {
 
   // Track usage in background
   c.waitUntil(async () => {
-    await c.kv.set('usage', `${userId}:${Date.now()}`, {
+    await c.var.kv.set('usage', `${userId}:${Date.now()}`, {
       endpoint: 'chat',
       tokens: result.tokensUsed,
     });

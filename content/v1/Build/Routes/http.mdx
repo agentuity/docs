@@ -195,9 +195,9 @@ c.redirect('/other');      // Redirect
 import myAgent from '@agent/my-agent';
 await myAgent.run(input);     // Call an agent
 
-c.kv.get('bucket', 'key');    // Key-value storage
-c.vector.search('ns', opts);  // Vector search
-c.var.logger.info('message'); // Logging
+c.var.kv.get('bucket', 'key');    // Key-value storage
+c.var.vector.search('ns', opts);  // Vector search
+c.var.logger.info('message');     // Logging
 ```
 
 ## Best Practices

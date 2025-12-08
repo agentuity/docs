@@ -12,6 +12,8 @@ Webhooks require quick responses (usually under 3 seconds). Use `waitUntil` to a
 ```typescript
 import { createRouter } from '@agentuity/runtime';
 import crypto from 'crypto';
+import paymentProcessor from '@agent/payment-processor';
+import subscriptionHandler from '@agent/subscription-handler';
 
 const router = createRouter();
 
@@ -35,7 +37,7 @@ router.post('/stripe', async (c) => {
     try {
       switch (event.type) {
         case 'payment_intent.succeeded':
-          await c.agent.paymentProcessor.run({
+          await paymentProcessor.run({
             paymentId: event.data.object.id,
             amount: event.data.object.amount,
             customerId: event.data.object.customer,
@@ -43,7 +45,7 @@ router.post('/stripe', async (c) => {
           break;
 
         case 'customer.subscription.updated':
-          await c.agent.subscriptionHandler.run({
+          await subscriptionHandler.run({
             subscriptionId: event.data.object.id,
             status: event.data.object.status,
           });
@@ -55,7 +57,7 @@ router.post('/stripe', async (c) => {
     } catch (error) {
       c.var.logger.error('Webhook processing failed', { error, eventType: event.type });
       // Store for retry
-      await c.kv.set('failed-webhooks', event.id, {
+      await c.var.kv.set('failed-webhooks', event.id, {
         event,
         error: String(error),
         timestamp: Date.now(),
@@ -108,6 +110,8 @@ export default router;
 ## Slack Webhook Example
 
 ```typescript
+import slackHandler from '@agent/slack-handler';
+
 router.post('/slack', async (c) => {
   // Slack retries on failure - skip duplicates
   if (c.req.header('x-slack-retry-num')) {
@@ -134,7 +138,7 @@ router.post('/slack', async (c) => {
 
   // Process event in background
   c.waitUntil(async () => {
-    await c.agent.slackHandler.run(payload);
+    await slackHandler.run(payload);
   });
 
   return c.text('OK');

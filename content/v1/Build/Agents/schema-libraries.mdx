@@ -7,12 +7,14 @@ Agentuity uses the [StandardSchema](https://github.com/standard-schema/standard-
 
 ## Choosing a Library
 
-| Library | Bundle Size | Syntax | Best For |
-|---------|-------------|--------|----------|
-| `@agentuity/schema` | ~2 kB | Simple builder | Quick prototyping, minimal deps |
-| [Zod](https://zod.dev) | ~13.5 kB | Method chaining | Most projects (largest ecosystem) |
-| [Valibot](https://valibot.dev) | ~1-2 kB | Modular pipes | Bundle-sensitive apps |
-| [ArkType](https://arktype.io) | ~5 kB | TypeScript-like | Performance-critical apps |
+| Library | Syntax | Best For |
+|---------|--------|----------|
+| `@agentuity/schema` | `s.object({ name: s.string() })` | Zero dependencies, basic validation |
+| [Zod](https://zod.dev) | `z.object({ name: z.string() })` | AI SDK integration (`.describe()` support) |
+| [Valibot](https://valibot.dev) | `v.object({ name: v.string() })` | Smallest bundle size |
+| [ArkType](https://arktype.io) | `type({ name: 'string' })` | TypeScript-native syntax, fast runtime |
+
+**Recommendation:** Start with `@agentuity/schema` for simple cases. Use other libraries depending on your needs. For example, Zod is recommended when working with `generateObject()` (its `.describe()` helps guide LLM output).
 
 ## Using @agentuity/schema
 

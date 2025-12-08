@@ -160,11 +160,11 @@ router.post('/', async (c) => {
   const userId = c.var.session.state.get('userId');
 
   // Storage
-  await c.kv.set('cache', 'key', data);
-  const results = await c.vector.search('docs', { query: 'search term' });
+  await c.var.kv.set('cache', 'key', data);
+  const results = await c.var.vector.search('docs', { query: 'search term' });
 
   // Durable streams
-  const stream = await c.stream.create('export', { contentType: 'text/csv' });
+  const stream = await c.var.stream.create('export', { contentType: 'text/csv' });
 
   // Call agents (import them at the top of your file)
   const result = await myAgent.run(body);

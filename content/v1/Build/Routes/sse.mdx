@@ -250,7 +250,7 @@ const router = createRouter();
 
 router.sse('/builds/:id/logs', (c) => async (stream) => {
   const buildId = c.req.param('id');
-  const logs = await c.kv.get<string[]>('builds', `${buildId}:logs`);
+  const logs = await c.var.kv.get<string[]>('builds', `${buildId}:logs`);
 
   if (logs.exists) {
     for (const line of logs.data) {
@@ -269,4 +269,4 @@ export default router;
 
 - [WebSockets](/v1/Build/Routes/websockets): Bidirectional real-time communication
 - [HTTP Routes](/v1/Build/Routes/http): Standard request/response endpoints
-- [React Hooks](/v1/Build/Frontend/react-hooks): Connect from React with `useAgentEventStream`
+- [React Hooks](/v1/Build/Frontend/react-hooks): Connect from React with `useEventStream`

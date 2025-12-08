@@ -20,7 +20,7 @@ my-project/
 └── src/
     ├── agent/            # Agent code (required)
     │   └── chat/
-    │       └── agent.ts  # Business logic
+    │       └── agent.ts  # Agent logic
     ├── api/              # HTTP routes (optional)
     │   └── index.ts      # All routes, imports agents
     └── web/              # Frontend code (scaffolded by default)
@@ -103,11 +103,11 @@ React is currently supported via `@agentuity/react`, with a framework-agnostic a
 import { useAPI } from '@agentuity/react';
 
 function App() {
-  const { data, invoke, isLoading } = useAPI('POST /api/chat');
+  const { data, invoke, isLoading } = useAPI('POST /api/hello');
 
   return (
-    <button onClick={() => invoke({ message: 'Hello' })}>
-      {isLoading ? 'Loading...' : 'Send'}
+    <button onClick={() => invoke({ name: 'World' })}>
+      {isLoading ? 'Loading...' : 'Say Hello'}
     </button>
   );
 }
@@ -119,6 +119,6 @@ You can also deploy your frontend elsewhere (e.g.,Vercel, Netlify) and call your
 
 ## Next Steps
 
-- [App Configuration](/v1/Get-Started/app-configuration) — Configure `app.ts` and `agentuity.json`
-- [Creating Agents](/v1/Build/Agents/creating-agents) — Deep dive into agent creation
-- [Routes](/v1/Build/Routes) — Learn about HTTP, cron, email, and other triggers
+- [App Configuration](/v1/Get-Started/app-configuration): Configure `app.ts` and `agentuity.json`
+- [Creating Agents](/v1/Build/Agents/creating-agents): Deep dive into agent creation
+- [Routes](/v1/Build/Routes): Learn about HTTP, cron, email, and other triggers

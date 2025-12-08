@@ -5,8 +5,8 @@ description: Add authentication, validation, and request processing to your rout
 
 Agentuity routes are built on [Hono](https://hono.dev), giving you access to Hono's middleware system. Use middleware to add authentication, logging, CORS, rate limiting, and other shared request processing.
 
-<Callout type="info" title="Works in agents and APIs">
-Middleware works on all routes, whether in agent directories (`src/agents/*/route.ts`) or API directories (`src/apis/*/route.ts`). The patterns below apply to both.
+<Callout type="info" title="Works Everywhere">
+Middleware works on all route types in `src/api/`. The patterns below apply to HTTP, WebSocket, SSE, and email routes.
 </Callout>
 
 <Callout type="warning" title="Middleware Compatibility">
@@ -61,7 +61,7 @@ const apiKeyAuth = createMiddleware(async (c, next) => {
   }
 
   // Validate against stored keys
-  const keyData = await c.kv.get('api-keys', apiKey);
+  const keyData = await c.var.kv.get('api-keys', apiKey);
   if (!keyData.exists) {
     return c.json({ error: 'Invalid API key' }, 401);
   }
@@ -161,7 +161,7 @@ const router = createRouter();
 // Validates using agent's input schema
 router.post('/items', agent.validator(), async (c) => {
   const data = c.req.valid('json'); // Fully typed from schema
-  await c.kv.set('items', crypto.randomUUID(), data);
+  await c.var.kv.set('items', crypto.randomUUID(), data);
   return c.json({ created: true, item: data });
 });
 
@@ -254,14 +254,14 @@ const rateLimiter = createMiddleware(async (c, next) => {
   const ip = c.req.header('x-forwarded-for') || 'unknown';
   const key = `ratelimit:${ip}`;
 
-  const result = await c.kv.get<number>('ratelimit', key);
+  const result = await c.var.kv.get<number>('ratelimit', key);
   const count = result.exists ? result.data : 0;
 
   if (count >= 100) {
     return c.json({ error: 'Rate limit exceeded' }, 429);
   }
 
-  await c.kv.set('ratelimit', key, count + 1, { ttl: 60 });
+  await c.var.kv.set('ratelimit', key, count + 1, { ttl: 60 });
   await next();
 });
 

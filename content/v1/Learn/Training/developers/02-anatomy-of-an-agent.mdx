@@ -186,9 +186,9 @@ c.html(data)          // HTML response
 **Storage (Basic Introduction)**
 ```typescript
 // Key-value storage for basic caching
-await c.kv.get(bucket, key)
-await c.kv.set(bucket, key, value, { ttl })
-await c.kv.delete(bucket, key)
+await c.var.kv.get(bucket, key)
+await c.var.kv.set(bucket, key, value, { ttl })
+await c.var.kv.delete(bucket, key)
 
 // Note: Vector and object storage covered in Module 5
 ```
@@ -196,12 +196,12 @@ await c.kv.delete(bucket, key)
 **Observability**
 ```typescript
 // Structured logging
-c.logger.info('message', { metadata })
-c.logger.warn('message', { metadata })
-c.logger.error('message', { metadata })
+c.var.logger.info('message', { metadata })
+c.var.logger.warn('message', { metadata })
+c.var.logger.error('message', { metadata })
 
 // Child loggers (add context to all logs)
-const userLogger = c.logger.child({ userId: '123' })
+const userLogger = c.var.logger.child({ userId: '123' })
 userLogger.info('User action') // Includes userId automatically
 ```
 
@@ -219,8 +219,8 @@ ctx.env         // Environment variables
 | Parse HTTP request body | `c.req.json()`, `c.req.text()` |
 | Access route parameters | `c.req.param()` |
 | Access query strings | `c.req.query()` |
-| Log with context | `c.logger` |
-| Basic caching | `c.kv` |
+| Log with context | `c.var.logger` |
+| Basic caching | `c.var.kv` |
 
 #### Practical Example
 
@@ -315,7 +315,7 @@ By the end of this module, you should understand:
 1. **The Two-File Pattern:**
    - `agent.ts` contains business logic
    - `route.ts` contains HTTP endpoints
-   - Routes call agents via `c.agent.name.run()`
+   - Routes call agents via imports: `import agent from '@agent/name'; agent.run()`
 
 2. **HTTP Routing:**
    - Different methods (GET, POST, PUT, DELETE)

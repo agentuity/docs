@@ -12,14 +12,15 @@ Put your frontend code in `src/web/` and deploy everything together:
 ```
 my-project/
 ├── src/
-│   ├── agents/
+│   ├── agent/
 │   │   └── chat/
-│   │       ├── agent.ts
-│   │       └── route.ts
+│   │       └── agent.ts
+│   ├── api/
+│   │   └── index.ts
 │   └── web/
 │       ├── App.tsx
-│       ├── index.html
-│       └── main.tsx
+│       ├── frontend.tsx
+│       └── index.html
 └── agentuity.json
 ```
 
@@ -27,10 +28,10 @@ When you run `agentuity deploy`, both your agents and frontend are bundled and d
 
 ```tsx
 // src/web/App.tsx
-import { AgentuityProvider, useAgent } from '@agentuity/react';
+import { AgentuityProvider, useAPI } from '@agentuity/react';
 
 function Chat() {
-  const { run, data, running } = useAgent('chat');
+  const { invoke, data, isLoading } = useAPI('POST /api/chat');
   // ... your chat UI
 }
 
@@ -89,7 +90,7 @@ When your frontend and agents are on different domains, configure CORS in `app.t
 // app.ts
 import { createApp } from '@agentuity/runtime';
 
-const app = createApp({
+const { server, logger } = await createApp({
   cors: {
     origin: ['https://your-frontend.com', 'http://localhost:3000'],
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -97,7 +98,7 @@ const app = createApp({
   },
 });
 
-export default app;
+logger.debug('Running %s', server.url);
 ```
 
 <Callout type="warning" title="Required for Cross-Origin">
