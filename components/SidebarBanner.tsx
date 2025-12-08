@@ -8,8 +8,8 @@ import { VersionToggle } from './VersionToggle';
 // - url: where to navigate when selected
 // - matchUrl: base path for determining active state
 const versionOptions = [
-	{ url: '/v0/Introduction', matchUrl: '/v0', title: 'Current', description: 'Agentuity SDK 0.x' },
 	{ url: '/v1/Get-Started/what-is-agentuity', matchUrl: '/v1', title: 'Preview', description: 'Agentuity SDK 1.x' },
+	{ url: '/v0/Introduction', matchUrl: '/v0', title: 'Current', description: 'Agentuity SDK 0.x' },
 ];
 
 export function SidebarBanner() {

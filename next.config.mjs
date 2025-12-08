@@ -11,12 +11,12 @@ const config = {
 	redirects: async () => [
 		{
 			source: '/',
-			destination: '/v0/Introduction',
+			destination: '/v1/Get-Started/what-is-agentuity',
 			permanent: false,
 		},
 		{
 			source: '/docs',
-			destination: '/v0/Introduction',
+			destination: '/v1/Get-Started/what-is-agentuity',
 			permanent: true,
 		},
 		// Redirect old v0 paths to new /v0/ prefix
