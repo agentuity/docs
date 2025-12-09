@@ -55,31 +55,21 @@ export default function App() {
 }
 ```
 
-**For POST/PUT/PATCH/DELETE requests:**
+**Return values:**
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `invoke` | `(input) => Promise<TOutput>` | Execute the request |
-| `isLoading` | `boolean` | True during initial load |
-| `isFetching` | `boolean` | True during any fetch (including refetches) |
-| `isSuccess` | `boolean` | True after successful completion |
-| `isError` | `boolean` | True if request failed |
-| `data` | `TOutput \| undefined` | Last successful response |
-| `error` | `Error \| null` | Last error, if any |
-| `reset` | `() => void` | Reset state to initial values |
+| Property | Type | Description | Methods |
+|----------|------|-------------|---------|
+| `invoke` | `(input) => Promise<TOutput>` | Execute the request | POST, PUT, PATCH, DELETE |
+| `refetch` | `() => Promise<void>` | Manually refetch data | GET |
+| `data` | `TOutput \| undefined` | Last successful response | All |
+| `error` | `Error \| null` | Last error, if any | All |
+| `isLoading` | `boolean` | True during initial load | All |
+| `isFetching` | `boolean` | True during any fetch (including refetches) | All |
+| `isSuccess` | `boolean` | True after successful completion | All |
+| `isError` | `boolean` | True if request failed | All |
+| `reset` | `() => void` | Reset state to initial values | All |
 
-**For GET requests** (auto-fetches on mount):
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `refetch` | `() => Promise<void>` | Manually refetch data |
-| `isLoading` | `boolean` | True during initial load |
-| `isFetching` | `boolean` | True during any fetch (including refetches) |
-| `isSuccess` | `boolean` | True after successful completion |
-| `isError` | `boolean` | True if request failed |
-| `data` | `TOutput \| undefined` | Last successful response |
-| `error` | `Error \| null` | Last error, if any |
-| `reset` | `() => void` | Reset state to initial values |
+GET requests auto-fetch on mount. POST/PUT/PATCH/DELETE require calling `invoke()`.
 
 ### useAPI Options
 
@@ -136,35 +126,43 @@ For bidirectional real-time communication, use `useWebsocket`:
 
 ```tsx
 import { useWebsocket } from '@agentuity/react';
-import { useEffect, useState } from 'react';
 
 function RealtimeChat() {
-  const [messages, setMessages] = useState<string[]>([]);
-  const { isConnected, send, data } = useWebsocket('/api/chat');
-
-  // Handle incoming messages
-  useEffect(() => {
-    if (data) {
-      setMessages((prev) => [...prev, `Server: ${data}`]);
-    }
-  }, [data]);
-
-  const handleSend = (message: string) => {
-    setMessages((prev) => [...prev, `You: ${message}`]);
-    send({ message });
-  };
+  const { isConnected, send, messages, clearMessages } = useWebsocket('/api/chat', {
+    maxMessages: 100,  // Keep last 100 messages
+  });
 
   return (
     <div>
       <p>Status: {isConnected ? 'Connected' : 'Connecting...'}</p>
       <ul>
         {messages.map((msg, i) => (
-          <li key={i}>{msg}</li>
+          <li key={i}>{JSON.stringify(msg)}</li>
         ))}
       </ul>
-      <button onClick={() => handleSend('Hello!')}>Send Hello</button>
+      <button onClick={() => send({ message: 'Hello!' })}>Send Hello</button>
+      <button onClick={clearMessages}>Clear</button>
     </div>
   );
+}
+```
+
+You can also use `data` for only the most recent message:
+
+```tsx
+import { useWebsocket } from '@agentuity/react';
+import { useEffect } from 'react';
+
+function LatestUpdate() {
+  const { isConnected, send, data } = useWebsocket('/api/updates');
+
+  useEffect(() => {
+    if (data) {
+      console.log('Latest update:', data);
+    }
+  }, [data]);
+
+  return <p>Latest: {data ? JSON.stringify(data) : 'Waiting...'}</p>;
 }
 ```
 
@@ -179,9 +177,22 @@ WebSocket connections automatically reconnect with exponential backoff if the co
 | `isConnected` | `boolean` | True when WebSocket is open |
 | `send` | `(data: TInput) => void` | Send a message |
 | `data` | `TOutput \| undefined` | Last received message |
+| `messages` | `TOutput[]` | Array of all received messages |
+| `clearMessages` | `() => void` | Clear the messages array |
 | `error` | `Error \| null` | Connection or message error |
+| `isError` | `boolean` | True if an error occurred |
+| `readyState` | `number` | WebSocket state (0=connecting, 1=open, 2=closing, 3=closed) |
 | `close` | `() => void` | Close the connection |
 | `reset` | `() => void` | Clear error state |
+
+**Options:**
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `query` | `URLSearchParams` | Query parameters to append to the WebSocket URL |
+| `subpath` | `string` | Subpath to append to the WebSocket path |
+| `signal` | `AbortSignal` | AbortSignal to cancel the connection |
+| `maxMessages` | `number` | Maximum messages to keep in `messages` array (oldest removed when exceeded) |
 
 ## Streaming with useEventStream
 
@@ -214,6 +225,20 @@ function LiveStatus() {
 Use `useEventStream` when you only need server-to-client updates (e.g., progress indicators, live dashboards, notifications). For bidirectional communication, use `useWebsocket`.
 </Callout>
 
+**Return values:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `isConnected` | `boolean` | True when EventStream is open |
+| `data` | `TOutput \| undefined` | Last received event data |
+| `error` | `Error \| null` | Connection error |
+| `isError` | `boolean` | True if an error occurred |
+| `readyState` | `number` | EventSource state (0=connecting, 1=open, 2=closed) |
+| `close` | `() => void` | Close the connection |
+| `reset` | `() => void` | Clear error state |
+
+**Options:** Accepts `query`, `subpath`, and `signal` options, same as `useWebsocket`.
+
 ## Choosing the Right Hook
 
 | Hook | Use Case | Direction | Examples |
@@ -224,24 +249,31 @@ Use `useEventStream` when you only need server-to-client updates (e.g., progress
 
 ## Request Options
 
-Hooks accept options for customizing requests:
+Pass options to the hook for customizing requests. Options like `query` and `headers` are set when calling the hook, not when invoking:
 
 ```tsx
-const { invoke } = useAPI('POST /api/chat');
-
-// Add query parameters
-await invoke(input, {
+// Options are passed to useAPI, not invoke
+const { invoke } = useAPI({
+  route: 'POST /api/chat',
   query: new URLSearchParams({ version: '2' }),
-});
-
-// Add custom headers
-await invoke(input, {
   headers: { 'X-Custom-Header': 'value' },
 });
 
-// Cancel request with AbortSignal
-const controller = new AbortController();
-await invoke(input, { signal: controller.signal });
+// invoke only takes the input data
+await invoke({ message: 'Hello' });
+```
+
+For dynamic query parameters, create a new hook instance:
+
+```tsx
+function SearchResults({ query }: { query: string }) {
+  const { data, isLoading } = useAPI({
+    route: 'GET /api/search',
+    query: { q: query },
+  });
+
+  return <div>{isLoading ? 'Searching...' : JSON.stringify(data)}</div>;
+}
 ```
 
 ## Next Steps
