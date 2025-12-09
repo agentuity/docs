@@ -26,6 +26,63 @@ The handler receives two parameters:
 - `ctx` - The agent context with logging, storage, and state management
 - `input` - The data passed to the agent (validated if schema is defined)
 
+## Adding LLM Capabilities
+
+Most agents use an LLM for inference. Here's an agent using the [AI SDK](https://ai-sdk.dev):
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { s } from '@agentuity/schema';
+
+const agent = createAgent('Assistant', {
+  schema: {
+    input: s.object({ prompt: s.string() }),
+    output: s.object({ response: s.string() }),
+  },
+  handler: async (ctx, { prompt }) => {
+    const { text } = await generateText({
+      model: openai('gpt-5-mini'),
+      prompt,
+    });
+
+    return { response: text };
+  },
+});
+
+export default agent;
+```
+
+You can also use provider SDKs directly:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { s } from '@agentuity/schema';
+import OpenAI from 'openai';
+
+const client = new OpenAI();
+
+const agent = createAgent('Assistant', {
+  schema: {
+    input: s.object({ prompt: s.string() }),
+    output: s.object({ response: s.string() }),
+  },
+  handler: async (ctx, { prompt }) => {
+    const completion = await client.chat.completions.create({
+      model: 'gpt-5-mini',
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    return { response: completion.choices[0]?.message?.content ?? '' };
+  },
+});
+
+export default agent;
+```
+
+For streaming, structured output, and more patterns, see [Using the AI SDK](/v1/Build/Agents/ai-sdk-integration).
+
 ## Adding Schema Validation
 
 Define input and output schemas for type safety and runtime validation. Agentuity includes a lightweight built-in schema library:

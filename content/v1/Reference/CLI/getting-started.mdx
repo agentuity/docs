@@ -3,7 +3,7 @@ title: Getting Started with the CLI
 description: Install the Agentuity CLI and authenticate to start building agents.
 ---
 
-The v1 CLI is designed to be your primary interface for building and managing Agentuity projects. You can create agents, inspect sessions, manage storage, debug deployments, and deploy — all without leaving your terminal. The [Console](https://app.agentuity.com) stays fully synced for when you prefer a visual interface.
+The v1 CLI is designed to be your primary interface for building and managing Agentuity projects. You can create agents, inspect sessions, manage storage, debug deployments, and deploy — all without leaving your terminal. The [Console](https://app-v1.agentuity.com) stays fully synced for when you prefer a visual interface.
 
 ## Installation
 
@@ -69,56 +69,6 @@ agentuity auth logout
 # or simply
 agentuity logout
 ```
-
-## SSH Key Management
-
-Add SSH keys to your account for secure container access during development and debugging.
-
-### List SSH Keys
-
-View all SSH keys on your account:
-
-```bash
-agentuity auth ssh list
-```
-
-### Add an SSH Key
-
-Add a new SSH key interactively (automatically discovers keys in `~/.ssh/`):
-
-```bash
-agentuity auth ssh add
-```
-
-Add a specific key file:
-
-```bash
-agentuity auth ssh add --file ~/.ssh/id_ed25519.pub
-```
-
-Pipe a key from stdin:
-
-```bash
-cat ~/.ssh/id_rsa.pub | agentuity auth ssh add
-```
-
-### Remove an SSH Key
-
-Remove keys interactively:
-
-```bash
-agentuity auth ssh delete
-```
-
-Remove a specific key by fingerprint:
-
-```bash
-agentuity auth ssh delete <fingerprint>
-```
-
-<Callout type="info" title="Why SSH Keys?">
-SSH keys enable secure access to deployed agent containers for debugging and log inspection. See [Debugging Deployments](/v1/Reference/CLI/debugging) for details.
-</Callout>
 
 ## Creating Projects
 
@@ -224,6 +174,21 @@ agentuity project delete <project-id> --confirm
 Project deletion is permanent and cannot be undone. Deployed agents and associated resources will be removed.
 </Callout>
 
+## Command Shortcuts
+
+Several common commands have shortcuts that let you skip the subcommand prefix:
+
+| Full Command | Shortcut | Also Works |
+|--------------|----------|------------|
+| `agentuity auth login` | `agentuity login` | |
+| `agentuity auth logout` | `agentuity logout` | |
+| `agentuity auth signup` | `agentuity signup` | |
+| `agentuity project create` | `agentuity create` | `new`, `init` |
+| `agentuity cloud deploy` | `agentuity deploy` | |
+| `agentuity cloud ssh` | `agentuity ssh` | |
+
+All other commands require their full prefix (e.g., `agentuity cloud session list`, `agentuity auth ssh add`).
+
 ## Global Options
 
 The CLI supports several global flags that work with any command:
@@ -290,20 +255,55 @@ agentuity profile list
 Configuration is stored in `~/.config/agentuity/production.yaml` by default. You can override this with `--config=/path/to/config.yaml`.
 </Callout>
 
-## Command Shortcuts
+## SSH Key Management
 
-Several common commands have shortcuts that let you skip the subcommand prefix:
+Add SSH keys to your account for secure container access during development and debugging.
 
-| Full Command | Shortcut | Also Works |
-|--------------|----------|------------|
-| `agentuity auth login` | `agentuity login` | |
-| `agentuity auth logout` | `agentuity logout` | |
-| `agentuity auth signup` | `agentuity signup` | |
-| `agentuity project create` | `agentuity create` | `new`, `init` |
-| `agentuity cloud deploy` | `agentuity deploy` | |
-| `agentuity cloud ssh` | `agentuity ssh` | |
+### List SSH Keys
 
-All other commands require their full prefix (e.g., `agentuity cloud session list`, `agentuity auth ssh add`).
+View all SSH keys on your account:
+
+```bash
+agentuity auth ssh list
+```
+
+### Add an SSH Key
+
+Add a new SSH key interactively (automatically discovers keys in `~/.ssh/`):
+
+```bash
+agentuity auth ssh add
+```
+
+Add a specific key file:
+
+```bash
+agentuity auth ssh add --file ~/.ssh/id_ed25519.pub
+```
+
+Pipe a key from stdin:
+
+```bash
+cat ~/.ssh/id_rsa.pub | agentuity auth ssh add
+```
+
+### Remove an SSH Key
+
+Remove keys interactively:
+
+```bash
+agentuity auth ssh delete
+```
+
+Remove a specific key by fingerprint:
+
+```bash
+agentuity auth ssh delete <fingerprint>
+```
+
+<Callout type="info" title="Why SSH Keys?">
+SSH keys enable secure access to deployed agent containers for debugging and log inspection. See [Debugging Deployments](/v1/Reference/CLI/debugging) for details.
+</Callout>
 
 ## Next Steps
 
