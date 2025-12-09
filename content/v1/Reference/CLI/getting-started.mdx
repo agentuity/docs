@@ -98,11 +98,11 @@ agentuity project create --name my-agent --dir ~/projects/agents
 
 | Template | Description |
 |----------|-------------|
-| `default` | React UI with example agents (recommended for getting started) |
-| `openai` | OpenAI-focused starter with GPT integration |
-| `groq` | Groq-focused starter for fast inference |
-| `xai` | xAI/Grok-focused starter |
-| `vercel-openai` | Optimized for Vercel deployment with OpenAI |
+| `default` | React UI with example agents using `@agentuity/schema` (recommended for getting started) |
+| `openai` | Uses OpenAI SDK directly for chat completions |
+| `groq` | Uses Groq SDK for fast inference with open-source models |
+| `xai` | Uses AI SDK with xAI provider for Grok models |
+| `vercel-openai` | Uses AI SDK with OpenAI provider |
 
 ```bash
 agentuity project create --template openai

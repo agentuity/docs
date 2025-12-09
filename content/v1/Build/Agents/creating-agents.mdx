@@ -64,9 +64,10 @@ import OpenAI from 'openai';
 const client = new OpenAI();
 
 const agent = createAgent('Assistant', {
+  description: 'An agent using OpenAI SDK directly',
   schema: {
     input: s.object({ prompt: s.string() }),
-    output: s.object({ response: s.string() }),
+    output: s.string(),
   },
   handler: async (ctx, { prompt }) => {
     const completion = await client.chat.completions.create({
@@ -74,7 +75,35 @@ const agent = createAgent('Assistant', {
       messages: [{ role: 'user', content: prompt }],
     });
 
-    return { response: completion.choices[0]?.message?.content ?? '' };
+    return completion.choices[0]?.message?.content ?? '';
+  },
+});
+
+export default agent;
+```
+
+Or use Groq for fast inference with open-source models:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { s } from '@agentuity/schema';
+import Groq from 'groq-sdk';
+
+const client = new Groq();
+
+const agent = createAgent('Assistant', {
+  description: 'An agent using Groq SDK with open-source models',
+  schema: {
+    input: s.object({ prompt: s.string() }),
+    output: s.string(),
+  },
+  handler: async (ctx, { prompt }) => {
+    const completion = await client.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    return completion.choices[0]?.message?.content ?? '';
   },
 });
 
