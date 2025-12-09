@@ -109,10 +109,15 @@ See [Key-Value Storage](/v1/Build/Storage/key-value) for details.
 
 Manage S3-compatible storage resources for file uploads and downloads.
 
+<Callout type="info" title="Command Alias">
+Both `cloud storage` and `cloud s3` work interchangeably. Examples below use `s3` for brevity.
+</Callout>
+
 ### Create Storage Resource
 
 ```bash
-agentuity cloud s3 create --name my-storage
+agentuity cloud storage create --name my-storage
+# or: agentuity cloud s3 create --name my-storage
 ```
 
 ### List Storage Resources

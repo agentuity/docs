@@ -60,18 +60,47 @@ s.string()                    // Any string
 s.number()                    // Any number
 s.boolean()                   // Boolean
 s.null()                      // Null value
+s.undefined()                 // Undefined value
+s.any()                       // Any value (no validation)
+s.unknown()                   // Unknown value (safer any)
 
 // Objects and arrays
 s.object({ name: s.string() })    // Object shape
 s.array(s.string())               // Array of strings
+s.record(s.number())              // { [key: string]: number }
 
 // Optional and nullable
 s.optional(s.string())            // string | undefined
 s.nullable(s.string())            // string | null
 
-// Unions and literals
+// Unions, literals, and enums
 s.union(s.string(), s.number())   // string | number
 s.literal('active')               // Exact value
+s.enum(['admin', 'user', 'guest']) // One of these values
+
+// Type coercion (useful for form inputs, query params)
+s.coerce.string()             // Convert to string via String(value)
+s.coerce.number()             // Convert to number via Number(value)
+s.coerce.boolean()            // Convert to boolean via Boolean(value)
+s.coerce.date()               // Convert to Date via new Date(value)
+```
+
+### Type Inference
+
+Extract TypeScript types from schemas:
+
+```typescript
+import { s } from '@agentuity/schema';
+
+const User = s.object({
+  name: s.string(),
+  age: s.number(),
+  role: s.enum(['admin', 'user']),
+});
+
+// Extract the type
+type User = s.infer<typeof User>;
+// { name: string; age: number; role: 'admin' | 'user' }
 ```
 
 <Callout type="info" title="When to Use">

@@ -202,9 +202,6 @@ export default ragAgent;
 Data stored in `ctx.state` during agent execution persists to eval handlers. Use this to pass retrieved documents, intermediate results, or timing data.
 </Callout>
 
-<Callout type="tip" title="Built-in Evals vs Custom Agent Chaining">
-Built-in evals (`agent.createEval()`) are designed for automated background monitoring of a single agent's output. For user-facing comparison reports or cross-model evaluations (like comparing GPT vs Claude outputs), use custom agent chaining with `generateObject` instead. See [Learning/Examples](/v1/Learn/Examples) for advanced patterns.
-</Callout>
 
 ## Multiple Evals
 

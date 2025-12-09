@@ -153,6 +153,55 @@ Common uses for app lifecycle hooks:
 - Metrics/telemetry setup
 </Callout>
 
+## Agent Lifecycle Hooks
+
+Individual agents can also define `setup` and `shutdown` functions for agent-specific initialization:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent('CachedLookup', {
+  schema: {
+    input: z.object({ key: z.string() }),
+    output: z.object({ value: z.string() }),
+  },
+  // Called once when app starts - receives app state, returns agent config
+  setup: async (app) => {
+    const cache = new Map<string, string>();
+    return { cache };
+  },
+  // Called when app shuts down - receives app state and agent config
+  shutdown: async (app, config) => {
+    config.cache.clear();
+  },
+  handler: async (ctx, input) => {
+    // ctx.config is typed from setup's return value
+    const cached = ctx.config.cache.get(input.key);
+    if (cached) {
+      return { value: cached };
+    }
+
+    // Fetch and cache
+    const value = await fetchValue(input.key);
+    ctx.config.cache.set(input.key, value);
+    return { value };
+  },
+});
+
+export default agent;
+```
+
+**Key differences from app lifecycle:**
+- `setup` receives `app` state (from `createApp`) and returns agent-specific config
+- Config is accessed via `ctx.config` (not `ctx.app`)
+- Each agent can have its own isolated resources
+
+<Callout type="tip" title="When to Use Agent vs App Setup">
+- **App setup (`createApp`)**: Shared resources like database pools, Redis clients
+- **Agent setup**: Agent-specific caches, pre-loaded models, isolated connections
+</Callout>
+
 ## Shared State
 
 Event handlers share state via `ctx.state`:

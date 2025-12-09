@@ -114,7 +114,9 @@ const agent = createAgent('BackgroundExporter', {
 });
 ```
 
-## Listing and Deleting Streams
+## Managing Streams
+
+### Listing Streams
 
 ```typescript
 const agent = createAgent('StreamManager', {
@@ -122,7 +124,9 @@ const agent = createAgent('StreamManager', {
     // List streams with optional filtering
     const result = await ctx.stream.list({
       name: 'export',  // filter by stream name
-      limit: 10,
+      metadata: { userId: input.userId },  // filter by metadata
+      limit: 100,  // max 1000, default 100
+      offset: 0,   // pagination offset
     });
 
     ctx.logger.info('Found streams', {
@@ -130,10 +134,45 @@ const agent = createAgent('StreamManager', {
       count: result.streams.length,
     });
 
-    // Delete a stream
-    await ctx.stream.delete(input.streamId);
-
     return { streams: result.streams };
+  },
+});
+```
+
+### Reading Stream Content
+
+```typescript
+const agent = createAgent('StreamReader', {
+  handler: async (ctx, input) => {
+    // Get stream metadata by ID
+    const info = await ctx.stream.get(input.streamId);
+    ctx.logger.info('Stream info', { name: info.name, sizeBytes: info.sizeBytes });
+
+    // Download stream content as ReadableStream
+    const content = await ctx.stream.download(input.streamId);
+
+    // Process the stream
+    const reader = content.getReader();
+    const chunks: Uint8Array[] = [];
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+    }
+
+    return { data: Buffer.concat(chunks).toString() };
+  },
+});
+```
+
+### Deleting Streams
+
+```typescript
+const agent = createAgent('StreamCleaner', {
+  handler: async (ctx, input) => {
+    await ctx.stream.delete(input.streamId);
+    return { deleted: true };
   },
 });
 ```

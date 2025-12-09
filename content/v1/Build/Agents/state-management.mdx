@@ -293,6 +293,22 @@ handler: async (ctx, input) => {
 }
 ```
 
+### Removing Event Listeners
+
+Use `removeEventListener` to unregister handlers:
+
+```typescript
+const handler = async (eventName: string, thread: Thread) => {
+  await archiveThread(thread);
+};
+
+// Register listener
+ctx.thread.addEventListener('destroyed', handler);
+
+// Later: remove listener
+ctx.thread.removeEventListener('destroyed', handler);
+```
+
 ### Session Completion Events
 
 Track when sessions (individual requests) complete:
@@ -304,6 +320,9 @@ ctx.session.addEventListener('completed', async (eventName, session) => {
     threadId: session.thread.id,
   });
 });
+
+// Remove if needed
+ctx.session.removeEventListener('completed', handler);
 ```
 
 For app-level event monitoring, see [Events & Lifecycle](/v1/Build/Agents/events-lifecycle).
@@ -326,6 +345,17 @@ handler: async (ctx, input) => {
 }
 ```
 
+## State Size Limits
+
+<Callout type="warning" title="1MB State Limit">
+Thread and session state are limited to **1MB** after JSON serialization. Values that exceed this limit are truncated with a warning. Non-JSON-serializable values (functions, circular references) are silently dropped.
+</Callout>
+
+To stay within limits:
+- Store large data in [KV storage](/v1/Build/Storage/key-value) instead of state
+- Keep only recent messages (e.g., last 20-50)
+- Store IDs or references rather than full objects
+
 ## Best Practices
 
 - **Use the right scope**: Request for temp data, thread for conversations, session for user data
@@ -333,6 +363,7 @@ handler: async (ctx, input) => {
 - **Persist important data**: Don't rely on state for data that must survive restarts
 - **Clean up resources**: Use `destroyed` event to save or archive data
 - **Cache strategically**: Load from KV once, cache in state, save on completion
+- **Watch state size**: Stay under 1MB to avoid truncation
 
 ```typescript
 // Good: Bounded conversation history

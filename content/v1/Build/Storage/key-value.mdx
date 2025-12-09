@@ -111,22 +111,47 @@ const agent = createAgent('PreferenceLoader', {
 ```typescript
 const agent = createAgent('StorageExplorer', {
   handler: async (ctx, input) => {
-    // Search keys by keyword
+    // Search keys by keyword (returns keys with metadata)
     const matches = await ctx.kv.search('cache', 'user-');
 
-    // List all keys in a bucket
+    // List all keys in a namespace
     const keys = await ctx.kv.getKeys('cache');
 
-    // List all buckets
-    const buckets = await ctx.kv.getNamespaces();
+    // List all namespaces
+    const namespaces = await ctx.kv.getNamespaces();
 
-    // Get bucket statistics
+    // Get statistics for a namespace
     const stats = await ctx.kv.getStats('cache');
 
-    return { keys, buckets, stats };
+    // Get statistics for all namespaces
+    const allStats = await ctx.kv.getAllStats();
+
+    return { keys, namespaces, stats, allStats };
   },
 });
 ```
+
+### Namespace Management
+
+Create and delete namespaces programmatically:
+
+```typescript
+const agent = createAgent('NamespaceManager', {
+  handler: async (ctx, input) => {
+    // Create a new namespace
+    await ctx.kv.createNamespace('tenant-123');
+
+    // Delete a namespace (removes all keys)
+    await ctx.kv.deleteNamespace('old-cache');
+
+    return { success: true };
+  },
+});
+```
+
+<Callout type="warning" title="Destructive Operation">
+`deleteNamespace()` permanently removes the namespace and all its keys. This operation cannot be undone.
+</Callout>
 
 ## TTL Strategy
 

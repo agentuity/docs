@@ -144,15 +144,25 @@ Create a project in a specific directory:
 agentuity project create --name my-agent --dir ~/projects/agents
 ```
 
-<Callout type="info" title="Templates">
-Currently, the default template includes React UI components and example agents. Additional templates will be available in future releases.
-</Callout>
+### Available Templates
+
+| Template | Description |
+|----------|-------------|
+| `default` | React UI with example agents (recommended for getting started) |
+| `openai` | OpenAI-focused starter with GPT integration |
+| `groq` | Groq-focused starter for fast inference |
+| `xai` | xAI/Grok-focused starter |
+| `vercel-openai` | Optimized for Vercel deployment with OpenAI |
+
+```bash
+agentuity project create --template openai
+```
 
 ### Project Creation Options
 
 - `--name <name>`: Project name
 - `--dir <path>`: Directory to create the project in
-- `--template <template>`: Template to use (default: "default")
+- `--template <name>`: Template to use (default: "default")
 - `--no-install`: Skip dependency installation
 - `--no-build`: Skip initial build
 - `--no-register`: Don't register the project with Agentuity Cloud

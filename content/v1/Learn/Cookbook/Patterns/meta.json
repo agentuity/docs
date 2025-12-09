@@ -1,8 +1,9 @@
 {
   "title": "Patterns",
   "pages": [
+    "background-tasks",
     "chat-with-history",
-    "webhook-handler",
-    "product-search"
+    "product-search",
+    "webhook-handler"
   ]
 }

@@ -9,6 +9,8 @@ Run your Agentuity project locally with automatic hot reload, type checking, and
 
 ```bash
 agentuity dev
+# or
+bun run dev
 ```
 
 The server starts on port 3500 by default with:
@@ -26,6 +28,7 @@ The server starts on port 3500 by default with:
 | `--public` | true | Enable public URL tunneling |
 | `--no-public` | - | Disable public URL tunneling |
 | `--interactive` | true | Enable interactive keyboard shortcuts |
+| `--watch <path>` | - | Additional paths to watch for changes (repeatable) |
 
 ```bash
 # Custom port
@@ -39,7 +42,14 @@ agentuity dev --no-public
 
 # Non-interactive mode (useful for CI/CD)
 agentuity dev --no-interactive
+
+# Watch additional directories (e.g., local packages)
+agentuity dev --watch ../my-shared-lib/dist --watch ../other-package/src
 ```
+
+<Callout type="tip" title="Watching External Packages">
+Use `--watch` when developing with local packages outside your project. Changes in watched paths trigger rebuilds just like changes in your source directory.
+</Callout>
 
 ## Keyboard Shortcuts
 

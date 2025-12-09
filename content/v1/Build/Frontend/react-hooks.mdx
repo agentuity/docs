@@ -60,7 +60,10 @@ export default function App() {
 | Property | Type | Description |
 |----------|------|-------------|
 | `invoke` | `(input) => Promise<TOutput>` | Execute the request |
-| `isLoading` | `boolean` | True while request is pending |
+| `isLoading` | `boolean` | True during initial load |
+| `isFetching` | `boolean` | True during any fetch (including refetches) |
+| `isSuccess` | `boolean` | True after successful completion |
+| `isError` | `boolean` | True if request failed |
 | `data` | `TOutput \| undefined` | Last successful response |
 | `error` | `Error \| null` | Last error, if any |
 | `reset` | `() => void` | Reset state to initial values |
@@ -69,11 +72,63 @@ export default function App() {
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `refetch` | `() => Promise<TOutput>` | Manually refetch data |
-| `isLoading` | `boolean` | True while request is pending |
+| `refetch` | `() => Promise<void>` | Manually refetch data |
+| `isLoading` | `boolean` | True during initial load |
+| `isFetching` | `boolean` | True during any fetch (including refetches) |
+| `isSuccess` | `boolean` | True after successful completion |
+| `isError` | `boolean` | True if request failed |
 | `data` | `TOutput \| undefined` | Last successful response |
 | `error` | `Error \| null` | Last error, if any |
 | `reset` | `() => void` | Reset state to initial values |
+
+### useAPI Options
+
+Pass an options object instead of a route string for advanced configuration:
+
+```tsx
+const { data, refetch } = useAPI({
+  route: 'GET /api/users',
+  staleTime: 30000,        // Data stays fresh for 30 seconds
+  refetchInterval: 60000,  // Auto-refetch every 60 seconds
+  enabled: isReady,        // Only fetch when condition is true
+  onSuccess: (data) => console.log('Fetched:', data),
+  onError: (err) => console.error('Failed:', err),
+});
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `route` | `string` | - | Route key (e.g., `'GET /api/users'`) |
+| `query` | `URLSearchParams \| Record<string, string>` | - | Query parameters |
+| `headers` | `Record<string, string>` | - | Additional request headers |
+| `enabled` | `boolean` | `true` (GET), `false` (others) | Control when request executes |
+| `staleTime` | `number` | `0` | Milliseconds data stays fresh before refetching |
+| `refetchInterval` | `number` | - | Auto-refetch interval in milliseconds |
+| `onSuccess` | `(data) => void` | - | Callback on successful request |
+| `onError` | `(error) => void` | - | Callback on failed request |
+
+### Streaming with useAPI
+
+For streaming routes, `useAPI` accumulates chunks and provides transform callbacks:
+
+```tsx
+const { data, isLoading } = useAPI({
+  route: 'POST /api/stream',
+  input: { prompt: 'Hello' },
+  delimiter: '\n',  // Split chunks by newline (default)
+  onChunk: (chunk) => {
+    console.log('Received chunk:', chunk);
+    return chunk;  // Can transform before accumulation
+  },
+});
+
+// data is TOutput[] - array of all received chunks
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `delimiter` | `string` | Delimiter for splitting stream chunks (default: `\n`) |
+| `onChunk` | `(chunk) => chunk` | Transform each chunk before accumulation |
 
 ## Real-Time with useWebsocket
 

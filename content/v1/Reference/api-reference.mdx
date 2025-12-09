@@ -38,8 +38,13 @@ Creates and initializes an Agentuity application instance.
 
 - `config` (optional): Application configuration object
   - `cors`: Override default CORS settings
-  - `services`: Override default services (KV, Vector, ObjectStore, etc.)
+  - `services`: Override default services (KV, Vector, Stream)
     - `useLocal`: Use local services for development (default: false)
+    - `keyvalue`: Custom KeyValueStorage implementation
+    - `vector`: Custom VectorStorage implementation
+    - `stream`: Custom StreamStorage implementation
+  - `setup`: Async function called before server starts, returns app state available via `ctx.app`
+  - `shutdown`: Async cleanup function called when server stops, receives app state
 
 **Return Value**
 
@@ -89,6 +94,29 @@ const { server, logger } = await createApp({
 });
 ```
 
+**With Setup and Shutdown**
+
+```typescript
+import { createApp } from '@agentuity/runtime';
+
+const { server, logger } = await createApp({
+  // Initialize shared resources
+  setup: async () => {
+    const db = await connectDatabase();
+    const redis = await connectRedis();
+    return { db, redis };
+  },
+  // Clean up on shutdown
+  shutdown: async (state) => {
+    await state.db.close();
+    await state.redis.quit();
+  },
+});
+
+// In agents, access via ctx.app:
+// ctx.app.db.query('SELECT * FROM users')
+```
+
 ### Environment Variables
 
 Agentuity applications access configuration and secrets through standard Node.js environment variables (`process.env`).
@@ -127,29 +155,29 @@ Agents are created using the `createAgent()` function, which provides type-safe 
 
 ### createAgent
 
-`createAgent<TInput, TOutput, TStream>(config: AgentConfig<TInput, TOutput, TStream>): Agent<TInput, TOutput, TStream>`
+`createAgent(name: string, config: AgentConfig): AgentRunner`
 
 Creates a new agent with schema validation and type inference.
 
 **Parameters**
 
+- `name`: Unique agent name (must be unique within the project)
 - `config`: Configuration object with the following properties:
+  - `description` (optional): Human-readable description of what the agent does
   - `schema` (optional): Object containing input and output schemas
     - `input`: Schema for validating incoming data (Zod, Valibot, ArkType, or any StandardSchemaV1)
     - `output`: Schema for validating outgoing data
     - `stream`: Enable streaming responses (boolean, defaults to false)
   - `handler`: The agent function that processes inputs and returns outputs
-  - `metadata` (optional): Agent metadata
-    - `name`: Display name for the agent
-    - `description`: Description of what the agent does
-    - `filename`: File path (auto-populated by bundler)
+  - `setup` (optional): Async function called once on app startup, returns agent-specific config accessible via `ctx.config`
+  - `shutdown` (optional): Async cleanup function called on app shutdown
 
 **Return Value**
 
-Returns an `Agent` object with the following properties:
+Returns an `AgentRunner` object with the following properties:
 - `metadata`: Agent metadata (id, identifier, filename, version, name, description)
-- `handler`: The internal handler function
-- `createEval(config: EvalConfig): Eval`: Create quality evaluations for this agent
+- `run(input?)`: Execute the agent with optional input
+- `createEval(name, config)`: Create quality evaluations for this agent
 - `addEventListener(eventName, callback)`: Attach lifecycle event listeners
 - `removeEventListener(eventName, callback)`: Remove event listeners
 - `validator(options?)`: Route validation middleware (see below)
@@ -158,6 +186,51 @@ Returns an `Agent` object with the following properties:
 - `stream` (conditional): Present if streaming is enabled
 
 **Note**: To call agents from other agents, import them directly: `import otherAgent from '@agent/other'; otherAgent.run(input)` (see [Agent Communication](#agent-communication)).
+
+### Agent Setup and Shutdown
+
+Agents can define `setup` and `shutdown` functions for initialization and cleanup:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent('CachedProcessor', {
+  schema: {
+    input: z.object({ key: z.string() }),
+    output: z.object({ value: z.string() }),
+  },
+  // Called once when app starts - return value available via ctx.config
+  setup: async (app) => {
+    const cache = new Map<string, string>();
+    const client = await initializeExternalService();
+    return { cache, client };
+  },
+  // Called when app shuts down
+  shutdown: async (app, config) => {
+    await config.client.disconnect();
+    config.cache.clear();
+  },
+  handler: async (ctx, input) => {
+    // ctx.config is fully typed from setup's return value
+    const cached = ctx.config.cache.get(input.key);
+    if (cached) {
+      return { value: cached };
+    }
+
+    const value = await ctx.config.client.fetch(input.key);
+    ctx.config.cache.set(input.key, value);
+    return { value };
+  },
+});
+
+export default agent;
+```
+
+The `setup` function receives the app state (from `createApp`'s setup) and returns agent-specific configuration. This is useful for:
+- Agent-specific caches or connection pools
+- Pre-computed data or models
+- External service clients
 
 ### agent.validator()
 
@@ -628,14 +701,17 @@ The `AgentContext` provides access to various capabilities and services within y
 The context object passed to your agent handler contains the following properties:
 
 ```typescript
-interface AgentContext {
+interface AgentContext<TConfig = unknown, TAppState = unknown> {
   // Identifiers
   sessionId: string;                  // Unique ID for this agent execution
-  agentName?: string;                 // Name of the current agent
 
   // Agent Calling (use imports instead)
   // import otherAgent from '@agent/other-agent';
   // await otherAgent.run(input);
+
+  // Configuration
+  config: TConfig;                    // Agent-specific config from setup()
+  app: TAppState;                     // App-wide state from createApp setup()
 
   // State Management
   session: Session;                   // Session object for cross-request state
@@ -645,7 +721,6 @@ interface AgentContext {
   // Storage Services
   kv: KeyValueStorage;                // Key-value storage
   vector: VectorStorage;              // Vector database for embeddings
-  objectstore: ObjectStorage;         // Object/blob storage
   stream: StreamStorage;              // Stream storage
 
   // Observability
@@ -661,7 +736,10 @@ interface AgentContext {
 
 **Identifiers:**
 - `sessionId`: Unique identifier for this agent execution. Use for tracking and correlating logs.
-- `agentName`: The name of the currently executing agent.
+
+**Configuration:**
+- `config`: Agent-specific configuration returned from the agent's `setup()` function. Fully typed based on what setup returns.
+- `app`: Application-wide state returned from `createApp()`'s `setup()` function. Shared across all agents.
 
 **Agent Calling:**
 - Import agents directly: `import otherAgent from '@agent/other-agent'`
@@ -773,7 +851,7 @@ const agent = createAgent('MessageReceiver', {
 
 ## Storage APIs
 
-The SDK provides four storage APIs: Key-Value Storage, Vector Storage, Object Storage, and Stream Storage. All storage services are accessed through the agent context.
+The SDK provides five storage options: Key-Value, Vector, Database (SQL), Object (S3), and Stream. Built-in services (KV, Vector, Stream) are accessed through the agent context (`ctx.*`), while Database and Object storage use Bun's native APIs (`sql`, `s3`).
 
 ### Key-Value Storage
 
@@ -864,6 +942,134 @@ Returns a Promise that resolves when the value has been deleted.
 ```typescript
 // Delete a value
 await ctx.kv.delete('user-preferences', 'user-123');
+```
+
+#### search
+
+`search<T>(name: string, keyword: string): Promise<Record<string, KeyValueItemWithMetadata<T>>>`
+
+Searches for keys matching a keyword pattern.
+
+**Parameters**
+
+- `name`: The name of the key-value storage
+- `keyword`: The keyword to search for in key names
+
+**Return Value**
+
+Returns a map of keys to items with metadata:
+
+```typescript
+interface KeyValueItemWithMetadata<T> {
+  value: T;              // The stored value
+  contentType: string;   // MIME type of the value
+  size: number;          // Size in bytes
+  created_at: string;    // ISO timestamp
+  updated_at: string;    // ISO timestamp
+}
+```
+
+**Example**
+
+```typescript
+// Search for all keys starting with 'user-'
+const matches = await ctx.kv.search<{ theme: string }>('preferences', 'user-');
+
+for (const [key, item] of Object.entries(matches)) {
+  ctx.logger.info('Found key', {
+    key,
+    value: item.value,
+    size: item.size,
+    updatedAt: item.updated_at,
+  });
+}
+```
+
+#### getKeys
+
+`getKeys(name: string): Promise<string[]>`
+
+Returns all keys in a namespace.
+
+**Example**
+
+```typescript
+const keys = await ctx.kv.getKeys('cache');
+ctx.logger.info(`Found ${keys.length} keys in cache`);
+```
+
+#### getNamespaces
+
+`getNamespaces(): Promise<string[]>`
+
+Returns all namespace names.
+
+**Example**
+
+```typescript
+const namespaces = await ctx.kv.getNamespaces();
+// ['cache', 'sessions', 'preferences']
+```
+
+#### getStats
+
+`getStats(name: string): Promise<KeyValueStats>`
+
+Returns statistics for a namespace.
+
+```typescript
+interface KeyValueStats {
+  sum: number;          // Total size in bytes
+  count: number;        // Number of keys
+  createdAt?: number;   // Unix timestamp
+  lastUsedAt?: number;  // Unix timestamp
+}
+```
+
+**Example**
+
+```typescript
+const stats = await ctx.kv.getStats('cache');
+ctx.logger.info('Cache stats', { keys: stats.count, totalBytes: stats.sum });
+```
+
+#### getAllStats
+
+`getAllStats(): Promise<Record<string, KeyValueStats>>`
+
+Returns statistics for all namespaces.
+
+**Example**
+
+```typescript
+const allStats = await ctx.kv.getAllStats();
+for (const [namespace, stats] of Object.entries(allStats)) {
+  ctx.logger.info(`${namespace}: ${stats.count} keys, ${stats.sum} bytes`);
+}
+```
+
+#### createNamespace
+
+`createNamespace(name: string): Promise<void>`
+
+Creates a new namespace.
+
+**Example**
+
+```typescript
+await ctx.kv.createNamespace('tenant-123');
+```
+
+#### deleteNamespace
+
+`deleteNamespace(name: string): Promise<void>`
+
+Deletes a namespace and all its keys. **This operation cannot be undone.**
+
+**Example**
+
+```typescript
+await ctx.kv.deleteNamespace('old-cache');
 ```
 
 ### Vector Storage
@@ -1018,9 +1224,86 @@ const deletedCount4 = await ctx.vector.delete('product-descriptions', 'existing-
 ctx.logger.info(`Deleted ${deletedCount4} vector(s)`); // May be less than number of keys provided
 ```
 
+### Database (Bun SQL)
+
+Database storage uses [Bun's native SQL APIs](https://bun.com/docs/runtime/sql). Agentuity auto-injects credentials (`DATABASE_URL`) for PostgreSQL.
+
+```typescript
+import { sql } from 'bun';
+```
+
+#### Basic Queries
+
+```typescript
+// Query with automatic parameter escaping
+const users = await sql`SELECT * FROM users WHERE active = ${true}`;
+
+// Insert data
+await sql`INSERT INTO users (name, email) VALUES (${"Alice"}, ${"alice@example.com"})`;
+
+// Update data
+await sql`UPDATE users SET active = ${false} WHERE id = ${userId}`;
+
+// Delete data
+await sql`DELETE FROM users WHERE id = ${userId}`;
+```
+
+#### Transactions
+
+```typescript
+await sql.begin(async (tx) => {
+  await tx`UPDATE accounts SET balance = balance - ${amount} WHERE id = ${fromId}`;
+  await tx`UPDATE accounts SET balance = balance + ${amount} WHERE id = ${toId}`;
+  await tx`INSERT INTO transfers (from_id, to_id, amount) VALUES (${fromId}, ${toId}, ${amount})`;
+});
+// Automatically rolls back on error
+```
+
+#### Dynamic Queries
+
+```typescript
+const users = await sql`
+  SELECT * FROM users
+  WHERE 1=1
+  ${minAge ? sql`AND age >= ${minAge}` : sql``}
+  ${active !== undefined ? sql`AND active = ${active}` : sql``}
+`;
+```
+
+#### Bulk Insert
+
+```typescript
+const newUsers = [
+  { name: "Alice", email: "alice@example.com" },
+  { name: "Bob", email: "bob@example.com" },
+];
+await sql`INSERT INTO users ${sql(newUsers)}`;
+```
+
+#### Custom Connections
+
+```typescript
+import { SQL } from "bun";
+
+// PostgreSQL
+const postgres = new SQL({
+  url: process.env.POSTGRES_URL,
+  max: 20,
+  idleTimeout: 30,
+});
+
+// MySQL
+const mysql = new SQL("mysql://user:pass@localhost:3306/mydb");
+
+// SQLite
+const sqlite = new SQL("sqlite://data/app.db");
+```
+
+For Agentuity-specific patterns, see [Database Storage](/v1/Build/Storage/database). For the complete Bun SQL API, see [Bun SQL documentation](https://bun.com/docs/runtime/sql).
+
 ### Object Storage (Bun S3)
 
-Object storage uses Bun's native S3 APIs. Agentuity auto-injects the required credentials (`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_ENDPOINT`).
+Object storage uses [Bun's native S3 APIs](https://bun.com/docs/runtime/s3). Agentuity auto-injects the required credentials (`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_ENDPOINT`).
 
 ```typescript
 import { s3 } from 'bun';
@@ -1109,6 +1392,8 @@ writer.write(chunk2);
 await writer.end();
 ```
 
+For Agentuity-specific patterns, see [Object Storage](/v1/Build/Storage/object). For the complete Bun S3 API, see [Bun S3 documentation](https://bun.com/docs/runtime/s3).
+
 ### Stream Storage
 
 The Stream Storage API provides first-class support for creating and managing server-side streams. Streams are accessible via the `ctx.stream` object.
@@ -1129,7 +1414,20 @@ Creates a new, named, writable stream.
 
 **Return Value**
 
-Returns a Promise that resolves to a `Stream` object with `id`, `url`, and WritableStream methods.
+Returns a Promise that resolves to a `Stream` object:
+
+```typescript
+interface Stream {
+  id: string;                     // Unique stream identifier
+  url: string;                    // Public URL to access the stream
+  bytesWritten: number;           // Total bytes written (readonly)
+  compressed: boolean;            // Whether compression is enabled (readonly)
+
+  write(chunk: string | Uint8Array | ArrayBuffer | object): Promise<void>;
+  close(): Promise<void>;
+  getReader(): ReadableStream<Uint8Array>;  // Get readable stream from URL
+}
+```
 
 **Stream Characteristics:**
 - **Read-Many**: Multiple consumers can read simultaneously
@@ -1176,6 +1474,73 @@ const agent = createAgent('UserExporter', {
 });
 ```
 
+#### get
+
+`get(id: string): Promise<StreamInfo>`
+
+Retrieves metadata for a stream by ID.
+
+**Parameters**
+
+- `id`: The stream ID to retrieve
+
+**Return Value**
+
+Returns a `StreamInfo` object:
+
+```typescript
+interface StreamInfo {
+  id: string;                        // Unique stream identifier
+  name: string;                      // Stream name
+  metadata: Record<string, string>;  // User-defined metadata
+  url: string;                       // Public URL to access the stream
+  sizeBytes: number;                 // Size of stream content in bytes
+}
+```
+
+**Example**
+
+```typescript
+const info = await ctx.stream.get('stream_0199a52b06e3767dbe2f10afabb5e5e4');
+ctx.logger.info('Stream details', {
+  name: info.name,
+  sizeBytes: info.sizeBytes,
+  url: info.url,
+});
+```
+
+#### download
+
+`download(id: string): Promise<ReadableStream<Uint8Array>>`
+
+Downloads stream content as a readable stream.
+
+**Parameters**
+
+- `id`: The stream ID to download
+
+**Return Value**
+
+Returns a `ReadableStream<Uint8Array>` of the stream content.
+
+**Example**
+
+```typescript
+const readable = await ctx.stream.download('stream_0199a52b06e3767dbe2f10afabb5e5e4');
+
+// Process the stream
+const reader = readable.getReader();
+const chunks: Uint8Array[] = [];
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  chunks.push(value);
+}
+
+const content = Buffer.concat(chunks).toString('utf-8');
+```
+
 #### list
 
 `list(params?: ListStreamsParams): Promise<ListStreamsResponse>`
@@ -1192,7 +1557,16 @@ Lists and searches streams with filtering and pagination.
 
 **Return Value**
 
-Returns a `ListStreamsResponse` with `success`, `streams` array, and `total` count.
+Returns a `ListStreamsResponse`:
+
+```typescript
+interface ListStreamsResponse {
+  success: boolean;
+  message?: string;           // Error message if not successful
+  streams: StreamInfo[];      // Array of stream metadata
+  total: number;              // Total count for pagination
+}
+```
 
 **Example**
 
@@ -1216,13 +1590,6 @@ Deletes a stream by its ID.
 **Parameters**
 
 - `id`: The stream ID to delete
-
-**Example**
-
-```typescript
-await ctx.stream.delete(streamId);
-ctx.logger.info('Stream deleted successfully');
-```
 
 **Example**
 
@@ -1632,14 +1999,14 @@ interface RouterContext {
   // Request
   req: Request;                       // Hono request object with .param(), .query(), .header(), .json()
 
-  // Agentuity Services (same as agent context)
-  agent: AgentRegistry;               // Type-safe agent calls
-  kv: KeyValueStorage;                // Key-value storage
-  vector: VectorStorage;              // Vector storage
-  objectstore: ObjectStorage;         // Object storage
-  stream: StreamStorage;              // Stream storage
-  logger: Logger;                     // Structured logging
-  tracer: Tracer;                     // OpenTelemetry tracing
+  // Agentuity Services (via c.var)
+  var: {
+    kv: KeyValueStorage;              // Key-value storage
+    vector: VectorStorage;            // Vector storage
+    stream: StreamStorage;            // Stream storage
+    logger: Logger;                   // Structured logging
+    tracer: Tracer;                   // OpenTelemetry tracing
+  };
 
   // Response Helpers
   json(data: any, status?: number): Response;
@@ -1658,7 +2025,8 @@ interface RouterContext {
 | **Used in** | `route.ts` files | `agent.ts` files |
 | **Request access** | `c.req` (Hono Request) | Direct `input` parameter (validated) |
 | **Response** | Builder methods (`.json()`, `.text()`) | Direct returns |
-| **Services** | `.agent`, `.kv`, `.logger`, etc. | `.agent`, `.kv`, `.logger`, etc. |
+| **Services** | `c.var.kv`, `c.var.logger`, etc. | `ctx.kv`, `ctx.logger`, etc. |
+| **Agent calling** | Import and call: `agent.run()` | Import and call: `agent.run()` |
 | **State management** | Via Hono middleware | Built-in (`.state`, `.session`, `.thread`) |
 
 **Example Usage:**

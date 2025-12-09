@@ -3,7 +3,7 @@ title: Database
 description: Relational database storage using Bun's native SQL APIs
 ---
 
-Database storage provides relational database capabilities using Bun's native SQL APIs. Use it for structured data that benefits from queries, joins, and transactions.
+Database storage provides relational database capabilities using [Bun's native SQL APIs](https://bun.com/docs/runtime/sql). Use it for structured data that benefits from queries, joins, and transactions.
 
 ## When to Use Database Storage
 
@@ -19,14 +19,12 @@ Database storage provides relational database capabilities using Bun's native SQ
 Agentuity automatically injects database credentials (`DATABASE_URL`) during development and deployment. No manual configuration required.
 </Callout>
 
-## Basic Operations
-
-Use the `sql` tagged template literal from Bun for type-safe, injection-proof queries:
+## Quick Start
 
 ```typescript
 import { sql } from "bun";
 
-// Query with automatic parameter escaping
+// Query with automatic SQL injection protection
 const users = await sql`SELECT * FROM users WHERE active = ${true}`;
 
 // Insert data
@@ -43,7 +41,7 @@ await sql`DELETE FROM users WHERE id = ${userId}`;
 Always use template literal parameters (`${value}`) for dynamic values. Never concatenate strings into queries.
 </Callout>
 
-## Querying Data
+## Using in Agents
 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
@@ -51,81 +49,49 @@ import { sql } from "bun";
 
 const agent = createAgent('UserQuery', {
   handler: async (ctx, input) => {
-    // Basic query
-    const users = await sql`SELECT * FROM users LIMIT 10`;
-
-    // Query with parameters
-    const user = await sql`
-      SELECT * FROM users
-      WHERE id = ${input.userId}
-    `;
-
-    // Query with multiple conditions
-    const filtered = await sql`
+    const users = await sql`
       SELECT * FROM users
       WHERE active = ${true}
       AND created_at > ${input.since}
       ORDER BY created_at DESC
+      LIMIT 10
     `;
 
     ctx.logger.info("Query results", { count: users.length });
-    return { users, user: user[0], filtered };
-  },
-});
-```
-
-### Dynamic Queries
-
-Build conditional queries safely:
-
-```typescript
-import { sql } from "bun";
-
-const agent = createAgent('UserFilter', {
-  handler: async (ctx, input) => {
-    const { minAge, maxAge, active } = input;
-
-    // Dynamic WHERE conditions
-    const users = await sql`
-      SELECT * FROM users
-      WHERE 1=1
-      ${minAge ? sql`AND age >= ${minAge}` : sql``}
-      ${maxAge ? sql`AND age <= ${maxAge}` : sql``}
-      ${active !== undefined ? sql`AND active = ${active}` : sql``}
-    `;
-
     return { users };
   },
 });
 ```
 
-## Inserting Data
+## Using in Routes
 
 ```typescript
-import { createAgent } from '@agentuity/runtime';
+import { createRouter } from '@agentuity/runtime';
 import { sql } from "bun";
 
-const agent = createAgent('UserCreator', {
-  handler: async (ctx, input) => {
-    // Single insert
-    const result = await sql`
-      INSERT INTO users (name, email, created_at)
-      VALUES (${input.name}, ${input.email}, ${new Date()})
-      RETURNING id
-    `;
-    const newUserId = result[0].id;
+const router = createRouter();
 
-    // Bulk insert with array
-    const newUsers = [
-      { name: "Alice", email: "alice@example.com" },
-      { name: "Bob", email: "bob@example.com" },
-    ];
-    await sql`INSERT INTO users ${sql(newUsers)}`;
-
-    ctx.logger.info("Users created", { userId: newUserId });
-    return { userId: newUserId };
-  },
+router.get('/users', async (c) => {
+  const limit = parseInt(c.req.query('limit') || '10');
+  const users = await sql`
+    SELECT id, name, email FROM users
+    ORDER BY created_at DESC
+    LIMIT ${limit}
+  `;
+  return c.json({ users });
 });
+
+router.post('/users', async (c) => {
+  const body = await c.req.json();
+  const result = await sql`
+    INSERT INTO users (name, email)
+    VALUES (${body.name}, ${body.email})
+    RETURNING id, name, email
+  `;
+  return c.json({ user: result[0] }, 201);
+});
+
+export default router;
 ```
 
 ## Transactions
@@ -141,36 +107,15 @@ const agent = createAgent('MoneyTransfer', {
     const { fromAccount, toAccount, amount } = input;
 
     try {
-      // Begin transaction
-      const result = await sql.begin(async (tx) => {
-        // Debit from source account
-        await tx`
-          UPDATE accounts
-          SET balance = balance - ${amount}
-          WHERE id = ${fromAccount}
-        `;
-
-        // Credit to destination account
-        await tx`
-          UPDATE accounts
-          SET balance = balance + ${amount}
-          WHERE id = ${toAccount}
-        `;
-
-        // Record the transfer
-        await tx`
-          INSERT INTO transfers (from_account, to_account, amount, created_at)
-          VALUES (${fromAccount}, ${toAccount}, ${amount}, ${new Date()})
-          RETURNING id
-        `;
-
-        return { success: true };
+      await sql.begin(async (tx) => {
+        await tx`UPDATE accounts SET balance = balance - ${amount} WHERE id = ${fromAccount}`;
+        await tx`UPDATE accounts SET balance = balance + ${amount} WHERE id = ${toAccount}`;
+        await tx`INSERT INTO transfers (from_id, to_id, amount) VALUES (${fromAccount}, ${toAccount}, ${amount})`;
       });
 
       ctx.logger.info("Transfer completed", { fromAccount, toAccount, amount });
-      return result;
+      return { success: true };
     } catch (error) {
-      // Transaction automatically rolled back on error
       ctx.logger.error("Transfer failed", { error: error.message });
       return { error: "Transfer failed" };
     }
@@ -178,223 +123,29 @@ const agent = createAgent('MoneyTransfer', {
 });
 ```
 
-### Savepoints
+## Supported Databases
 
-Use savepoints for partial rollbacks within a transaction:
-
-```typescript
-import { sql } from "bun";
-
-await sql.begin(async (tx) => {
-  await tx`INSERT INTO orders (customer_id) VALUES (${customerId})`;
-
-  // Create savepoint
-  await tx.savepoint(async (sp) => {
-    await sp`INSERT INTO order_items (order_id, product_id) VALUES (${orderId}, ${productId})`;
-
-    // If this fails, only this savepoint rolls back
-    if (outOfStock) {
-      throw new Error("Product out of stock");
-    }
-  });
-
-  // Order still exists even if savepoint rolled back
-  await tx`UPDATE orders SET status = ${"pending"} WHERE id = ${orderId}`;
-});
-```
-
-## Working with Arrays
-
-PostgreSQL array operations:
-
-```typescript
-import { sql } from "bun";
-
-// Insert array values
-await sql`
-  INSERT INTO products (name, tags)
-  VALUES (${"Widget"}, ${sql.array(["electronics", "gadgets"])})
-`;
-
-// Query with array contains
-const products = await sql`
-  SELECT * FROM products
-  WHERE ${"electronics"} = ANY(tags)
-`;
-
-// Query with array overlap
-const tagged = await sql`
-  SELECT * FROM products
-  WHERE tags && ${sql.array(["sale", "featured"])}
-`;
-```
-
-## Result Formats
-
-```typescript
-import { sql } from "bun";
-
-// Default: array of objects
-const users = await sql`SELECT id, name FROM users`;
-// [{ id: 1, name: "Alice" }, { id: 2, name: "Bob" }]
-
-// Values only (array of arrays)
-const values = await sql`SELECT id, name FROM users`.values();
-// [[1, "Alice"], [2, "Bob"]]
-
-// Single column shorthand
-const ids = await sql`SELECT id FROM users`.then(rows => rows.map(r => r.id));
-// [1, 2, 3]
-```
-
-## Using in Routes
-
-```typescript
-import { createRouter } from '@agentuity/runtime';
-import { sql } from "bun";
-
-const router = createRouter();
-
-router.get('/users', async (c) => {
-  const limit = parseInt(c.req.query('limit') || '10');
-  const offset = parseInt(c.req.query('offset') || '0');
-
-  const users = await sql`
-    SELECT id, name, email, created_at
-    FROM users
-    ORDER BY created_at DESC
-    LIMIT ${limit} OFFSET ${offset}
-  `;
-
-  const [{ count }] = await sql`SELECT COUNT(*) as count FROM users`;
-
-  return c.json({ users, total: Number(count), limit, offset });
-});
-
-router.get('/users/:id', async (c) => {
-  const id = c.req.param('id');
-  const users = await sql`SELECT * FROM users WHERE id = ${id}`;
-
-  if (users.length === 0) {
-    return c.json({ error: 'User not found' }, 404);
-  }
-
-  return c.json({ user: users[0] });
-});
-
-router.post('/users', async (c) => {
-  const body = await c.req.json();
-
-  const result = await sql`
-    INSERT INTO users (name, email)
-    VALUES (${body.name}, ${body.email})
-    RETURNING id, name, email, created_at
-  `;
-
-  return c.json({ user: result[0] }, 201);
-});
-
-export default router;
-```
-
-## Custom Database Connections
-
-For multiple databases or non-default configurations:
+Bun's SQL API supports PostgreSQL, MySQL, and SQLite:
 
 ```typescript
 import { SQL } from "bun";
 
-// PostgreSQL with explicit connection
-const postgres = new SQL({
-  url: process.env.POSTGRES_URL,
-  max: 20,              // Max connections in pool
-  idleTimeout: 30,      // Close idle connections after 30s
-  connectionTimeout: 10, // Connection timeout in seconds
-});
+// PostgreSQL (default, uses DATABASE_URL)
+const users = await sql`SELECT * FROM users`;
 
-// MySQL connection
+// Custom PostgreSQL connection
+const postgres = new SQL("postgres://user:pass@localhost:5432/mydb");
+
+// MySQL
 const mysql = new SQL("mysql://user:pass@localhost:3306/mydb");
 
-// SQLite (file-based)
+// SQLite
 const sqlite = new SQL("sqlite://data/app.db");
-
-// SQLite (in-memory)
-const memoryDb = new SQL("sqlite://:memory:");
-
-// Use specific connection
-const users = await postgres`SELECT * FROM users`;
-const products = await mysql`SELECT * FROM products`;
 ```
 
-## Error Handling
+## Bun SQL Documentation
 
-```typescript
-import { createAgent } from '@agentuity/runtime';
-import { sql, SQL } from "bun";
-
-const agent = createAgent('UserRegistration', {
-  handler: async (ctx, input) => {
-    try {
-      const result = await sql`
-        INSERT INTO users (email) VALUES (${input.email})
-        RETURNING id
-      `;
-      return { userId: result[0].id };
-    } catch (error) {
-      if (error instanceof SQL.PostgresError) {
-        // Handle PostgreSQL-specific errors
-        if (error.code === "23505") {
-          // Unique violation
-          ctx.logger.warn("Duplicate email", { email: input.email });
-          return { error: "Email already exists" };
-        }
-      }
-      ctx.logger.error("Database error", { error: error.message });
-      throw error;
-    }
-  },
-});
-```
-
-Common PostgreSQL error codes:
-- `23505` - Unique constraint violation
-- `23503` - Foreign key violation
-- `42P01` - Table does not exist
-- `42703` - Column does not exist
-
-## Connection Configuration
-
-Environment variables for auto-configuration:
-
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | Full connection string (auto-detected) |
-| `POSTGRES_URL` | PostgreSQL connection string |
-| `MYSQL_URL` | MySQL connection string |
-| `PGHOST`, `PGPORT`, `PGDATABASE` | Individual PostgreSQL settings |
-| `PGUSERNAME`, `PGPASSWORD` | PostgreSQL credentials |
-
-Connection pool options:
-
-```typescript
-import { SQL } from "bun";
-
-const db = new SQL({
-  url: process.env.DATABASE_URL,
-  max: 10,                // Maximum connections
-  idleTimeout: 30,        // Seconds before closing idle connection
-  maxLifetime: 3600,      // Maximum connection lifetime in seconds
-  connectionTimeout: 10,  // Connection timeout in seconds
-});
-```
-
-## Best Practices
-
-- **Use parameterized queries**: Always use `${value}` for dynamic values, never string concatenation
-- **Use transactions**: Wrap related operations in `sql.begin()` to ensure data consistency
-- **Handle errors gracefully**: Catch specific error codes for user-friendly messages
-- **Limit query results**: Always use `LIMIT` for potentially large result sets
-- **Index frequently queried columns**: Ensure proper indexes exist for WHERE clause columns
+For complete API documentation including dynamic queries, bulk inserts, savepoints, array operations, error handling, and connection pooling, see the [Bun SQL documentation](https://bun.com/docs/runtime/sql).
 
 ## Next Steps
 

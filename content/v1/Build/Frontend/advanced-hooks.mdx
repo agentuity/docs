@@ -18,7 +18,7 @@ import { useWebsocket } from '@agentuity/react';
 import { useEffect } from 'react';
 
 function CustomWebSocket() {
-  const { connected, send, data, setHandler, close } = useWebsocket<
+  const { isConnected, send, data, setHandler, close } = useWebsocket<
     { action: string },  // Input type
     { result: string }   // Output type
   >('/custom/websocket');
@@ -37,8 +37,8 @@ function CustomWebSocket() {
 
   return (
     <div>
-      <p>Status: {connected ? 'Connected' : 'Disconnected'}</p>
-      <button onClick={handleClick} disabled={!connected}>
+      <p>Status: {isConnected ? 'Connected' : 'Disconnected'}</p>
+      <button onClick={handleClick} disabled={!isConnected}>
         Send Ping
       </button>
       <button onClick={close}>Disconnect</button>
@@ -51,7 +51,7 @@ function CustomWebSocket() {
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `connected` | `boolean` | True when WebSocket is open |
+| `isConnected` | `boolean` | True when WebSocket is open |
 | `send` | `(data: TInput) => void` | Send a message |
 | `data` | `TOutput \| undefined` | Last received message |
 | `setHandler` | `(fn: (data: TOutput) => void) => void` | Custom message handler |
@@ -69,7 +69,7 @@ import { useEventStream } from '@agentuity/react';
 import { useEffect } from 'react';
 
 function CustomEventStream() {
-  const { connected, data, setHandler, close, error } = useEventStream<
+  const { isConnected, data, setHandler, close, error } = useEventStream<
     { event: string; timestamp: number }
   >('/custom/events');
 
@@ -85,7 +85,7 @@ function CustomEventStream() {
 
   return (
     <div>
-      <p>Stream: {connected ? 'Active' : 'Connecting...'}</p>
+      <p>Stream: {isConnected ? 'Active' : 'Connecting...'}</p>
       <p>Last event: {data?.event ?? 'None'}</p>
       <button onClick={close}>Stop Stream</button>
     </div>
@@ -97,7 +97,7 @@ function CustomEventStream() {
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `connected` | `boolean` | True when stream is active |
+| `isConnected` | `boolean` | True when stream is active |
 | `data` | `TOutput \| undefined` | Last received event |
 | `setHandler` | `(fn: (data: TOutput) => void) => void` | Custom event handler |
 | `readyState` | `number` | Connection state |
@@ -110,7 +110,7 @@ function CustomEventStream() {
 Both hooks accept options for customizing the connection:
 
 ```tsx
-const { connected, send } = useWebsocket('/path', {
+const { isConnected, send } = useWebsocket('/path', {
   query: new URLSearchParams({ token: 'abc123' }),
   subpath: '/room/1',  // Appends to path
   signal: abortController.signal,
