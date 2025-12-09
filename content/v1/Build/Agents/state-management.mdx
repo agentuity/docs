@@ -1,21 +1,19 @@
 ---
 title: Managing State
-description: Request, thread, and session state for stateful agents
+description: Request and thread state for stateful agents
 ---
 
-Agentuity provides three state scopes for managing data across requests:
+Agentuity provides two state scopes for managing data across requests:
 
-- request state for temporary calculations
-- thread state for conversation context
-- session state for user-level data
+- **Request state** for temporary calculations within a single request
+- **Thread state** for conversation context that persists across requests
 
-## The Three State Scopes
+## State Scopes
 
 | Scope | Lifetime | Cleared When | Access | Example Use Case |
 |-------|----------|--------------|--------|----------|
 | Request | Single request | After response sent | `ctx.state` | Timing, temp calculations |
 | Thread | Up to 1 hour | Expiration or `destroy()` | `ctx.thread.state` | Conversation history |
-| Session | Spans threads | In-memory (server restart) | `ctx.session.state` | User preferences |
 
 ### Quick Example
 
@@ -40,10 +38,6 @@ const agent = createAgent('StateDemo', {
     const messages = (ctx.thread.state.get('messages') as string[]) || [];
     messages.push(input.message);
     ctx.thread.state.set('messages', messages);
-
-    // SESSION STATE: Persists across threads
-    const totalRequests = (ctx.session.state.get('totalRequests') as number) || 0;
-    ctx.session.state.set('totalRequests', totalRequests + 1);
 
     const requestTime = Date.now() - (ctx.state.get('startTime') as number);
 
@@ -167,27 +161,18 @@ handler: async (ctx, input) => {
 }
 ```
 
-## Session State
+## ctx.state vs ctx.session.state
 
-Session state (`ctx.session.state`) spans multiple threads, useful for user-level data that should persist across conversations.
+Both `ctx.state` and `ctx.session.state` are request-scoped and reset after each request. The difference:
 
-```typescript
-handler: async (ctx, input) => {
-  // Track user activity across threads
-  const visits = (ctx.session.state.get('visits') as number) || 0;
-  ctx.session.state.set('visits', visits + 1);
-  ctx.session.state.set('lastActive', new Date().toISOString());
+- **`ctx.state`**: General request state, accessible in agent event listeners and evals
+- **`ctx.session.state`**: Accessible via `session` in completion event callbacks
 
-  ctx.logger.info('Session activity', {
-    sessionId: ctx.sessionId,
-    visits: visits + 1,
-  });
+For most use cases, use `ctx.state`. Use `ctx.session.state` only when you need data in session completion events. See [Events & Lifecycle](/v1/Build/Agents/events-lifecycle) for more on event handlers.
 
-  return { visits: visits + 1 };
-}
-```
-
-**Note:** Session state is in-memory and cleared on server restart. For durable data, use [KV storage](/v1/Build/Storage/key-value).
+<Callout type="info" title="Persistent Data">
+Neither `ctx.state` nor `ctx.session.state` persist across requests. For data that should survive across requests, use `ctx.thread.state` (up to 1 hour) or [KV storage](/v1/Build/Storage/key-value) (durable).
+</Callout>
 
 ## Persisting to Storage
 
@@ -358,11 +343,11 @@ To stay within limits:
 
 ## Best Practices
 
-- **Use the right scope**: Request for temp data, thread for conversations, session for user data
+- **Use the right scope**: `ctx.state` for request-scoped data, `ctx.thread.state` for conversations
 - **Keep state bounded**: Limit conversation history (e.g., last 20-50 messages)
 - **Persist important data**: Don't rely on state for data that must survive restarts
 - **Clean up resources**: Use `destroyed` event to save or archive data
-- **Cache strategically**: Load from KV once, cache in state, save on completion
+- **Cache strategically**: Load from KV once, cache in thread state, save on completion
 - **Watch state size**: Stay under 1MB to avoid truncation
 
 ```typescript
