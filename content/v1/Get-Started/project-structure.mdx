@@ -20,14 +20,15 @@ my-project/
 └── src/
     ├── agent/            # Agent code (required)
     │   └── chat/
-    │       └── agent.ts  # Agent logic
+    │       ├── agent.ts  # Agent logic
+    │       └── index.ts  # Enables import from '@agent/chat'
     ├── api/              # HTTP routes (optional)
     │   └── index.ts      # All routes, imports agents
     └── web/              # Frontend code (scaffolded by default)
         └── App.tsx
 ```
 
-Agent names come from their directory. `src/agent/chat/` creates an agent you can import and call from your routes.
+Agent names come from their directory. Each agent directory contains `agent.ts` (logic) and `index.ts` (enables `import agent from '@agent/name'`). Multiple agents can share a directory.
 
 ## Agents and Routes
 

@@ -125,7 +125,40 @@ router.stream('/chat', async (c) => {
 export default router;
 ```
 
-## 5. Deploy
+## 5. Add a Frontend
+
+The default template includes a React UI in `src/web/`. Here's how it connects to your agent:
+
+```tsx
+import { useAPI } from '@agentuity/react';
+import { useState } from 'react';
+
+export function App() {
+  const [message, setMessage] = useState('');
+  const { data, invoke, isLoading } = useAPI('POST /api/chat');
+
+  return (
+    <div>
+      <input
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Ask something..."
+        disabled={isLoading}
+      />
+      <button onClick={() => invoke({ message })} disabled={isLoading}>
+        {isLoading ? 'Thinking...' : 'Send'}
+      </button>
+      {data && <p>{data.response}</p>}
+    </div>
+  );
+}
+```
+
+The `useAPI` hook provides type-safe access to your routes. It infers types from your agent's schema, so `data.response` is fully typed.
+
+For more patterns, see [React Hooks](/v1/Build/Frontend/react-hooks).
+
+## 6. Deploy
 
 When you're ready, deploy to Agentuity:
 
@@ -141,10 +174,10 @@ Your agent is now live with a public URL. View deployments, logs, and more in th
 **Build something more:**
 
 - [Build a multi-agent system](/v1/Build/Agents/calling-other-agents): Routing, RAG, workflows
-- [Add a React frontend](/v1/Build/Frontend/react-hooks): Call your agent from the web
 - [Persist data](/v1/Build/Agents/state-management): Use thread and session state
+- [Add a React frontend](/v1/Build/Frontend/react-hooks): Call your agent from the web
 
 **Understand the platform:**
 
-- [Project Structure](/v1/Get-Started/project-structure): The two-file pattern
+- [Project Structure](/v1/Get-Started/project-structure): Agents, routes, and frontend
 - [App Configuration](/v1/Get-Started/app-configuration): Configure your project

@@ -1964,7 +1964,7 @@ Routes are created using the `createRouter()` function from `@agentuity/server`.
 **Basic Setup:**
 
 ```typescript
-// src/agents/my-agent/route.ts
+// src/api/index.ts
 import { createRouter } from '@agentuity/runtime';
 
 const router = createRouter();
@@ -1986,7 +1986,7 @@ Router handlers receive a context parameter (typically `c`) that provides access
 Agentuity uses two distinct context types based on where you're writing code:
 
 - **AgentContext**: Used in `agent.ts` files for business logic (no HTTP access)
-- **Router Context (Hono)**: Used in `route.ts` files for HTTP handling (has HTTP + agent services)
+- **Router Context (Hono)**: Used in `src/api/index.ts` for HTTP handling (has HTTP + agent services)
 
 Both commonly use `c` as the variable name in SDK examples. The distinction is **type-based**, not name-based.
 
@@ -2022,7 +2022,7 @@ interface RouterContext {
 | Feature | Router Context (Hono) | Agent Context |
 |---------|----------------------|---------------|
 | **Type** | Hono Context | `AgentContext` |
-| **Used in** | `route.ts` files | `agent.ts` files |
+| **Used in** | `src/api/index.ts` | `agent.ts` files |
 | **Request access** | `c.req` (Hono Request) | Direct `input` parameter (validated) |
 | **Response** | Builder methods (`.json()`, `.text()`) | Direct returns |
 | **Services** | `c.var.kv`, `c.var.logger`, etc. | `ctx.kv`, `ctx.logger`, etc. |
