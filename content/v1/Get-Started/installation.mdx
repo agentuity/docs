@@ -3,6 +3,20 @@ title: Installation
 description: Set up your development environment
 ---
 
+<Callout type="warning" title="Upgrading from v0?">
+If you have the v0 CLI installed, uninstall it first:
+
+```bash
+bun remove -g @agentuity/cli
+```
+
+Or, to keep both versions, create an alias after installing v1:
+
+```bash
+alias agentuity-v1="~/.agentuity/bin/agentuity"
+```
+</Callout>
+
 ## Install the CLI
 
 ```bash
@@ -18,10 +32,14 @@ If you prefer package managers: `bun add -g @agentuity/cli`
 ## Create a Project
 
 ```bash
-agentuity create
+agentuity create my-app
 ```
 
-The CLI will prompt you to select a [template](/v1/Reference/CLI/getting-started#available-templates) and configure your project.
+The CLI will prompt you to select a [template](/v1/Reference/CLI/getting-started#available-templates). Or specify one directly:
+
+```bash
+agentuity create my-app --template default
+```
 
 ## Start the Dev Server
 

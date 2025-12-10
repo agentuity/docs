@@ -3,7 +3,17 @@ title: Quickstart
 description: Build your first agent in 5 minutes
 ---
 
-This guide walks you through creating a simple chat agent that uses OpenAI to generate responses.
+This guide walks you through building a chat agent from scratch using OpenAI.
+
+<Callout type="tip" title="Want a Head Start?">
+Use a template to get a working project instantly:
+
+```bash
+agentuity create my-app --template vercel-openai
+```
+
+See [available templates](/v1/Reference/CLI/getting-started#available-templates) for options.
+</Callout>
 
 ## 1. Create the Agent
 
@@ -54,7 +64,7 @@ router.post('/chat', chat.validator(), async (c) => {
 export default router;
 ```
 
-## 3. Test It
+## 3. Run Your Agent
 
 Start the dev server:
 
@@ -63,9 +73,7 @@ agentuity dev
 # or: bun run dev
 ```
 
-Open [http://localhost:3500](http://localhost:3500) in your browser. All [templates](/v1/Reference/CLI/getting-started#available-templates) include a UI where you can test your agents directly.
-
-You can also test via curl:
+Test your agent via curl:
 
 ```bash
 curl -X POST http://localhost:3500/api/chat \
@@ -81,7 +89,59 @@ Response:
 }
 ```
 
-## 4. Add Streaming
+## 4. Test Locally with Workbench
+
+The Workbench is a built-in UI for testing agents directly, without going through your frontend. Enable it in `app.ts`:
+
+```typescript
+import { createApp } from '@agentuity/runtime';
+import { createWorkbench } from '@agentuity/workbench';
+
+const workbench = createWorkbench();
+
+const { server, logger } = await createApp({
+  services: {
+    workbench,
+  },
+});
+
+logger.debug('Running %s', server.url);
+```
+
+Open [http://localhost:3500/workbench](http://localhost:3500/workbench) to test your agents with raw JSON input. This is useful for debugging agents before building the frontend, or testing different inputs quickly.
+
+## 5. Add a Frontend
+
+Add a React UI in `src/web/` to call your agent. Here's a simple example:
+
+```tsx
+import { useAPI } from '@agentuity/react';
+import { useState } from 'react';
+
+export function App() {
+  const [message, setMessage] = useState('');
+  const { data, invoke, isLoading } = useAPI('POST /api/chat');
+
+  return (
+    <div>
+      <input
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Ask something..."
+        disabled={isLoading}
+      />
+      <button onClick={() => invoke({ message })} disabled={isLoading}>
+        {isLoading ? 'Thinking...' : 'Send'}
+      </button>
+      {data && <p>{data.response}</p>}
+    </div>
+  );
+}
+```
+
+The `useAPI` hook provides type-safe access to your routes. It infers types from your agent's schema, so `data.response` is fully typed.
+
+## 6. Add Streaming
 
 For real-time responses, return a stream instead:
 
@@ -125,40 +185,7 @@ router.stream('/chat', async (c) => {
 export default router;
 ```
 
-## 5. Add a Frontend
-
-The [default template](/v1/Reference/CLI/getting-started#available-templates) includes a React UI in `src/web/`. Here's how it connects to your agent:
-
-```tsx
-import { useAPI } from '@agentuity/react';
-import { useState } from 'react';
-
-export function App() {
-  const [message, setMessage] = useState('');
-  const { data, invoke, isLoading } = useAPI('POST /api/chat');
-
-  return (
-    <div>
-      <input
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        placeholder="Ask something..."
-        disabled={isLoading}
-      />
-      <button onClick={() => invoke({ message })} disabled={isLoading}>
-        {isLoading ? 'Thinking...' : 'Send'}
-      </button>
-      {data && <p>{data.response}</p>}
-    </div>
-  );
-}
-```
-
-The `useAPI` hook provides type-safe access to your routes. It infers types from your agent's schema, so `data.response` is fully typed.
-
-For more patterns, see [React Hooks](/v1/Build/Frontend/react-hooks).
-
-## 6. Deploy
+## 7. Deploy
 
 When you're ready, deploy to Agentuity:
 
@@ -175,7 +202,7 @@ Your agent is now live with a public URL. View deployments, logs, and more in th
 
 - [Build a multi-agent system](/v1/Build/Agents/calling-other-agents): Routing, RAG, workflows
 - [Persist data](/v1/Build/Agents/state-management): Use thread and session state
-- [Add a React frontend](/v1/Build/Frontend/react-hooks): Call your agent from the web
+- [Explore React Hooks](/v1/Build/Frontend/react-hooks): WebSocket, SSE, and more patterns
 
 **Understand the platform:**
 
