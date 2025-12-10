@@ -44,14 +44,14 @@ This agent uses the AI SDK to call OpenAI and respond to messages. Deploy with `
 
 ## How It Works
 
-Each agent directory contains:
+Each agent lives in its own file under `src/agent/`. Routes are defined separately in `src/api/index.ts`:
 
 | File | Purpose |
 |------|---------|
 | `agent.ts` | Agent logic with schema validation |
-| `index.ts` | Enables `import agent from '@agent/name'` |
+| `api/index.ts` | HTTP endpoints that call your agents |
 
-You can have multiple agents in the same directory. Routes live in `src/api/index.ts`, where you import agents and define HTTP endpoints. Infrastructure like cron schedules and email handlers are defined in route code, not config. Rolling back a deployment restores the exact configuration from that version.
+Infrastructure like cron schedules and email handlers are defined in route code, not config. Rolling back a deployment restores the exact configuration from that version.
 
 ---
 
