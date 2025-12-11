@@ -10,7 +10,7 @@ Build a product search that understands natural language queries and filters by 
 Vector search finds semantically similar products. Combine with metadata filtering for precise results.
 
 ```typescript
-import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
 interface ProductMetadata {
@@ -41,7 +41,7 @@ const agent = createAgent('Product Search', {
       total: z.number(),
     }),
   },
-  handler: async (ctx: AgentContext, input) => {
+  handler: async (ctx, input) => {
     ctx.logger.info('Searching products', {
       query: input.query,
       category: input.category,
@@ -104,7 +104,7 @@ Add products to the vector database:
 
 ```typescript
 // src/agent/product-indexer/agent.ts
-import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
 const ProductSchema = z.object({
@@ -125,7 +125,7 @@ const agent = createAgent('ProductIndexer', {
       indexed: z.number(),
     }),
   },
-  handler: async (ctx: AgentContext, input) => {
+  handler: async (ctx, input) => {
     for (const product of input.products) {
       // Use description as the searchable document
       await ctx.vector.upsert('products', {
@@ -189,7 +189,7 @@ curl "http://localhost:3500/products/search?q=laptop&category=electronics&maxPri
 Enhance search results with AI-generated recommendations. Use `generateObject` to analyze matches and suggest the best option.
 
 ```typescript
-import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { createAgent } from '@agentuity/runtime';
 import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { s } from '@agentuity/schema';
@@ -224,7 +224,7 @@ const agent = createAgent('Product Advisor', {
       recommendedSKU: s.string(),
     }),
   },
-  handler: async (ctx: AgentContext, input) => {
+  handler: async (ctx, input) => {
     // Semantic search for matching products
     const results = await ctx.vector.search<ProductMetadata>('products', {
       query: input.query,

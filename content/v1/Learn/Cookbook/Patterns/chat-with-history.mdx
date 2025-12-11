@@ -10,7 +10,7 @@ Use thread state to maintain conversation history across multiple requests. The 
 Thread state stores conversation history automatically. Each browser session gets its own thread, and messages persist across requests.
 
 ```typescript
-import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { createAgent } from '@agentuity/runtime';
 import { streamText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { s } from '@agentuity/schema';
@@ -28,7 +28,7 @@ const agent = createAgent('Chat Agent', {
     }),
     stream: true,
   },
-  handler: async (ctx: AgentContext, input) => {
+  handler: async (ctx, input) => {
     // Get or initialize conversation history
     const messages = (ctx.thread.state.get('messages') as Message[]) || [];
 

@@ -13,9 +13,7 @@ Install the CLI using the universal installer:
 curl -sSL https://v1.agentuity.sh | sh
 ```
 
-<Callout type="info" title="Alternative: Install via Bun">
-If you prefer package managers: `bun add -g @agentuity/cli`
-</Callout>
+Alternatively, install via package manager: `bun add -g @agentuity/cli`
 
 Verify the installation:
 
@@ -26,6 +24,22 @@ agentuity --version
 <Callout type="info" title="Requirements">
 Bun 1.3.0 or higher is required to run the CLI.
 </Callout>
+
+## Upgrading
+
+Upgrade the CLI to the latest version:
+
+```bash
+agentuity upgrade
+```
+
+Force upgrade even if already on the latest version:
+
+```bash
+agentuity upgrade --force
+```
+
+The CLI periodically checks for new versions and prompts you to upgrade when one is available.
 
 ## Authentication
 
@@ -219,9 +233,7 @@ agentuity --json auth whoami
 agentuity --json project list | jq '.[].name'
 ```
 
-<Callout type="info" title="What is jq?">
-[jq](https://jqlang.org/) is a lightweight command-line JSON processor. Install it via `brew install jq` (macOS), `apt install jq` (Linux), or download from the official site.
-</Callout>
+[jq](https://jqlang.org/) is a lightweight command-line JSON processor. Install via `brew install jq` (macOS) or `apt install jq` (Linux).
 
 ### Log Levels
 
@@ -255,9 +267,7 @@ View available profiles:
 agentuity profile list
 ```
 
-<Callout type="info" title="Default Configuration">
-Configuration is stored in `~/.config/agentuity/production.yaml` by default. You can override this with `--config=/path/to/config.yaml`.
-</Callout>
+Configuration is stored in `~/.config/agentuity/production.yaml` by default. Override with `--config=/path/to/config.yaml`.
 
 ## SSH Key Management
 
@@ -305,9 +315,7 @@ Remove a specific key by fingerprint:
 agentuity auth ssh delete <fingerprint>
 ```
 
-<Callout type="info" title="Why SSH Keys?">
 SSH keys enable secure access to deployed agent containers for debugging and log inspection. See [Debugging Deployments](/v1/Reference/CLI/debugging) for details.
-</Callout>
 
 ## Next Steps
 

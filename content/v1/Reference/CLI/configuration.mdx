@@ -116,15 +116,7 @@ agentuity cloud secret pull --force
 agentuity cloud secret import .env.secrets
 ```
 
-<Callout type="info" title="SDK Access">
-Access secrets in agents via `process.env`:
-
-```typescript
-const apiKey = process.env.API_KEY;
-```
-
-Secrets are injected at runtime and never logged.
-</Callout>
+**In agents:** Access secrets via `process.env.API_KEY`. Secrets are injected at runtime and never logged.
 
 ## API Keys
 

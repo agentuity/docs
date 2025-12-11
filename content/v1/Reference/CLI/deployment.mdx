@@ -20,9 +20,7 @@ The deploy command:
 4. Provisions your deployment on Agentuity's infrastructure
 5. Activates your deployment
 
-<Callout type="info" title="View in Console">
-After deployment, view your environment variables and secrets in the Agentuity Console under **Project > Settings**.
-</Callout>
+After deployment, view your environment variables and secrets in the [Agentuity Console](https://app-v1.agentuity.com) under **Project > Settings**.
 
 **Example output:**
 
@@ -65,9 +63,7 @@ agentuity deploy
 # Project URL:    https://proj-456def.agentuity.cloud
 ```
 
-<Callout type="info" title="URL Structure">
-Both URLs are automatically provisioned and support HTTPS. The project URL automatically routes to the active deployment.
-</Callout>
+Both URLs are automatically provisioned with HTTPS. The project URL always routes to the active deployment.
 
 ## Tagging Deployments
 
@@ -265,9 +261,7 @@ Configure custom domains in `agentuity.json`:
 }
 ```
 
-<Callout type="info" title="Available Regions">
 Available regions are fetched from the API at deployment time. If multiple regions are available, the CLI prompts you to select one.
-</Callout>
 
 ### DNS Configuration
 
@@ -337,9 +331,7 @@ agentuity cloud domain remove api.example.com
 agentuity cloud domain verify api.example.com
 ```
 
-<Callout type="info" title="When to Use Each Approach">
 Use the configuration file for domains that should persist across deployments. Use CLI commands for quick testing or temporary domains.
-</Callout>
 
 ## Environment Variables
 

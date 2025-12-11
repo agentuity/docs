@@ -94,24 +94,13 @@ agentuity cloud kv create-namespace staging
 agentuity cloud kv delete-namespace old-cache
 ```
 
-<Callout type="info" title="SDK Access">
-For programmatic access in agents, use `ctx.kv`:
-
-```typescript
-await ctx.kv.set('cache', 'user:123', data);
-const value = await ctx.kv.get('cache', 'user:123');
-```
-
-See [Key-Value Storage](/v1/Build/Storage/key-value) for details.
-</Callout>
+**In agents:** Use `ctx.kv` for programmatic access. See [Key-Value Storage](/v1/Build/Storage/key-value).
 
 ## S3 Storage
 
 Manage S3-compatible storage resources for file uploads and downloads.
 
-<Callout type="info" title="Command Alias">
 Both `cloud storage` and `cloud s3` work interchangeably. Examples below use `s3` for brevity.
-</Callout>
 
 ### Create Storage Resource
 
@@ -150,19 +139,7 @@ agentuity cloud s3 get <storage-id>
 agentuity cloud s3 delete <storage-id>
 ```
 
-<Callout type="info" title="SDK Access">
-For programmatic access, use Bun's native S3 APIs:
-
-```typescript
-import { s3 } from "bun";
-
-const file = s3.file("path/to/file.pdf");
-await file.write(buffer);
-const url = s3.presign("path/to/file.pdf", { expiresIn: 3600 });
-```
-
-See [Object Storage (S3)](/v1/Build/Storage/object) for details.
-</Callout>
+**In agents:** Use Bun's `s3` API (`import { s3 } from "bun"`). See [Object Storage (S3)](/v1/Build/Storage/object).
 
 ## Object Storage (Legacy)
 
@@ -253,18 +230,7 @@ agentuity cloud vec get <vector-id>
 agentuity cloud vec delete <vector-id>
 ```
 
-<Callout type="info" title="SDK Access">
-For programmatic access, use `ctx.vector`:
-
-```typescript
-const results = await ctx.vector.search('products', {
-  query: 'comfortable chair',
-  limit: 10
-});
-```
-
-See [Vector Storage](/v1/Build/Storage/vector) for details.
-</Callout>
+**In agents:** Use `ctx.vector` for programmatic access. See [Vector Storage](/v1/Build/Storage/vector).
 
 ## Database
 
@@ -315,18 +281,7 @@ agentuity cloud db logs <database-id>
 agentuity cloud db delete <database-id>
 ```
 
-<Callout type="info" title="SDK Access">
-For programmatic access, use Bun's native SQL APIs:
-
-```typescript
-import { sql } from "bun";
-
-const users = await sql`SELECT * FROM users WHERE active = ${true}`;
-await sql`INSERT INTO users (name, email) VALUES (${"Alice"}, ${"alice@example.com"})`;
-```
-
-See [Database](/v1/Build/Storage/database) for details.
-</Callout>
+**In agents:** Use Bun's `sql` API (`import { sql } from "bun"`). See [Database](/v1/Build/Storage/database).
 
 ## Streams
 
@@ -350,19 +305,7 @@ agentuity cloud stream get <stream-id>
 agentuity cloud stream delete <stream-id>
 ```
 
-<Callout type="info" title="SDK Access">
-For programmatic access, use `ctx.stream`:
-
-```typescript
-const stream = await ctx.stream.create('export', {
-  contentType: 'text/csv',
-});
-await stream.write('data');
-await stream.close();
-```
-
-See [Durable Streams](/v1/Build/Storage/durable-streams) for details.
-</Callout>
+**In agents:** Use `ctx.stream` for programmatic access. See [Durable Streams](/v1/Build/Storage/durable-streams).
 
 ## Next Steps
 

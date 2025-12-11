@@ -10,10 +10,10 @@ Each agent encapsulates a handler function, input/output validation, and metadat
 Create an agent with `createAgent()`, providing a name and handler function:
 
 ```typescript
-import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent('Greeter', {
-  handler: async (ctx: AgentContext, input) => {
+  handler: async (ctx, input) => {
     ctx.logger.info('Processing request', { input });
     return { message: 'Hello from agent!' };
   },
@@ -123,7 +123,7 @@ For streaming, structured output, and more patterns, see [Using the AI SDK](/v1/
 Define input and output schemas for type safety and runtime validation. Agentuity includes a lightweight built-in schema library:
 
 ```typescript
-import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 
 const agent = createAgent('Contact Form', {
@@ -137,7 +137,7 @@ const agent = createAgent('Contact Form', {
       id: s.string(),
     }),
   },
-  handler: async (ctx: AgentContext, input) => {
+  handler: async (ctx, input) => {
     // input is typed as { email: string, message: string }
     ctx.logger.info('Received message', { from: input.email });
 
@@ -154,7 +154,7 @@ export default agent;
 You can also use [Zod](https://zod.dev) for more advanced validation:
 
 ```typescript
-import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
 const agent = createAgent('Contact Form', {
@@ -168,7 +168,7 @@ const agent = createAgent('Contact Form', {
       id: z.string(),
     }),
   },
-  handler: async (ctx: AgentContext, input) => {
+  handler: async (ctx, input) => {
     ctx.logger.info('Received message', { from: input.email });
 
     return {

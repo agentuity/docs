@@ -18,7 +18,7 @@ Agentuity provides two state scopes for managing data across requests:
 ### Quick Example
 
 ```typescript
-import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
 
 const agent = createAgent('StateDemo', {
@@ -30,7 +30,7 @@ const agent = createAgent('StateDemo', {
       messageCount: s.number(),
     }),
   },
-  handler: async (ctx: AgentContext, input) => {
+  handler: async (ctx, input) => {
     // REQUEST STATE: Cleared after this response
     ctx.state.set('startTime', Date.now());
 
@@ -81,7 +81,7 @@ Thread state (`ctx.thread.state`) persists across multiple requests within a con
 ### Conversation Memory
 
 ```typescript
-import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { createAgent } from '@agentuity/runtime';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import * as v from 'valibot';
@@ -96,7 +96,7 @@ const agent = createAgent('ConversationMemory', {
     input: v.object({ message: v.string() }),
     output: v.string(),
   },
-  handler: async (ctx: AgentContext, input) => {
+  handler: async (ctx, input) => {
     // Initialize on first request
     if (!ctx.thread.state.has('messages')) {
       ctx.thread.state.set('messages', []);
@@ -181,7 +181,7 @@ In-memory state is lost on server restart. For durability, combine state managem
 ### Load → Cache → Save Pattern
 
 ```typescript
-import { createAgent, type AgentContext } from '@agentuity/runtime';
+import { createAgent } from '@agentuity/runtime';
 import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import * as v from 'valibot';
@@ -193,7 +193,7 @@ const agent = createAgent('PersistentChat', {
     input: v.object({ message: v.string() }),
     stream: true,
   },
-  handler: async (ctx: AgentContext, input) => {
+  handler: async (ctx, input) => {
     const key = `chat_${ctx.thread.id}`;
     let messages: Message[] = [];
 

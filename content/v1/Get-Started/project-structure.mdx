@@ -29,6 +29,10 @@ my-project/
 
 Agent names come from their directory. Each agent has one file: `agent.ts` with your logic and schema.
 
+<Callout type="info" title="Utility Files">
+You can add helper files (like `types.ts`, `helpers.ts`, `utils.ts`) alongside your agents and routes. The build system only processes files that export agents or routers.
+</Callout>
+
 ## Agents and Routes
 
 Agents and routes are separate concerns in Agentuity:
