@@ -140,6 +140,12 @@ router.sse('/stream', (c) => async (stream) => {
 
 ## Context Access
 
+<Callout type="info" title="Route vs Agent Context">
+In routes, use [Hono's context](https://hono.dev/docs/api/context): `c.var.logger` or `c.get('logger')`, `c.var.kv`, `c.var.thread`, etc.
+
+In agents, access services directly on `ctx`: `ctx.logger`, `ctx.kv`, `ctx.thread`.
+</Callout>
+
 All route handlers have access to the same context:
 
 ```typescript

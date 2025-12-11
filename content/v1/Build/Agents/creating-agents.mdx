@@ -26,6 +26,12 @@ The handler receives two parameters:
 - `ctx` - The agent context with logging, storage, and state management
 - `input` - The data passed to the agent (validated if schema is defined)
 
+<Callout type="info" title="Route vs Agent Context">
+In agents, access services directly on `ctx`: `ctx.logger`, `ctx.kv`, `ctx.thread`, etc.
+
+In routes, use [Hono's context](https://hono.dev/docs/api/context): `c.var.logger` or `c.get('logger')`, `c.var.kv`, `c.var.thread`, etc.
+</Callout>
+
 ## Adding LLM Capabilities
 
 Most agents use an LLM for inference. Here's an agent using the [AI SDK](https://ai-sdk.dev):

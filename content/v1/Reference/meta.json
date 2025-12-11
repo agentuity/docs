@@ -2,7 +2,7 @@
   "title": "Reference",
   "pages": [
     "CLI",
-    "api-reference",
+    "sdk-reference",
     "migration-guide"
   ]
 }
