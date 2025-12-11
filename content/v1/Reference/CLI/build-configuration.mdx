@@ -1,0 +1,189 @@
+---
+title: Build Configuration
+description: Customize the bundling process with plugins, externals, and build-time constants
+---
+
+Customize how your project is bundled by creating an `agentuity.config.ts` file in your project root. Add Bun plugins, exclude packages from bundling, or define build-time constants.
+
+## Basic Configuration
+
+```typescript
+import type { BuildPhase, BuildContext, BuildConfig } from '@agentuity/cli';
+
+export default function config(phase: BuildPhase, context: BuildContext): BuildConfig {
+  return {};
+}
+```
+
+The function is called once per build phase. Return an empty object for phases you don't need to customize.
+
+## Build Phases
+
+| Phase | Bundles | Runs When |
+|-------|---------|-------------|
+| `api` | Server code (`app.ts`, agents, routes) | Every build |
+| `web` | Frontend (`src/web/`) | When `src/web/` exists |
+| `workbench` | Development testing UI | Dev mode only |
+
+Return phase-specific configuration:
+
+```typescript
+export default function config(phase: BuildPhase, context: BuildContext): BuildConfig {
+  if (phase === 'web') {
+    return { plugins: [tailwindcss] };
+  }
+
+  if (phase === 'api') {
+    return { external: ['sharp'] };
+  }
+
+  return {};
+}
+```
+
+## BuildContext
+
+The context object provides information about the current build.
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `rootDir` | `string` | Project root directory (absolute path) |
+| `srcDir` | `string` | Source directory path |
+| `outDir` | `string` | Output directory (`.agentuity`) |
+| `dev` | `boolean` | `true` for development builds |
+| `orgId` | `string \| undefined` | Organization ID |
+| `projectId` | `string \| undefined` | Project ID |
+| `region` | `string` | Deployment region |
+| `logger` | `Logger` | Build logger instance |
+
+```typescript
+export default function config(phase: BuildPhase, context: BuildContext): BuildConfig {
+  context.logger.debug(`Building ${phase} in ${context.dev ? 'dev' : 'prod'} mode`);
+
+  return {
+    define: {
+      'BUILD_TIME': JSON.stringify(new Date().toISOString()),
+    },
+  };
+}
+```
+
+## Configuration Options
+
+### plugins
+
+Add Bun plugins to extend the build process. Your plugins run after Agentuity's built-in plugins.
+
+```typescript
+import tailwindcss from 'bun-plugin-tailwind';
+
+export default function config(phase: BuildPhase): BuildConfig {
+  if (phase === 'web') {
+    return {
+      plugins: [tailwindcss],
+    };
+  }
+  return {};
+}
+```
+
+See the [Bun plugin documentation](https://bun.sh/docs/bundler/plugins) for creating custom plugins.
+
+### external
+
+Exclude packages from bundling. Use this for native modules or large dependencies that should load at runtime.
+
+```typescript
+export default function config(phase: BuildPhase): BuildConfig {
+  if (phase === 'api') {
+    return {
+      external: [
+        'sharp',           // Native image processing
+        '@prisma/client',  // Generated client
+      ],
+    };
+  }
+  return {};
+}
+```
+
+<Callout type="info" title="Default Externals">
+These packages are always excluded: `bun`, `fsevents`, `chromium-bidi`, `sharp`. Your externals are merged with these defaults.
+</Callout>
+
+### define
+
+Replace identifiers with constant values at build time. Values must be JSON-stringified.
+
+```typescript
+export default function config(phase: BuildPhase, context: BuildContext): BuildConfig {
+  return {
+    define: {
+      'API_VERSION': JSON.stringify('v2'),
+      '__DEV__': JSON.stringify(context.dev),
+    },
+  };
+}
+```
+
+<Callout type="warning" title="Reserved Keys">
+These keys cannot be overridden:
+- `process.env.AGENTUITY_*` (all Agentuity environment variables)
+- `process.env.NODE_ENV`
+
+Attempting to override reserved keys logs a warning and the values are ignored.
+</Callout>
+
+## Advanced Patterns
+
+### Async Configuration
+
+Load configuration dynamically at build time:
+
+```typescript
+export default async function config(
+  phase: BuildPhase,
+  context: BuildContext
+): Promise<BuildConfig> {
+  const pkg = await Bun.file('./package.json').json();
+
+  return {
+    define: {
+      'APP_VERSION': JSON.stringify(pkg.version),
+    },
+  };
+}
+```
+
+### Environment-Specific Builds
+
+Combine phase and context for conditional configuration:
+
+```typescript
+export default function config(phase: BuildPhase, context: BuildContext): BuildConfig {
+  // Development-only plugins
+  if (context.dev && phase === 'web') {
+    return {
+      plugins: [devToolsPlugin()],
+    };
+  }
+
+  // Production optimizations
+  if (!context.dev && phase === 'api') {
+    return {
+      external: ['canvas', 'jsdom'],
+      define: {
+        '__DEV__': JSON.stringify(false),
+      },
+    };
+  }
+
+  return {};
+}
+```
+
+## Next Steps
+
+- [Tailwind CSS Setup](/v1/Learn/Cookbook/Patterns/tailwind-setup): Add Tailwind styling to your frontend
+- [Development Server](/v1/Reference/CLI/development): Run the dev server with your configuration
+- [Deployment](/v1/Reference/CLI/deployment): Deploy with build configuration

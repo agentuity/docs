@@ -1,0 +1,109 @@
+---
+title: Tailwind CSS Setup
+description: Add Tailwind CSS styling to your Agentuity frontend
+---
+
+Add [Tailwind CSS](https://tailwindcss.com) v4 to your Agentuity project using the Bun Tailwind plugin.
+
+<Callout type="tip" title="Starting a New Project?">
+Use the Tailwind template for a pre-configured setup:
+
+```bash
+agentuity create my-app --template tailwind
+```
+</Callout>
+
+## Prerequisites
+
+- An Agentuity project with a `src/web/` directory
+- Bun runtime (included with Agentuity CLI)
+
+## Step 1: Install Dependencies
+
+```bash
+bun add -D tailwindcss bun-plugin-tailwind
+```
+
+## Step 2: Create Build Configuration
+
+Create `agentuity.config.ts` in your project root:
+
+```typescript
+import tailwindcss from 'bun-plugin-tailwind';
+import type { BuildPhase, BuildContext, BuildConfig } from '@agentuity/cli';
+
+export default function config(phase: BuildPhase, context: BuildContext): BuildConfig {
+  if (phase === 'web') {
+    return { plugins: [tailwindcss] };
+  }
+  return {};
+}
+```
+
+## Step 3: Link the Stylesheet
+
+Add the Tailwind stylesheet to your HTML file (`src/web/index.html`):
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="tailwindcss" />
+    <title>My App</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./frontend.tsx"></script>
+  </body>
+</html>
+```
+
+<Callout type="info" title="Special href Value">
+The `href="tailwindcss"` is a virtual module resolved by the Bun Tailwind plugin, not a file path. The plugin generates and injects the compiled CSS automatically.
+</Callout>
+
+## Step 4: Use Tailwind Classes
+
+Add utility classes to your React components:
+
+```tsx
+// src/web/App.tsx
+export function App() {
+  return (
+    <div className="min-h-screen bg-zinc-900 flex items-center justify-center">
+      <div className="bg-zinc-800 rounded-lg p-8 max-w-md">
+        <h1 className="text-2xl font-bold text-white mb-4">
+          Hello, Tailwind!
+        </h1>
+        <p className="text-zinc-400">
+          Your Agentuity frontend is styled with Tailwind CSS.
+        </p>
+      </div>
+    </div>
+  );
+}
+```
+
+## Step 5: Verify
+
+Start the dev server and check that styles are applied:
+
+```bash
+bun run dev
+```
+
+Open `http://localhost:3500` in your browser. You should see your styled component.
+
+## Key Points
+
+- Tailwind only applies to the `web` build phase
+- The plugin scans your components and generates only the CSS you use
+- No `tailwind.config.ts` needed for basic usage (Tailwind v4 works out of the box)
+- Style changes reflect immediately in dev mode
+
+## See Also
+
+- [Build Configuration](/v1/Reference/CLI/build-configuration): All build config options
+- [Frontend Development](/v1/Build/Frontend/react-hooks): React hooks for calling your agents

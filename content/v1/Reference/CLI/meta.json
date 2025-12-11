@@ -3,6 +3,7 @@
   "pages": [
     "getting-started",
     "development",
+    "build-configuration",
     "deployment",
     "storage",
     "configuration",

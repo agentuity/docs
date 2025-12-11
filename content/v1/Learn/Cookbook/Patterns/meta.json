@@ -4,6 +4,7 @@
     "background-tasks",
     "chat-with-history",
     "product-search",
+    "tailwind-setup",
     "webhook-handler"
   ]
 }
