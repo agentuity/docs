@@ -100,13 +100,6 @@ function verifyStripeSignature(
 export default router;
 ```
 
-## Key Points
-
-- **Raw body first** — Read body as text before parsing for signature verification
-- **Fast response** — Return 200 immediately, process with `waitUntil`
-- **Error handling** — Store failed webhooks for retry/debugging
-- **Signature verification** — Always verify webhooks from external services
-
 ## Slack Webhook Example
 
 ```typescript
@@ -144,6 +137,13 @@ router.post('/slack', async (c) => {
   return c.text('OK');
 });
 ```
+
+## Key Points
+
+- **Raw body first**: Read body as text before parsing for signature verification
+- **Fast response**: Return 200 immediately, process with `waitUntil`
+- **Error handling**: Store failed webhooks for retry/debugging
+- **Signature verification**: Always verify webhooks from external services
 
 ## See Also
 

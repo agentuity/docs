@@ -100,29 +100,29 @@ export default agent;
 
 ## Indexing Products
 
-Add products to the vector database:
+Add products to the vector database. This example uses [Valibot](https://valibot.dev) for schema validation:
 
 ```typescript
 // src/agent/product-indexer/agent.ts
 import { createAgent } from '@agentuity/runtime';
-import { z } from 'zod';
+import * as v from 'valibot';
 
-const ProductSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string(),
-  price: z.number(),
-  category: z.string(),
-  inStock: z.boolean().default(true),
+const ProductSchema = v.object({
+  id: v.string(),
+  name: v.string(),
+  description: v.string(),
+  price: v.number(),
+  category: v.string(),
+  inStock: v.optional(v.boolean(), true),
 });
 
 const agent = createAgent('ProductIndexer', {
   schema: {
-    input: z.object({
-      products: z.array(ProductSchema),
+    input: v.object({
+      products: v.array(ProductSchema),
     }),
-    output: z.object({
-      indexed: z.number(),
+    output: v.object({
+      indexed: v.number(),
     }),
   },
   handler: async (ctx, input) => {
@@ -293,6 +293,87 @@ Add AI recommendations when customers benefit from personalized guidance: compar
   ],
   "recommendation": "For a comfortable office chair, I recommend the ErgoMax Pro. Customers report significant back pain relief, and the premium lumbar support justifies the higher price for long work sessions.",
   "recommendedSKU": "CHAIR-ERG-001"
+}
+```
+
+## React UI Example
+
+A simple product search interface:
+
+```tsx
+// src/web/App.tsx
+import { useState } from 'react';
+
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  relevance: number;
+}
+
+export function App() {
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const search = async () => {
+    if (!query.trim()) return;
+    setLoading(true);
+
+    const params = new URLSearchParams({ q: query });
+    if (category) params.set('category', category);
+    if (maxPrice) params.set('maxPrice', maxPrice);
+
+    const response = await fetch(`/products/search?${params}`);
+    const data = await response.json();
+    setProducts(data.products);
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ padding: '2rem', maxWidth: '800px' }}>
+      <h1>Product Search</h1>
+
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && search()}
+          placeholder="Search products..."
+          style={{ flex: 1, padding: '0.5rem' }}
+        />
+        <select value={category} onChange={(e) => setCategory(e.target.value)}>
+          <option value="">All categories</option>
+          <option value="electronics">Electronics</option>
+          <option value="furniture">Furniture</option>
+        </select>
+        <input
+          type="number"
+          value={maxPrice}
+          onChange={(e) => setMaxPrice(e.target.value)}
+          placeholder="Max price"
+          style={{ width: '100px', padding: '0.5rem' }}
+        />
+        <button onClick={search} disabled={loading}>
+          {loading ? '...' : 'Search'}
+        </button>
+      </div>
+
+      <div>
+        {products.map((product) => (
+          <div key={product.id} style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
+            <strong>{product.name}</strong> - ${product.price}
+            <div style={{ color: '#666', fontSize: '0.9rem' }}>{product.description}</div>
+            <small>{Math.round(product.relevance * 100)}% match</small>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 ```
 

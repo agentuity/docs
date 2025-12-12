@@ -63,13 +63,6 @@ const agent = createAgent('Chat Agent', {
 export default agent;
 ```
 
-## Key Points
-
-- **Thread state** (`ctx.thread.state`) persists for up to 1 hour
-- **Messages array** stores the full conversation history
-- **`waitUntil`** saves the response after streaming completes
-- **Thread ID** (`ctx.thread.id`) identifies the conversation
-
 ## Route Example
 
 ```typescript
@@ -78,19 +71,126 @@ import chatAgent from '@agent/chat';
 
 const router = createRouter();
 
-router.post('/', async (c) => {
-  const { message } = await c.req.json();
+router.post('/chat', chatAgent.validator(), async (c) => {
+  const { message } = c.req.valid('json');
   return chatAgent.run({ message });
 });
 
 // Reset conversation
-router.delete('/', async (c) => {
+router.delete('/chat', async (c) => {
   await c.var.thread.destroy();
   return c.json({ reset: true });
 });
 
 export default router;
 ```
+
+## React UI Example
+
+A simple chat interface that displays streaming responses:
+
+```tsx
+// src/web/App.tsx
+import { useState, useRef, useEffect } from 'react';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export function App() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isStreaming, setIsStreaming] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const sendMessage = async () => {
+    if (!input.trim() || isStreaming) return;
+
+    const userMessage = input.trim();
+    setInput('');
+    setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
+    setIsStreaming(true);
+
+    // Add placeholder for assistant response
+    setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+
+    const response = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: userMessage }),
+    });
+
+    // Stream the response
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+
+    while (reader) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1].content += chunk;
+        return updated;
+      });
+    }
+
+    setIsStreaming(false);
+  };
+
+  return (
+    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '1rem' }}>
+      <div style={{ height: '400px', overflowY: 'auto', marginBottom: '1rem' }}>
+        {messages.map((msg, i) => (
+          <div
+            key={i}
+            style={{
+              padding: '0.75rem',
+              margin: '0.5rem 0',
+              borderRadius: '8px',
+              background: msg.role === 'user' ? '#e3f2fd' : '#f5f5f5',
+              marginLeft: msg.role === 'user' ? '20%' : '0',
+              marginRight: msg.role === 'assistant' ? '20%' : '0',
+            }}
+          >
+            {msg.content || '...'}
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+          placeholder="Type a message..."
+          disabled={isStreaming}
+          style={{ flex: 1, padding: '0.75rem' }}
+        />
+        <button onClick={sendMessage} disabled={isStreaming || !input.trim()}>
+          {isStreaming ? '...' : 'Send'}
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+The frontend reads the streaming response chunk by chunk and updates the UI in real-time.
+
+## Key Points
+
+- **Thread state** (`ctx.thread.state`) persists for up to 1 hour
+- **Messages array** stores the full conversation history
+- **`waitUntil`** saves the response after streaming completes
+- **Thread ID** (`ctx.thread.id`) identifies the conversation
 
 ## See Also
 

@@ -269,88 +269,119 @@ Expected response:
   "confidence": 0.89
 }
 ```
+
+### Using a React UI
+
+Build a search interface for your knowledge base:
+
+```tsx
+// src/web/App.tsx
+import { useAPI } from '@agentuity/react';
+import { useState } from 'react';
+
+interface Source {
+  id: string;
+  title: string;
+  relevance: number;
+}
+
+interface KnowledgeResult {
+  answer: string;
+  sources: Source[];
+  confidence: number;
+}
+
+export function App() {
+  const [question, setQuestion] = useState('');
+  const { data, invoke, isLoading } = useAPI<KnowledgeResult>('POST /knowledge');
+
+  return (
+    <div style={{ padding: '2rem', maxWidth: '700px' }}>
+      <h1>Knowledge Search</h1>
+
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+        <input
+          type="text"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && invoke({ question })}
+          placeholder="Ask a question..."
+          disabled={isLoading}
+          style={{ flex: 1, padding: '0.75rem' }}
+        />
+        <button
+          onClick={() => invoke({ question })}
+          disabled={isLoading || !question.trim()}
+        >
+          {isLoading ? 'Searching...' : 'Search'}
+        </button>
+      </div>
+
+      {data && (
+        <div>
+          {/* Answer */}
+          <div style={{ marginBottom: '1rem' }}>
+            <p style={{ fontSize: '1.1rem', lineHeight: 1.6 }}>{data.answer}</p>
+          </div>
+
+          {/* Confidence */}
+          <div style={{ marginBottom: '1rem', color: '#666' }}>
+            Confidence: {Math.round(data.confidence * 100)}%
+          </div>
+
+          {/* Sources */}
+          {data.sources.length > 0 && (
+            <div>
+              <h3>Sources</h3>
+              <ul>
+                {data.sources.map((source) => (
+                  <li key={source.id}>
+                    <strong>{source.title}</strong>
+                    <span style={{ color: '#666', marginLeft: '0.5rem' }}>
+                      ({Math.round(source.relevance * 100)}% relevant)
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+Wrap your app with `AgentuityProvider`:
+
+```tsx
+// src/web/frontend.tsx
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { AgentuityProvider } from '@agentuity/react';
+import { App } from './App';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <AgentuityProvider>
+      <App />
+    </AgentuityProvider>
+  </StrictMode>
+);
+```
 </Step>
 
 </Steps>
 
-## Full Code
+## Summary
 
-Here's the complete RAG agent with all features:
-
-```typescript
-// src/agent/knowledge/agent.ts
-import { createAgent } from '@agentuity/runtime';
-import { generateText } from 'ai';
-import { openai } from '@ai-sdk/openai';
-import { z } from 'zod';
-
-const agent = createAgent('Knowledge Agent', {
-  description: 'Answers questions using a knowledge base',
-  schema: {
-    input: z.object({
-      question: z.string().describe('The question to answer'),
-    }),
-    output: z.object({
-      answer: z.string(),
-      sources: z.array(z.object({
-        id: z.string(),
-        title: z.string(),
-        relevance: z.number(),
-      })),
-      confidence: z.number().min(0).max(1),
-    }),
-  },
-  handler: async (ctx, input) => {
-    ctx.logger.info('Searching knowledge base', { question: input.question });
-
-    const results = await ctx.vector.search('knowledge-base', {
-      query: input.question,
-      limit: 5,
-      similarity: 0.7,
-    });
-
-    if (results.length === 0) {
-      ctx.logger.info('No relevant documents found');
-      return {
-        answer: "I couldn't find relevant information to answer your question.",
-        sources: [],
-        confidence: 0,
-      };
-    }
-
-    const context = results
-      .map((r, i) => `[${i + 1}] ${r.document}`)
-      .join('\n\n');
-
-    const { text } = await generateText({
-      model: openai('gpt-5-mini'),
-      system: `You are a helpful assistant that answers questions based on provided context.
-Only use information from the context. If the context doesn't contain the answer, say so.
-Cite sources using [1], [2], etc. when referencing specific information.`,
-      prompt: `Context:
-${context}
-
-Question: ${input.question}
-
-Answer the question using only the provided context. Cite your sources.`,
-    });
-
-    const avgSimilarity = results.reduce((sum, r) => sum + r.similarity, 0) / results.length;
-
-    return {
-      answer: text,
-      sources: results.map((r, i) => ({
-        id: r.key,
-        title: (r.metadata?.title as string) || `Document ${i + 1}`,
-        relevance: r.similarity,
-      })),
-      confidence: avgSimilarity,
-    };
-  },
-});
-
-export default agent;
-```
+| Concept | Description |
+|---------|-------------|
+| **Vector Search** | Find semantically similar documents using `ctx.vector.search()` |
+| **Context Building** | Format search results into LLM-readable context with citations |
+| **Similarity Threshold** | Filter results by minimum similarity score (e.g., 0.7) |
+| **Confidence Score** | Calculate from average similarity of retrieved documents |
+| **Indexing Agent** | Separate agent to populate the vector database with documents |
 
 ## Next Steps
 

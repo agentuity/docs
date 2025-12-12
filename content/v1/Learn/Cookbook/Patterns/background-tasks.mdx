@@ -9,19 +9,21 @@ Run tasks after sending a response using `waitUntil`. This keeps response times 
 
 `waitUntil` accepts an async function that runs after the response is sent. Multiple calls run concurrently.
 
+This example uses [ArkType](https://arktype.io) for schema validation:
+
 ```typescript
 import { createAgent } from '@agentuity/runtime';
-import { z } from 'zod';
+import { type } from 'arktype';
 
 const agent = createAgent('OrderProcessor', {
   schema: {
-    input: z.object({
-      orderId: z.string(),
-      userId: z.string(),
+    input: type({
+      orderId: 'string',
+      userId: 'string',
     }),
-    output: z.object({
-      status: z.string(),
-      orderId: z.string(),
+    output: type({
+      status: 'string',
+      orderId: 'string',
     }),
   },
   handler: async (ctx, input) => {
@@ -65,14 +67,14 @@ Create a stream for the client to poll, then populate it in the background:
 import { createAgent } from '@agentuity/runtime';
 import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { z } from 'zod';
+import { type } from 'arktype';
 
 const agent = createAgent('AsyncGenerator', {
   schema: {
-    input: z.object({ prompt: z.string() }),
-    output: z.object({
-      streamId: z.string(),
-      streamUrl: z.string(),
+    input: type({ prompt: 'string' }),
+    output: type({
+      streamId: 'string',
+      streamUrl: 'string',
     }),
   },
   handler: async (ctx, input) => {
@@ -114,10 +116,13 @@ export default agent;
 Write progress updates to a stream as background work proceeds:
 
 ```typescript
+import { createAgent } from '@agentuity/runtime';
+import { type } from 'arktype';
+
 const agent = createAgent('BatchProcessor', {
   schema: {
-    input: z.object({ items: z.array(z.string()) }),
-    output: z.object({ progressUrl: z.string() }),
+    input: type({ items: 'string[]' }),
+    output: type({ progressUrl: 'string' }),
   },
   handler: async (ctx, input) => {
     const progress = await ctx.stream.create('progress', {
@@ -149,10 +154,10 @@ const agent = createAgent('BatchProcessor', {
 
 ## Key Points
 
-- **Non-blocking** — Response returns immediately, tasks run after
-- **Concurrent** — Multiple `waitUntil` calls run in parallel
-- **Error isolation** — Background task failures don't affect the response
-- **Always close streams** — Use `finally` blocks to ensure cleanup
+- **Non-blocking**: Response returns immediately, tasks run after
+- **Concurrent**: Multiple `waitUntil` calls run in parallel
+- **Error isolation**: Background task failures don't affect the response
+- **Always close streams**: Use `finally` blocks to ensure cleanup
 
 ## See Also
 

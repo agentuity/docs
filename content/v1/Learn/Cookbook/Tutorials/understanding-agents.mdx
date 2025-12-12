@@ -197,8 +197,8 @@ import researchAgent from '@agent/researcher';
 
 const router = createRouter();
 
-router.post('/research', async (c) => {
-  const { topic } = await c.req.json();
+router.post('/research', researchAgent.validator(), async (c) => {
+  const { topic } = c.req.valid('json');
   const result = await researchAgent.run({ topic });
   return c.json(result);
 });

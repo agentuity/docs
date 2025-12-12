@@ -134,6 +134,20 @@ These keys cannot be overridden:
 Attempting to override reserved keys logs a warning and the values are ignored.
 </Callout>
 
+<Callout type="tip" title="Frontend Environment Variables">
+For exposing environment variables to the frontend, use `AGENTUITY_PUBLIC_*` instead of `define`. Any environment variable prefixed with `AGENTUITY_PUBLIC_` is automatically available in your frontend code:
+
+```typescript
+// .env.local
+AGENTUITY_PUBLIC_API_URL=https://api.example.com
+
+// src/web/App.tsx
+const apiUrl = process.env.AGENTUITY_PUBLIC_API_URL;
+```
+
+See [App Configuration](/v1/Get-Started/app-configuration#environment-variables) for details.
+</Callout>
+
 ## Advanced Patterns
 
 ### Async Configuration
