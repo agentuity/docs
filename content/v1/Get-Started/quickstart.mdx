@@ -3,6 +3,9 @@ title: Quickstart
 description: Build your first agent in 5 minutes
 ---
 
+import { Card } from 'fumadocs-ui/components/card';
+import { Lightbulb } from 'lucide-react';
+
 This guide walks you through building a chat agent from scratch using OpenAI.
 
 <Callout type="tip" title="Want a Head Start?">
@@ -14,6 +17,14 @@ agentuity create my-app --template vercel-openai
 
 See [available templates](/v1/Reference/CLI/getting-started#available-templates) for options.
 </Callout>
+
+<Card
+  href="/v1/Learn/Cookbook/Tutorials/understanding-agents"
+  title="New to AI Agents?"
+  icon={<Lightbulb />}
+>
+  Learn how agents use tools and run in loops to complete tasks autonomously.
+</Card>
 
 ## 1. Create the Agent
 
@@ -108,7 +119,7 @@ const { server, logger } = await createApp({
 logger.debug('Running %s', server.url);
 ```
 
-Open [http://localhost:3500/workbench](http://localhost:3500/workbench) to test your agents with raw JSON input. This is useful for debugging agents before building the frontend, or testing different inputs quickly.
+Open [http://localhost:3500/workbench](http://localhost:3500/workbench) to test your agents with raw JSON input. See [Testing with Workbench](/v1/Build/Agents/workbench) for adding test prompts and configuration options.
 
 ## 5. Add a Frontend
 
@@ -197,6 +208,10 @@ agentuity deploy
 Your agent is now live with a public URL. View deployments, logs, and more in the [Console](https://app-v1.agentuity.com).
 
 ## What's Next?
+
+**Learn the concepts:**
+
+- [Understanding How Agents Work](/v1/Learn/Cookbook/Tutorials/understanding-agents): Tools, loops, and autonomous behavior
 
 **Build something more:**
 

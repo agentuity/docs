@@ -7,6 +7,12 @@ Evaluations (evals) are automated tests that run after your agent completes. The
 
 Evals come in two types: **binary** (pass/fail) for yes/no criteria, and **score** (0-1) for quality gradients.
 
+<Callout type="info" title="Where Scores Appear">
+Evals run in the background after your agent responds. Results appear in the [Console](https://app-v1.agentuity.com), not in your response.
+
+To show scores in your frontend, include them in your output schema. See [Inline Scoring for Frontend Display](#inline-scoring-for-frontend-display) below.
+</Callout>
+
 ## Basic Example
 
 Attach an eval to any agent using `createEval()`:
@@ -202,6 +208,61 @@ export default ragAgent;
 Data stored in `ctx.state` during agent execution persists to eval handlers. Use this to pass retrieved documents, intermediate results, or timing data.
 </Callout>
 
+### Inline Scoring for Frontend Display
+
+When you need scores visible in your UI (not just the Console), run LLM-as-judge inline in your handler and include the results in your output schema:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { generateText, generateObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+import { s } from '@agentuity/schema';
+
+const agent = createAgent('Story Generator', {
+  schema: {
+    input: s.object({ prompt: s.string(), tone: s.string() }),
+    output: s.object({
+      story: s.string(),
+      scores: s.object({
+        creativity: s.number(),
+        engagement: s.number(),
+        toneMatch: s.boolean(),
+      }),
+    }),
+  },
+  handler: async (ctx, input) => {
+    // Generate the story
+    const { text: story } = await generateText({
+      model: openai('gpt-5-mini'),
+      prompt: `Write a short ${input.tone} story about: ${input.prompt}`,
+    });
+
+    // Inline LLM-as-judge: scores returned with response
+    const { object: scores } = await generateObject({
+      model: openai('gpt-5-nano'),
+      schema: z.object({
+        creativity: z.number().min(0).max(1),
+        engagement: z.number().min(0).max(1),
+        toneMatch: z.boolean(),
+      }),
+      prompt: `Score this ${input.tone} story (0-1 for scores, boolean for tone match):
+
+${story}
+
+- creativity: How original and imaginative?
+- engagement: How compelling to read?
+- toneMatch: Does it match the requested "${input.tone}" tone?`,
+    });
+
+    return { story, scores };  // Frontend receives scores directly
+  },
+});
+
+export default agent;
+```
+
+Your frontend can then display the scores alongside the response. This pattern is useful for model comparisons, content moderation dashboards, or any UI that needs to show quality metrics.
 
 ## Multiple Evals
 

@@ -1,0 +1,91 @@
+---
+title: Testing with Workbench
+description: Use the built-in development UI to test agents, validate schemas, and debug responses
+---
+
+The Workbench is a built-in UI for testing your agents during development. It automatically discovers your agents, displays their input/output schemas, and lets you execute them with real inputs.
+
+## Enabling the Workbench
+
+Add the Workbench to your `app.ts`:
+
+```typescript
+import { createApp } from '@agentuity/runtime';
+import { createWorkbench } from '@agentuity/workbench';
+
+const workbench = createWorkbench();
+
+await createApp({
+  services: {
+    workbench,
+  },
+});
+```
+
+Start the dev server and visit [http://localhost:3500/workbench](http://localhost:3500/workbench).
+
+## Adding Test Prompts
+
+Export a `welcome` function from your agent to customize the Workbench experience:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent('Support Agent', {
+  schema: {
+    input: z.object({ message: z.string() }),
+    output: z.object({ response: z.string() }),
+  },
+  handler: async (ctx, input) => {
+    // Agent logic
+    return { response: 'Hello!' };
+  },
+});
+
+export const welcome = () => ({
+  welcome: `Welcome to the **Support Agent**.
+
+Ask questions about your account, billing, or technical issues.`,
+  prompts: [
+    {
+      data: JSON.stringify({ message: 'How do I reset my password?' }),
+      contentType: 'application/json',
+    },
+    {
+      data: JSON.stringify({ message: 'What are your business hours?' }),
+      contentType: 'application/json',
+    },
+  ],
+});
+
+export default agent;
+```
+
+The `welcome` field supports Markdown. The `prompts` array provides quick-test buttons in the UI.
+
+## What You See
+
+The Workbench displays:
+
+- **Agent selector**: Switch between agents in your project
+- **Input schema**: See what fields the agent expects
+- **Output schema**: See what the agent returns
+- **Execution metrics**: Token usage and response time
+- **Response viewer**: Formatted output with copy support
+
+## Custom Route
+
+Serve the Workbench at a different path:
+
+```typescript
+const workbench = createWorkbench({
+  route: '/dev',
+});
+```
+
+## Next Steps
+
+- [Using the Workbench](/v1/Build/Frontend/workbench): Configuration options and embedding in custom frontends
+- [Creating Agents](/v1/Build/Agents/creating-agents): Agent patterns and best practices
+- [Local Development](/v1/Reference/CLI/development): Dev server options

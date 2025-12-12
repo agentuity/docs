@@ -307,6 +307,27 @@ agentuity cloud stream delete <stream-id>
 
 **In agents:** Use `ctx.stream` for programmatic access. See [Durable Streams](/v1/Build/Storage/durable-streams).
 
+## Redis
+
+View Redis connection details for your organization.
+
+### Show Connection URL
+
+```bash
+# Show Redis URL (credentials masked in terminal)
+agentuity cloud redis show
+
+# Show with credentials visible
+agentuity cloud redis show --show-credentials
+
+# JSON output (credentials always visible)
+agentuity --json cloud redis show
+```
+
+<Callout type="info" title="Organization Resource">
+Redis is provisioned at the organization level. Contact support if you need Redis enabled for your organization.
+</Callout>
+
 ## Next Steps
 
 - [Configuration Commands](/v1/Reference/CLI/configuration): Manage environment variables, secrets, and API keys

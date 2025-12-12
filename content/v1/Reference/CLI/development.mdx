@@ -130,30 +130,9 @@ The `--public` flag creates a secure tunnel through Agentuity's edge network, gi
 
 ## Workbench UI
 
-Access the interactive Workbench at `http://localhost:3500/workbench` to test agents visually.
+Access the interactive Workbench at `http://localhost:3500/workbench` to test agents visually. It displays agent schemas, handles input validation, and shows execution results with timing metrics.
 
-**Features:**
-- Test agents with custom inputs or generated data (based on the agent's schema)
-- View request/response data
-- Inspect agent metadata
-- Explore available routes
-
-<Callout type="tip" title="Setup Required">
-Enable the Workbench in your `app.ts`:
-
-```typescript
-import { createApp } from '@agentuity/runtime';
-import { createWorkbench } from '@agentuity/workbench';
-
-const workbench = createWorkbench();
-
-const { server, logger } = await createApp({
-  services: {
-    workbench,
-  },
-});
-```
-</Callout>
+See [Testing with Workbench](/v1/Build/Agents/workbench) for setup and configuration.
 
 ## Building Your Project
 

@@ -1,0 +1,77 @@
+---
+title: Workbench Configuration
+description: Configure routes, authentication, and embed Workbench in custom frontends
+---
+
+This page covers advanced Workbench configuration and embedding. For basic setup and testing agents, see [Testing with Workbench](/v1/Build/Agents/workbench).
+
+## Configuration
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `route` | `string` | Custom route path (default: `/workbench`) |
+| `headers` | `Record<string, string>` | Custom headers for API requests |
+| `apiKey` | `string` | Bearer token for authentication |
+
+### Custom Route
+
+Serve the Workbench at a different path:
+
+```typescript
+const workbench = createWorkbench({
+  route: '/dev',
+});
+```
+
+### Authentication
+
+Protect the Workbench with an API key:
+
+```typescript
+const workbench = createWorkbench({
+  apiKey: process.env.WORKBENCH_API_KEY,
+});
+```
+
+Set the `AGENTUITY_WORKBENCH_APIKEY` environment variable to enable authentication. Requests without a valid Bearer token will be rejected.
+
+## Embedding in Your Frontend
+
+The Workbench exports React components you can embed in your own application:
+
+```typescript
+import { App } from '@agentuity/workbench';
+import '@agentuity/workbench/styles';
+import { encodeWorkbenchConfig } from '@agentuity/core/workbench';
+
+const config = encodeWorkbenchConfig({
+  route: '/workbench',
+  headers: {},
+});
+
+function MyApp() {
+  return <App configBase64={config} />;
+}
+```
+
+For custom layouts, the package also exports individual components:
+
+- `Chat` - The conversation area
+- `Schema` - Schema viewer panel
+- `WorkbenchProvider` + `useWorkbench` - Context and hooks for full control
+
+## Debug Logging
+
+Enable debug logging in the browser console:
+
+```javascript
+localStorage.setItem('AGENTUITY_LOG_LEVEL', 'debug');
+```
+
+Valid levels: `debug`, `info`, `warn`, `error`. Refresh the page after setting.
+
+## Next Steps
+
+- [Testing with Workbench](/v1/Build/Agents/workbench): Basic setup and test prompts
+- [React Hooks](/v1/Build/Frontend/react-hooks): Build custom agent UIs
+- [Local Development](/v1/Reference/CLI/development): Dev server options

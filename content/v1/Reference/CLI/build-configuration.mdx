@@ -168,7 +168,7 @@ export default function config(phase: BuildPhase, context: BuildContext): BuildC
     };
   }
 
-  // Production optimizations
+  // Deployment optimizations
   if (!context.dev && phase === 'api') {
     return {
       external: ['canvas', 'jsdom'],
