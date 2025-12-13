@@ -53,7 +53,7 @@ export async function createAgentStreamProcessor(
   const { TutorialStateManager } = await import('@/lib/tutorial/state-manager');
 
   // Track accumulated data
-  let accumulatedContent = '';
+  let contentChunks: string[] = [];
   let finalTutorialData: TutorialData | undefined;
   let documentationReferences: string[] = [];
 
@@ -80,7 +80,7 @@ export async function createAgentStreamProcessor(
           const data = JSON.parse(line.slice(6)) as StreamingChunk;
 
           if (data.type === 'text-delta' && data.textDelta) {
-            accumulatedContent += data.textDelta;
+            contentChunks.push(data.textDelta);
           } else if (data.type === 'tutorial-data' && data.tutorialData) {
             finalTutorialData = data.tutorialData;
 
@@ -102,7 +102,7 @@ export async function createAgentStreamProcessor(
               id: assistantMessageId,
               sessionId,
               role: 'ASSISTANT',
-              content: accumulatedContent,
+              content: contentChunks.join(''),
               timestamp: new Date().toISOString(),
               status: 'COMPLETED',
               tutorialData: finalTutorialData,
