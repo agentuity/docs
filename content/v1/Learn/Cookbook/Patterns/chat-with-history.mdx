@@ -39,10 +39,7 @@ const agent = createAgent('Chat Agent', {
     const { textStream, text } = streamText({
       model: anthropic('claude-sonnet-4-5'),
       system: 'You are a helpful assistant. Be concise but friendly.',
-      messages: messages.map(m => ({
-        role: m.role,
-        content: m.content,
-      })),
+      messages,
     });
 
     // Save assistant response after streaming completes

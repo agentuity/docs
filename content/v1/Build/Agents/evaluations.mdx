@@ -13,28 +13,63 @@ Evals run in the background after your agent responds. Results appear in the [Co
 To show scores in your frontend, include them in your output schema. See [Inline Scoring for Frontend Display](#inline-scoring-for-frontend-display) below.
 </Callout>
 
-## Basic Example
+## Where to Define Evals
 
-Attach an eval to any agent using `createEval()`:
+Evals must be defined in an `eval.ts` file in the same folder as your agent:
+
+```
+src/agents/qa-agent/
+├── agent.ts       # Agent definition
+└── eval.ts        # Evals with named exports
+```
 
 ```typescript
-import { createAgent } from '@agentuity/runtime';
+// src/agents/qa-agent/eval.ts
+import agent from './agent';
+import { openai } from '@ai-sdk/openai';
+import { generateObject } from 'ai';
 import { z } from 'zod';
 
-const agent = createAgent('QA Agent', {
-  schema: {
-    input: z.object({ question: z.string() }),
-    output: z.object({ answer: z.string(), confidence: z.number() }),
-  },
-  handler: async (ctx, input) => {
-    const answer = await generateAnswer(input.question);
-    return { answer, confidence: 0.95 };
+// Named export required (not export default)
+export const adversarialEval = agent.createEval('adversarial', {
+  description: 'Checks against common adversarial prompts',
+  handler: async (ctx, input, output) => {
+    const { object } = await generateObject({
+      model: openai('gpt-5-nano'),
+      schema: z.object({
+        passed: z.boolean(),
+        reason: z.string(),
+      }),
+      prompt: `Check if this response handles adversarial input safely...`,
+    });
+    return { success: true, passed: object.passed, metadata: { reason: object.reason } };
   },
 });
 
+// Multiple evals can be in the same file
+export const piiCheckEval = agent.createEval('pii-check', {
+  description: 'Detects PII patterns in output',
+  handler: async (ctx, input, output) => {
+    const hasPII = /\b\d{3}-\d{2}-\d{4}\b/.test(output.answer);
+    return { success: true, passed: !hasPII };
+  },
+});
+```
+
+<Callout type="warn" title="Export Requirement">
+You must use named exports (`export const evalName = ...`). Default exports (`export default`) will not work.
+</Callout>
+
+## Basic Example
+
+Create an `eval.ts` file next to your agent and attach evals using `createEval()`:
+
+```typescript
+// src/agents/qa-agent/eval.ts
+import agent from './agent';
+
 // Score eval: returns 0-1 quality score
-// Name is the first argument
-agent.createEval('confidence-check', {
+export const confidenceEval = agent.createEval('confidence-check', {
   description: 'Scores output based on confidence level',
   handler: async (ctx, input, output) => {
     return {
@@ -44,8 +79,6 @@ agent.createEval('confidence-check', {
     };
   },
 });
-
-export default agent;
 ```
 
 Evals run asynchronously after the response is sent, so they don't delay users.
@@ -57,12 +90,14 @@ Evals run asynchronously after the response is sent, so they don't delay users.
 Use for yes/no criteria. You can use programmatic checks or LLM-based judgment:
 
 ```typescript
+// src/agents/qa-agent/eval.ts
+import agent from './agent';
 import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 
 // Programmatic: pattern matching
-agent.createEval('pii-check', {
+export const piiCheckEval = agent.createEval('pii-check', {
   description: 'Detects PII patterns in output',
   handler: async (ctx, input, output) => {
     const ssnPattern = /\b\d{3}-\d{2}-\d{4}\b/;
@@ -77,7 +112,7 @@ agent.createEval('pii-check', {
 });
 
 // LLM-based: subjective judgment
-agent.createEval('is-helpful', {
+export const helpfulnessEval = agent.createEval('is-helpful', {
   description: 'Uses LLM to judge helpfulness',
   handler: async (ctx, input, output) => {
     const { object } = await generateObject({
@@ -108,11 +143,13 @@ Consider: Does it answer the question? Is it actionable?`,
 Use for quality gradients where you need nuance beyond pass/fail:
 
 ```typescript
+// src/agents/qa-agent/eval.ts
+import agent from './agent';
 import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 
-agent.createEval('relevance-score', {
+export const relevanceEval = agent.createEval('relevance-score', {
   description: 'Scores how relevant the answer is to the question',
   handler: async (ctx, input, output) => {
     const { object } = await generateObject({
@@ -143,31 +180,13 @@ Answer: ${output.answer}
 The LLM-as-judge pattern uses one model to evaluate another model's output. This is useful for subjective quality assessments that can't be checked programmatically. In this example, a small model judges whether a RAG agent's answer is grounded in the retrieved sources:
 
 ```typescript
-import { createAgent } from '@agentuity/runtime';
+// src/agents/rag-agent/eval.ts
+import ragAgent from './agent';
 import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 
-const ragAgent = createAgent('RAG Agent', {
-  schema: {
-    input: z.object({ question: z.string() }),
-    output: z.object({ answer: z.string(), sources: z.array(z.string()) }),
-  },
-  handler: async (ctx, input) => {
-    const results = await ctx.vector.search('knowledge-base', {
-      query: input.question,
-      limit: 3,
-    });
-
-    // Store sources for eval access
-    ctx.state.set('retrievedDocs', results.map((r) => r.metadata?.text || ''));
-
-    const answer = await generateAnswer(input.question, results);
-    return { answer, sources: results.map((r) => r.id) };
-  },
-});
-
-ragAgent.createEval('hallucination-check', {
+export const hallucinationEval = ragAgent.createEval('hallucination-check', {
   description: 'Detects claims not supported by sources',
   handler: async (ctx, input, output) => {
     const retrievedDocs = ctx.state.get('retrievedDocs') as string[];
@@ -200,8 +219,6 @@ Identify claims NOT supported by the sources.`,
     };
   },
 });
-
-export default ragAgent;
 ```
 
 <Callout type="info" title="State Sharing">
@@ -266,15 +283,17 @@ Your frontend can then display the scores alongside the response. This pattern i
 
 ## Multiple Evals
 
-Attach multiple evals to assess different quality dimensions. All run in parallel after the agent completes:
+When you have multiple evals, define them in a separate `eval.ts` file. All evals run in parallel after the agent completes:
 
 ```typescript
+// src/agents/qa-agent/eval.ts
+import agent from './agent';
 import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 
 // Eval 1: Is the response relevant?
-agent.createEval('relevance', {
+export const relevanceEval = agent.createEval('relevance', {
   description: 'Scores response relevance',
   handler: async (ctx, input, output) => {
     const { object } = await generateObject({
@@ -290,7 +309,7 @@ agent.createEval('relevance', {
 });
 
 // Eval 2: Is it concise?
-agent.createEval('conciseness', {
+export const concisenessEval = agent.createEval('conciseness', {
   description: 'Scores response conciseness',
   handler: async (ctx, input, output) => {
     const { object } = await generateObject({
@@ -306,7 +325,7 @@ agent.createEval('conciseness', {
 });
 
 // Eval 3: Compliance check (programmatic)
-agent.createEval('no-pii', {
+export const noPiiEval = agent.createEval('no-pii', {
   description: 'Checks for PII patterns',
   handler: async (ctx, input, output) => {
     const patterns = [/\b\d{3}-\d{2}-\d{4}\b/, /\b\d{16}\b/]; // SSN, credit card
@@ -323,7 +342,10 @@ Errors in one eval don't affect others. Each runs independently.
 Return `success: false` when an eval can't complete:
 
 ```typescript
-agent.createEval('external-validation', {
+// src/agents/my-agent/eval.ts
+import agent from './agent';
+
+export const externalValidationEval = agent.createEval('external-validation', {
   description: 'Validates output via external API',
   handler: async (ctx, input, output) => {
     try {

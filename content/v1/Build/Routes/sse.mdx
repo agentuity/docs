@@ -43,7 +43,7 @@ router.sse('/path', (c) => async (stream) => {
   await stream.write('data');
   await stream.writeSSE({ event, data, id });
   stream.onAbort(() => { /* cleanup */ });
-  stream.close();
+  stream.close();  // Optional: stream closes automatically when handler returns
 });
 ```
 
