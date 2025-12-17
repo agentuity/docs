@@ -15,6 +15,10 @@ Agentuity provides two state scopes for managing data across requests:
 | Request | Single request | After response sent | `ctx.state` | Timing, temp calculations |
 | Thread | Up to 1 hour | Expiration or `destroy()` | `ctx.thread.state` | Conversation history |
 
+<Callout type="tip" title="Threads and Sessions">
+Threads "wrap" sessions. Think of a *thread* as a conversation and a *session* as one message in that conversation. Each request creates a new session, but sessions within the same conversation share a thread.
+</Callout>
+
 ### Quick Example
 
 ```typescript

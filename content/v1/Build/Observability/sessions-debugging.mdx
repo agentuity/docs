@@ -14,6 +14,10 @@ Every request to your agents gets a unique session ID (`sess_...`). Sessions lin
 
 A thread contains multiple sessions. When a user has a multi-turn conversation, each message creates a new session within the same thread.
 
+<Callout type="tip" title="Quick Mental Model">
+Threads "wrap" sessions. Think of a *thread* as a conversation and a *session* as one message in that conversation.
+</Callout>
+
 ## Accessing Session ID
 
 ```typescript
