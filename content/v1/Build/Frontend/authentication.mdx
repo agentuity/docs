@@ -1,0 +1,204 @@
+---
+title: Adding Authentication
+description: Add user authentication with Clerk, WorkOS, or other identity providers
+---
+
+Protect your agents and routes with user authentication. The `@agentuity/auth` package provides drop-in integration for identity providers like Clerk.
+
+## Quick Start with Clerk
+
+The fastest way to add authentication is the Clerk template:
+
+```bash
+bunx agentuity create my-app --template clerk
+cd my-app
+cp .env.example .env
+# Add your Clerk keys to .env
+bun run dev
+```
+
+Get your keys from the [Clerk Dashboard](https://dashboard.clerk.com).
+
+## Adding to an Existing Project
+
+### 1. Install Dependencies
+
+```bash
+bun add @agentuity/auth @clerk/clerk-react @clerk/backend
+```
+
+### 2. Client Setup
+
+Wrap your app with the Clerk and Agentuity providers:
+
+```tsx
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { ClerkProvider, useAuth } from '@clerk/clerk-react';
+import { AgentuityProvider } from '@agentuity/react';
+import { AgentuityClerk } from '@agentuity/auth/clerk';
+import { App } from './App';
+
+const CLERK_KEY = process.env.AGENTUITY_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+createRoot(document.getElementById('root')!).render(
+  <ClerkProvider publishableKey={CLERK_KEY!}>
+    <AgentuityProvider>
+      <AgentuityClerk useAuth={useAuth}>
+        <App />
+      </AgentuityClerk>
+    </AgentuityProvider>
+  </ClerkProvider>
+);
+```
+
+<Callout type="warning" title="Provider Order">
+`AgentuityClerk` must be inside both `ClerkProvider` and `AgentuityProvider`. The order matters.
+</Callout>
+
+### 3. Server Middleware
+
+Protect routes with `createMiddleware()`:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { createMiddleware } from '@agentuity/auth/clerk';
+
+const router = createRouter();
+
+// Protected route - requires authentication
+router.get('/profile', createMiddleware(), async (c) => {
+  const user = await c.var.auth.requireUser();
+  return c.json({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+  });
+});
+
+// Public route - no auth required
+router.get('/public', (c) => {
+  return c.json({ message: 'Anyone can access this' });
+});
+
+export default router;
+```
+
+## Using Auth State in Components
+
+The `useAgentuity` hook provides authentication state:
+
+```tsx
+import { useAPI, useAgentuity } from '@agentuity/react';
+
+function Dashboard() {
+  const { isAuthenticated, authLoading } = useAgentuity();
+  const { data, refetch } = useAPI('GET /api/profile');
+
+  if (authLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <div>Please sign in to continue</div>;
+  }
+
+  return (
+    <div>
+      <h1>Welcome, {data?.name}</h1>
+      <button onClick={() => refetch()}>Refresh Profile</button>
+    </div>
+  );
+}
+```
+
+Once `AgentuityClerk` is set up, `useAPI` and `useWebsocket` automatically include the auth token in requests.
+
+## Accessing User Data
+
+### Generic Fields
+
+All providers expose a common interface:
+
+```typescript
+router.get('/profile', createMiddleware(), async (c) => {
+  const user = await c.var.auth.requireUser();
+
+  // Available on all providers
+  c.var.logger.info('User authenticated', {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+  });
+
+  return c.json(user);
+});
+```
+
+### Provider-Specific Data
+
+Access Clerk-specific fields via `user.raw`:
+
+```typescript
+router.get('/profile', createMiddleware(), async (c) => {
+  const user = await c.var.auth.requireUser();
+
+  // Clerk-specific fields (fully typed)
+  const imageUrl = user.raw.imageUrl;
+  const metadata = user.raw.publicMetadata;
+  const createdAt = user.raw.createdAt;
+
+  // Access JWT payload
+  const payload = c.var.auth.raw;
+  c.var.logger.debug('JWT payload', { sub: payload.sub });
+
+  return c.json({ user, imageUrl });
+});
+```
+
+## Environment Variables
+
+| Variable | Side | Description |
+|----------|------|-------------|
+| `AGENTUITY_PUBLIC_CLERK_PUBLISHABLE_KEY` | Client | Clerk publishable key (bundled into frontend) |
+| `CLERK_SECRET_KEY` | Server | Clerk secret key (never exposed to client) |
+
+<Callout type="info" title="AGENTUITY_PUBLIC_ Prefix">
+Environment variables prefixed with `AGENTUITY_PUBLIC_` are bundled into the frontend build and accessible via `process.env`. Keep secrets (like `CLERK_SECRET_KEY`) without this prefix.
+</Callout>
+
+## Global Middleware
+
+Protect all routes under a path prefix:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { createMiddleware } from '@agentuity/auth/clerk';
+
+const router = createRouter();
+
+// Protect all /api/* routes
+router.use('/api/*', createMiddleware());
+
+router.get('/api/profile', async (c) => {
+  const user = await c.var.auth.requireUser();
+  return c.json({ email: user.email });
+});
+
+router.get('/api/settings', async (c) => {
+  const user = await c.var.auth.requireUser();
+  return c.json({ userId: user.id });
+});
+
+export default router;
+```
+
+## Other Providers
+
+For identity providers not yet supported by `@agentuity/auth`, use [JWT middleware](/v1/Build/Routes/middleware#bearer-token-jwt) to validate tokens from your provider.
+
+## Next Steps
+
+- [Middleware & Authentication](/v1/Build/Routes/middleware): More middleware patterns
+- [Provider Setup](/v1/Build/Frontend/provider-setup): AgentuityProvider configuration
+- [React Hooks](/v1/Build/Frontend/react-hooks): Building custom UIs

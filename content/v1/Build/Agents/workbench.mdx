@@ -3,11 +3,11 @@ title: Testing with Workbench
 description: Use the built-in development UI to test agents, validate schemas, and debug responses
 ---
 
-The Workbench is a built-in UI for testing your agents during development. It automatically discovers your agents, displays their input/output schemas, and lets you execute them with real inputs.
+Workbench is a built-in UI for testing your agents during development. It automatically discovers your agents, displays their input/output schemas, and lets you execute them with real inputs.
 
-## Enabling the Workbench
+## Enabling Workbench
 
-Add the Workbench to your `app.ts`:
+Add Workbench to your `app.ts`:
 
 ```typescript
 import { createApp } from '@agentuity/runtime';
@@ -26,7 +26,7 @@ Start the dev server and visit [http://localhost:3500/workbench](http://localhos
 
 ## Adding Test Prompts
 
-Export a `welcome` function from your agent to customize the Workbench experience:
+Export a `welcome` function from your agent to customize Workbench:
 
 ```typescript
 import { createAgent } from '@agentuity/runtime';
@@ -66,7 +66,7 @@ The `welcome` field supports Markdown. The `prompts` array provides quick-test b
 
 ## What You See
 
-The Workbench displays:
+Workbench displays:
 
 - **Agent selector**: Switch between agents in your project
 - **Input schema**: See what fields the agent expects
@@ -74,9 +74,45 @@ The Workbench displays:
 - **Execution metrics**: Token usage and response time
 - **Response viewer**: Formatted output with copy support
 
+## Thread Persistence
+
+Workbench maintains thread state across requests, allowing you to test multi-turn conversations. Each browser tab gets its own thread, and state persists until you close the tab.
+
+Test conversational agents that use thread state:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent('Chat', {
+  schema: {
+    input: z.object({ message: z.string() }),
+    output: z.object({ response: z.string(), turnCount: z.number() }),
+  },
+  handler: async (ctx, input) => {
+    // Initialize turn count on first request
+    if (!ctx.thread.state.has('turns')) {
+      ctx.thread.state.set('turns', 0);
+    }
+
+    const turns = (ctx.thread.state.get('turns') as number) + 1;
+    ctx.thread.state.set('turns', turns);
+
+    return {
+      response: `You said: ${input.message}`,
+      turnCount: turns,
+    };
+  },
+});
+
+export default agent;
+```
+
+Send multiple requests in Workbench to see the turn count increment.
+
 ## Custom Route
 
-Serve the Workbench at a different path:
+Serve Workbench at a different path:
 
 ```typescript
 const workbench = createWorkbench({
@@ -86,6 +122,6 @@ const workbench = createWorkbench({
 
 ## Next Steps
 
-- [Using the Workbench](/v1/Build/Frontend/workbench): Configuration options and embedding in custom frontends
+- [Workbench Configuration](/v1/Build/Frontend/workbench): Configuration options and embedding in custom frontends
 - [Creating Agents](/v1/Build/Agents/creating-agents): Agent patterns and best practices
 - [Local Development](/v1/Reference/CLI/development): Dev server options

@@ -5,12 +5,8 @@ description: Add authentication, validation, and request processing to your rout
 
 Agentuity routes are built on [Hono](https://hono.dev), giving you access to Hono's middleware system. Use middleware to add authentication, logging, CORS, rate limiting, and other shared request processing.
 
-<Callout type="info" title="Works Everywhere">
-Middleware works on all route types in `src/api/`. The patterns below apply to HTTP, WebSocket, SSE, and email routes.
-</Callout>
-
-<Callout type="warning" title="Middleware Compatibility">
-Middleware is supported on: HTTP routes, WebSocket, SSE, Email, and Stream routes. SMS and Cron routes do not support middleware.
+<Callout type="info" title="Supported Routes">
+Middleware works on HTTP, WebSocket, SSE, Email, and Stream routes. SMS and Cron routes do not support middleware.
 </Callout>
 
 ## Basic Middleware
@@ -116,36 +112,35 @@ export default router;
 
 ### Third-Party Auth Providers
 
-Services like [Clerk](https://clerk.dev), [Auth0](https://auth0.com), and [Supabase Auth](https://supabase.com/auth) provide drop-in authentication. Here's an example with Clerk:
+The `@agentuity/auth` package provides integrated authentication for identity providers like Clerk:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
-import { clerkMiddleware, getAuth } from '@hono/clerk-auth';
+import { createMiddleware } from '@agentuity/auth/clerk';
 
 const router = createRouter();
-
-// Apply Clerk middleware
-router.use('/*', clerkMiddleware());
 
 router.get('/public', (c) => {
   return c.json({ message: 'Public endpoint' });
 });
 
-router.get('/protected', (c) => {
-  const auth = getAuth(c);
-
-  if (!auth?.userId) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
-  return c.json({ userId: auth.userId });
+// Protected route with Clerk auth
+router.get('/protected', createMiddleware(), async (c) => {
+  const user = await c.var.auth.requireUser();
+  return c.json({
+    userId: user.id,
+    email: user.email,
+    name: user.name,
+  });
 });
 
 export default router;
 ```
 
-<Callout type="info" title="Using Other Providers">
-For other auth providers, check if they have Hono middleware available, or use JWT validation with their tokens.
+The `@agentuity/auth` package automatically integrates with `useAPI` and `useWebsocket` hooks, injecting auth tokens into requests.
+
+<Callout type="info" title="Full Authentication Setup">
+For complete setup including client-side configuration and the Clerk template, see [Adding Authentication](/v1/Build/Frontend/authentication).
 </Callout>
 
 ## Request Validation

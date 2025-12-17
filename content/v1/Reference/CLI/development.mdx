@@ -23,12 +23,16 @@ The server starts on port 3500 by default with:
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--port` | 3500 | TCP port for the dev server |
+| `--port` | 3500 (or `PORT` env) | TCP port for the dev server |
 | `--local` | false | Use local services instead of cloud |
 | `--public` | true | Enable public URL tunneling |
 | `--no-public` | - | Disable public URL tunneling |
 | `--interactive` | true | Enable interactive keyboard shortcuts |
 | `--watch <path>` | - | Additional paths to watch for changes (repeatable) |
+
+<Callout type="tip" title="PORT Environment Variable">
+The dev server respects the `PORT` environment variable. The `--port` flag takes precedence if both are set.
+</Callout>
 
 ```bash
 # Custom port
