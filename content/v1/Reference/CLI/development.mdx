@@ -191,36 +191,11 @@ The dev server watches for file changes and automatically:
 
 ## Dev Server Architecture
 
-Agentuity uses a hybrid Bun + Vite architecture during development:
+The dev server uses Vite for frontend hot module replacement (HMR) and Bun for server-side code. All requests go through a single port (3500), so you don't need to manage multiple servers or ports during development.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  Browser                                                │
-│  └── All requests go to http://localhost:3500           │
-└─────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────┐
-│  Bun Server (port 3500)                                 │
-│  ├── Agents, routes, WebSocket                          │
-│  ├── Workbench UI                                       │
-│  └── Proxies frontend assets → Vite                     │
-└─────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────┐
-│  Vite Asset Server (dynamic port)                       │
-│  ├── Frontend asset transformation                      │
-│  ├── React Fast Refresh / HMR                           │
-│  └── CSS processing                                     │
-└─────────────────────────────────────────────────────────┘
-```
-
-**Why this architecture:**
-- **Single entry point**: All browser traffic goes through port 3500
-- **Fast frontend updates**: Vite handles HMR without full server restarts
-- **WebSocket support**: Bun's native WebSocket works seamlessly
-- **Unified development**: No port switching between API and frontend
+- **Frontend changes** (React, CSS) reload instantly via Vite HMR
+- **Server changes** (agents, routes) trigger a fast Bun rebuild
+- **WebSocket connections** work seamlessly
 
 ## Development vs Production
 
