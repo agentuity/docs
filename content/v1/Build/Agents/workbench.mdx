@@ -7,22 +7,24 @@ Workbench is a built-in UI for testing your agents during development. It automa
 
 ## Enabling Workbench
 
-Add Workbench to your `app.ts`:
+Add a `workbench` section to your `agentuity.config.ts`:
 
 ```typescript
-import { createApp } from '@agentuity/runtime';
-import { createWorkbench } from '@agentuity/workbench';
+import type { AgentuityConfig } from '@agentuity/cli';
 
-const workbench = createWorkbench();
-
-await createApp({
-  services: {
-    workbench,
+export default {
+  workbench: {
+    route: '/workbench',
+    headers: {},
   },
-});
+} satisfies AgentuityConfig;
 ```
 
 Start the dev server and visit [http://localhost:3500/workbench](http://localhost:3500/workbench).
+
+<Callout type="info" title="Development Only">
+Workbench is only available in development mode (`agentuity dev`). It is not included in production builds.
+</Callout>
 
 ## Adding Test Prompts
 
@@ -115,9 +117,13 @@ Send multiple requests in Workbench to see the turn count increment.
 Serve Workbench at a different path:
 
 ```typescript
-const workbench = createWorkbench({
-  route: '/dev',
-});
+import type { AgentuityConfig } from '@agentuity/cli';
+
+export default {
+  workbench: {
+    route: '/dev',
+  },
+} satisfies AgentuityConfig;
 ```
 
 ## Next Steps

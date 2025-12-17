@@ -76,7 +76,7 @@ handler: async (ctx, input) => {
 
 ## Thread State
 
-Thread state (`ctx.thread.state`) persists across multiple requests within a conversation, expiring after 1 hour of inactivity. Thread identity is managed automatically via cookies.
+Thread state (`ctx.thread.state`) persists across multiple requests within a conversation, expiring after 1 hour of inactivity. Thread identity is managed automatically via cookies (or the `x-thread-id` header for API clients).
 
 ### Conversation Memory
 
@@ -248,69 +248,23 @@ export default agent;
 
 ## Thread Lifecycle
 
-Threads expire after 1 hour of inactivity. Use the `destroyed` event to run cleanup logic:
+Threads expire after 1 hour of inactivity. Use the `destroyed` event to archive data before expiration:
 
 ```typescript
-handler: async (ctx, input) => {
-  // Register cleanup handler once per thread
-  if (!ctx.thread.state.has('cleanupRegistered')) {
-    ctx.thread.addEventListener('destroyed', async (eventName, thread) => {
-      const messages = thread.state.get('messages') as string[] || [];
-
-      if (messages.length > 0) {
-        // Save conversation before thread expires
-        await ctx.kv.set('archives', thread.id, {
-          messages,
-          endedAt: new Date().toISOString(),
-        }, { ttl: 604800 }); // 7 days
-
-        ctx.logger.info('Archived conversation', {
-          threadId: thread.id,
-          messageCount: messages.length,
-        });
-      }
-    });
-
-    ctx.thread.state.set('cleanupRegistered', true);
+ctx.thread.addEventListener('destroyed', async (eventName, thread) => {
+  const messages = thread.state.get('messages') as string[] || [];
+  if (messages.length > 0) {
+    await ctx.kv.set('archives', thread.id, {
+      messages,
+      endedAt: new Date().toISOString(),
+    }, { ttl: 604800 });
   }
-
-  // Process request...
-}
-```
-
-### Removing Event Listeners
-
-Use `removeEventListener` to unregister handlers:
-
-```typescript
-const handler = async (eventName: string, thread: Thread) => {
-  await archiveThread(thread);
-};
-
-// Register listener
-ctx.thread.addEventListener('destroyed', handler);
-
-// Later: remove listener
-ctx.thread.removeEventListener('destroyed', handler);
-```
-
-### Session Completion Events
-
-Track when sessions (individual requests) complete:
-
-```typescript
-ctx.session.addEventListener('completed', async (eventName, session) => {
-  ctx.logger.info('Session completed', {
-    sessionId: session.id,
-    threadId: session.thread.id,
-  });
 });
-
-// Remove if needed
-ctx.session.removeEventListener('completed', handler);
 ```
 
-For app-level event monitoring, see [Events & Lifecycle](/v1/Build/Agents/events-lifecycle).
+Similarly, track when sessions complete with `ctx.session.addEventListener('completed', ...)`.
+
+For app-level monitoring of all threads and sessions, see [Events & Lifecycle](/v1/Build/Agents/events-lifecycle).
 
 ## Thread vs Session IDs
 
@@ -329,6 +283,118 @@ handler: async (ctx, input) => {
   return { threadId: ctx.thread.id, sessionId: ctx.sessionId };
 }
 ```
+
+## Advanced: Custom Thread IDs
+
+By default, thread IDs are generated automatically and managed via signed cookies. For advanced use cases, you can provide custom thread ID logic using a `ThreadIDProvider`.
+
+**Use cases:**
+- Integrating with external identity systems
+- Multi-tenant applications where threads should be scoped to users
+- Custom conversation management tied to your domain model
+
+### ThreadIDProvider Interface
+
+```typescript
+import type { Context } from 'hono';
+import type { Env, AppState } from '@agentuity/runtime';
+
+interface ThreadIDProvider {
+  getThreadId(appState: AppState, ctx: Context<Env>): string | Promise<string>;
+}
+```
+
+### Thread ID Format Requirements
+
+Custom thread IDs must follow these rules:
+
+| Requirement | Value |
+|-------------|-------|
+| Prefix | Must start with `thrd_` |
+| Length | 32-64 characters total |
+| Characters | After prefix: `[a-zA-Z0-9]` only |
+
+```typescript
+// Valid thread IDs
+'thrd_abc123def456789012345678901'     // 32 chars - minimum
+'thrd_' + 'a'.repeat(59)                // 64 chars - maximum
+
+// Invalid thread IDs
+'thrd_abc'                              // Too short
+'thrd_abc-def-123'                      // Dashes not allowed
+'thread_abc123'                         // Wrong prefix
+```
+
+### Custom Provider Example
+
+Create a provider that generates deterministic thread IDs based on authenticated users:
+
+```typescript
+import { createApp, getThreadProvider } from '@agentuity/runtime';
+import type { ThreadIDProvider } from '@agentuity/runtime';
+
+const userThreadProvider: ThreadIDProvider = {
+  getThreadId: async (appState, ctx) => {
+    const userId = ctx.req.header('x-user-id');
+
+    if (userId) {
+      // Create deterministic thread ID from user ID
+      const data = new TextEncoder().encode(userId);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hex = Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('')
+        .slice(0, 27);
+      return `thrd_${hex}`;
+    }
+
+    // Fall back to random ID for unauthenticated requests
+    const arr = new Uint8Array(16);
+    crypto.getRandomValues(arr);
+    return `thrd_${Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('')}`;
+  }
+};
+
+await createApp({
+  setup: () => {
+    getThreadProvider().setThreadIDProvider(userThreadProvider);
+    return {};
+  }
+});
+```
+
+### Default Thread ID Behavior
+
+The built-in `DefaultThreadIDProvider` handles thread IDs automatically:
+
+1. **Check header**: Looks for signed `x-thread-id` header
+2. **Check cookie**: Falls back to signed `atid` cookie
+3. **Generate new**: Creates a new random thread ID if neither exists
+4. **Persist**: Sets both the response header and cookie for future requests
+
+The signing uses `AGENTUITY_SDK_KEY` (or defaults to `'agentuity'` in development) with HMAC SHA-256 to prevent tampering.
+
+### Client-Side Thread Persistence
+
+When building frontends, you can maintain thread continuity by storing and sending the thread ID:
+
+```typescript
+// Client-side: store thread ID from response header
+const response = await fetch('/api/chat', { method: 'POST', body: message });
+const threadId = response.headers.get('x-thread-id');
+localStorage.setItem('threadId', threadId);
+
+// Subsequent requests: send thread ID header
+const nextResponse = await fetch('/api/chat', {
+  method: 'POST',
+  headers: { 'x-thread-id': localStorage.getItem('threadId') },
+  body: nextMessage
+});
+```
+
+<Callout type="warning" title="Signed Headers Required">
+The `x-thread-id` header must include the signature (format: `threadId;signature`). Use the exact value from the response header. Unsigned or tampered thread IDs are rejected.
+</Callout>
 
 ## State Size Limits
 

@@ -3,7 +3,7 @@ title: Tailwind CSS Setup
 description: Add Tailwind CSS styling to your Agentuity frontend
 ---
 
-Add [Tailwind CSS](https://tailwindcss.com) v4 to your Agentuity project using the Bun Tailwind plugin.
+Add [Tailwind CSS](https://tailwindcss.com) v4 to your Agentuity project using the official Tailwind Vite plugin.
 
 <Callout type="tip" title="Starting a New Project?">
 Use the Tailwind template for a pre-configured setup:
@@ -21,7 +21,7 @@ agentuity create my-app --template tailwind
 ## Step 1: Install Dependencies
 
 ```bash
-bun add -D tailwindcss bun-plugin-tailwind
+bun add -D tailwindcss @tailwindcss/vite
 ```
 
 ## Step 2: Create Build Configuration
@@ -29,40 +29,27 @@ bun add -D tailwindcss bun-plugin-tailwind
 Create `agentuity.config.ts` in your project root:
 
 ```typescript
-import tailwindcss from 'bun-plugin-tailwind';
-import type { BuildPhase, BuildContext, BuildConfig } from '@agentuity/cli';
+import type { AgentuityConfig } from '@agentuity/cli';
+import tailwindcss from '@tailwindcss/vite';
 
-export default function config(phase: BuildPhase, context: BuildContext): BuildConfig {
-  if (phase === 'web') {
-    return { plugins: [tailwindcss] };
-  }
-  return {};
-}
+export default {
+  plugins: [tailwindcss()],
+} satisfies AgentuityConfig;
 ```
 
-## Step 3: Link the Stylesheet
+## Step 3: Import Tailwind in Your CSS
 
-Add the Tailwind stylesheet to your HTML file (`src/web/index.html`):
+Create or update your main CSS file (`src/web/styles.css`):
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="tailwindcss" />
-    <title>My App</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="./frontend.tsx"></script>
-  </body>
-</html>
+```css
+@import 'tailwindcss';
 ```
 
-<Callout type="info" title="Special href Value">
-The `href="tailwindcss"` is a virtual module resolved by the Bun Tailwind plugin, not a file path. The plugin generates and injects the compiled CSS automatically.
-</Callout>
+Then import it in your entry point (`src/web/frontend.tsx`):
+
+```typescript
+import './styles.css';
+```
 
 ## Step 4: Use Tailwind Classes
 
@@ -98,12 +85,12 @@ Open `http://localhost:3500` in your browser. You should see your styled compone
 
 ## Key Points
 
-- Tailwind only applies to the `web` build phase
+- Tailwind applies to frontend builds only (via Vite)
 - The plugin scans your components and generates only the CSS you use
 - No `tailwind.config.ts` needed for basic usage (Tailwind v4 works out of the box)
-- Style changes reflect immediately in dev mode
+- Style changes reflect immediately in dev mode via Vite HMR
 
 ## Next Steps
 
-- [Build Configuration](/v1/Reference/CLI/build-configuration): Explore all config options including externals and define constants
+- [Build Configuration](/v1/Reference/CLI/build-configuration): Explore all config options including plugins and define constants
 - [Frontend Development](/v1/Build/Frontend/react-hooks): Connect your styled frontend to agents using React hooks

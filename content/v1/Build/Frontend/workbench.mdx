@@ -7,33 +7,48 @@ This page covers advanced Workbench configuration and embedding. For basic setup
 
 ## Configuration
 
+Configure Workbench in your `agentuity.config.ts`:
+
+```typescript
+import type { AgentuityConfig } from '@agentuity/cli';
+
+export default {
+  workbench: {
+    route: '/workbench',
+    headers: {},
+  },
+} satisfies AgentuityConfig;
+```
+
 | Option | Type | Description |
 |--------|------|-------------|
 | `route` | `string` | Custom route path (default: `/workbench`) |
 | `headers` | `Record<string, string>` | Custom headers for API requests |
-| `apiKey` | `string` | Bearer token for authentication |
 
 ### Custom Route
 
 Serve Workbench at a different path:
 
 ```typescript
-const workbench = createWorkbench({
-  route: '/dev',
-});
+import type { AgentuityConfig } from '@agentuity/cli';
+
+export default {
+  workbench: {
+    route: '/dev',
+  },
+} satisfies AgentuityConfig;
 ```
 
 ### Authentication
 
-Protect Workbench with an API key:
+Protect Workbench with an API key by setting the `AGENTUITY_WORKBENCH_APIKEY` environment variable:
 
-```typescript
-const workbench = createWorkbench({
-  apiKey: process.env.WORKBENCH_API_KEY,
-});
+```bash
+# .env
+AGENTUITY_WORKBENCH_APIKEY=your-secret-key
 ```
 
-Set the `AGENTUITY_WORKBENCH_APIKEY` environment variable to enable authentication. Requests without a valid Bearer token will be rejected.
+When set, requests to Workbench without a valid Bearer token will be rejected.
 
 ## Embedding in Your Frontend
 

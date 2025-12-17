@@ -97,15 +97,15 @@ app.addEventListener('agent.completed', (event, agent, ctx) => {
 For advanced build customization, create an `agentuity.config.ts` file in your project root:
 
 ```typescript
-import type { BuildPhase, BuildContext, BuildConfig } from '@agentuity/cli';
+import type { AgentuityConfig } from '@agentuity/cli';
 
-export default function config(phase: BuildPhase, context: BuildContext): BuildConfig {
-  return {};
-}
+export default {
+  // Configuration options here
+} satisfies AgentuityConfig;
 ```
 
 <Callout type="info" title="When to Use This">
-Use build configuration to add Bun plugins (like Tailwind CSS), exclude packages from bundling, or define build-time constants.
+Use build configuration to add Vite plugins (like Tailwind CSS), exclude packages from server bundling, or define build-time constants.
 </Callout>
 
 See the [reference page](/v1/Reference/CLI/build-configuration) for all options and examples.
@@ -125,7 +125,10 @@ OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
 
 # Frontend-accessible (exposed to browser)
-AGENTUITY_PUBLIC_API_URL=... # Any AGENTUITY_PUBLIC_* vars are bundled into frontend
+AGENTUITY_PUBLIC_API_URL=... # Any of these prefixes work:
+VITE_MY_VAR=...              # - AGENTUITY_PUBLIC_*
+PUBLIC_MY_VAR=...            # - VITE_*
+                             # - PUBLIC_*
 ```
 
 <Callout type="info" title="AI Gateway">
@@ -133,7 +136,7 @@ If you don't set provider API keys, LLM requests are routed through the Agentuit
 </Callout>
 
 <Callout type="warning" title="Public Environment Variables">
-Environment variables prefixed with `AGENTUITY_PUBLIC_` are exposed to the frontend bundle and visible in the browser. Never put secrets or API keys in `AGENTUITY_PUBLIC_*` variables.
+Environment variables prefixed with `AGENTUITY_PUBLIC_`, `VITE_`, or `PUBLIC_` are exposed to the frontend bundle and visible in the browser. Never put secrets or API keys in these variables.
 </Callout>
 
 ## Infrastructure as Code

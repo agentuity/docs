@@ -189,6 +189,39 @@ The dev server watches for file changes and automatically:
 
 **Cooldown period:** 500ms after build completes to prevent restart loops.
 
+## Dev Server Architecture
+
+Agentuity uses a hybrid Bun + Vite architecture during development:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Browser                                                │
+│  └── All requests go to http://localhost:3500           │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│  Bun Server (port 3500)                                 │
+│  ├── Agents, routes, WebSocket                          │
+│  ├── Workbench UI                                       │
+│  └── Proxies frontend assets → Vite                     │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│  Vite Asset Server (dynamic port)                       │
+│  ├── Frontend asset transformation                      │
+│  ├── React Fast Refresh / HMR                           │
+│  └── CSS processing                                     │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Why this architecture:**
+- **Single entry point**: All browser traffic goes through port 3500
+- **Fast frontend updates**: Vite handles HMR without full server restarts
+- **WebSocket support**: Bun's native WebSocket works seamlessly
+- **Unified development**: No port switching between API and frontend
+
 ## Development vs Production
 
 Understanding the differences between local development and deployed production:

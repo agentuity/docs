@@ -1,114 +1,39 @@
 ---
 title: Build Configuration
-description: Customize the bundling process with plugins, externals, and build-time constants
+description: Customize the build process with Vite plugins and build-time constants
 ---
 
-Customize how your project is bundled by creating an `agentuity.config.ts` file in your project root. Add Bun plugins, exclude packages from bundling, or define build-time constants.
+Customize how your project is built by creating an `agentuity.config.ts` file in your project root. Add Vite plugins for frontend builds or define build-time constants.
 
 ## Basic Configuration
 
 ```typescript
-import type { BuildPhase, BuildContext, BuildConfig } from '@agentuity/cli';
+import type { AgentuityConfig } from '@agentuity/cli';
 
-export default function config(phase: BuildPhase, context: BuildContext): BuildConfig {
-  return {};
-}
-```
-
-The function is called once per build phase. Return an empty object for phases you don't need to customize.
-
-## Build Phases
-
-| Phase | Bundles | Runs When |
-|-------|---------|-------------|
-| `api` | Server code (`app.ts`, agents, routes) | Every build |
-| `web` | Frontend (`src/web/`) | When `src/web/` exists |
-| `workbench` | Development testing UI | Dev mode only |
-
-Return phase-specific configuration:
-
-```typescript
-export default function config(phase: BuildPhase, context: BuildContext): BuildConfig {
-  if (phase === 'web') {
-    return { plugins: [tailwindcss] };
-  }
-
-  if (phase === 'api') {
-    return { external: ['sharp'] };
-  }
-
-  return {};
-}
-```
-
-## BuildContext
-
-The context object provides information about the current build.
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `rootDir` | `string` | Project root directory (absolute path) |
-| `srcDir` | `string` | Source directory path |
-| `outDir` | `string` | Output directory (`.agentuity`) |
-| `dev` | `boolean` | `true` for development builds |
-| `orgId` | `string \| undefined` | Organization ID |
-| `projectId` | `string \| undefined` | Project ID |
-| `region` | `string` | Deployment region |
-| `logger` | `Logger` | Build logger instance |
-
-```typescript
-export default function config(phase: BuildPhase, context: BuildContext): BuildConfig {
-  context.logger.debug(`Building ${phase} in ${context.dev ? 'dev' : 'prod'} mode`);
-
-  return {
-    define: {
-      'BUILD_TIME': JSON.stringify(new Date().toISOString()),
-    },
-  };
-}
+export default {
+  // Configuration options here
+} satisfies AgentuityConfig;
 ```
 
 ## Configuration Options
 
 ### plugins
 
-Add Bun plugins to extend the build process. Your plugins run after Agentuity's built-in plugins.
+Add Vite plugins for frontend builds (`src/web/`). Plugins run after built-in plugins (React, environment variables).
 
 ```typescript
-import tailwindcss from 'bun-plugin-tailwind';
+import type { AgentuityConfig } from '@agentuity/cli';
+import tailwindcss from '@tailwindcss/vite';
 
-export default function config(phase: BuildPhase): BuildConfig {
-  if (phase === 'web') {
-    return {
-      plugins: [tailwindcss],
-    };
-  }
-  return {};
-}
+export default {
+  plugins: [tailwindcss()],
+} satisfies AgentuityConfig;
 ```
 
-See the [Bun plugin documentation](https://bun.sh/docs/bundler/plugins) for creating custom plugins.
+See the [Vite plugin documentation](https://vitejs.dev/plugins/) for available plugins.
 
-### external
-
-Exclude packages from bundling. Use this for native modules or large dependencies that should load at runtime.
-
-```typescript
-export default function config(phase: BuildPhase): BuildConfig {
-  if (phase === 'api') {
-    return {
-      external: [
-        'sharp',           // Native image processing
-        '@prisma/client',  // Generated client
-      ],
-    };
-  }
-  return {};
-}
-```
-
-<Callout type="info" title="Default Externals">
-These packages are always excluded: `bun`, `fsevents`, `chromium-bidi`, `sharp`. Your externals are merged with these defaults.
+<Callout type="info" title="Frontend Only">
+Vite plugins apply to frontend builds only. Server code is bundled separately with Bun.
 </Callout>
 
 ### define
@@ -116,84 +41,94 @@ These packages are always excluded: `bun`, `fsevents`, `chromium-bidi`, `sharp`.
 Replace identifiers with constant values at build time. Values must be JSON-stringified.
 
 ```typescript
-export default function config(phase: BuildPhase, context: BuildContext): BuildConfig {
-  return {
-    define: {
-      'API_VERSION': JSON.stringify('v2'),
-      '__DEV__': JSON.stringify(context.dev),
-    },
-  };
-}
+import type { AgentuityConfig } from '@agentuity/cli';
+
+export default {
+  define: {
+    'API_VERSION': JSON.stringify('v2'),
+    '__DEV__': JSON.stringify(false),
+  },
+} satisfies AgentuityConfig;
 ```
 
 <Callout type="warning" title="Reserved Keys">
-These keys cannot be overridden:
-- `process.env.AGENTUITY_*` (all Agentuity environment variables)
+These keys are set by the build system and will override any user-defined values:
+- `import.meta.env.AGENTUITY_PUBLIC_*` (Agentuity internal variables)
 - `process.env.NODE_ENV`
-
-Attempting to override reserved keys logs a warning and the values are ignored.
 </Callout>
 
-<Callout type="tip" title="Frontend Environment Variables">
-For exposing environment variables to the frontend, use `AGENTUITY_PUBLIC_*` instead of `define`. Any environment variable prefixed with `AGENTUITY_PUBLIC_` is automatically available in your frontend code:
+### workbench
+
+Configure the development Workbench UI. See [Testing with Workbench](/v1/Build/Agents/workbench) for usage.
+
+```typescript
+import type { AgentuityConfig } from '@agentuity/cli';
+
+export default {
+  workbench: {
+    route: '/workbench',  // Access at http://localhost:3500/workbench
+    headers: {},          // Custom headers for requests
+  },
+} satisfies AgentuityConfig;
+```
+
+Omit the `workbench` section to disable Workbench.
+
+## Environment Variables
+
+Environment variables with these prefixes are available in frontend code:
+
+| Prefix | Description |
+|--------|-------------|
+| `VITE_*` | Standard Vite convention |
+| `AGENTUITY_PUBLIC_*` | Agentuity convention |
+| `PUBLIC_*` | Short form |
 
 ```typescript
 // .env.local
 AGENTUITY_PUBLIC_API_URL=https://api.example.com
 
 // src/web/App.tsx
-const apiUrl = process.env.AGENTUITY_PUBLIC_API_URL;
+const apiUrl = import.meta.env.AGENTUITY_PUBLIC_API_URL;
 ```
 
-See [App Configuration](/v1/Get-Started/app-configuration#environment-variables) for details.
+<Callout type="warning" title="Security">
+Public environment variables are bundled into frontend code and visible in the browser. Never put secrets or API keys in public variables.
 </Callout>
 
-## Advanced Patterns
+## Build Architecture
 
-### Async Configuration
+Agentuity uses a hybrid build system:
 
-Load configuration dynamically at build time:
+| Component | Tool | Output |
+|-----------|------|--------|
+| Frontend (`src/web/`) | Vite | `.agentuity/client/` |
+| Workbench | Vite | `.agentuity/workbench/` |
+| Server (agents, routes) | Bun | `.agentuity/app.js` |
 
-```typescript
-export default async function config(
-  phase: BuildPhase,
-  context: BuildContext
-): Promise<BuildConfig> {
-  const pkg = await Bun.file('./package.json').json();
+This separation allows Vite's optimizations for frontend (HMR, tree-shaking, CSS processing) while using Bun's fast bundling for server code.
 
-  return {
-    define: {
-      'APP_VERSION': JSON.stringify(pkg.version),
-    },
-  };
-}
-```
-
-### Environment-Specific Builds
-
-Combine phase and context for conditional configuration:
+## Full Example
 
 ```typescript
-export default function config(phase: BuildPhase, context: BuildContext): BuildConfig {
-  // Development-only plugins
-  if (context.dev && phase === 'web') {
-    return {
-      plugins: [devToolsPlugin()],
-    };
-  }
+import type { AgentuityConfig } from '@agentuity/cli';
+import tailwindcss from '@tailwindcss/vite';
 
-  // Deployment optimizations
-  if (!context.dev && phase === 'api') {
-    return {
-      external: ['canvas', 'jsdom'],
-      define: {
-        '__DEV__': JSON.stringify(false),
-      },
-    };
-  }
+export default {
+  // Vite plugins for frontend
+  plugins: [tailwindcss()],
 
-  return {};
-}
+  // Build-time constants
+  define: {
+    'APP_VERSION': JSON.stringify('1.0.0'),
+  },
+
+  // Development workbench
+  workbench: {
+    route: '/workbench',
+    headers: {},
+  },
+} satisfies AgentuityConfig;
 ```
 
 ## Next Steps

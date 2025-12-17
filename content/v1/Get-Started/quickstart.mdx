@@ -102,21 +102,16 @@ Response:
 
 ## 4. Test Locally with Workbench
 
-Workbench is a built-in UI for testing agents directly, without going through your frontend. Enable it in `app.ts`:
+Workbench is a built-in UI for testing agents directly, without going through your frontend. Enable it by adding a `workbench` section to your `agentuity.config.ts`:
 
 ```typescript
-import { createApp } from '@agentuity/runtime';
-import { createWorkbench } from '@agentuity/workbench';
+import type { AgentuityConfig } from '@agentuity/cli';
 
-const workbench = createWorkbench();
-
-const { server, logger } = await createApp({
-  services: {
-    workbench,
+export default {
+  workbench: {
+    route: '/workbench',
   },
-});
-
-logger.debug('Running %s', server.url);
+} satisfies AgentuityConfig;
 ```
 
 Open [http://localhost:3500/workbench](http://localhost:3500/workbench) to test your agents with raw JSON input. See [Testing with Workbench](/v1/Build/Agents/workbench) for adding test prompts and configuration options.
