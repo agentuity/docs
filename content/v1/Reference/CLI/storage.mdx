@@ -224,11 +224,67 @@ agentuity cloud vector search embeddings "neural networks" --metadata category=a
 agentuity cloud vec get <vector-id>
 ```
 
+### Upsert Vectors
+
+Add or update vectors from a JSON file:
+
+```bash
+# Upsert from file
+agentuity cloud vector upsert products --file vectors.json
+
+# File format: array of { key, document?, embeddings?, metadata? }
+```
+
+Example `vectors.json`:
+
+```json
+[
+  {
+    "key": "product-123",
+    "document": "Ergonomic office chair with lumbar support",
+    "metadata": { "category": "furniture", "price": 299 }
+  },
+  {
+    "key": "product-456",
+    "document": "Standing desk with adjustable height",
+    "metadata": { "category": "furniture", "price": 599 }
+  }
+]
+```
+
 ### Delete a Vector
 
 ```bash
 agentuity cloud vec delete <vector-id>
 ```
+
+### View Statistics
+
+```bash
+# Stats for all namespaces
+agentuity cloud vector stats
+
+# Stats for specific namespace
+agentuity cloud vector stats products
+```
+
+### List Namespaces
+
+```bash
+agentuity cloud vector namespaces
+```
+
+### Delete a Namespace
+
+Delete an entire namespace and all its vectors:
+
+```bash
+agentuity cloud vector delete-namespace old-products
+```
+
+<Callout type="warning" title="Destructive Operation">
+Deleting a namespace removes all vectors within it. This cannot be undone.
+</Callout>
 
 **In agents:** Use `ctx.vector` for programmatic access. See [Vector Storage](/v1/Build/Storage/vector).
 

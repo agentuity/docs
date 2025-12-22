@@ -183,9 +183,9 @@ import chat from '@agent/chat';
 
 const router = createRouter();
 
-router.stream('/chat', async (c) => {
-  const body = await c.req.json();
-  return chat.run(body);
+router.stream('/chat', chat.validator(), async (c) => {
+  const data = c.req.valid('json');
+  return chat.run(data);
 });
 
 export default router;

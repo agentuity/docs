@@ -29,6 +29,7 @@ The server starts on port 3500 by default with:
 | `--no-public` | - | Disable public URL tunneling |
 | `--interactive` | true | Enable interactive keyboard shortcuts |
 | `--watch <path>` | - | Additional paths to watch for changes (repeatable) |
+| `--profile <name>` | - | Load `.env.<name>` in addition to `.env` |
 
 <Callout type="tip" title="PORT Environment Variable">
 The dev server respects the `PORT` environment variable. The `--port` flag takes precedence if both are set.
@@ -102,6 +103,40 @@ const app = createApp({
 ```
 
 See [Custom Storage](/v1/Build/Storage/custom) for implementation details.
+
+## Profile-Specific Environment Variables
+
+Load different environment variables based on a profile name:
+
+```bash
+# Load .env.staging
+agentuity dev --profile staging
+
+# Load .env.testing
+agentuity dev --profile testing
+```
+
+Profile-specific files are loaded in addition to the base `.env` file. Variables in the profile file override those in `.env`.
+
+**Example setup:**
+
+```bash
+# .env (base, always loaded)
+DATABASE_URL=postgres://localhost:5432/myapp
+LOG_LEVEL=info
+
+# .env.staging (loaded with --profile staging)
+DATABASE_URL=postgres://staging.example.com:5432/myapp
+API_BASE_URL=https://staging-api.example.com
+
+# .env.testing (loaded with --profile testing)
+DATABASE_URL=postgres://localhost:5432/myapp_test
+MOCK_EXTERNAL_APIS=true
+```
+
+<Callout type="tip" title="Profile Use Cases">
+Use profiles to switch between configurations without editing files. Common profiles: `staging`, `testing`, `local`, `demo`.
+</Callout>
 
 ## Public URLs
 
