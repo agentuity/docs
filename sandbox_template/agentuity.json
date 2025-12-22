@@ -1,0 +1,17 @@
+{
+  "$schema": "https://agentuity.dev/schema/cli/v1/agentuity.json",
+  // the project id
+  "projectId": "proj_b705b7ca393bab6f746dd053632bb2df",
+  // the organization id
+  "orgId": "org_2u8RgDTwcZWrZrZ3sZh24T5FCtz",
+  // the region identifier that the project is deployed into
+  "region": "use",
+  // the deployment configuration
+  "deployment": {
+    "resources": {
+      "memory": "500Mi",
+      "cpu": "500m",
+      "disk": "500Mi"
+    }
+  }
+}
