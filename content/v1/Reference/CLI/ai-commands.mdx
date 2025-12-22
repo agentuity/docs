@@ -58,6 +58,21 @@ This creates machine-readable skill definitions that enable coding agents (e.g.,
 In dev mode (`agentuity dev`), skills are automatically regenerated when the CLI version changes.
 </Callout>
 
+## Project Context Files
+
+During development (`agentuity dev` or `bun run dev`), the CLI generates AGENTS.md files to help AI coding assistants (e.g., Claude Code, Codex, Cursor) understand Agentuity patterns:
+
+```
+.agents/
+└── agentuity/
+    └── sdk/
+        ├── agent/AGENTS.md   # Agent creation patterns
+        ├── api/AGENTS.md     # Route creation patterns
+        └── web/AGENTS.md     # Frontend patterns
+```
+
+These files are auto-updated when the CLI version changes and should be added to `.gitignore`.
+
 ## Prompt Generation
 
 Generate context-aware prompts for LLMs working with Agentuity projects:

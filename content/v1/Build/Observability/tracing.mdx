@@ -145,10 +145,9 @@ Routes access the tracer via `c.var.tracer`:
 ```typescript
 import { createRouter } from '@agentuity/runtime';
 import { SpanStatusCode } from '@opentelemetry/api';
+import notificationSender from '@agent/notification-sender';
 
 const router = createRouter();
-
-// import notificationSender from '@agent/notification-sender';
 
 router.post('/customers/:id/notify', async (c) => {
   return c.var.tracer.startActiveSpan('send-notification', async (span) => {
