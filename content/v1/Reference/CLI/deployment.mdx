@@ -385,6 +385,36 @@ agentuity deploy --dry-run
 agentuity deploy --force
 ```
 
+## CI/CD Pipelines
+
+For automated deployments in CI/CD systems (GitHub Actions, GitLab CI, etc.), you can use a pre-created deployment.
+
+### Using Pre-Created Deployments
+
+Set the `AGENTUITY_DEPLOYMENT` environment variable with deployment details:
+
+```bash
+export AGENTUITY_DEPLOYMENT='{"id":"dep_xxx","orgId":"org_xxx","publicKey":"..."}'
+agentuity deploy
+```
+
+The JSON object requires:
+
+| Field | Description |
+|-------|-------------|
+| `id` | The deployment ID |
+| `orgId` | Your organization ID |
+| `publicKey` | The deployment's public key |
+
+When this variable is set, the CLI:
+- Skips deployment creation and uses the existing deployment
+- Uses plain output mode (no TUI) for cleaner CI logs
+- Validates the JSON schema before proceeding
+
+<Callout type="info" title="Getting Deployment Details">
+Pre-created deployments are typically provisioned by external systems like GitHub Actions workflows or custom CI pipelines that integrate with the Agentuity API.
+</Callout>
+
 ## Next Steps
 
 - [Debugging Deployments](/v1/Reference/CLI/debugging): SSH access and debugging tools

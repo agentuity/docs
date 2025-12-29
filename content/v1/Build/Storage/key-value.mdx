@@ -222,6 +222,35 @@ router.get('/session/:id', async (c) => {
 export default router;
 ```
 
+## Standalone Usage
+
+Use KV storage outside of agent handlers with `createAgentContext()`:
+
+```typescript
+import { createApp, createAgentContext } from '@agentuity/runtime';
+
+await createApp();
+
+// Discord bot example
+client.on('messageCreate', async (message) => {
+  const ctx = createAgentContext();
+
+  await ctx.invoke(async () => {
+    // Check user preferences
+    const prefs = await ctx.kv.get('prefs', message.author.id);
+
+    if (!prefs.exists) {
+      await ctx.kv.set('prefs', message.author.id, {
+        theme: 'dark',
+        notifications: true,
+      });
+    }
+  });
+});
+```
+
+See [Running Agents Without HTTP](/v1/Build/Agents/standalone-execution) for more patterns including Discord bots, CLI tools, and queue workers.
+
 ## Best Practices
 
 - **Use descriptive keys**: `user:{userId}:prefs` instead of `u123`

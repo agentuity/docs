@@ -1,6 +1,6 @@
 ---
 title: Scheduling Cron Jobs
-description: Run tasks on a schedule with router.cron()
+description: Run tasks on a schedule with the cron() middleware
 ---
 
 Schedule recurring tasks using cron expressions. Schedules are defined in code, deployed with your agents, and automatically provisioned.
@@ -11,13 +11,16 @@ All routes live in `src/api/`. Import agents you need and call them directly.
 
 ## Basic Example
 
+Use the `cron()` middleware to wrap a POST route handler with a schedule:
+
 ```typescript
-import { createRouter } from '@agentuity/runtime';
+import { createRouter, cron } from '@agentuity/runtime';
 import reportGenerator from '@agent/report-generator';
 
 const router = createRouter();
 
-router.cron('0 9 * * *', async (c) => { // runs daily at 9am
+// Runs daily at 9am
+router.post('/daily-report', cron('0 9 * * *', async (c) => {
   c.var.logger.info('Daily report starting');
 
   const report = await reportGenerator.run({
@@ -28,7 +31,7 @@ router.cron('0 9 * * *', async (c) => { // runs daily at 9am
   await c.var.kv.set('reports', `daily-${Date.now()}`, report);
 
   return c.text('OK');
-});
+}));
 
 export default router;
 ```
@@ -62,12 +65,13 @@ Standard five-field cron format:
 A health check that monitors external services and stores results:
 
 ```typescript
-import { createRouter } from '@agentuity/runtime';
+import { createRouter, cron } from '@agentuity/runtime';
 import healthChecker from '@agent/health-checker';
 
 const router = createRouter();
 
-router.cron('*/5 * * * *', async (c) => { // runs every 5 minutes
+// Runs every 5 minutes
+router.post('/health-check', cron('*/5 * * * *', async (c) => {
   const startTime = Date.now();
   c.var.logger.info('Health check starting');
 
@@ -88,30 +92,21 @@ router.cron('*/5 * * * *', async (c) => { // runs every 5 minutes
     c.var.logger.error('Health check failed', { error });
     return c.text('ERROR', 500);
   }
-});
+}));
 
 export default router;
 ```
 
 ## Testing Locally
 
-Cron jobs only trigger in deployed environments. For local testing, add a manual POST route:
+Cron jobs only trigger in deployed environments. Since cron routes use `router.post()` with an explicit path, you can test them locally by sending a POST request to that path:
 
-```typescript
-import dailyReport from '@agent/daily-report';
-
-router.cron('0 9 * * *', cronHandler);
-
-// Manual trigger for local development
-router.post('/trigger', async (c) => {
-  return cronHandler(c);
-});
-
-async function cronHandler(c) {
-  const result = await dailyReport.run({ date: new Date() });
-  return c.json(result);
-}
+```bash
+# Test your cron route locally
+curl -X POST http://localhost:3000/daily-report
 ```
+
+The `cron()` middleware only affects scheduling in deployed environments. Locally, the route behaves like a standard POST endpoint.
 
 ## Best Practices
 
@@ -125,11 +120,12 @@ async function cronHandler(c) {
 Cron jobs work without agents. This example clears expired cache entries hourly:
 
 ```typescript
-import { createRouter } from '@agentuity/runtime';
+import { createRouter, cron } from '@agentuity/runtime';
 
 const router = createRouter();
 
-router.cron('0 * * * *', async (c) => {
+// Runs every hour
+router.post('/cache-cleanup', cron('0 * * * *', async (c) => {
   const allKeys = await c.var.kv.getKeys('cache');
   const expiredKeys = allKeys.filter(key => key.startsWith('temp-'));
 
@@ -139,7 +135,7 @@ router.cron('0 * * * *', async (c) => {
 
   c.var.logger.info('Cache cleanup completed', { deleted: expiredKeys.length });
   return c.text('OK');
-});
+}));
 
 export default router;
 ```
@@ -147,5 +143,5 @@ export default router;
 ## Next Steps
 
 - [HTTP Routes](/v1/Build/Routes/http): Standard request/response endpoints
-- [Email Handling](/v1/Build/Routes/email): Process incoming emails
+- [Middleware](/v1/Build/Routes/middleware): Add authentication and validation to routes
 - [Key-Value Storage](/v1/Build/Storage/key-value): Store job results

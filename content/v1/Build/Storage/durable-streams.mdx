@@ -300,6 +300,36 @@ async function moderateContent(text: string): Promise<boolean> {
 }
 ```
 
+## Standalone Usage
+
+Create streams from background processes with `createAgentContext()`:
+
+```typescript
+import { createApp, createAgentContext } from '@agentuity/runtime';
+
+await createApp();
+
+// Background job to generate reports
+async function generateDailyReport() {
+  const ctx = createAgentContext({ trigger: 'cron' });
+
+  await ctx.invoke(async () => {
+    const stream = await ctx.stream.create('report', {
+      contentType: 'text/csv',
+      metadata: { date: new Date().toISOString() },
+    });
+
+    await stream.write('Date,Metric,Value\n');
+    // ... write report data
+    await stream.close();
+
+    ctx.logger.info('Report generated', { url: stream.url });
+  });
+}
+```
+
+See [Running Agents Without HTTP](/v1/Build/Agents/standalone-execution) for more patterns including Discord bots, CLI tools, and queue workers.
+
 ## Stream Properties
 
 | Property | Description |

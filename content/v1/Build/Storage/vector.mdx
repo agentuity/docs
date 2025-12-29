@@ -235,6 +235,35 @@ const ragAgent = createAgent('RAG', {
 });
 ```
 
+## Standalone Usage
+
+Use vector storage in background jobs or external scripts with `createAgentContext()`:
+
+```typescript
+import { createApp, createAgentContext } from '@agentuity/runtime';
+
+await createApp();
+
+// CLI tool to index documents
+async function indexDocuments(files: string[]) {
+  const ctx = createAgentContext();
+
+  await ctx.invoke(async () => {
+    for (const file of files) {
+      const content = await Bun.file(file).text();
+      await ctx.vector.upsert('knowledge-base', {
+        key: file,
+        document: content,
+        metadata: { source: 'cli-import' },
+      });
+    }
+    ctx.logger.info('Indexed documents', { count: files.length });
+  });
+}
+```
+
+See [Running Agents Without HTTP](/v1/Build/Agents/standalone-execution) for more patterns including Discord bots, CLI tools, and queue workers.
+
 ## Troubleshooting
 
 - **Empty results**: Lower your similarity threshold (try 0.5 instead of 0.8) or check metadata filters

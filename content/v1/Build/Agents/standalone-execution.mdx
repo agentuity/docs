@@ -49,7 +49,7 @@ cron.schedule('0 * * * *', async () => {
 ```
 
 <Callout type="info" title="Built-in Cron Support">
-For most scheduled tasks, use [`router.cron()`](/v1/Build/Routes/cron) instead. It handles infrastructure automatically without needing `createAgentContext`. Use standalone execution only when you need external cron management.
+For most scheduled tasks, use the [`cron()` middleware](/v1/Build/Routes/cron) instead. It handles infrastructure automatically without needing `createAgentContext`. Use standalone execution only when you need external cron management.
 </Callout>
 
 ## Multiple Agents in Sequence

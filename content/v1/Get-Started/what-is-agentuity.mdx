@@ -34,7 +34,7 @@ This agent uses the AI SDK to call OpenAI and respond to messages. Deploy with `
 
 ## What You Get
 
-- **Routes & Triggers**: HTTP, WebSocket, SSE, cron, email, SMS
+- **Routes & Triggers**: HTTP, WebSocket, SSE, cron
 - **Storage**: Key-value, vector, object storage, durable streams
 - **Observability**: Logging, tracing, real-time analytics
 - **[Console](https://app-v1.agentuity.com)**: Visual dashboard for deployments, logs, and more
@@ -51,7 +51,7 @@ Each agent lives in its own file under `src/agent/`. Routes are defined separate
 | `agent.ts` | Agent logic with schema validation |
 | `api/index.ts` | HTTP endpoints that call your agents |
 
-Infrastructure like cron schedules and email handlers are defined in route code, not config. Rolling back a deployment restores the exact configuration from that version.
+Infrastructure like cron schedules is defined in route code, not config. Rolling back a deployment restores the exact configuration from that version.
 
 ---
 

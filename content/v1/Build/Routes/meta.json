@@ -5,8 +5,6 @@
 		"http",
 		"middleware",
 		"cron",
-		"email",
-		"sms",
 		"websockets",
 		"sse"
 	]

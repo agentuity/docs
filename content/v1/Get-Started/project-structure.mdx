@@ -40,7 +40,7 @@ Agents and routes are separate concerns in Agentuity:
 | Concept | Location | Purpose |
 |---------|----------|---------|
 | **Agents** | `src/agent/` | Core logic, schemas, validation |
-| **Routes** | `src/api/` | HTTP endpoints, triggers (cron, email, SMS) |
+| **Routes** | `src/api/` | HTTP endpoints, triggers (cron, WebSocket, SSE) |
 
 Agents contain your core logic with schema validation and lifecycle hooks. Routes define how agents get invoked (HTTP, cron, webhooks, etc.). This separation keeps concerns clear: agents don't know how they're called, and routes handle all transport.
 
@@ -125,4 +125,4 @@ You can also deploy your frontend elsewhere (e.g., Vercel, Netlify) and call you
 
 - [App Configuration](/v1/Get-Started/app-configuration): Configure `app.ts` and `agentuity.json`
 - [Creating Agents](/v1/Build/Agents/creating-agents): Deep dive into agent creation
-- [Routes](/v1/Build/Routes): Learn about HTTP, cron, email, and other triggers
+- [Routes](/v1/Build/Routes): Learn about HTTP, cron, and other triggers

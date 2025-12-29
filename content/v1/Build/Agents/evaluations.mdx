@@ -371,6 +371,98 @@ export const externalValidationEval = agent.createEval('external-validation', {
 
 Eval errors are logged but don't affect agent responses.
 
+## Preset Evals
+
+The `@agentuity/evals` package provides reusable, LLM-powered evaluations for common quality checks. These preset evals use optimized prompts and can be configured with custom thresholds and models.
+
+### Available Presets
+
+| Preset | Description |
+|--------|-------------|
+| `politeness` | Checks for rude, dismissive, or hostile language |
+| `safety` | Detects unsafe content and missing disclaimers |
+| `pii` | Identifies personally identifiable information |
+| `conciseness` | Evaluates response brevity and clarity |
+| `adversarial` | Tests handling of adversarial inputs |
+| `ambiguity` | Checks for unclear or ambiguous responses |
+| `answerCompleteness` | Verifies the response fully addresses the question |
+| `extraneousContent` | Detects off-topic or unnecessary information |
+| `format` | Validates response formatting requirements |
+| `knowledgeRetention` | Checks for consistent facts across responses |
+| `roleAdherence` | Verifies the agent stays in character |
+
+### Using Preset Evals
+
+Import preset evals from `@agentuity/evals` and pass them to `agent.createEval()`:
+
+```typescript
+// src/agents/chat/eval.ts
+import agent from './agent';
+import { politeness, safety, pii } from '@agentuity/evals';
+
+// Use with default settings
+export const politenessCheck = agent.createEval(politeness());
+
+// Override the model or threshold
+export const safetyCheck = agent.createEval(safety({
+  name: 'safety-custom',  // Optional custom name
+}));
+
+// PII detection with defaults
+export const piiCheck = agent.createEval(pii());
+```
+
+### Configuring Preset Evals
+
+Preset evals accept configuration options:
+
+```typescript
+import { politeness } from '@agentuity/evals';
+import { openai } from '@ai-sdk/openai';
+
+// Override model and threshold
+export const politenessCheck = agent.createEval(politeness({
+  name: 'politeness-strict',
+  model: openai('gpt-5-nano'),
+  threshold: 0.9,  // Stricter passing threshold
+}));
+```
+
+All preset evals use a default model optimized for cost and speed. Override `model` when you need specific capabilities.
+
+### Schema Middleware
+
+Preset evals expect a standard input/output format:
+- **Input**: `{ request: string, context?: string }`
+- **Output**: `{ response: string }`
+
+When your agent uses different schemas, provide middleware to transform between them:
+
+```typescript
+// src/agents/calculator/eval.ts
+import agent from './agent';
+import { politeness } from '@agentuity/evals';
+import type { AgentInput, AgentOutput } from './agent';
+
+// Agent schema: { value: number } -> { result: number, doubled: boolean }
+// Eval expects: { request: string } -> { response: string }
+
+export const politenessCheck = agent.createEval(
+  politeness<typeof AgentInput, typeof AgentOutput>({
+    middleware: {
+      transformInput: (input) => ({
+        request: `Calculate double of ${input.value}`,
+      }),
+      transformOutput: (output) => ({
+        response: `Result: ${output.result}, Doubled: ${output.doubled}`,
+      }),
+    },
+  })
+);
+```
+
+Pass your agent's schema types as generics to get typed middleware transforms. Without generics, the transform functions receive `any`.
+
 ## Next Steps
 
 - [Events & Lifecycle](/v1/Build/Agents/events-lifecycle): Monitor agent execution with lifecycle hooks

@@ -823,8 +823,8 @@ const agent = createAgent('MessageReceiver', {
     });
 
     ctx.waitUntil(async () => {
-      // Send notification email in the background
-      await sendNotificationEmail(input.userId, input.message);
+      // Send push notification in the background
+      await sendPushNotification(input.userId, input.message);
     });
 
     // Can also use synchronous functions
@@ -842,7 +842,7 @@ const agent = createAgent('MessageReceiver', {
 **Use Cases**
 
 - Logging and analytics that don't affect the user experience
-- Sending notifications or emails
+- Sending push notifications
 - Database cleanup or maintenance tasks
 - Third-party API calls that don't impact the response
 - Background data processing or enrichment
@@ -2137,101 +2137,24 @@ The router provides specialized route handlers for non-HTTP triggers like email,
 
 #### Email Routes
 
-`router.email(address: string, handler: EmailHandler): Router`
-
-Handle incoming emails sent to a specific address.
-
-**Parameters:**
-
-- `address`: Email address to handle (e.g., 'support@example.com')
-- `handler`: Function that receives the parsed email object and context
-
-**Handler Signature:**
-
-```typescript
-type EmailHandler = (email: Email, c: Context) => any | Promise<any>;
-
-interface Email {
-  // Sender information
-  fromEmail(): string | null;
-  fromName(): string | null;
-
-  // Recipient information
-  to(): string | null;              // All recipients (comma-separated)
-  toEmail(): string | null;         // First recipient email
-  toName(): string | null;          // First recipient name
-
-  // Message content
-  subject(): string | null;
-  text(): string | null;
-  html(): string | null;
-
-  // Attachments
-  attachments(): Array<{
-    filename: string;
-    contentType: string;
-  }>;
-
-  // Metadata
-  date(): Date | null;
-  messageId(): string | null;
-  headers(): Headers;
-}
-```
-
-**Example:**
-
-```typescript
-router.email('support@example.com', async (email, c) => {
-  c.logger.info('Email received', {
-    from: email.fromEmail(),
-    fromName: email.fromName(),
-    to: email.to(),                    // All recipients
-    toEmail: email.toEmail(),          // First recipient
-    subject: email.subject(),
-    date: email.date(),
-    messageId: email.messageId(),
-    hasAttachments: email.attachments().length > 0
-  });
-
-  // Process attachments if present
-  const attachments = email.attachments();
-  if (attachments.length > 0) {
-    c.logger.info('Attachments found', {
-      count: attachments.length,
-      files: attachments.map(att => ({
-        filename: att.filename,
-        contentType: att.contentType
-      }))
-    });
-  }
-
-  // Process email and trigger agent
-  // import emailProcessor from '@agent/email-processor';
-  const result = await emailProcessor.run({
-    sender: email.fromEmail(),
-    content: email.text() || email.html() || '',
-  });
-
-  return c.json({ processed: true });
-});
-```
+<Callout type="warning" title="Coming Soon">
+Email routing is not yet available. This feature will be enabled in a future release.
+</Callout>
 
 #### WebSocket Routes
 
-`router.websocket(path: string, handler: WebSocketHandler): Router`
+Create a WebSocket endpoint for real-time bidirectional communication using the `websocket` middleware.
 
-Create a WebSocket endpoint for real-time bidirectional communication.
+**Import:**
 
-**Parameters:**
-
-- `path`: Route path for the WebSocket endpoint
-- `handler`: Function that returns a WebSocket connection setup function
+```typescript
+import { websocket } from '@agentuity/runtime';
+```
 
 **Handler Signature:**
 
 ```typescript
-type WebSocketHandler = (c: Context) => (ws: WebSocketConnection) => void | Promise<void>;
+type WebSocketHandler = (c: Context, ws: WebSocketConnection) => void | Promise<void>;
 
 interface WebSocketConnection {
   onOpen(handler: (event: any) => void | Promise<void>): void;
@@ -2244,9 +2167,12 @@ interface WebSocketConnection {
 **Example:**
 
 ```typescript
+import { createRouter, websocket } from '@agentuity/runtime';
 import chatAgent from '@agent/chat';
 
-router.websocket('/chat', (c) => (ws) => {
+const router = createRouter();
+
+router.get('/chat', websocket((c, ws) => {
   ws.onOpen((event) => {
     c.var.logger.info('WebSocket connected');
     ws.send(JSON.stringify({ type: 'connected' }));
@@ -2266,24 +2192,25 @@ router.websocket('/chat', (c) => (ws) => {
   ws.onClose((event) => {
     c.var.logger.info('WebSocket disconnected');
   });
-});
+}));
+
+export default router;
 ```
 
 #### Server-Sent Events (SSE)
 
-`router.sse(path: string, handler: SSEHandler): Router`
+Create a Server-Sent Events endpoint for server-to-client streaming using the `sse` middleware.
 
-Create a Server-Sent Events endpoint for server-to-client streaming.
+**Import:**
 
-**Parameters:**
-
-- `path`: Route path for the SSE endpoint
-- `handler`: Function that returns an SSE stream setup function
+```typescript
+import { sse } from '@agentuity/runtime';
+```
 
 **Handler Signature:**
 
 ```typescript
-type SSEHandler = (c: Context) => (stream: SSEStream) => void | Promise<void>;
+type SSEHandler = (c: Context, stream: SSEStream) => void | Promise<void>;
 
 interface SSEStream {
   write(data: string | number | boolean | object): Promise<void>;
@@ -2296,9 +2223,12 @@ interface SSEStream {
 **Example:**
 
 ```typescript
+import { createRouter, sse } from '@agentuity/runtime';
 import longRunningAgent from '@agent/long-running';
 
-router.sse('/updates', (c) => async (stream) => {
+const router = createRouter();
+
+router.get('/updates', sse(async (c, stream) => {
   // Send initial connection message
   await stream.write({ type: 'connected' });
 
@@ -2316,19 +2246,20 @@ router.sse('/updates', (c) => async (stream) => {
   stream.onAbort(() => {
     c.var.logger.info('Client disconnected');
   });
-});
+}));
+
+export default router;
 ```
 
 #### Stream Routes
 
-`router.stream(path: string, handler: StreamHandler): Router`
+Create an HTTP streaming endpoint for piping data streams using the `stream` middleware.
 
-Create an HTTP streaming endpoint for piping data streams.
+**Import:**
 
-**Parameters:**
-
-- `path`: Route path for the stream endpoint
-- `handler`: Function that returns a ReadableStream
+```typescript
+import { stream } from '@agentuity/runtime';
+```
 
 **Handler Signature:**
 
@@ -2339,11 +2270,14 @@ type StreamHandler = (c: Context) => ReadableStream<any> | Promise<ReadableStrea
 **Example:**
 
 ```typescript
+import { createRouter, stream } from '@agentuity/runtime';
 import dataGenerator from '@agent/data-generator';
 
-router.stream('/data', async (c) => {
+const router = createRouter();
+
+router.post('/data', stream(async (c) => {
   // Create a readable stream
-  const stream = new ReadableStream({
+  const readableStream = new ReadableStream({
     async start(controller) {
       // Stream data chunks
       const data = await dataGenerator.run({ query: 'all' });
@@ -2356,20 +2290,21 @@ router.stream('/data', async (c) => {
     },
   });
 
-  return stream;
-});
+  return readableStream;
+}));
+
+export default router;
 ```
 
 #### Cron Routes
 
-`router.cron(schedule: string, handler: CronHandler): Router`
+Schedule recurring jobs using cron syntax with the `cron` middleware.
 
-Schedule a recurring job using cron syntax.
+**Import:**
 
-**Parameters:**
-
-- `schedule`: Cron schedule expression (e.g., '0 9 * * *' for daily at 9am)
-- `handler`: Function to execute on schedule
+```typescript
+import { cron } from '@agentuity/runtime';
+```
 
 **Handler Signature:**
 
@@ -2392,11 +2327,14 @@ type CronHandler = (c: Context) => any | Promise<any>;
 **Example:**
 
 ```typescript
+import { createRouter, cron } from '@agentuity/runtime';
 import reportGenerator from '@agent/report-generator';
 import healthCheck from '@agent/health-check';
 
+const router = createRouter();
+
 // Run daily at 9am
-router.cron('0 9 * * *', async (c) => {
+router.post('/daily-report', cron('0 9 * * *', async (c) => {
   c.var.logger.info('Running daily report');
 
   const report = await reportGenerator.run({
@@ -2404,58 +2342,26 @@ router.cron('0 9 * * *', async (c) => {
     date: new Date().toISOString(),
   });
 
-  // Send report via email or store
+  // Store report in KV
   await c.var.kv.set('reports', `daily-${Date.now()}`, report);
 
   return c.json({ success: true });
-});
+}));
 
 // Run every 5 minutes
-router.cron('*/5 * * * *', async (c) => {
+router.post('/health-check', cron('*/5 * * * *', async (c) => {
   await healthCheck.run({});
   return c.json({ checked: true });
-});
+}));
+
+export default router;
 ```
 
 #### SMS Routes
 
-`router.sms(params: { number: string }, handler: SMSHandler): Router`
-
-Handle incoming SMS messages sent to a specific phone number.
-
-**Parameters:**
-
-- `params.number`: Phone number to handle (E.164 format, e.g., '+12345678900')
-- `handler`: Function that processes the SMS
-
-**Handler Signature:**
-
-```typescript
-type SMSHandler = (c: Context) => any | Promise<any>;
-```
-
-**Example:**
-
-```typescript
-import smsBot from '@agent/sms-bot';
-
-router.sms({ number: '+12345678900' }, async (c) => {
-  const body = await c.req.json();
-
-  c.var.logger.info('SMS received', {
-    from: body.from,
-    message: body.text,
-  });
-
-  // Process SMS with agent
-  const response = await smsBot.run({
-    sender: body.from,
-    message: body.text,
-  });
-
-  return c.json({ reply: response });
-});
-```
+<Callout type="warning" title="Coming Soon">
+SMS routing is not yet available. This feature will be enabled in a future release.
+</Callout>
 
 ### Route Parameters
 

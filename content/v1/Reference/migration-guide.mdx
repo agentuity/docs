@@ -17,7 +17,7 @@ Key improvements in v1:
 
 - **Auto-Discovery**: Create agents by adding folders, no CLI registration needed
 - **Type-Safe Schemas**: Built-in support for Zod, Valibot, ArkType, and StandardSchema libraries
-- **Advanced Routing**: Native WebSocket, SSE, email, cron, and SMS routes
+- **Advanced Routing**: WebSocket, SSE, streaming, and cron routes via middleware
 - **Bun Runtime**: Native S3 storage and SQL database support
 - **Evaluations & Events**: Test agent outputs and monitor lifecycle
 
@@ -38,7 +38,7 @@ These changes require code modifications in all agents:
 3. **Context Properties**: `runId` renamed to `sessionId`, new properties added
 4. **Package Structure**: SDK split into multiple packages (`@agentuity/runtime`, `@agentuity/core`, etc.)
 5. **Language Support**: v1 is TypeScript-only, optimized for Bun runtime
-6. **Trigger Configuration**: Cron schedules, email addresses, and SMS numbers are now configured in code (via `router.cron()`, `router.email()`, `router.sms()`) rather than in the cloud console UI
+6. **Trigger Configuration**: Cron schedules are now configured in code using the `cron()` middleware rather than in the cloud console UI
 
 ---
 
@@ -508,24 +508,17 @@ export default agent;
 
 These features are optional but can improve your agents.
 
-### Specialized Routes
+### Cron Routes
 
-v1 adds native email and cron routes. See [Routes documentation](/v1/Build/Routes) for WebSocket and SSE.
+v1 adds cron routes via middleware. See [Routes documentation](/v1/Build/Routes) for WebSocket, SSE, and streaming.
 
-**Email:**
 ```typescript
-router.email('support@example.com', async (email, ctx) => {
-  ctx.logger.info('Email from:', email.fromEmail());
-  return { status: 'processed' };
-});
-```
+import { cron } from '@agentuity/runtime';
 
-**Cron:**
-```typescript
-router.cron('0 0 * * *', async (ctx) => {
-  ctx.logger.info('Daily job running');
+router.post('/daily-job', cron('0 0 * * *', async (c) => {
+  c.var.logger.info('Daily job running');
   return { status: 'completed' };
-});
+}));
 ```
 
 ### Evaluations

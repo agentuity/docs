@@ -6,7 +6,7 @@ description: Add authentication, validation, and request processing to your rout
 Agentuity routes are built on [Hono](https://hono.dev), giving you access to Hono's middleware system. Use middleware to add authentication, logging, CORS, rate limiting, and other shared request processing.
 
 <Callout type="info" title="Supported Routes">
-Middleware works on HTTP, WebSocket, SSE, Email, and Stream routes. SMS and Cron routes do not support middleware.
+Middleware works on HTTP, WebSocket, SSE, Cron, and Stream routes.
 </Callout>
 
 ## Basic Middleware
@@ -320,6 +320,61 @@ router.get('/risky', (c) => {
 
 export default router;
 ```
+
+## Built-in Middleware
+
+Agentuity provides middleware for common needs, exported from `@agentuity/runtime`.
+
+### CORS
+
+Apply CORS headers to routes:
+
+```typescript
+import { createRouter, createCorsMiddleware } from '@agentuity/runtime';
+
+const router = createRouter();
+
+// Apply CORS to all API routes
+router.use('/api/*', createCorsMiddleware());
+
+// Or with custom options
+router.use('/api/*', createCorsMiddleware({
+  origin: ['https://myapp.com', 'https://admin.myapp.com'],
+  credentials: true,
+  maxAge: 3600,
+}));
+
+export default router;
+```
+
+CORS can also be configured globally via `createApp()`. See [App Configuration](/v1/Get-Started/app-configuration).
+
+### Compression
+
+Compress responses with gzip/deflate based on the `Accept-Encoding` header:
+
+```typescript
+import { createRouter, createCompressionMiddleware } from '@agentuity/runtime';
+
+const router = createRouter();
+
+// Apply compression to all routes
+router.use('/*', createCompressionMiddleware());
+
+// Or with custom threshold (only compress responses > 2KB)
+router.use('/*', createCompressionMiddleware({
+  threshold: 2048,
+}));
+
+export default router;
+```
+
+Compression automatically bypasses:
+- WebSocket upgrade requests
+- Requests without `Accept-Encoding` headers
+- SSE and binary streams
+
+Compression can also be configured globally via `createApp({ compression: { ... } })`. See [App Configuration](/v1/Get-Started/app-configuration).
 
 ## Best Practices
 

@@ -1,6 +1,6 @@
 ---
 title: Using WebSockets
-description: Real-time bidirectional communication with router.websocket()
+description: Real-time bidirectional communication with the websocket middleware
 ---
 
 WebSockets enable persistent, bidirectional connections between client and server. Use them for chat interfaces, live dashboards, collaborative tools, and any scenario requiring real-time two-way communication.
@@ -12,12 +12,12 @@ All routes live in `src/api/`. Import agents you need and call them directly.
 ## Basic Example
 
 ```typescript
-import { createRouter } from '@agentuity/runtime';
+import { createRouter, websocket } from '@agentuity/runtime';
 import chatAgent from '@agent/chat';
 
 const router = createRouter();
 
-router.websocket('/chat', (c) => (ws) => {
+router.get('/chat', websocket((c, ws) => {
   ws.onOpen(() => {
     c.var.logger.info('Client connected');
     ws.send('Connected!');
@@ -32,24 +32,26 @@ router.websocket('/chat', (c) => (ws) => {
   ws.onClose(() => {
     c.var.logger.info('Client disconnected');
   });
-});
+}));
 
 export default router;
 ```
 
 ## Handler Structure
 
-The WebSocket handler uses a callback pattern:
+The `websocket()` middleware wraps your handler and upgrades the connection:
 
 ```typescript
-router.websocket('/path', (c) => (ws) => {
-  // c - Hono context (available in closure)
+import { createRouter, websocket } from '@agentuity/runtime';
+
+router.get('/path', websocket((c, ws) => {
+  // c - Hono context
   // ws - WebSocket connection object
 
   ws.onOpen(() => { /* connection opened */ });
   ws.onMessage(async (event) => { /* message received */ });
   ws.onClose(() => { /* connection closed */ });
-});
+}));
 ```
 
 ## WebSocket Events
@@ -65,8 +67,9 @@ router.websocket('/path', (c) => (ws) => {
 Apply authentication or logging before the WebSocket upgrade:
 
 ```typescript
-import { createRouter } from '@agentuity/runtime';
+import { createRouter, websocket } from '@agentuity/runtime';
 import { createMiddleware } from 'hono/factory';
+import chat from '@agent/chat';
 
 const router = createRouter();
 
@@ -79,9 +82,7 @@ const authMiddleware = createMiddleware(async (c, next) => {
   await next();
 });
 
-import chat from '@agent/chat';
-
-router.websocket('/chat', authMiddleware, (c) => (ws) => {
+router.get('/chat', authMiddleware, websocket((c, ws) => {
   const userId = c.var.userId;
 
   ws.onOpen(() => {
@@ -95,7 +96,7 @@ router.websocket('/chat', authMiddleware, (c) => (ws) => {
     });
     ws.send(response);
   });
-});
+}));
 
 export default router;
 ```
@@ -105,7 +106,7 @@ export default router;
 Send data to the client without waiting for a request:
 
 ```typescript
-router.websocket('/notifications', (c) => (ws) => {
+router.get('/notifications', websocket((c, ws) => {
   let heartbeat: Timer;
 
   ws.onOpen(() => {
@@ -123,7 +124,7 @@ router.websocket('/notifications', (c) => (ws) => {
   ws.onClose(() => {
     clearInterval(heartbeat); // Clean up!
   });
-});
+}));
 ```
 
 ## Full Example
@@ -131,12 +132,12 @@ router.websocket('/notifications', (c) => (ws) => {
 A real-time echo server with heartbeat:
 
 ```typescript
-import { createRouter } from '@agentuity/runtime';
+import { createRouter, websocket } from '@agentuity/runtime';
 import echoAgent from '@agent/echo';
 
 const router = createRouter();
 
-router.websocket('/', (c) => (ws) => {
+router.get('/', websocket((c, ws) => {
   let heartbeat: Timer;
 
   ws.onOpen(() => {
@@ -165,7 +166,7 @@ router.websocket('/', (c) => (ws) => {
     c.var.logger.info('WebSocket disconnected');
     clearInterval(heartbeat);
   });
-});
+}));
 
 export default router;
 ```
@@ -221,11 +222,11 @@ Use WebSockets when you need **bidirectional** communication. For **server-to-cl
 WebSocket handlers work without agents. This example broadcasts system metrics to connected clients:
 
 ```typescript
-import { createRouter } from '@agentuity/runtime';
+import { createRouter, websocket } from '@agentuity/runtime';
 
 const router = createRouter();
 
-router.websocket('/metrics', (c) => (ws) => {
+router.get('/metrics', websocket((c, ws) => {
   const interval = setInterval(() => {
     ws.send(JSON.stringify({
       cpu: Math.random() * 100,
@@ -235,7 +236,7 @@ router.websocket('/metrics', (c) => (ws) => {
   }, 5000);
 
   ws.onClose(() => clearInterval(interval));
-});
+}));
 
 export default router;
 ```

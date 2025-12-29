@@ -270,15 +270,20 @@ router.post('/process', async (c) => {
 
 ## Streaming Responses
 
-Use `router.stream()` to return a `ReadableStream` directly to the client without buffering:
+Use the `stream()` middleware to return a `ReadableStream` directly to the client without buffering:
 
 ```typescript
+import { createRouter, stream } from '@agentuity/runtime';
 import chatAgent from '@agent/chat';
 
-router.stream('/chat', async (c) => {
+const router = createRouter();
+
+router.post('/chat', stream(async (c) => {
   const body = await c.req.json();
   return chatAgent.run(body); // Returns a ReadableStream
-});
+}));
+
+export default router;
 ```
 
 ### Creating Custom Streams
@@ -286,7 +291,11 @@ router.stream('/chat', async (c) => {
 Return any `ReadableStream` for custom streaming:
 
 ```typescript
-router.stream('/events', (c) => {
+import { createRouter, stream } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.get('/events', stream((c) => {
   return new ReadableStream({
     start(controller) {
       controller.enqueue('data: event 1\n\n');
@@ -294,7 +303,9 @@ router.stream('/events', (c) => {
       controller.close();
     }
   });
-});
+}));
+
+export default router;
 ```
 
 ### With Middleware
@@ -302,27 +313,31 @@ router.stream('/events', (c) => {
 Stream routes support middleware:
 
 ```typescript
+import { createRouter, stream } from '@agentuity/runtime';
 import streamAgent from '@agent/stream';
 
-router.stream('/protected', authMiddleware, async (c) => {
+const router = createRouter();
+
+router.post('/protected', authMiddleware, stream(async (c) => {
   return streamAgent.run({ userId: c.var.userId });
-});
+}));
+
+export default router;
 ```
 
 ### Stream vs SSE vs WebSocket
 
 | Type | Direction | Format | Use Case |
 |------|-----------|--------|----------|
-| `router.stream()` | Server → Client | Raw bytes | LLM responses, file downloads |
-| `router.sse()` | Server → Client | SSE events | Progress updates, notifications |
-| `router.websocket()` | Bidirectional | Messages | Chat, collaboration |
+| `stream()` | Server → Client | Raw bytes | LLM responses, file downloads |
+| `sse()` | Server → Client | SSE events | Progress updates, notifications |
+| `websocket()` | Bidirectional | Messages | Chat, collaboration |
 
-Use `router.stream()` for raw streaming (like AI SDK `textStream`). Use `router.sse()` when you need named events or auto-reconnection. See [Streaming Responses](/v1/Build/Agents/streaming-responses) for the full guide on streaming agents.
+Use `stream()` middleware for raw streaming (like AI SDK `textStream`). Use `sse()` middleware when you need named events or auto-reconnection. See [Streaming Responses](/v1/Build/Agents/streaming-responses) for the full guide on streaming agents.
 
 ## Next Steps
 
 - [Middleware](/v1/Build/Routes/middleware): Authentication, rate limiting, logging
 - [Scheduled Jobs (Cron)](/v1/Build/Routes/cron): Run tasks on a schedule
-- [Email Handling](/v1/Build/Routes/email): Process incoming emails
 - [WebSockets](/v1/Build/Routes/websockets): Real-time bidirectional communication
 - [Server-Sent Events](/v1/Build/Routes/sse): Stream updates to clients

@@ -175,18 +175,18 @@ const agent = createAgent('Chat', {
 export default agent;
 ```
 
-Update the route to use the streaming endpoint:
+Update the route to use the `stream()` middleware:
 
 ```typescript
-import { createRouter } from '@agentuity/runtime';
+import { createRouter, stream } from '@agentuity/runtime';
 import chat from '@agent/chat';
 
 const router = createRouter();
 
-router.stream('/chat', chat.validator(), async (c) => {
+router.post('/chat', chat.validator(), stream(async (c) => {
   const data = c.req.valid('json');
   return chat.run(data);
-});
+}));
 
 export default router;
 ```

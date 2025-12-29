@@ -308,8 +308,8 @@ For detailed state management patterns, see [Managing State](/v1/Build/Agents/st
 Every agent requires a name (first argument) and can include an optional description:
 
 ```typescript
-const agent = createAgent('Email Processor', {
-  description: 'Processes incoming emails and extracts key information',
+const agent = createAgent('Support Ticket Analyzer', {
+  description: 'Analyzes support tickets and extracts key information',
   schema: { ... },
   handler: async (ctx, input) => { ... },
 });
@@ -323,10 +323,10 @@ Export a `welcome` function to add test prompts for [Workbench](/v1/Build/Agents
 
 ```typescript
 export const welcome = () => ({
-  welcome: 'Welcome to the **Email Processor** agent.',
+  welcome: 'Welcome to the **Support Ticket Analyzer** agent.',
   prompts: [
     {
-      data: JSON.stringify({ email: 'test@example.com', subject: 'Meeting' }),
+      data: JSON.stringify({ ticketId: 'TKT-1234', subject: 'Login issue' }),
       contentType: 'application/json',
     },
   ],

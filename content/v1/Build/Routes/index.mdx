@@ -3,7 +3,7 @@ title: Routing Overview
 description: Define how requests reach your code
 ---
 
-Routes define how requests reach your application, whether HTTP calls, scheduled jobs, incoming emails, or SMS messages. Built on [Hono](https://hono.dev), the router provides a familiar API with full TypeScript support.
+Routes define how requests reach your application, whether HTTP calls, scheduled jobs, or real-time connections. Built on [Hono](https://hono.dev), the router provides a familiar API with full TypeScript support.
 
 <Callout type="info" title="Infrastructure as Code">
 Routes are defined in your codebase and automatically discovered. Changes are tracked in Git, reviewed in PRs, and deployed with your code. No UI configuration required.
@@ -16,7 +16,7 @@ All routes live in `src/api/`. Agents and routes are separate concerns:
 | Directory | Purpose |
 |-----------|---------|
 | `src/agent/*/` | Agent logic (no routes here) |
-| `src/api/` | All routes: HTTP, cron, email, SMS, etc. |
+| `src/api/` | All routes: HTTP, cron, WebSocket, SSE, etc. |
 
 Routes import and call agents directly:
 
@@ -42,13 +42,11 @@ Routes in `src/api/` are automatically mounted at `/api`. For the full project l
 
 | Type | Method | Use case |
 |------|--------|----------|
-| [HTTP](/v1/Build/Routes/http) | `router.get()`, `router.post()`, `router.stream()` | REST APIs, webhooks, LLM streaming |
+| [HTTP](/v1/Build/Routes/http) | `router.get()`, `router.post()`, `stream()` middleware | REST APIs, webhooks, LLM streaming |
 | [Middleware](/v1/Build/Routes/middleware) | Hono middleware | Auth, logging, validation |
-| [Cron](/v1/Build/Routes/cron) | `router.cron()` | Scheduled tasks |
-| [Email](/v1/Build/Routes/email) | `router.email()` | Process incoming emails |
-| [SMS](/v1/Build/Routes/sms) | `router.sms()` | Process incoming SMS |
-| [WebSocket](/v1/Build/Routes/websockets) | `router.websocket()` | Real-time bidirectional |
-| [SSE](/v1/Build/Routes/sse) | `router.sse()` | Server-sent events |
+| [Cron](/v1/Build/Routes/cron) | `cron()` middleware | Scheduled tasks |
+| [WebSocket](/v1/Build/Routes/websockets) | `websocket()` middleware | Real-time bidirectional |
+| [SSE](/v1/Build/Routes/sse) | `sse()` middleware | Server-sent events |
 
 ## Quick Examples
 
@@ -76,66 +74,40 @@ export default router;
 ### Cron
 
 ```typescript
+import { cron } from '@agentuity/runtime';
 import reportGenerator from '@agent/report-generator';
 
-router.cron('0 9 * * *', async (c) => {
+router.post('/daily-report', cron('0 9 * * *', async (c) => {
   await reportGenerator.run({ type: 'daily' });
   return c.text('OK');
-});
-```
-
-### Email
-
-```typescript
-import emailHandler from '@agent/email-handler';
-
-router.email('support@myapp.com', async (email, c) => {
-  const result = await emailHandler.run({
-    from: email.fromEmail(),
-    subject: email.subject(),
-    body: email.text(),
-  });
-  return c.text('Processed');
-});
-```
-
-### SMS
-
-```typescript
-import smsResponder from '@agent/sms-responder';
-
-router.sms({ number: '+15551234567' }, async (c) => {
-  const formData = await c.req.parseBody();
-  const reply = await smsResponder.run({
-    message: formData.Body as string,
-    from: formData.From as string
-  });
-  return c.text(reply); // Sent as SMS reply
-});
+}));
 ```
 
 ### WebSocket
 
 ```typescript
+import { websocket } from '@agentuity/runtime';
 import assistant from '@agent/assistant';
 
-router.websocket('/chat', (c) => (ws) => {
+router.get('/chat', websocket((c, ws) => {
   ws.onMessage(async (event) => {
     const response = await assistant.run(event.data);
     ws.send(response);
   });
-});
+}));
 ```
 
 ### SSE
 
 ```typescript
-router.sse('/stream', (c) => async (stream) => {
+import { sse } from '@agentuity/runtime';
+
+router.get('/stream', sse(async (c, stream) => {
   for (let i = 0; i < 5; i++) {
     await stream.writeSSE({ data: `Message ${i}` });
   }
   stream.close();
-});
+}));
 ```
 
 ## Context Access

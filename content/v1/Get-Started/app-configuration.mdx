@@ -66,6 +66,11 @@ const { server, logger } = await createApp({
     credentials: true,
   },
 
+  // Response compression (gzip/deflate)
+  compression: {
+    threshold: 1024, // Compress responses larger than 1KB (default)
+  },
+
   // Custom storage implementations (optional)
   services: {
     keyvalue: myCustomKV,
@@ -73,6 +78,16 @@ const { server, logger } = await createApp({
   },
 });
 ```
+
+#### Compression Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `enabled` | `boolean` | `true` | Enable/disable compression |
+| `threshold` | `number` | `1024` | Minimum response size (bytes) to compress |
+| `filter` | `(c) => boolean` | - | Custom filter function |
+
+Compression automatically bypasses WebSocket upgrades and requests without `Accept-Encoding` headers.
 
 ### Event Listeners
 
@@ -145,27 +160,25 @@ Unlike traditional platforms, Agentuity defines infrastructure in your route fil
 
 ```typescript
 // src/api/index.ts
-import { createRouter } from '@agentuity/runtime';
+import { createRouter, cron, websocket } from '@agentuity/runtime';
 import scheduler from '@agent/scheduler';
-import emailHandler from '@agent/email-handler';
+import chatHandler from '@agent/chat';
 
 const router = createRouter();
 
 // Cron job - runs every hour
-router.cron('0 * * * *', async (c) => {
+router.post('/cleanup', cron('0 * * * *', async (c) => {
   await scheduler.run({ task: 'cleanup' });
   return c.text('OK');
-});
+}));
 
-// Email trigger
-router.email('support@mycompany.com', async (email, c) => {
-  const result = await emailHandler.run({
-    from: email.fromEmail(),
-    subject: email.subject(),
-    body: email.text(),
+// WebSocket endpoint
+router.get('/chat', websocket((c, ws) => {
+  ws.onMessage(async (event) => {
+    const response = await chatHandler.run({ message: event.data as string });
+    ws.send(response);
   });
-  return c.text('Processed');
-});
+}));
 
 export default router;
 ```

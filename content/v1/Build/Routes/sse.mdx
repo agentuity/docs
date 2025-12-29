@@ -1,6 +1,6 @@
 ---
 title: Streaming with SSE
-description: Stream updates from server to client with router.sse()
+description: Stream updates from server to client using SSE middleware
 ---
 
 Server-Sent Events (SSE) provide efficient one-way streaming from server to client over HTTP. Use them for progress indicators, live feeds, notifications, and LLM response streaming.
@@ -12,11 +12,11 @@ All routes live in `src/api/`. Import agents you need and call them directly.
 ## Basic Example
 
 ```typescript
-import { createRouter } from '@agentuity/runtime';
+import { createRouter, sse } from '@agentuity/runtime';
 
 const router = createRouter();
 
-router.sse('/updates', (c) => async (stream) => {
+router.get('/updates', sse(async (c, stream) => {
   await stream.write('Connected!');
 
   // Stream data to client
@@ -26,17 +26,19 @@ router.sse('/updates', (c) => async (stream) => {
   }
 
   stream.close();
-});
+}));
 
 export default router;
 ```
 
 ## Handler Structure
 
-The SSE handler uses an async callback pattern:
+The `sse()` middleware wraps your handler and provides the stream object:
 
 ```typescript
-router.sse('/path', (c) => async (stream) => {
+import { createRouter, sse } from '@agentuity/runtime';
+
+router.get('/path', sse(async (c, stream) => {
   // c - Route context (logger, agents, storage)
   // stream - SSE stream object
 
@@ -44,7 +46,7 @@ router.sse('/path', (c) => async (stream) => {
   await stream.writeSSE({ event, data, id });
   stream.onAbort(() => { /* cleanup */ });
   stream.close();  // Optional: stream closes automatically when handler returns
-});
+}));
 ```
 
 ## With Middleware
@@ -52,7 +54,7 @@ router.sse('/path', (c) => async (stream) => {
 Apply authentication or logging before streaming:
 
 ```typescript
-import { createRouter } from '@agentuity/runtime';
+import { createRouter, sse } from '@agentuity/runtime';
 import { createMiddleware } from 'hono/factory';
 
 const router = createRouter();
@@ -65,12 +67,12 @@ const authMiddleware = createMiddleware(async (c, next) => {
   await next();
 });
 
-router.sse('/events', authMiddleware, (c) => async (stream) => {
+router.get('/events', authMiddleware, sse(async (c, stream) => {
   await stream.writeSSE({ event: 'connected', data: 'Authenticated!' });
 
   // Stream events...
   stream.close();
-});
+}));
 
 export default router;
 ```
@@ -127,11 +129,11 @@ source.addEventListener('complete', (e) => {
 A job progress tracker that streams status updates:
 
 ```typescript
-import { createRouter } from '@agentuity/runtime';
+import { createRouter, sse } from '@agentuity/runtime';
 
 const router = createRouter();
 
-router.sse('/', (c) => async (stream) => {
+router.get('/', sse(async (c, stream) => {
   c.var.logger.info('Client connected');
 
   const steps = [
@@ -173,7 +175,7 @@ router.sse('/', (c) => async (stream) => {
 
   // Keep connection open
   await new Promise(() => {});
-});
+}));
 
 export default router;
 ```
@@ -196,12 +198,12 @@ Always clean up resources to prevent memory leaks.
 SSE connections stay open until closed. Use a pending promise to keep the handler alive:
 
 ```typescript
-router.sse('/stream', (c) => async (stream) => {
+router.get('/stream', sse(async (c, stream) => {
   // Set up intervals, subscriptions, etc.
 
   // Keep connection open until client disconnects or stream.close()
   await new Promise(() => {});
-});
+}));
 ```
 
 ## Client Connection
@@ -244,11 +246,11 @@ Use SSE when you only need to push data **from server to client**. Use [WebSocke
 SSE handlers work without agents. This example streams build logs from storage:
 
 ```typescript
-import { createRouter } from '@agentuity/runtime';
+import { createRouter, sse } from '@agentuity/runtime';
 
 const router = createRouter();
 
-router.sse('/builds/:id/logs', (c) => async (stream) => {
+router.get('/builds/:id/logs', sse(async (c, stream) => {
   const buildId = c.req.param('id');
   const logs = await c.var.kv.get<string[]>('builds', `${buildId}:logs`);
 
@@ -260,7 +262,7 @@ router.sse('/builds/:id/logs', (c) => async (stream) => {
 
   await stream.writeSSE({ event: 'complete', data: 'Build finished' });
   stream.close();
-});
+}));
 
 export default router;
 ```
