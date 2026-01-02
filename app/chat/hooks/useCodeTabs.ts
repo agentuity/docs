@@ -42,30 +42,32 @@ export function useCodeTabs() {
     ) => {
         const tabIdentifier = identifier || `${language}-${hashCode(code)}`;
 
-        // Check for existing tab using current state
-        const existing = tabs.find(t => t.identifier === tabIdentifier);
-        if (existing) {
-            setActiveTabId(existing.id);
+        setTabs(prev => {
+            // Check for existing tab using prev state
+            const existing = prev.find(t => t.identifier === tabIdentifier);
+            if (existing) {
+                setActiveTabId(existing.id);
+                setEditorOpen(true);
+                setMinimizedBlocks(p => new Set(p).add(tabIdentifier));
+                return prev; // No change to tabs
+            }
+
+            // Create new tab with ID generated outside setState
+            const newTabId = uuidv4();
+            const newTab: CodeTab = {
+                id: newTabId,
+                content: code,
+                language,
+                label: label || extractLabel(identifier, language),
+                identifier: tabIdentifier,
+            };
+
+            setActiveTabId(newTabId);
             setEditorOpen(true);
-            setMinimizedBlocks(prev => new Set(prev).add(tabIdentifier));
-            return;
-        }
-
-        // Create new tab with ID generated outside setState
-        const newTabId = uuidv4();
-        const newTab: CodeTab = {
-            id: newTabId,
-            content: code,
-            language,
-            label: label || extractLabel(identifier, language),
-            identifier: tabIdentifier,
-        };
-
-        setTabs(prev => [...prev, newTab]);
-        setActiveTabId(newTabId);
-        setEditorOpen(true);
-        setMinimizedBlocks(prev => new Set(prev).add(tabIdentifier));
-    }, [tabs]);
+            setMinimizedBlocks(p => new Set(p).add(tabIdentifier));
+            return [...prev, newTab];
+        });
+    }, []);
 
     const closeTab = useCallback((tabId: string) => {
         setTabs(prev => {
