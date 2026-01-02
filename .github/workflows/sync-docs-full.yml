@@ -24,4 +24,4 @@ jobs:
           set -euo pipefail
           cat all-files.txt | \
             ./bin/build-payload.sh "${{ github.repository }}" full | \
-            ./bin/send-webhook.sh "https://agentuity.ai/webhook/f61d5ce9d6ed85695cc992c55ccdc2a6" "Bearer $AGENTUITY_TOKEN"
+            ./bin/send-webhook.sh "https://p0f83a312791b60ff.agentuity.run/api/process-docs" "Bearer $AGENTUITY_TOKEN"
