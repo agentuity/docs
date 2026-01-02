@@ -135,6 +135,11 @@ AGENTUITY_SDK_KEY=...        # API key for Agentuity services
 AGENTUITY_LOG_LEVEL=info     # trace, debug, info, warn, error
 AGENTUITY_PORT=3500          # Dev server port (default: 3500)
 
+# Resource Credentials (auto-added by CLI when creating resources)
+DATABASE_URL=postgresql://...   # Added by: agentuity cloud db create
+# S3 credentials                # Added by: agentuity cloud s3 create
+# REDIS_URL=redis://...         # From: agentuity cloud redis show
+
 # LLM Provider Keys (optional; if using your own API keys instead of the AI Gateway)
 OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...

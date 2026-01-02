@@ -280,13 +280,15 @@ handler: async (ctx, input) => {
   ctx.logger.error('Something failed', { error });
 
   // Identifiers
-  ctx.sessionId;      // Unique per request (sess_...)
-  ctx.thread.id;      // Conversation context (thrd_...)
+  ctx.sessionId;           // Unique per request (sess_...)
+  ctx.thread.id;           // Conversation context (thrd_...)
+  ctx.current.agentId;     // This agent's ID
+  ctx.current.name;        // This agent's name
 
   // State management
-  ctx.state.set('key', value);           // Request-scoped (cleared after response)
-  ctx.thread.state.set('key', value);    // Thread-scoped (up to 1 hour)
-  ctx.session.state.set('key', value);   // Session-scoped
+  ctx.state.set('key', value);                   // Request-scoped (sync, cleared after response)
+  await ctx.thread.state.set('key', value);      // Thread-scoped (async, up to 1 hour)
+  ctx.session.state.set('key', value);           // Session-scoped
 
   // Storage
   await ctx.kv.set('bucket', 'key', data);

@@ -9,7 +9,7 @@ Process webhooks from external services (Stripe, GitHub, Slack) with proper sign
 
 Webhooks require quick responses (usually under 3 seconds). Use `waitUntil` to acknowledge immediately and process in the background.
 
-```typescript
+```typescript title="src/api/webhooks/route.ts"
 import { createRouter } from '@agentuity/runtime';
 import crypto from 'crypto';
 import paymentProcessor from '@agent/payment-processor';
@@ -24,7 +24,7 @@ router.post('/stripe', async (c) => {
 
   // Verify signature
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!secret || !verifyStripeSignature(rawBody, signature, secret)) {
+  if (!secret || !verifyStripeSignature(rawBody, signature, secret)) { // [!code highlight]
     c.var.logger.warn('Invalid webhook signature');
     return c.text('Invalid signature', 401);
   }
@@ -33,7 +33,7 @@ router.post('/stripe', async (c) => {
   c.var.logger.info('Webhook received', { type: event.type });
 
   // Process in background, respond immediately
-  c.waitUntil(async () => {
+  c.waitUntil(async () => { // [!code highlight]
     try {
       switch (event.type) {
         case 'payment_intent.succeeded':
@@ -66,7 +66,7 @@ router.post('/stripe', async (c) => {
   });
 
   // Return 200 immediately
-  return c.json({ received: true });
+  return c.json({ received: true }); // [!code highlight]
 });
 
 function verifyStripeSignature(
@@ -102,7 +102,7 @@ export default router;
 
 ## Slack Webhook Example
 
-```typescript
+```typescript title="src/api/webhooks/route.ts"
 import slackHandler from '@agent/slack-handler';
 
 router.post('/slack', async (c) => {
@@ -130,7 +130,7 @@ router.post('/slack', async (c) => {
   }
 
   // Process event in background
-  c.waitUntil(async () => {
+  c.waitUntil(async () => { // [!code highlight]
     await slackHandler.run(payload);
   });
 

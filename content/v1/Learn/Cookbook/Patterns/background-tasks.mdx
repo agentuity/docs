@@ -11,7 +11,7 @@ Run tasks after sending a response using `waitUntil`. This keeps response times 
 
 This example uses [ArkType](https://arktype.io) for schema validation:
 
-```typescript
+```typescript title="src/agent/order-processor/agent.ts"
 import { createAgent } from '@agentuity/runtime';
 import { type } from 'arktype';
 
@@ -33,18 +33,18 @@ const agent = createAgent('OrderProcessor', {
     const order = await processOrder(orderId);
 
     // Background: send confirmation email
-    ctx.waitUntil(async () => {
+    ctx.waitUntil(async () => { // [!code highlight]
       await sendConfirmationEmail(userId, order);
       ctx.logger.info('Confirmation email sent', { orderId });
     });
 
     // Background: update analytics
-    ctx.waitUntil(async () => {
+    ctx.waitUntil(async () => { // [!code highlight]
       await trackPurchase(userId, order);
     });
 
     // Background: notify warehouse
-    ctx.waitUntil(async () => {
+    ctx.waitUntil(async () => { // [!code highlight]
       await notifyWarehouse(order);
     });
 
@@ -63,7 +63,7 @@ export default agent;
 
 Create a stream for the client to poll, then populate it in the background:
 
-```typescript
+```typescript title="src/agent/async-generator/agent.ts"
 import { createAgent } from '@agentuity/runtime';
 import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
@@ -79,13 +79,13 @@ const agent = createAgent('AsyncGenerator', {
   },
   handler: async (ctx, input) => {
     // Create a durable stream the client can read from
-    const stream = await ctx.stream.create('generation', {
+    const stream = await ctx.stream.create('generation', { // [!code highlight]
       contentType: 'text/plain',
       metadata: { sessionId: ctx.sessionId },
     });
 
     // Generate content in the background
-    ctx.waitUntil(async () => {
+    ctx.waitUntil(async () => { // [!code highlight]
       try {
         const { textStream } = streamText({
           model: openai('gpt-5-mini'),
@@ -96,7 +96,7 @@ const agent = createAgent('AsyncGenerator', {
           await stream.write(chunk);
         }
       } finally {
-        await stream.close();
+        await stream.close(); // [!code highlight]
       }
     });
 
@@ -115,7 +115,7 @@ export default agent;
 
 Write progress updates to a stream as background work proceeds:
 
-```typescript
+```typescript title="src/agent/batch-processor/agent.ts"
 import { createAgent } from '@agentuity/runtime';
 import { type } from 'arktype';
 

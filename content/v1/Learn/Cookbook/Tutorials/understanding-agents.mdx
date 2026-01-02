@@ -84,7 +84,7 @@ The schema is converted to JSON and sent to the LLM, which uses the description 
 
 The AI SDK's `generateText` function orchestrates the agent loop automatically. When you provide tools, it handles the back-and-forth between the LLM and tool execution.
 
-```typescript
+```typescript title="src/agent/researcher/agent.ts"
 import { createAgent } from '@agentuity/runtime';
 import { generateText, tool, stepCountIs } from 'ai';
 import { openai } from '@ai-sdk/openai';
@@ -190,16 +190,15 @@ const result = await generateText({
 
 Create an HTTP endpoint to call your agent:
 
-```typescript
-// src/api/index.ts
+```typescript title="src/api/index.ts"
 import { createRouter } from '@agentuity/runtime';
 import researchAgent from '@agent/researcher';
 
 const router = createRouter();
 
-router.post('/research', researchAgent.validator(), async (c) => {
-  const { topic } = c.req.valid('json');
-  const result = await researchAgent.run({ topic });
+router.post('/research', researchAgent.validator(), async (c) => { // [!code highlight]
+  const { topic } = c.req.valid('json'); // [!code highlight]
+  const result = await researchAgent.run({ topic }); // [!code highlight]
   return c.json(result);
 });
 
@@ -224,18 +223,17 @@ curl -X POST http://localhost:3500/research \
   -d '{"topic": "how do AI agents work"}'
 ```
 
-### Using a React UI
+### Frontend
 
 Create a simple frontend to interact with your agent:
 
-```tsx
-// src/web/App.tsx
+```tsx title="src/web/App.tsx"
 import { useAPI } from '@agentuity/react';
 import { useState } from 'react';
 
 export function App() {
   const [topic, setTopic] = useState('');
-  const { data, invoke, isLoading } = useAPI('POST /research');
+  const { data, invoke, isLoading } = useAPI('POST /research'); // [!code highlight]
 
   return (
     <div style={{ padding: '2rem', maxWidth: '600px' }}>
@@ -268,8 +266,7 @@ export function App() {
 
 Wrap your app with `AgentuityProvider` in the entry point:
 
-```tsx
-// src/web/frontend.tsx
+```tsx title="src/web/frontend.tsx"
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AgentuityProvider } from '@agentuity/react';

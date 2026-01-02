@@ -704,6 +704,10 @@ The context object passed to your agent handler contains the following propertie
 interface AgentContext<TConfig = unknown, TAppState = unknown> {
   // Identifiers
   sessionId: string;                  // Unique ID for this agent execution
+  current: {                          // Current agent metadata
+    agentId: string;
+    name: string;
+  };
 
   // Agent Calling (use imports instead)
   // import otherAgent from '@agent/other-agent';
@@ -736,6 +740,7 @@ interface AgentContext<TConfig = unknown, TAppState = unknown> {
 
 **Identifiers:**
 - `sessionId`: Unique identifier for this agent execution. Use for tracking and correlating logs.
+- `current`: Metadata about the currently executing agent. Contains `agentId` and `name`. Useful for agent-specific state keys or logging.
 
 **Configuration:**
 - `config`: Agent-specific configuration returned from the agent's `setup()` function. Fully typed based on what setup returns.
@@ -2506,15 +2511,15 @@ const conversationAgent = createAgent('ConversationAgent', {
     }),
   },
   handler: async (ctx, input) => {
-    // Get conversation history from thread
-    const history = (ctx.thread.state.get('history') as string[]) || [];
+    // Get conversation history from thread (async)
+    const history = (await ctx.thread.state.get<string[]>('history')) || [];
 
     // Add current message to history
     history.push(input.message);
-    ctx.thread.state.set('history', history);
+    await ctx.thread.state.set('history', history);
 
     // Store user info
-    ctx.thread.state.set('userId', input.userId);
+    await ctx.thread.state.set('userId', input.userId);
 
     return {
       reply: `Processed message ${history.length}`,
@@ -2548,11 +2553,12 @@ handler: async (ctx, input) => {
 - Persists across requests within the same thread
 - Useful for conversation context and workflow state
 - Destroyed when thread is destroyed
+- **All methods are async** for lazy-loading performance
 
 ```typescript
 handler: async (ctx, input) => {
-  const step = (ctx.thread.state.get('currentStep') as number) || 1;
-  ctx.thread.state.set('currentStep', step + 1);
+  const step = (await ctx.thread.state.get<number>('currentStep')) || 1;
+  await ctx.thread.state.set('currentStep', step + 1);
 }
 ```
 
@@ -2584,13 +2590,13 @@ const statefulAgent = createAgent('StatefulAgent', {
     }),
   },
   handler: async (ctx, input) => {
-    // Request-scoped state
+    // Request-scoped state (sync)
     ctx.state.set('startTime', Date.now());
 
-    // Thread-scoped state (conversation flow)
-    const threadStep = (ctx.thread.state.get('step') as number) || 0;
-    ctx.thread.state.set('step', threadStep + 1);
-    ctx.thread.state.set('lastAction', input.action);
+    // Thread-scoped state (async, conversation flow)
+    const threadStep = (await ctx.thread.state.get<number>('step')) || 0;
+    await ctx.thread.state.set('step', threadStep + 1);
+    await ctx.thread.state.set('lastAction', input.action);
 
     // Session-scoped state (user-level)
     const sessionTotal = (ctx.session.state.get('total') as number) || 0;

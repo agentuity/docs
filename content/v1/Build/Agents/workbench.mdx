@@ -92,13 +92,13 @@ const agent = createAgent('Chat', {
     output: z.object({ response: z.string(), turnCount: z.number() }),
   },
   handler: async (ctx, input) => {
-    // Initialize turn count on first request
-    if (!ctx.thread.state.has('turns')) {
-      ctx.thread.state.set('turns', 0);
+    // Initialize turn count on first request (async)
+    if (!(await ctx.thread.state.has('turns'))) {
+      await ctx.thread.state.set('turns', 0);
     }
 
-    const turns = (ctx.thread.state.get('turns') as number) + 1;
-    ctx.thread.state.set('turns', turns);
+    const turns = ((await ctx.thread.state.get<number>('turns')) || 0) + 1;
+    await ctx.thread.state.set('turns', turns);
 
     return {
       response: `You said: ${input.message}`,

@@ -16,7 +16,7 @@ Database storage provides relational database capabilities using [Bun's native S
 | [Durable Streams](/v1/Build/Storage/durable-streams) | Large exports, audit logs |
 
 <Callout type="info" title="Credentials Auto-Injected">
-Agentuity automatically injects database credentials (`DATABASE_URL`) during development and deployment. No manual configuration required.
+When you create a database with `agentuity cloud db create`, the `DATABASE_URL` is automatically added to your `.env` file. During deployment, credentials are injected automatically.
 </Callout>
 
 ## Quick Start

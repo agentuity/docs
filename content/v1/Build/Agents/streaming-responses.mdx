@@ -173,8 +173,8 @@ Combine streaming with thread state for multi-turn conversations:
 
 ```typescript
 handler: async (ctx, input) => {
-  // Get existing messages from thread state
-  const messages = ctx.thread.state.get('messages') || [];
+  // Get existing messages from thread state (async)
+  const messages = (await ctx.thread.state.get('messages')) || [];
 
   // Add new user message
   messages.push({ role: 'user', content: input.message });
@@ -188,7 +188,7 @@ handler: async (ctx, input) => {
   ctx.waitUntil(async () => {
     const fullText = await text;
     messages.push({ role: 'assistant', content: fullText });
-    ctx.thread.state.set('messages', messages);
+    await ctx.thread.state.set('messages', messages);
   });
 
   return textStream;

@@ -41,9 +41,7 @@ When a user asks a question, the agent needs to:
 3. Generate an answer using the LLM with that context
 4. Return the answer with source citations
 
-Here's the code for `src/agent/knowledge/agent.ts`:
-
-```typescript
+```typescript title="src/agent/knowledge/agent.ts"
 import { createAgent } from '@agentuity/runtime';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
@@ -69,10 +67,10 @@ const agent = createAgent('Knowledge Agent', {
     ctx.logger.info('Searching knowledge base', { question: input.question });
 
     // Search for relevant documents
-    const results = await ctx.vector.search('knowledge-base', {
-      query: input.question,
+    const results = await ctx.vector.search('knowledge-base', { // [!code highlight]
+      query: input.question, // [!code highlight]
       limit: 5,
-      similarity: 0.7,
+      similarity: 0.7, // [!code highlight]
     });
 
     // Handle no results
@@ -86,8 +84,8 @@ const agent = createAgent('Knowledge Agent', {
     }
 
     // Build context from search results
-    const context = results
-      .map((r, i) => `[${i + 1}] ${r.document}`)
+    const context = results // [!code highlight]
+      .map((r, i) => `[${i + 1}] ${r.document}`) // [!code highlight]
       .join('\n\n');
 
     ctx.logger.debug('Built context from documents', {
@@ -132,18 +130,16 @@ export default agent;
 
 The route exposes your agent over HTTP. Use `agent.validator()` for type-safe validation using the agent's schema.
 
-Here's the code for `src/api/index.ts`:
-
-```typescript
+```typescript title="src/api/index.ts"
 import { createRouter } from '@agentuity/runtime';
 import knowledgeAgent from '@agent/knowledge';
 
 const router = createRouter();
 
 // Query endpoint - validates using agent's input schema
-router.post('/knowledge', knowledgeAgent.validator(), async (c) => {
-  const { question } = c.req.valid('json');
-  const result = await knowledgeAgent.run({ question });
+router.post('/knowledge', knowledgeAgent.validator(), async (c) => { // [!code highlight]
+  const { question } = c.req.valid('json'); // [!code highlight]
+  const result = await knowledgeAgent.run({ question }); // [!code highlight]
   return c.json(result);
 });
 
@@ -163,9 +159,7 @@ Before you can query your knowledge base, you need to populate it. A separate in
 2. Storing each document in the vector database with metadata
 3. Returning the count and IDs of indexed documents
 
-Here's the code for `src/agent/indexer/agent.ts`:
-
-```typescript
+```typescript title="src/agent/indexer/agent.ts"
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
@@ -193,9 +187,9 @@ const agent = createAgent('Document Indexer', {
     const ids: string[] = [];
 
     for (const doc of input.documents) {
-      await ctx.vector.upsert('knowledge-base', {
-        key: doc.id,
-        document: doc.content,
+      await ctx.vector.upsert('knowledge-base', { // [!code highlight]
+        key: doc.id, // [!code highlight]
+        document: doc.content, // [!code highlight]
         metadata: {
           title: doc.title,
           category: doc.category,
@@ -270,12 +264,11 @@ Expected response:
 }
 ```
 
-### Using a React UI
+### Frontend
 
 Build a search interface for your knowledge base:
 
-```tsx
-// src/web/App.tsx
+```tsx title="src/web/App.tsx"
 import { useAPI } from '@agentuity/react';
 import { useState } from 'react';
 
@@ -293,7 +286,7 @@ interface KnowledgeResult {
 
 export function App() {
   const [question, setQuestion] = useState('');
-  const { data, invoke, isLoading } = useAPI<KnowledgeResult>('POST /knowledge');
+  const { data, invoke, isLoading } = useAPI<KnowledgeResult>('POST /knowledge'); // [!code highlight]
 
   return (
     <div style={{ padding: '2rem', maxWidth: '700px' }}>
@@ -354,8 +347,7 @@ export function App() {
 
 Wrap your app with `AgentuityProvider`:
 
-```tsx
-// src/web/frontend.tsx
+```tsx title="src/web/frontend.tsx"
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AgentuityProvider } from '@agentuity/react';

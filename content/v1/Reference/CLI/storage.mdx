@@ -109,6 +109,8 @@ agentuity cloud storage create --name my-storage
 # or: agentuity cloud s3 create --name my-storage
 ```
 
+This adds S3 credentials to your local `.env` file automatically.
+
 ### List Storage Resources
 
 ```bash
@@ -304,6 +306,8 @@ agentuity cloud db list
 agentuity cloud db create --name my-database
 ```
 
+This adds `DATABASE_URL` to your local `.env` file automatically.
+
 ### Get Database Details
 
 ```bash
@@ -383,6 +387,12 @@ agentuity --json cloud redis show
 <Callout type="info" title="Organization Resource">
 Redis is provisioned at the organization level. Contact support if you need Redis enabled for your organization.
 </Callout>
+
+To use Redis locally, add the URL to your `.env`:
+
+```bash
+REDIS_URL=redis://...
+```
 
 ## Next Steps
 

@@ -9,7 +9,7 @@ Build a product search that understands natural language queries and filters by 
 
 Vector search finds semantically similar products. Combine with metadata filtering for precise results.
 
-```typescript
+```typescript title="src/agent/product-search/agent.ts"
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
@@ -49,7 +49,7 @@ const agent = createAgent('Product Search', {
     });
 
     // Search with semantic similarity
-    const results = await ctx.vector.search<ProductMetadata>('products', {
+    const results = await ctx.vector.search<ProductMetadata>('products', { // [!code highlight]
       query: input.query,
       limit: input.limit * 2, // Fetch extra for filtering
       similarity: 0.6,
@@ -102,8 +102,7 @@ export default agent;
 
 Add products to the vector database. This example uses [Valibot](https://valibot.dev) for schema validation:
 
-```typescript
-// src/agent/product-indexer/agent.ts
+```typescript title="src/agent/product-indexer/agent.ts"
 import { createAgent } from '@agentuity/runtime';
 import * as v from 'valibot';
 
@@ -149,7 +148,7 @@ export default agent;
 
 ## Route with Query Parameters
 
-```typescript
+```typescript title="src/api/products/route.ts"
 import { createRouter } from '@agentuity/runtime';
 import productSearch from '@agent/product-search';
 
@@ -174,21 +173,11 @@ router.get('/search', async (c) => {
 export default router;
 ```
 
-## Example Usage
-
-```bash
-# Natural language search
-curl "http://localhost:3500/products/search?q=comfortable%20office%20chair"
-
-# With filters
-curl "http://localhost:3500/products/search?q=laptop&category=electronics&maxPrice=1000"
-```
-
 ## AI-Powered Recommendations
 
 Enhance search results with AI-generated recommendations. Use `generateObject` to analyze matches and suggest the best option.
 
-```typescript
+```typescript title="src/agent/product-advisor/agent.ts"
 import { createAgent } from '@agentuity/runtime';
 import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
@@ -258,7 +247,7 @@ const agent = createAgent('Product Advisor', {
       .join('\n');
 
     // Generate personalized recommendation
-    const { object } = await generateObject({
+    const { object } = await generateObject({ // [!code highlight]
       model: openai('gpt-5-mini'),
       system: 'You are a product consultant. Provide a brief 2-3 sentence recommendation based on the search results. Reference customer feedback when relevant.',
       prompt: `Customer searched for: "${input.query}"\n\nMatching products:\n${context}`,
@@ -296,85 +285,131 @@ Add AI recommendations when customers benefit from personalized guidance: compar
 }
 ```
 
-## React UI Example
+## Frontend
 
-A simple product search interface:
+A search interface that displays matches and the AI recommendation:
 
-```tsx
-// src/web/App.tsx
+```tsx title="src/web/App.tsx"
 import { useState } from 'react';
 
-interface Product {
-  id: string;
+interface Match {
+  sku: string;
   name: string;
-  description: string;
   price: number;
-  category: string;
-  relevance: number;
+  rating: number;
+  similarity: number;
+}
+
+interface SearchResult {
+  matches: Match[];
+  recommendation: string;
+  recommendedSKU: string;
 }
 
 export function App() {
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
-  const [products, setProducts] = useState<Product[]>([]);
+  const [result, setResult] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
 
   const search = async () => {
     if (!query.trim()) return;
     setLoading(true);
 
-    const params = new URLSearchParams({ q: query });
-    if (category) params.set('category', category);
-    if (maxPrice) params.set('maxPrice', maxPrice);
-
-    const response = await fetch(`/products/search?${params}`);
+    const response = await fetch('/api/products/search', { // [!code highlight]
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    });
     const data = await response.json();
-    setProducts(data.products);
+    setResult(data);
     setLoading(false);
   };
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '800px' }}>
+    <div style={{ padding: '2rem', maxWidth: '600px' }}>
       <h1>Product Search</h1>
 
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && search()}
           placeholder="Search products..."
-          style={{ flex: 1, padding: '0.5rem' }}
-        />
-        <select value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option value="">All categories</option>
-          <option value="electronics">Electronics</option>
-          <option value="furniture">Furniture</option>
-        </select>
-        <input
-          type="number"
-          value={maxPrice}
-          onChange={(e) => setMaxPrice(e.target.value)}
-          placeholder="Max price"
-          style={{ width: '100px', padding: '0.5rem' }}
+          style={{ flex: 1, padding: '0.75rem' }}
         />
         <button onClick={search} disabled={loading}>
           {loading ? '...' : 'Search'}
         </button>
       </div>
 
-      <div>
-        {products.map((product) => (
-          <div key={product.id} style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
-            <strong>{product.name}</strong> - ${product.price}
-            <div style={{ color: '#666', fontSize: '0.9rem' }}>{product.description}</div>
-            <small>{Math.round(product.relevance * 100)}% match</small>
+      {result && (
+        <>
+          {/* AI Recommendation */}
+          {result.recommendation && (
+            <div style={{
+              background: '#f0f9ff',
+              border: '1px solid #bae6fd',
+              borderRadius: '8px',
+              padding: '1rem',
+              marginBottom: '1.5rem',
+            }}>
+              <strong style={{ color: '#0284c7' }}>AI Recommendation</strong>
+              <p style={{ margin: '0.5rem 0 0' }}>{result.recommendation}</p>
+            </div>
+          )}
+
+          {/* Matches */}
+          <div>
+            {result.matches.map((match) => (
+              <div
+                key={match.sku}
+                style={{
+                  padding: '1rem',
+                  borderBottom: '1px solid #eee',
+                  background: match.sku === result.recommendedSKU ? '#f0fdf4' : 'transparent',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div>
+                    <strong>{match.name}</strong>
+                    {match.sku === result.recommendedSKU && (
+                      <span style={{
+                        background: '#dcfce7',
+                        color: '#166534',
+                        fontSize: '0.75rem',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '4px',
+                        marginLeft: '0.5rem',
+                      }}>
+                        Recommended
+                      </span>
+                    )}
+                    <div style={{ color: '#666', fontSize: '0.85rem' }}>{match.sku}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div>${match.price}</div>
+                    <div style={{ color: '#666', fontSize: '0.85rem' }}>
+                      {match.rating} stars · {Math.round(match.similarity * 100)}% match
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
     </div>
   );
 }
+```
+
+## Testing
+
+Use the frontend to search interactively. If you need to call the endpoint directly:
+
+```bash
+curl "http://localhost:3500/products/search?q=comfortable%20office%20chair"
+curl "http://localhost:3500/products/search?q=laptop&category=electronics&maxPrice=1000"
 ```
 
 ## Key Points

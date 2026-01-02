@@ -1,0 +1,139 @@
+---
+title: Auth0 Authentication
+description: Add user authentication with Auth0
+---
+
+Add user authentication to your Agentuity project using [Auth0](https://auth0.com).
+
+<Callout type="info" title="First-Party Alternative">
+For a zero-configuration auth solution, see [Agentuity Auth](/v1/Build/Frontend/authentication) which provides built-in authentication without external dependencies.
+</Callout>
+
+## Installation
+
+```bash
+bun add @agentuity/auth @auth0/auth0-react
+```
+
+## Client Setup
+
+Wrap your app with the Auth0 and Agentuity providers:
+
+```tsx
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { Auth0Provider, useAuth0 } from '@auth0/auth0-react';
+import { AgentuityProvider } from '@agentuity/react';
+import { AgentuityAuth0 } from '@agentuity/auth/auth0';
+import { App } from './App';
+
+const domain = process.env.AGENTUITY_PUBLIC_AUTH0_DOMAIN;
+const clientId = process.env.AGENTUITY_PUBLIC_AUTH0_CLIENT_ID;
+
+createRoot(document.getElementById('root')!).render(
+  <Auth0Provider
+    domain={domain!}
+    clientId={clientId!}
+    authorizationParams={{ redirect_uri: window.location.origin }}
+  >
+    <AgentuityProvider>
+      <AgentuityAuth0 useAuth0={useAuth0}>
+        <App />
+      </AgentuityAuth0>
+    </AgentuityProvider>
+  </Auth0Provider>
+);
+```
+
+## Server Middleware
+
+Protect routes with Auth0's `createMiddleware()`:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { createMiddleware } from '@agentuity/auth/auth0/server';
+
+const router = createRouter();
+
+router.get('/profile', createMiddleware(), async (c) => {
+  const user = await c.var.auth.getUser();
+  return c.json({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+  });
+});
+
+export default router;
+```
+
+## Environment Variables
+
+| Variable | Side | Description |
+|----------|------|-------------|
+| `AGENTUITY_PUBLIC_AUTH0_DOMAIN` | Client | Auth0 domain (e.g., `your-tenant.auth0.com`) |
+| `AGENTUITY_PUBLIC_AUTH0_CLIENT_ID` | Client | Auth0 application client ID |
+| `AGENTUITY_PUBLIC_AUTH0_AUDIENCE` | Client | Auth0 API audience (optional) |
+| `AUTH0_DOMAIN` | Server | Auth0 domain (server-side) |
+| `AUTH0_AUDIENCE` | Server | Auth0 API audience (optional) |
+
+<Callout type="info" title="User Profile">
+By default, user info is fetched from Auth0's `/userinfo` endpoint. For richer profile data, set `fetchUserProfile: true` in the middleware options and configure `AUTH0_M2M_CLIENT_ID` and `AUTH0_M2M_CLIENT_SECRET` for Management API access.
+</Callout>
+
+## Global Middleware
+
+Protect all routes under a path prefix:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { createMiddleware } from '@agentuity/auth/auth0/server';
+
+const router = createRouter();
+
+// Protect all /api/* routes
+router.use('/api/*', createMiddleware());
+
+router.get('/api/profile', async (c) => {
+  const user = await c.var.auth.getUser();
+  return c.json({ email: user.email });
+});
+
+export default router;
+```
+
+## Using Auth State in Components
+
+The `useAgentuity` hook provides authentication state:
+
+```tsx
+import { useAPI, useAgentuity } from '@agentuity/react';
+
+function Dashboard() {
+  const { isAuthenticated, authLoading } = useAgentuity();
+  const { data, refetch } = useAPI('GET /api/profile');
+
+  if (authLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <div>Please sign in to continue</div>;
+  }
+
+  return (
+    <div>
+      <h1>Welcome, {data?.name}</h1>
+      <button onClick={() => refetch()}>Refresh Profile</button>
+    </div>
+  );
+}
+```
+
+Once your auth provider is set up, `useAPI` and `useWebsocket` automatically include the auth token in requests.
+
+## See Also
+
+- [Clerk Integration](/v1/Learn/Cookbook/Integrations/clerk): Alternative third-party provider
+- [Middleware](/v1/Build/Routes/middleware): More middleware patterns
+- [React Hooks](/v1/Build/Frontend/react-hooks): Building custom UIs

@@ -454,8 +454,8 @@ import processingAgent from '@agent/processing';
 
 const coordinator = createAgent('Coordinator', {
   handler: async (ctx, input) => {
-    // Store data in thread state
-    ctx.thread.state.set('userId', input.userId);
+    // Store data in thread state (async)
+    await ctx.thread.state.set('userId', input.userId);
 
     // Called agents can access the same thread state
     const result = await processingAgent.run(input);

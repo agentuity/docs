@@ -3,6 +3,7 @@
   "pages": [
     "background-tasks",
     "chat-with-history",
+    "cron-with-storage",
     "product-search",
     "tailwind-setup",
     "webhook-handler"

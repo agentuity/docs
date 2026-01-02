@@ -8,6 +8,10 @@ Agentuity provides two state scopes for managing data across requests:
 - **Request state** for temporary calculations within a single request
 - **Thread state** for conversation context that persists across requests
 
+<Callout type="info" title="Async Thread State">
+Thread state uses async lazy-loading for performance. State is only fetched when first accessed, eliminating latency for requests that don't use thread state. All `ctx.thread.state` methods are async and require `await`.
+</Callout>
+
 ## State Scopes
 
 | Scope | Lifetime | Cleared When | Access | Example Use Case |
@@ -35,13 +39,13 @@ const agent = createAgent('StateDemo', {
     }),
   },
   handler: async (ctx, input) => {
-    // REQUEST STATE: Cleared after this response
+    // REQUEST STATE: Cleared after this response (sync)
     ctx.state.set('startTime', Date.now());
 
-    // THREAD STATE: Persists across requests (up to 1 hour)
-    const messages = (ctx.thread.state.get('messages') as string[]) || [];
+    // THREAD STATE: Persists across requests (async, up to 1 hour)
+    const messages = (await ctx.thread.state.get<string[]>('messages')) || [];
     messages.push(input.message);
-    ctx.thread.state.set('messages', messages);
+    await ctx.thread.state.set('messages', messages);
 
     const requestTime = Date.now() - (ctx.state.get('startTime') as number);
 
@@ -102,13 +106,13 @@ const agent = createAgent('ConversationMemory', {
   },
   handler: async (ctx, input) => {
     // Initialize on first request
-    if (!ctx.thread.state.has('messages')) {
-      ctx.thread.state.set('messages', []);
-      ctx.thread.state.set('turnCount', 0);
+    if (!(await ctx.thread.state.has('messages'))) {
+      await ctx.thread.state.set('messages', []);
+      await ctx.thread.state.set('turnCount', 0);
     }
 
-    const messages = ctx.thread.state.get('messages') as Message[];
-    const turnCount = ctx.thread.state.get('turnCount') as number;
+    const messages = await ctx.thread.state.get<Message[]>('messages') || [];
+    const turnCount = await ctx.thread.state.get<number>('turnCount') || 0;
 
     // Add user message
     messages.push({ role: 'user', content: input.message });
@@ -122,8 +126,8 @@ const agent = createAgent('ConversationMemory', {
 
     // Update thread state
     messages.push({ role: 'assistant', content: text });
-    ctx.thread.state.set('messages', messages);
-    ctx.thread.state.set('turnCount', turnCount + 1);
+    await ctx.thread.state.set('messages', messages);
+    await ctx.thread.state.set('turnCount', turnCount + 1);
 
     ctx.logger.info('Conversation turn', {
       threadId: ctx.thread.id,
@@ -141,10 +145,27 @@ export default agent;
 
 ```typescript
 ctx.thread.id;  // Thread ID (thrd_...)
-ctx.thread.state.set('key', value);
-ctx.thread.state.get('key');
-ctx.thread.state.has('key');
-ctx.thread.state.delete('key');
+
+// All state methods are async
+await ctx.thread.state.set('key', value);
+await ctx.thread.state.get<T>('key');
+await ctx.thread.state.has('key');
+await ctx.thread.state.delete('key');
+await ctx.thread.state.clear();
+
+// Array operations with optional sliding window
+await ctx.thread.state.push('messages', newMessage);
+await ctx.thread.state.push('messages', newMessage, 100);  // Keep last 100
+
+// Bulk access (returns arrays, not iterators)
+const keys = await ctx.thread.state.keys();           // string[]
+const values = await ctx.thread.state.values<Message>();  // Message[]
+const entries = await ctx.thread.state.entries<Message>(); // [string, Message][]
+const count = await ctx.thread.state.size();          // number
+
+// State status
+ctx.thread.state.loaded;  // Has state been fetched?
+ctx.thread.state.dirty;   // Are there pending changes?
 
 // Reset the conversation
 await ctx.thread.destroy();
@@ -202,16 +223,16 @@ const agent = createAgent('PersistentChat', {
     let messages: Message[] = [];
 
     // Load from KV on first access in this thread
-    if (!ctx.thread.state.has('loaded')) {
+    if (!(await ctx.thread.state.has('kvLoaded'))) {
       const result = await ctx.kv.get<Message[]>('conversations', key);
       if (result.exists) {
         messages = result.data;
         ctx.logger.info('Loaded conversation from KV', { messageCount: messages.length });
       }
-      ctx.thread.state.set('messages', messages);
-      ctx.thread.state.set('loaded', true);
+      await ctx.thread.state.set('messages', messages);
+      await ctx.thread.state.set('kvLoaded', true);
     } else {
-      messages = ctx.thread.state.get('messages') as Message[];
+      messages = await ctx.thread.state.get<Message[]>('messages') || [];
     }
 
     // Add user message
@@ -230,7 +251,7 @@ const agent = createAgent('PersistentChat', {
 
       // Keep last 20 messages to bound state size
       const recentMessages = messages.slice(-20);
-      ctx.thread.state.set('messages', recentMessages);
+      await ctx.thread.state.set('messages', recentMessages);
 
       // Persist to KV
       await ctx.kv.set('conversations', key, recentMessages, {
@@ -250,13 +271,17 @@ export default agent;
 - Use `ctx.waitUntil()` for non-blocking saves
 - Bound state size to prevent unbounded growth
 
+<Callout type="tip" title="Write-Only Optimization">
+Thread state supports write-only operations without loading existing state. If you only call `set()`, `delete()`, or `push()` without any reads, the SDK batches these as a merge operation, avoiding the latency of fetching existing state.
+</Callout>
+
 ## Thread Lifecycle
 
 Threads expire after 1 hour of inactivity. Use the `destroyed` event to archive data before expiration:
 
 ```typescript
 ctx.thread.addEventListener('destroyed', async (eventName, thread) => {
-  const messages = thread.state.get('messages') as string[] || [];
+  const messages = await thread.state.get<string[]>('messages') || [];
   if (messages.length > 0) {
     await ctx.kv.set('archives', thread.id, {
       messages,
@@ -419,16 +444,20 @@ To stay within limits:
 - **Clean up resources**: Use `destroyed` event to save or archive data
 - **Cache strategically**: Load from KV once, cache in thread state, save on completion
 - **Watch state size**: Stay under 1MB to avoid truncation
+- **Use `push()` for arrays**: The `push()` method with `maxRecords` handles sliding windows efficiently
 
 ```typescript
-// Good: Bounded conversation history
-const messages = ctx.thread.state.get('messages') as Message[];
+// Good: Use push() with maxRecords for bounded history
+await ctx.thread.state.push('messages', newMessage, 50);  // Keeps last 50
+
+// Alternative: Manual bounding when you need the full array
+const messages = await ctx.thread.state.get<Message[]>('messages') || [];
 if (messages.length > 50) {
   const archived = messages.slice(0, -50);
   ctx.waitUntil(async () => {
     await ctx.kv.set('archives', `${ctx.thread.id}_${Date.now()}`, archived);
   });
-  ctx.thread.state.set('messages', messages.slice(-50));
+  await ctx.thread.state.set('messages', messages.slice(-50));
 }
 ```
 
