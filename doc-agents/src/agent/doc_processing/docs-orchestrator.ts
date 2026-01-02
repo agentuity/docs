@@ -16,7 +16,7 @@ async function removeVectorsByPath(
 
 	while (true) {
 		const vectors = await ctx.vector.search(vectorStoreName, {
-			query: ' ',
+			query: 'A',
 			limit: 100,
 			metadata: { path: logicalPath },
 		});
