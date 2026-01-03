@@ -4,8 +4,8 @@ import { type ChangeEvent, useState } from 'react';
 const WORKBENCH_PATH = process.env.AGENTUITY_PUBLIC_WORKBENCH_PATH;
 
 export function App() {
-	const [prompt, setPrompt] = useState('Tell me a joke');
-	const { data: greeting, invoke, isLoading: running } = useAPI('POST /api/hello');
+	const [prompt, setPrompt] = useState('What is Agentuity?');
+	const { data: result, invoke, isLoading: running } = useAPI('POST /api/doc-qa');
 
 	return (
 		<div className="app-container">
@@ -44,7 +44,7 @@ export function App() {
 
 				<div className="card card-interactive">
 					<h2 className="card-title">
-						Try the <span className="highlight">OpenAI powered AI Agent</span>
+						Ask about <span className="highlight">Agentuity Documentation</span>
 					</h2>
 
 					<div className="input-group">
@@ -54,7 +54,7 @@ export function App() {
 							onChange={(e: ChangeEvent<HTMLInputElement>) =>
 								setPrompt(e.currentTarget.value)
 							}
-							placeholder="Enter your prompt"
+							placeholder="Ask a question about Agentuity..."
 							type="text"
 							value={prompt}
 						/>
@@ -65,16 +65,32 @@ export function App() {
 							<button
 								className={`button ${running ? 'disabled' : ''}`}
 								disabled={running}
-								onClick={() => invoke({ prompt })}
+								onClick={() => invoke({ message: prompt })}
 								type="button"
 							>
-								{running ? 'Running...' : 'Ask AI'}
+								{running ? 'Searching...' : 'Ask'}
 							</button>
 						</div>
 					</div>
 
-					<div className="output" data-loading={!greeting}>
-						{greeting ?? 'Waiting for request'}
+					<div className="output" data-loading={!result}>
+						{result ? (
+							<div>
+								<div style={{ marginBottom: '1rem' }}>{result.answer}</div>
+								{result.documents && result.documents.length > 0 && (
+									<div style={{ fontSize: '0.875rem', color: '#a1a1aa', borderTop: '1px solid #2b2b30', paddingTop: '1rem' }}>
+										<strong>Sources:</strong>
+										<ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
+											{result.documents.map((doc, idx) => (
+												<li key={idx}>{doc}</li>
+											))}
+										</ul>
+									</div>
+								)}
+							</div>
+						) : (
+							'Waiting for question'
+						)}
 					</div>
 				</div>
 
@@ -85,29 +101,29 @@ export function App() {
 						{[
 							{
 								key: 'customize-agent',
-								title: 'Customize your agent',
+								title: 'Customize the Q&A Agent',
 								text: (
 									<>
-										Edit <code>src/agent/hello/agent.ts</code> to change how your agent
-										responds.
+										Edit <code>src/agent/doc_qa/agent.ts</code> or <code>src/agent/doc_qa/rag.ts</code> to modify the
+										documentation Q&A behavior.
 									</>
 								),
 							},
 							{
-								key: 'add-routes',
-								title: 'Add new API routes',
+								key: 'add-vector-store',
+								title: 'Configure Vector Storage',
 								text: (
 									<>
-										Create new files in <code>src/web/</code> to expose more endpoints.
+										Update the vector store configuration in <code>src/config.ts</code> to point to your documentation embeddings.
 									</>
 								),
 							},
 							{
 								key: 'update-frontend',
-								title: 'Update the frontend',
+								title: 'Enhance the UI',
 								text: (
 									<>
-										Modify <code>src/web/App.tsx</code> to build your custom UI.
+										Modify <code>src/web/App.tsx</code> to add more features like chat history or document filters.
 									</>
 								),
 							},
