@@ -5,12 +5,10 @@ export interface AgentConfig {
   url: string;
   bearerToken?: string;
 }
-/**
- * Builds agent configuration using non-secret IDs from config
- */
+
 import { config } from '@/lib/config';
 
-const buildAgentConfig = (agentId: string): AgentConfig => {
+const buildAgentConfig = (endpoint: string): AgentConfig => {
   const baseUrl = config.agentBaseUrl;
   const bearerToken = process.env.AGENT_BEARER_TOKEN;
 
@@ -19,30 +17,22 @@ const buildAgentConfig = (agentId: string): AgentConfig => {
       'Missing required configuration. Set AGENT_BASE_URL or ensure config.agentBaseUrl is defined.'
     );
   }
-  if (!agentId) {
-    throw new Error('Missing required agent ID in config');
-  }
-
-  // For localhost/127.0.0.1, ensure agent ID has 'agent_' prefix
-  let finalAgentId = agentId;
-  if (baseUrl.includes('127.0.0.1') || baseUrl.includes('localhost')) {
-    if (!agentId.startsWith('agent_')) {
-      finalAgentId = `agent_${agentId}`;
-    }
+  if (!endpoint) {
+    throw new Error('Missing required agent endpoint');
   }
 
   return {
-    url: `${baseUrl}/${finalAgentId}`,
+    url: `${baseUrl}${endpoint}`,
     bearerToken: bearerToken || undefined,
   };
 };
 
 export const getAgentQaConfig = (): AgentConfig => {
-  return buildAgentConfig(config.agentQaId);
+  return buildAgentConfig('/api/doc-qa');
 };
 
 export const getAgentPulseConfig = (): AgentConfig => {
-  return buildAgentConfig(config.agentPulseId);
+  return buildAgentConfig('/api/agent-pulse');
 };
 
 /**
@@ -51,13 +41,12 @@ export const getAgentPulseConfig = (): AgentConfig => {
 export const validateEnv = (): boolean => {
   try {
     getAgentQaConfig();
-    console.log('✓ Environment variables validated');
+    console.log('✓ Agent configuration validated');
     return true;
   } catch (error) {
-    console.error('❌ Environment validation failed:', error);
-    console.error('💡 Make sure to set base URL via:');
-    console.error('   - AGENT_BASE_URL env var, or');
-    console.error('   - Use default from config.baseUrl');
+    console.error('❌ Agent configuration validation failed:', error);
+    console.error('💡 Set AGENT_BASE_URL env var for agent communication');
+    console.error('   Default: http://127.0.0.1:3500 (for local development)');
     console.error('💡 Optionally set AGENT_BEARER_TOKEN for authentication');
     return false;
   }
