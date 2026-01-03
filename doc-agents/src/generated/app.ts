@@ -206,14 +206,12 @@ if (isDevelopment() && process.env.VITE_PORT) {
 }
 
 // Mount API routes
-const { default: router_0 } = await import('../api/index.js');
-app.route('/api', router_0);
-const { default: router_1 } = await import('../api/doc-qa/route.js');
-app.route('/api/doc-qa', router_1);
-const { default: router_2 } = await import('../api/process-docs/index.js');
+const { default: router_0 } = await import('../api/doc-qa/route.js');
+app.route('/api/doc-qa', router_0);
+const { default: router_1 } = await import('../api/process-docs/index.js');
+app.route('/api/process-docs', router_1);
+const { default: router_2 } = await import('../api/process-docs/route.js');
 app.route('/api/process-docs', router_2);
-const { default: router_3 } = await import('../api/process-docs/route.js');
-app.route('/api/process-docs', router_3);
 
 // Mount workbench API routes (/_agentuity/workbench/*)
 const workbenchRouter = createWorkbenchRouter();
