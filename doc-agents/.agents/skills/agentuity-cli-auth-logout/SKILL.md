@@ -24,11 +24,11 @@ agentuity auth logout
 Logout from account:
 
 ```bash
-agentuity auth logout
+bunx @agentuity/cli auth logout
 ```
 
 Logout from account:
 
 ```bash
-agentuity logout
+bunx @agentuity/cli logout
 ```

@@ -12,8 +12,8 @@ Learn more at the [Agent Skills Specification](https://agentskills.io/specificat
 ## Generated From
 
 - **CLI Version**: 0.0.105
-- **Generated**: 2026-01-02
-- **Total Skills**: 89
+- **Generated**: 2026-01-04
+- **Total Skills**: 88
 
 ## Available Skills
 
@@ -139,12 +139,6 @@ Learn more at the [Agent Skills Specification](https://agentskills.io/specificat
 | Skill | Command | Description |
 |-------|---------|-------------|
 | [agentuity-cli-repl](./agentuity-cli-repl) | `agentuity repl` | interactive REPL for testing |
-
-### upgrade
-
-| Skill | Command | Description |
-|-------|---------|-------------|
-| [agentuity-cli-upgrade](./agentuity-cli-upgrade) | `agentuity upgrade` | Upgrade the CLI to the latest version |
 
 ## Usage
 

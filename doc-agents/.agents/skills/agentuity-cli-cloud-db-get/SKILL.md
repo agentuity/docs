@@ -44,35 +44,35 @@ agentuity cloud db get <name> [options]
 Get database details:
 
 ```bash
-agentuity cloud db get my-database
+bunx @agentuity/cli cloud db get my-database
 ```
 
 Show database information:
 
 ```bash
-agentuity cloud db show my-database
+bunx @agentuity/cli cloud db show my-database
 ```
 
 Get database with credentials:
 
 ```bash
-agentuity cloud db get my-database --show-credentials
+bunx @agentuity/cli cloud db get my-database --show-credentials
 ```
 
 Get table schemas from the database:
 
 ```bash
-agentuity cloud db get my-database --show-tables
+bunx @agentuity/cli cloud db get my-database --show-tables
 ```
 
 Get table schemas as SQL CREATE statements:
 
 ```bash
-agentuity cloud db get my-database --show-tables --sql
+bunx @agentuity/cli cloud db get my-database --show-tables --sql
 ```
 
 Get table schemas as JSON:
 
 ```bash
-agentuity cloud db get my-database --show-tables --json
+bunx @agentuity/cli cloud db get my-database --show-tables --json
 ```

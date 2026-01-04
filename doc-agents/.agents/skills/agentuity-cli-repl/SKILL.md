@@ -24,5 +24,5 @@ agentuity repl
 Run repl command:
 
 ```bash
-agentuity repl
+bunx @agentuity/cli repl
 ```

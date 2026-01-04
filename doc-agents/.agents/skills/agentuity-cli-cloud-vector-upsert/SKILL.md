@@ -46,31 +46,31 @@ agentuity cloud vector upsert <namespace> [key] [options]
 Upsert a single vector with document text:
 
 ```bash
-agentuity vector upsert products doc1 --document "Comfortable office chair"
+bunx @agentuity/cli vector upsert products doc1 --document "Comfortable office chair"
 ```
 
 Upsert with metadata:
 
 ```bash
-agentuity vector upsert products doc1 --document "Chair" --metadata '{"category":"furniture"}'
+bunx @agentuity/cli vector upsert products doc1 --document "Chair" --metadata '{"category":"furniture"}'
 ```
 
 Upsert with pre-computed embeddings:
 
 ```bash
-agentuity vector upsert embeddings vec1 --embeddings "[0.1, 0.2, 0.3]"
+bunx @agentuity/cli vector upsert embeddings vec1 --embeddings "[0.1, 0.2, 0.3]"
 ```
 
 Bulk upsert from JSON file:
 
 ```bash
-agentuity vector upsert products --file vectors.json
+bunx @agentuity/cli vector upsert products --file vectors.json
 ```
 
 Bulk upsert from stdin:
 
 ```bash
-cat vectors.json | agentuity vector upsert products -
+cat vectors.json | bunx @agentuity/cli vector upsert products -
 ```
 
 ## Output

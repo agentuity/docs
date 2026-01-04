@@ -36,17 +36,17 @@ agentuity cloud vector stats [name]
 Show stats for all namespaces:
 
 ```bash
-agentuity vector stats
+bunx @agentuity/cli vector stats
 ```
 
 Show detailed stats for products namespace:
 
 ```bash
-agentuity vector stats products
+bunx @agentuity/cli vector stats products
 ```
 
 Show stats for embeddings:
 
 ```bash
-agentuity vector stats embeddings
+bunx @agentuity/cli vector stats embeddings
 ```

@@ -28,13 +28,13 @@ agentuity auth whoami
 Show current user:
 
 ```bash
-agentuity auth whoami
+bunx @agentuity/cli auth whoami
 ```
 
 Show output in JSON format:
 
 ```bash
-agentuity --json auth whoami
+bunx @agentuity/cli --json auth whoami
 ```
 
 ## Output

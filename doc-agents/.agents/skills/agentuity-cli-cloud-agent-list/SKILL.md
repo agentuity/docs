@@ -35,19 +35,19 @@ agentuity cloud agent list [options]
 List items:
 
 ```bash
-agentuity cloud agent list
+bunx @agentuity/cli cloud agent list
 ```
 
 Use verbose option:
 
 ```bash
-agentuity cloud agent list --verbose
+bunx @agentuity/cli cloud agent list --verbose
 ```
 
 Show output in JSON format:
 
 ```bash
-agentuity --json cloud agent list
+bunx @agentuity/cli --json cloud agent list
 ```
 
 ## Output

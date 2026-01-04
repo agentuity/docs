@@ -37,19 +37,19 @@ agentuity profile create <name> [options]
 Create new item:
 
 ```bash
-agentuity profile create production
+bunx @agentuity/cli profile create production
 ```
 
 Use switch option:
 
 ```bash
-agentuity profile create staging --switch
+bunx @agentuity/cli profile create staging --switch
 ```
 
 Create new item:
 
 ```bash
-agentuity profile create development
+bunx @agentuity/cli profile create development
 ```
 
 ## Output

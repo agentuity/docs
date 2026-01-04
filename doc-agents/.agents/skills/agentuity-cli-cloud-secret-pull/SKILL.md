@@ -36,13 +36,13 @@ agentuity cloud secret pull [options]
 Run pull command:
 
 ```bash
-agentuity secret pull
+bunx @agentuity/cli secret pull
 ```
 
 Use force option:
 
 ```bash
-agentuity secret pull --force
+bunx @agentuity/cli secret pull --force
 ```
 
 ## Output

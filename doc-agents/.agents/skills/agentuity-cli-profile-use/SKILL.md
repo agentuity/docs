@@ -31,17 +31,17 @@ agentuity profile use [name]
 Switch to the "production" profile:
 
 ```bash
-agentuity profile use production
+bunx @agentuity/cli profile use production
 ```
 
 Switch to the "staging" profile:
 
 ```bash
-agentuity profile switch staging
+bunx @agentuity/cli profile switch staging
 ```
 
 Show interactive profile selection menu:
 
 ```bash
-agentuity profile use
+bunx @agentuity/cli profile use
 ```

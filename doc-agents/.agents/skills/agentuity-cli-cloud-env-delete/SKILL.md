@@ -36,13 +36,13 @@ agentuity cloud env delete <key>
 Delete item:
 
 ```bash
-agentuity env delete OLD_FEATURE_FLAG
+bunx @agentuity/cli env delete OLD_FEATURE_FLAG
 ```
 
 Delete item:
 
 ```bash
-agentuity env rm PORT
+bunx @agentuity/cli env rm PORT
 ```
 
 ## Output

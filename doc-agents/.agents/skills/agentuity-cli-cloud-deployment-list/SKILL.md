@@ -35,19 +35,19 @@ agentuity cloud deployment list [options]
 List 10 most recent deployments:
 
 ```bash
-agentuity cloud deployment list
+bunx @agentuity/cli cloud deployment list
 ```
 
 List 25 most recent deployments:
 
 ```bash
-agentuity cloud deployment list --count=25
+bunx @agentuity/cli cloud deployment list --count=25
 ```
 
 List deployments for specific project:
 
 ```bash
-agentuity cloud deployment list --project-id=proj_abc123xyz
+bunx @agentuity/cli cloud deployment list --project-id=proj_abc123xyz
 ```
 
 ## Output

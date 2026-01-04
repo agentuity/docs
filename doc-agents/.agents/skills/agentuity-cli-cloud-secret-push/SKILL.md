@@ -30,7 +30,7 @@ agentuity cloud secret push
 Run push command:
 
 ```bash
-agentuity secret push
+bunx @agentuity/cli secret push
 ```
 
 ## Output

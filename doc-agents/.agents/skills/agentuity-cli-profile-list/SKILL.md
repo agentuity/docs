@@ -24,13 +24,13 @@ agentuity profile list
 List items:
 
 ```bash
-agentuity profile list
+bunx @agentuity/cli profile list
 ```
 
 List items:
 
 ```bash
-agentuity profile ls
+bunx @agentuity/cli profile ls
 ```
 
 ## Output

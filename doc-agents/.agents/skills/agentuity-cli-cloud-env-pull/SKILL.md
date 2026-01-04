@@ -36,13 +36,13 @@ agentuity cloud env pull [options]
 Run pull command:
 
 ```bash
-agentuity env pull
+bunx @agentuity/cli env pull
 ```
 
 Use force option:
 
 ```bash
-agentuity env pull --force
+bunx @agentuity/cli env pull --force
 ```
 
 ## Output

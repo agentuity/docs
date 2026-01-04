@@ -35,13 +35,13 @@ agentuity cloud deployment rollback [options]
 Rollback to previous deployment:
 
 ```bash
-agentuity cloud deployment rollback
+bunx @agentuity/cli cloud deployment rollback
 ```
 
 Rollback specific project:
 
 ```bash
-agentuity cloud deployment rollback --project-id=proj_abc123xyz
+bunx @agentuity/cli cloud deployment rollback --project-id=proj_abc123xyz
 ```
 
 ## Output

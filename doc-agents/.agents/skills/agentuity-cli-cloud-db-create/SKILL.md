@@ -35,25 +35,25 @@ agentuity cloud db create [options]
 Create new item:
 
 ```bash
-agentuity cloud db create
+bunx @agentuity/cli cloud db create
 ```
 
 Run new command:
 
 ```bash
-agentuity cloud db new
+bunx @agentuity/cli cloud db new
 ```
 
 Create new item:
 
 ```bash
-agentuity cloud db create --name my-db
+bunx @agentuity/cli cloud db create --name my-db
 ```
 
 Create new item:
 
 ```bash
-agentuity --dry-run cloud db create
+bunx @agentuity/cli --dry-run cloud db create
 ```
 
 ## Output

@@ -30,7 +30,7 @@ agentuity cloud env push
 Run push command:
 
 ```bash
-agentuity env push
+bunx @agentuity/cli env push
 ```
 
 ## Output

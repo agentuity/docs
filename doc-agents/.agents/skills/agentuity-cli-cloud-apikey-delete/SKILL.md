@@ -35,19 +35,19 @@ agentuity cloud apikey delete <id>
 Delete item:
 
 ```bash
-agentuity cloud apikey delete <id>
+bunx @agentuity/cli cloud apikey delete <id>
 ```
 
 Run <id> command:
 
 ```bash
-agentuity cloud apikey del <id>
+bunx @agentuity/cli cloud apikey del <id>
 ```
 
 Delete item:
 
 ```bash
-agentuity cloud apikey rm <id>
+bunx @agentuity/cli cloud apikey rm <id>
 ```
 
 ## Output

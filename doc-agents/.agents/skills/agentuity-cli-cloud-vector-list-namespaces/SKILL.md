@@ -29,19 +29,19 @@ agentuity cloud vector list-namespaces
 List all namespaces:
 
 ```bash
-agentuity vector list-namespaces
+bunx @agentuity/cli vector list-namespaces
 ```
 
 List namespaces (using alias):
 
 ```bash
-agentuity vector namespaces
+bunx @agentuity/cli vector namespaces
 ```
 
 List namespaces (short alias):
 
 ```bash
-agentuity vector ns
+bunx @agentuity/cli vector ns
 ```
 
 ## Output

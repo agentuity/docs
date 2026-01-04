@@ -37,13 +37,13 @@ agentuity cloud secret set <key> <value>
 Set the DATABASE_URL environment secret:
 
 ```bash
-agentuity secret set DATABASE_URL "postgres://user:pass@host:5432/db"
+bunx @agentuity/cli secret set DATABASE_URL "postgres://user:pass@host:5432/db"
 ```
 
 Set the STRIPE_SECRET_KEY environment secret:
 
 ```bash
-agentuity secret set STRIPE_SECRET_KEY "sk_live_..."
+bunx @agentuity/cli secret set STRIPE_SECRET_KEY "sk_live_..."
 ```
 
 ## Output

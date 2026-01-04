@@ -36,19 +36,19 @@ agentuity cloud keyvalue keys <name>
 List all keys in production:
 
 ```bash
-agentuity kv keys production
+bunx @agentuity/cli kv keys production
 ```
 
 List all cached keys (using alias):
 
 ```bash
-agentuity kv ls cache
+bunx @agentuity/cli kv ls cache
 ```
 
 List all staging keys:
 
 ```bash
-agentuity kv list staging
+bunx @agentuity/cli kv list staging
 ```
 
 ## Output

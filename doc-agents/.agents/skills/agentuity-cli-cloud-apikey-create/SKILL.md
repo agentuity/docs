@@ -37,19 +37,19 @@ agentuity cloud apikey create [options]
 Create API key with 1 year expiration:
 
 ```bash
-agentuity cloud apikey create --name "My API Key" --expires-at 1y
+bunx @agentuity/cli cloud apikey create --name "My API Key" --expires-at 1y
 ```
 
 Create API key with 30 day expiration:
 
 ```bash
-agentuity cloud apikey create --name "Short-lived Key" --expires-at 30d
+bunx @agentuity/cli cloud apikey create --name "Short-lived Key" --expires-at 30d
 ```
 
 Create API key with specific date and skip confirmation:
 
 ```bash
-agentuity cloud apikey create --name "Production Key" --expires-at 2026-01-01T00:00:00Z --confirm
+bunx @agentuity/cli cloud apikey create --name "Production Key" --expires-at 2026-01-01T00:00:00Z --confirm
 ```
 
 ## Output

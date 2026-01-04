@@ -24,17 +24,17 @@ agentuity build
 Build the project:
 
 ```bash
-agentuity build
+bunx @agentuity/cli build
 ```
 
 Run in development mode:
 
 ```bash
-agentuity build --dev
+bunx @agentuity/cli build --dev
 ```
 
 Bundle the project:
 
 ```bash
-agentuity bundle
+bunx @agentuity/cli bundle
 ```

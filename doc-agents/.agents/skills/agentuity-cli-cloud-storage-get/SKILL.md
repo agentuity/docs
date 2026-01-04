@@ -42,19 +42,19 @@ agentuity cloud storage get <name> [options]
 Get bucket details:
 
 ```bash
-agentuity cloud storage get my-bucket
+bunx @agentuity/cli cloud storage get my-bucket
 ```
 
 Show bucket information:
 
 ```bash
-agentuity cloud storage show my-bucket
+bunx @agentuity/cli cloud storage show my-bucket
 ```
 
 Get bucket with credentials:
 
 ```bash
-agentuity cloud storage get my-bucket --show-credentials
+bunx @agentuity/cli cloud storage get my-bucket --show-credentials
 ```
 
 ## Output

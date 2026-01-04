@@ -44,49 +44,49 @@ agentuity cloud session list [options]
 List 10 most recent sessions:
 
 ```bash
-agentuity cloud session list
+bunx @agentuity/cli cloud session list
 ```
 
 List 25 most recent sessions:
 
 ```bash
-agentuity cloud session list --count=25
+bunx @agentuity/cli cloud session list --count=25
 ```
 
 Filter by project:
 
 ```bash
-agentuity cloud session list --project-id=proj_*
+bunx @agentuity/cli cloud session list --project-id=proj_*
 ```
 
 Filter by deployment:
 
 ```bash
-agentuity cloud session list --deployment-id=*
+bunx @agentuity/cli cloud session list --deployment-id=*
 ```
 
 Only successful sessions:
 
 ```bash
-agentuity cloud session list --success=true
+bunx @agentuity/cli cloud session list --success=true
 ```
 
 Only production sessions:
 
 ```bash
-agentuity cloud session list --devmode=false
+bunx @agentuity/cli cloud session list --devmode=false
 ```
 
 Only API triggered sessions:
 
 ```bash
-agentuity cloud session list --trigger=api
+bunx @agentuity/cli cloud session list --trigger=api
 ```
 
 Only production environment:
 
 ```bash
-agentuity cloud session list --env=production
+bunx @agentuity/cli cloud session list --env=production
 ```
 
 ## Output

@@ -35,13 +35,13 @@ agentuity cloud secret list [options]
 List items:
 
 ```bash
-agentuity secret list
+bunx @agentuity/cli secret list
 ```
 
 Use no mask option:
 
 ```bash
-agentuity secret list --no-mask
+bunx @agentuity/cli secret list --no-mask
 ```
 
 ## Output

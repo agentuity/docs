@@ -39,31 +39,31 @@ agentuity project create [options]
 Create new item:
 
 ```bash
-agentuity project create
+bunx @agentuity/cli project create
 ```
 
 Create new item:
 
 ```bash
-agentuity project create --name my-ai-agent
+bunx @agentuity/cli project create --name my-ai-agent
 ```
 
 Create new item:
 
 ```bash
-agentuity project create --name customer-service-bot --dir ~/projects/agent
+bunx @agentuity/cli project create --name customer-service-bot --dir ~/projects/agent
 ```
 
 Use no install option:
 
 ```bash
-agentuity project create --template basic --no-install
+bunx @agentuity/cli project create --template basic --no-install
 ```
 
 Use no register option:
 
 ```bash
-agentuity project new --no-register
+bunx @agentuity/cli project new --no-register
 ```
 
 ## Output

@@ -36,17 +36,17 @@ agentuity cloud deployment undeploy [options]
 Undeploy with confirmation:
 
 ```bash
-agentuity cloud deployment undeploy
+bunx @agentuity/cli cloud deployment undeploy
 ```
 
 Undeploy without confirmation:
 
 ```bash
-agentuity cloud deployment undeploy --force
+bunx @agentuity/cli cloud deployment undeploy --force
 ```
 
 Undeploy specific project:
 
 ```bash
-agentuity cloud deployment undeploy --project-id=proj_abc123xyz
+bunx @agentuity/cli cloud deployment undeploy --project-id=proj_abc123xyz
 ```

@@ -24,11 +24,11 @@ agentuity auth login
 Login to account:
 
 ```bash
-agentuity auth login
+bunx @agentuity/cli auth login
 ```
 
 Login to account:
 
 ```bash
-agentuity login
+bunx @agentuity/cli login
 ```

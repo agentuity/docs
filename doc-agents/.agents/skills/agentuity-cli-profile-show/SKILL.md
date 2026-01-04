@@ -31,19 +31,19 @@ agentuity profile show [name]
 Show details:
 
 ```bash
-agentuity profile show
+bunx @agentuity/cli profile show
 ```
 
 Show details:
 
 ```bash
-agentuity profile show production
+bunx @agentuity/cli profile show production
 ```
 
 Show output in JSON format:
 
 ```bash
-agentuity profile show staging --json
+bunx @agentuity/cli profile show staging --json
 ```
 
 ## Output

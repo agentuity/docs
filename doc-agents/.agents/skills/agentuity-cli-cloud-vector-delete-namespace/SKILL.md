@@ -42,19 +42,19 @@ agentuity cloud vector delete-namespace <name> [options]
 Delete staging namespace (interactive):
 
 ```bash
-agentuity vector delete-namespace staging
+bunx @agentuity/cli vector delete-namespace staging
 ```
 
 Delete cache without confirmation:
 
 ```bash
-agentuity vector rm-namespace cache --confirm
+bunx @agentuity/cli vector rm-namespace cache --confirm
 ```
 
 Force delete old-data namespace:
 
 ```bash
-agentuity vector delete-namespace old-data --confirm
+bunx @agentuity/cli vector delete-namespace old-data --confirm
 ```
 
 ## Output

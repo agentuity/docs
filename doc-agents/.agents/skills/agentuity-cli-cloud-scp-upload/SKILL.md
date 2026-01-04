@@ -43,25 +43,25 @@ agentuity cloud scp upload <source> [destination] [options]
 Upload to remote home directory:
 
 ```bash
-agentuity cloud scp upload ./config.json
+bunx @agentuity/cli cloud scp upload ./config.json
 ```
 
 Upload to specific path:
 
 ```bash
-agentuity cloud scp upload ./config.json /app/config.json
+bunx @agentuity/cli cloud scp upload ./config.json /app/config.json
 ```
 
 Upload to specific project:
 
 ```bash
-agentuity cloud scp upload ./config.json --identifier=proj_abc123xyz
+bunx @agentuity/cli cloud scp upload ./config.json --identifier=proj_abc123xyz
 ```
 
 Upload multiple files:
 
 ```bash
-agentuity cloud scp upload ./logs/*.log ~/logs/
+bunx @agentuity/cli cloud scp upload ./logs/*.log ~/logs/
 ```
 
 ## Output

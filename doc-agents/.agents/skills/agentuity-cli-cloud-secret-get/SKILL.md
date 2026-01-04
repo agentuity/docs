@@ -42,13 +42,13 @@ agentuity cloud secret get <key> [options]
 Get item details:
 
 ```bash
-agentuity secret get DATABASE_URL
+bunx @agentuity/cli secret get DATABASE_URL
 ```
 
 Use no mask option:
 
 ```bash
-agentuity secret get STRIPE_SECRET_KEY --no-mask
+bunx @agentuity/cli secret get STRIPE_SECRET_KEY --no-mask
 ```
 
 ## Output

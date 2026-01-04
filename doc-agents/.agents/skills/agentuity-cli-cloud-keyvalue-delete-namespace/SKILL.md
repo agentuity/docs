@@ -37,19 +37,19 @@ agentuity cloud keyvalue delete-namespace <name> <confirm>
 Delete staging namespace (interactive):
 
 ```bash
-agentuity kv delete-namespace staging
+bunx @agentuity/cli kv delete-namespace staging
 ```
 
 Delete cache without confirmation:
 
 ```bash
-agentuity kv rm-namespace cache --confirm
+bunx @agentuity/cli kv rm-namespace cache --confirm
 ```
 
 Force delete production:
 
 ```bash
-agentuity kv delete-namespace production --confirm
+bunx @agentuity/cli kv delete-namespace production --confirm
 ```
 
 ## Output

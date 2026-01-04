@@ -24,23 +24,23 @@ agentuity dev
 Start development server:
 
 ```bash
-agentuity dev
+bunx @agentuity/cli dev
 ```
 
 Specify custom port:
 
 ```bash
-agentuity dev --port 8080
+bunx @agentuity/cli dev --port 8080
 ```
 
 Run in local mode:
 
 ```bash
-agentuity dev --local
+bunx @agentuity/cli dev --local
 ```
 
 Disable public URL:
 
 ```bash
-agentuity dev --no-public
+bunx @agentuity/cli dev --no-public
 ```

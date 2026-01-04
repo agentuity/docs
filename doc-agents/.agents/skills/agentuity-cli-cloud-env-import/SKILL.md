@@ -36,13 +36,13 @@ agentuity cloud env import <file>
 Import environment variables from .env file:
 
 ```bash
-agentuity cloud env import .env
+bunx @agentuity/cli cloud env import .env
 ```
 
 Import from .env.local file:
 
 ```bash
-agentuity cloud env import .env.local
+bunx @agentuity/cli cloud env import .env.local
 ```
 
 ## Output

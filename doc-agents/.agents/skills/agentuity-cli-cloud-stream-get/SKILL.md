@@ -42,25 +42,25 @@ agentuity cloud stream get <id> [options]
 Get stream details:
 
 ```bash
-agentuity stream get stream-id-123
+bunx @agentuity/cli stream get stream-id-123
 ```
 
 Get stream as JSON:
 
 ```bash
-agentuity stream get stream-id-123 --json
+bunx @agentuity/cli stream get stream-id-123 --json
 ```
 
 Download stream to file:
 
 ```bash
-agentuity stream get stream-id-123 --output stream.dat
+bunx @agentuity/cli stream get stream-id-123 --output stream.dat
 ```
 
 Download stream (short flag):
 
 ```bash
-agentuity stream get stream-id-123 -o stream.dat
+bunx @agentuity/cli stream get stream-id-123 -o stream.dat
 ```
 
 ## Output

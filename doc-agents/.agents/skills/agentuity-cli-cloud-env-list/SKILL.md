@@ -35,13 +35,13 @@ agentuity cloud env list [options]
 List items:
 
 ```bash
-agentuity env list
+bunx @agentuity/cli env list
 ```
 
 Use mask option:
 
 ```bash
-agentuity env list --mask
+bunx @agentuity/cli env list --mask
 ```
 
 ## Output

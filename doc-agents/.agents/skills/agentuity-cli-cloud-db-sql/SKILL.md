@@ -37,19 +37,19 @@ agentuity cloud db sql <name> <query>
 Execute SQL query:
 
 ```bash
-agentuity cloud db sql my-database "SELECT * FROM users LIMIT 10"
+bunx @agentuity/cli cloud db sql my-database "SELECT * FROM users LIMIT 10"
 ```
 
 Execute query with JSON output:
 
 ```bash
-agentuity cloud db exec my-database "SELECT COUNT(*) FROM orders" --json
+bunx @agentuity/cli cloud db exec my-database "SELECT COUNT(*) FROM orders" --json
 ```
 
 Query with filter:
 
 ```bash
-agentuity cloud db query my-database "SELECT * FROM products WHERE price > 100"
+bunx @agentuity/cli cloud db query my-database "SELECT * FROM products WHERE price > 100"
 ```
 
 ## Output

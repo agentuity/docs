@@ -35,7 +35,7 @@ agentuity cloud session get <session_id>
 Get a session by ID:
 
 ```bash
-agentuity cloud session get sess_abc123xyz
+bunx @agentuity/cli cloud session get sess_abc123xyz
 ```
 
 ## Output

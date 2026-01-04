@@ -36,13 +36,13 @@ agentuity cloud secret import <file>
 Run .env.local command:
 
 ```bash
-agentuity secret import .env.local
+bunx @agentuity/cli secret import .env.local
 ```
 
 Run .env.production.backup command:
 
 ```bash
-agentuity secret import .env.production.backup
+bunx @agentuity/cli secret import .env.production.backup
 ```
 
 ## Output

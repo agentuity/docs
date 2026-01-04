@@ -37,19 +37,19 @@ agentuity cloud env set <key> <value>
 Run production command:
 
 ```bash
-agentuity env set NODE_ENV production
+bunx @agentuity/cli env set NODE_ENV production
 ```
 
 Run 3000 command:
 
 ```bash
-agentuity env set PORT 3000
+bunx @agentuity/cli env set PORT 3000
 ```
 
 Run debug command:
 
 ```bash
-agentuity env set LOG_LEVEL debug
+bunx @agentuity/cli env set LOG_LEVEL debug
 ```
 
 ## Output

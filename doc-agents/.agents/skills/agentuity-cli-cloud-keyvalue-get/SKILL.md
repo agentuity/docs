@@ -37,19 +37,19 @@ agentuity cloud keyvalue get <namespace> <key>
 Get user data:
 
 ```bash
-agentuity kv get production user:123
+bunx @agentuity/cli kv get production user:123
 ```
 
 Get cached session:
 
 ```bash
-agentuity kv get cache session:abc
+bunx @agentuity/cli kv get cache session:abc
 ```
 
 Get homepage cache:
 
 ```bash
-agentuity kv get staging cache:homepage
+bunx @agentuity/cli kv get staging cache:homepage
 ```
 
 ## Output

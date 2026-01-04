@@ -37,19 +37,19 @@ agentuity cloud vector get <namespace> <key>
 Get a specific product vector:
 
 ```bash
-agentuity vector get products chair-001
+bunx @agentuity/cli vector get products chair-001
 ```
 
 Get a document from knowledge base:
 
 ```bash
-agentuity vector get knowledge-base doc-123
+bunx @agentuity/cli vector get knowledge-base doc-123
 ```
 
 Get user profile embedding:
 
 ```bash
-agentuity vector get embeddings user-profile-456
+bunx @agentuity/cli vector get embeddings user-profile-456
 ```
 
 ## Output

@@ -36,13 +36,13 @@ agentuity cloud secret delete <key>
 Delete item:
 
 ```bash
-agentuity secret delete OLD_API_KEY
+bunx @agentuity/cli secret delete OLD_API_KEY
 ```
 
 Delete item:
 
 ```bash
-agentuity secret rm DATABASE_URL
+bunx @agentuity/cli secret rm DATABASE_URL
 ```
 
 ## Output

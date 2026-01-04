@@ -43,35 +43,35 @@ agentuity cloud ssh [identifier] [command] [options]
 SSH into current project:
 
 ```bash
-agentuity cloud ssh
+bunx @agentuity/cli cloud ssh
 ```
 
 SSH into specific project:
 
 ```bash
-agentuity cloud ssh proj_abc123xyz
+bunx @agentuity/cli cloud ssh proj_abc123xyz
 ```
 
 SSH into specific deployment:
 
 ```bash
-agentuity cloud ssh deploy_abc123xyz
+bunx @agentuity/cli cloud ssh deploy_abc123xyz
 ```
 
 Run command and exit:
 
 ```bash
-agentuity cloud ssh 'ps aux'
+bunx @agentuity/cli cloud ssh 'ps aux'
 ```
 
 Run command on specific project:
 
 ```bash
-agentuity cloud ssh proj_abc123xyz 'tail -f /var/log/app.log'
+bunx @agentuity/cli cloud ssh proj_abc123xyz 'tail -f /var/log/app.log'
 ```
 
 Show SSH command without executing:
 
 ```bash
-agentuity cloud ssh --show
+bunx @agentuity/cli cloud ssh --show
 ```

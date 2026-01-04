@@ -29,5 +29,5 @@ agentuity cloud keyvalue repl
 Start interactive KV session:
 
 ```bash
-agentuity kv repl
+bunx @agentuity/cli kv repl
 ```

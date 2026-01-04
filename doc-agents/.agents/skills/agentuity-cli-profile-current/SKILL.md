@@ -24,13 +24,13 @@ agentuity profile current
 Show current profile:
 
 ```bash
-agentuity profile current
+bunx @agentuity/cli profile current
 ```
 
 Show output in JSON format:
 
 ```bash
-agentuity profile current --json
+bunx @agentuity/cli profile current --json
 ```
 
 ## Output

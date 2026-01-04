@@ -45,31 +45,31 @@ agentuity cloud vector search <namespace> <query> [options]
 Search for similar products:
 
 ```bash
-agentuity vector search products "comfortable office chair"
+bunx @agentuity/cli vector search products "comfortable office chair"
 ```
 
 Search knowledge base:
 
 ```bash
-agentuity vector list knowledge-base "machine learning"
+bunx @agentuity/cli vector list knowledge-base "machine learning"
 ```
 
 Limit results:
 
 ```bash
-agentuity vector search docs "API documentation" --limit 5
+bunx @agentuity/cli vector search docs "API documentation" --limit 5
 ```
 
 Set minimum similarity:
 
 ```bash
-agentuity vector search products "ergonomic" --similarity 0.8
+bunx @agentuity/cli vector search products "ergonomic" --similarity 0.8
 ```
 
 Filter by metadata:
 
 ```bash
-agentuity vector ls embeddings "neural networks" --metadata category=ai
+bunx @agentuity/cli vector ls embeddings "neural networks" --metadata category=ai
 ```
 
 ## Output

@@ -39,19 +39,19 @@ agentuity cloud keyvalue set <namespace> <key> <value> [ttl]
 Store user data:
 
 ```bash
-agentuity kv set production user:123 '{"name":"Alice","email":"alice@example.com"}'
+bunx @agentuity/cli kv set production user:123 '{"name":"Alice","email":"alice@example.com"}'
 ```
 
 Store session with 1h TTL:
 
 ```bash
-agentuity kv set cache session:abc "session-data-here" --ttl 3600
+bunx @agentuity/cli kv set cache session:abc "session-data-here" --ttl 3600
 ```
 
 Cache homepage for 10m:
 
 ```bash
-agentuity kv set staging cache:homepage "<!DOCTYPE html>..." --ttl 600
+bunx @agentuity/cli kv set staging cache:homepage "<!DOCTYPE html>..." --ttl 600
 ```
 
 ## Output

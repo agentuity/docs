@@ -43,13 +43,13 @@ agentuity cloud session logs <session_id> [options]
 View logs for session:
 
 ```bash
-agentuity cloud session logs sess_abc123xyz
+bunx @agentuity/cli cloud session logs sess_abc123xyz
 ```
 
 Hide timestamps:
 
 ```bash
-agentuity cloud session logs sess_abc123xyz --no-timestamps
+bunx @agentuity/cli cloud session logs sess_abc123xyz --no-timestamps
 ```
 
 ## Output

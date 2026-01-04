@@ -35,19 +35,19 @@ agentuity project show <id>
 Show details:
 
 ```bash
-agentuity project show proj_abc123def456
+bunx @agentuity/cli project show proj_abc123def456
 ```
 
 Show output in JSON format:
 
 ```bash
-agentuity --json project show proj_abc123def456
+bunx @agentuity/cli --json project show proj_abc123def456
 ```
 
 Get item details:
 
 ```bash
-agentuity project get proj_abc123def456
+bunx @agentuity/cli project get proj_abc123def456
 ```
 
 ## Output

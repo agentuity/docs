@@ -37,19 +37,19 @@ agentuity profile delete [name] [options]
 Delete item:
 
 ```bash
-agentuity profile delete staging
+bunx @agentuity/cli profile delete staging
 ```
 
 Use confirm option:
 
 ```bash
-agentuity profile delete old-dev --confirm
+bunx @agentuity/cli profile delete old-dev --confirm
 ```
 
 Delete item:
 
 ```bash
-agentuity profile delete
+bunx @agentuity/cli profile delete
 ```
 
 ## Output

@@ -42,13 +42,13 @@ agentuity cloud env get <key> [options]
 Get item details:
 
 ```bash
-agentuity env get NODE_ENV
+bunx @agentuity/cli env get NODE_ENV
 ```
 
 Get item details:
 
 ```bash
-agentuity env get LOG_LEVEL
+bunx @agentuity/cli env get LOG_LEVEL
 ```
 
 ## Output
