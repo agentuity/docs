@@ -19,6 +19,20 @@ Key-value ("KV") storage provides fast data access for agents. Use it for cachin
 Use built-in state (`ctx.state`, `ctx.thread.state`, `ctx.session.state`) for data tied to active requests and conversations. Use KV when you need custom TTL, *persistent data across sessions*, or *shared state across agents*.
 </Callout>
 
+## Access Patterns
+
+| Context | Access | Details |
+|---------|--------|---------|
+| Agents | `ctx.kv` | See examples below |
+| Routes | `c.var.kv` | See [Using in Routes](#using-in-routes) |
+| Standalone | `createAgentContext()` | See [Standalone Usage](#standalone-usage) |
+| External backends | HTTP routes | [External Storage Access](/v1/Learn/Cookbook/Patterns/external-storage-access) |
+| Frontend | Via routes | [React Hooks](/v1/Build/Frontend/react-hooks) |
+
+<Callout type="info" title="Same API Everywhere">
+The KV API is identical in all contexts. `ctx.kv.get()` and `c.var.kv.get()` work the same way. See [Accessing Services](/v1/Reference/sdk-reference#accessing-services) for the full reference.
+</Callout>
+
 ## Basic Operations
 
 Access key-value storage through `ctx.kv` in agents or `c.var.kv` in routes. Buckets are auto-created on first use.

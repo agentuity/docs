@@ -2069,17 +2069,119 @@ router.post('/process', processor.validator(), async (c) => {
 });
 ```
 
-**Accessing Services:**
+### Accessing Services
 
-All Agentuity storage and observability services are available in router handlers:
-- Call agents via imports: `import agent from '@agent/name'; agent.run()`
-- Use key-value storage via `c.var.kv`
-- Log with `c.var.logger`
-- Trace with `c.var.tracer`
-- Store objects via `import { s3 } from 'bun'`
-- Search vectors via `c.var.vector`
+Agentuity services (storage, logging, tracing) are available in multiple contexts. The API is identical; only the access pattern differs.
 
-This unified context makes it easy to build HTTP endpoints that leverage the full Agentuity platform.
+#### Quick Reference
+
+| Service | In Agents | In Routes | In Standalone |
+|---------|-----------|-----------|---------------|
+| Key-Value | `ctx.kv` | `c.var.kv` | `ctx.kv` |
+| Vector | `ctx.vector` | `c.var.vector` | `ctx.vector` |
+| Streams | `ctx.stream` | `c.var.stream` | `ctx.stream` |
+| Logger | `ctx.logger` | `c.var.logger` | `ctx.logger` |
+| Tracer | `ctx.tracer` | `c.var.tracer` | `ctx.tracer` |
+| State | `ctx.state` | `c.var.state` | `ctx.state` |
+| Thread | `ctx.thread` | `c.var.thread` | `ctx.thread` |
+| Session | `ctx.session` | `c.var.session` | `ctx.session` |
+
+#### From Agents
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+export default createAgent('cache-manager', {
+  handler: async (ctx, input) => {
+    await ctx.kv.set('cache', 'key', { data: 'value' });
+    ctx.logger.info('Data cached');
+    return { success: true };
+  },
+});
+```
+
+#### From Routes
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.post('/cache', async (c) => {
+  await c.var.kv.set('cache', 'key', { data: 'value' });
+  c.var.logger.info('Data cached');
+  return c.json({ success: true });
+});
+
+export default router;
+```
+
+#### From Standalone Code
+
+For Discord bots, CLI tools, or queue workers running within the Agentuity runtime:
+
+```typescript
+import { createApp, createAgentContext } from '@agentuity/runtime';
+
+await createApp();
+
+const ctx = createAgentContext();
+await ctx.invoke(async () => {
+  await ctx.kv.set('cache', 'key', { data: 'value' });
+  ctx.logger.info('Data cached from standalone context');
+});
+```
+
+See [Running Agents Without HTTP](/v1/Build/Agents/standalone-execution) for Discord bots, CLI tools, and queue worker patterns.
+
+#### From External Backends (Next.js, Express)
+
+External backends cannot access Agentuity services directly. Create authenticated routes that expose storage operations, then call them via HTTP:
+
+```typescript title="Agentuity route: src/api/sessions/route.ts"
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.get('/:id', async (c) => {
+  const result = await c.var.kv.get('sessions', c.req.param('id'));
+  return result.exists ? c.json(result.data) : c.json({ error: 'Not found' }, 404);
+});
+
+export default router;
+```
+
+```typescript title="Next.js: lib/agentuity.ts"
+const AGENTUITY_URL = process.env.AGENTUITY_URL!;
+const API_KEY = process.env.STORAGE_API_KEY!;
+
+export async function getSession(id: string) {
+  const res = await fetch(`${AGENTUITY_URL}/api/sessions/${id}`, {
+    headers: { 'x-api-key': API_KEY },
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+```
+
+See [Accessing Storage from External Backends](/v1/Learn/Cookbook/Patterns/external-storage-access) for the complete pattern with authentication.
+
+#### From Frontend
+
+Frontend code accesses services through routes using `useAPI` or `fetch`:
+
+```tsx
+import { useAPI } from '@agentuity/react';
+
+function SessionView({ id }: { id: string }) {
+  const { data, isLoading } = useAPI(`GET /api/sessions/${id}`);
+
+  if (isLoading) return <div>Loading...</div>;
+  return <div>{data?.message}</div>;
+}
+```
+
+See [React Hooks](/v1/Build/Frontend/react-hooks) for `useAPI`, `useWebsocket`, and `useEventStream`.
 
 ### HTTP Methods
 

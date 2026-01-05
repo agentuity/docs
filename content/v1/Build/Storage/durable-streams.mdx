@@ -21,6 +21,20 @@ Durable streams provide streaming storage for large data exports, audit logs, an
 - Process data in chunks without holding everything in memory
 - Return a URL immediately while data writes in the background
 
+## Access Patterns
+
+| Context | Access | Details |
+|---------|--------|---------|
+| Agents | `ctx.stream` | See examples below |
+| Routes | `c.var.stream` | See [Using in Routes](#using-in-routes) |
+| Standalone | `createAgentContext()` | See [Standalone Usage](#standalone-usage) |
+| External backends | HTTP routes | [External Storage Access](/v1/Learn/Cookbook/Patterns/external-storage-access) |
+| Frontend | Via routes | [React Hooks](/v1/Build/Frontend/react-hooks) |
+
+<Callout type="info" title="Same API Everywhere">
+The Stream API is identical in all contexts. `ctx.stream.create()` and `c.var.stream.create()` work the same way. See [Accessing Services](/v1/Reference/sdk-reference#accessing-services) for the full reference.
+</Callout>
+
 ## Creating Streams
 
 ```typescript
@@ -299,6 +313,41 @@ async function moderateContent(text: string): Promise<boolean> {
   return object.safe;
 }
 ```
+
+## Using in Routes
+
+Routes have the same stream access via `c.var.stream`:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.post('/export', async (c) => {
+  const { data } = await c.req.json();
+
+  const stream = await c.var.stream.create('export', {
+    contentType: 'text/csv',
+  });
+
+  // Return URL immediately, write in background
+  c.waitUntil(async () => {
+    await stream.write('Name,Email\n');
+    for (const row of data) {
+      await stream.write(`${row.name},${row.email}\n`);
+    }
+    await stream.close();
+  });
+
+  return c.json({ url: stream.url });
+});
+
+export default router;
+```
+
+<Callout type="tip" title="External Backend Access">
+Need to create streams from a Next.js backend or other external service? Create authenticated routes that expose stream operations, then call them via HTTP. See [Accessing Storage from External Backends](/v1/Learn/Cookbook/Patterns/external-storage-access).
+</Callout>
 
 ## Standalone Usage
 

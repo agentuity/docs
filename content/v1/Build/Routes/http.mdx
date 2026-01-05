@@ -195,10 +195,15 @@ c.redirect('/other');      // Redirect
 import myAgent from '@agent/my-agent';
 await myAgent.run(input);     // Call an agent
 
-c.var.kv.get('bucket', 'key');    // Key-value storage
-c.var.vector.search('ns', opts);  // Vector search
-c.var.logger.info('message');     // Logging
+c.var.kv.get('bucket', 'key');       // Key-value storage
+c.var.vector.search('ns', opts);     // Vector search
+c.var.stream.create('name', opts);   // Durable streams
+c.var.logger.info('message');        // Logging
 ```
+
+<Callout type="tip" title="Exposing Storage to External Backends">
+Routes can serve as a bridge between external backends (Next.js, Express) and Agentuity storage services. Create authenticated routes that expose KV, Vector, or Stream operations. See [Accessing Storage from External Backends](/v1/Learn/Cookbook/Patterns/external-storage-access).
+</Callout>
 
 ## Best Practices
 
