@@ -124,7 +124,7 @@ Agentuity applications access configuration and secrets through standard Node.js
 **Standard Environment Variables:**
 
 - `AGENTUITY_SDK_KEY` - SDK-level API key (used in development to access Agentuity Cloud)
-- `AGENTUITY_PROJECT_KEY` - Project-level API key (used in production)
+- `AGENTUITY_PROJECT_KEY` - Project-level API key (used when deployed)
 
 **Example**
 
@@ -145,7 +145,7 @@ const openaiKey = process.env.OPENAI_API_KEY;
 // Optional: you can use the AI Gateway to access OpenAI, Anthropic, etc without needing to set various API keys.
 ```
 
-**Note**: Environment variables are typically loaded from a `.env` file in development and configured in your deployment environment for production.
+**Note**: Environment variables are typically loaded from a `.env` file in development and configured in your deployment environment.
 
 ---
 
@@ -705,8 +705,11 @@ interface AgentContext<TConfig = unknown, TAppState = unknown> {
   // Identifiers
   sessionId: string;                  // Unique ID for this agent execution
   current: {                          // Current agent metadata
-    agentId: string;
-    name: string;
+    name: string;                     // Agent name from createAgent()
+    agentId: string;                  // Stable across deployments
+    id: string;                       // Changes each deployment
+    filename: string;                 // Path to agent file
+    version: string;                  // Changes when code changes
   };
 
   // Agent Calling (use imports instead)
@@ -740,7 +743,15 @@ interface AgentContext<TConfig = unknown, TAppState = unknown> {
 
 **Identifiers:**
 - `sessionId`: Unique identifier for this agent execution. Use for tracking and correlating logs.
-- `current`: Metadata about the currently executing agent. Contains `agentId` and `name`. Useful for agent-specific state keys or logging.
+- `current`: Metadata about the currently executing agent:
+  - `name`: The name passed to `createAgent()`.
+  - `agentId`: Stays the same across deployments. Use for state keys (e.g., `${ctx.current.agentId}_counter`).
+  - `id`: Changes with each deployment. Use when you need deployment-specific identifiers.
+  - `filename`: Relative path to the agent file.
+  - `version`: Changes when agent code changes. Use for cache keys or versioned storage.
+  - `description?`: Human-readable description from `createAgent()` config.
+  - `inputSchemaCode?`: Source code for the input schema (if defined).
+  - `outputSchemaCode?`: Source code for the output schema (if defined).
 
 **Configuration:**
 - `config`: Agent-specific configuration returned from the agent's `setup()` function. Fully typed based on what setup returns.
@@ -2138,13 +2149,7 @@ router.post('/process', processorAgent.validator(), async (c) => {
 
 ### Specialized Routes
 
-The router provides specialized route handlers for non-HTTP triggers like email, WebSockets, scheduled jobs, and real-time communication.
-
-#### Email Routes
-
-<Callout type="warning" title="Coming Soon">
-Email routing is not yet available. This feature will be enabled in a future release.
-</Callout>
+The router provides specialized route handlers for non-HTTP triggers like WebSockets, scheduled jobs, and real-time communication.
 
 #### WebSocket Routes
 
@@ -2361,12 +2366,6 @@ router.post('/health-check', cron('*/5 * * * *', async (c) => {
 
 export default router;
 ```
-
-#### SMS Routes
-
-<Callout type="warning" title="Coming Soon">
-SMS routing is not yet available. This feature will be enabled in a future release.
-</Callout>
 
 ### Route Parameters
 

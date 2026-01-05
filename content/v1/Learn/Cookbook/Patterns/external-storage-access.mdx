@@ -1,0 +1,225 @@
+---
+title: Accessing Storage from External Backends
+description: Expose Agentuity storage services to Next.js, Express, or other external backends via HTTP routes
+---
+
+Decouple storage from agent code by exposing KV, Vector, or Stream services through HTTP routes. External backends (Next.js, Express, etc.) call these routes to read and write data.
+
+## The Pattern
+
+Create Agentuity routes that expose storage operations, then call them via HTTP from your external backend. Routes have full access to all storage services through `c.var`.
+
+```typescript title="src/api/sessions/route.ts"
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+interface ChatSession {
+  messages: Array<{ role: string; content: string }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Get a session by ID
+router.get('/:id', async (c) => {
+  const sessionId = c.req.param('id');
+  const result = await c.var.kv.get<ChatSession>('sessions', sessionId); // [!code highlight]
+
+  if (!result.exists) {
+    return c.json({ error: 'Session not found' }, 404);
+  }
+
+  return c.json(result.data);
+});
+
+// Create or update a session
+router.post('/:id', async (c) => {
+  const sessionId = c.req.param('id');
+  const body = await c.req.json<Partial<ChatSession>>();
+
+  // Get existing session or create new one
+  const existing = await c.var.kv.get<ChatSession>('sessions', sessionId);
+  const session: ChatSession = existing.exists
+    ? { ...existing.data, ...body, updatedAt: new Date().toISOString() }
+    : { messages: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), ...body };
+
+  await c.var.kv.set('sessions', sessionId, session, { ttl: 86400 * 7 }); // [!code highlight]
+
+  c.var.logger.info('Session updated', { sessionId });
+  return c.json(session);
+});
+
+// Delete a session
+router.delete('/:id', async (c) => {
+  const sessionId = c.req.param('id');
+  await c.var.kv.delete('sessions', sessionId); // [!code highlight]
+
+  c.var.logger.info('Session deleted', { sessionId });
+  return c.json({ success: true });
+});
+
+export default router;
+```
+
+## Securing the Route
+
+Add authentication middleware to protect storage endpoints from unauthorized access.
+
+```typescript title="src/api/sessions/route.ts"
+import { createRouter, createMiddleware } from '@agentuity/runtime';
+
+const router = createRouter();
+
+// API key authentication middleware
+const requireAuth = createMiddleware(async (c, next) => {
+  const apiKey = c.req.header('x-api-key');
+
+  if (!apiKey || apiKey !== process.env.STORAGE_API_KEY) {
+    c.var.logger.warn('Unauthorized storage access attempt');
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  await next();
+});
+
+// Apply to all routes in this router
+router.use('/*', requireAuth); // [!code highlight]
+
+// Routes now require x-api-key header
+router.get('/:id', async (c) => {
+  // ... same as above
+});
+
+export default router;
+```
+
+## Calling from Next.js
+
+Create a client in your Next.js app to call the storage routes.
+
+```typescript title="lib/agentuity-client.ts"
+const AGENTUITY_URL = process.env.AGENTUITY_URL!;
+const STORAGE_API_KEY = process.env.STORAGE_API_KEY!;
+
+interface ChatSession {
+  messages: Array<{ role: string; content: string }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getSession(sessionId: string): Promise<ChatSession | null> {
+  const res = await fetch(`${AGENTUITY_URL}/api/sessions/${sessionId}`, {
+    headers: { 'x-api-key': STORAGE_API_KEY },
+  });
+
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Failed to get session: ${res.statusText}`);
+
+  return res.json();
+}
+
+export async function saveSession(sessionId: string, data: Partial<ChatSession>): Promise<ChatSession> {
+  const res = await fetch(`${AGENTUITY_URL}/api/sessions/${sessionId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': STORAGE_API_KEY,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) throw new Error(`Failed to save session: ${res.statusText}`);
+  return res.json();
+}
+
+export async function deleteSession(sessionId: string): Promise<void> {
+  const res = await fetch(`${AGENTUITY_URL}/api/sessions/${sessionId}`, {
+    method: 'DELETE',
+    headers: { 'x-api-key': STORAGE_API_KEY },
+  });
+
+  if (!res.ok) throw new Error(`Failed to delete session: ${res.statusText}`);
+}
+```
+
+Use the client in a Next.js API route:
+
+```typescript title="app/api/chat/route.ts"
+import { getSession, saveSession } from '@/lib/agentuity-client';
+
+export async function POST(req: Request) {
+  const { sessionId, message } = await req.json();
+
+  // Load existing session from Agentuity KV
+  const session = await getSession(sessionId) || { // [!code highlight]
+    messages: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  // Add new message
+  session.messages.push({ role: 'user', content: message });
+
+  // Process with your AI logic...
+  const response = { role: 'assistant', content: 'Hello!' };
+  session.messages.push(response);
+
+  // Save back to Agentuity KV
+  await saveSession(sessionId, session); // [!code highlight]
+
+  return Response.json({ response: response.content });
+}
+```
+
+## Other Storage Services
+
+The same pattern works for Vector and Stream storage:
+
+```typescript title="src/api/vectors/route.ts"
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.post('/search', async (c) => {
+  const { query, limit = 10 } = await c.req.json();
+
+  const results = await c.var.vector.search('documents', { // [!code highlight]
+    query,
+    topK: limit,
+  });
+
+  return c.json(results);
+});
+
+router.post('/upsert', async (c) => {
+  const { id, content, metadata } = await c.req.json();
+
+  await c.var.vector.upsert('documents', [{ // [!code highlight]
+    id,
+    content,
+    metadata,
+  }]);
+
+  return c.json({ success: true });
+});
+
+export default router;
+```
+
+## Key Points
+
+- **Routes have full access** to `c.var.kv`, `c.var.vector`, and `c.var.stream`
+- **HTTP is the bridge**: External backends call routes via REST
+- **Always authenticate** storage routes with API keys or other auth
+- **This works for any framework**: Next.js, Express, Remix, etc.
+- **`createAgentContext()` won't work** in external frameworks; it requires Agentuity's runtime initialization
+
+<Callout type="info" title="About createAgentContext()">
+`createAgentContext()` is designed for code running within the Agentuity runtime, like Discord bots or CLI tools deployed alongside your agents. For external backends, the HTTP pattern shown above is the standard approach for service-to-service communication.
+</Callout>
+
+## See Also
+
+- [Key-Value Storage](/v1/Build/Storage/key-value) for KV operations and TTL options
+- [Route Middleware](/v1/Build/Routes/middleware) for authentication patterns
+- [RPC Client](/v1/Build/Frontend/rpc-client) for typed client generation

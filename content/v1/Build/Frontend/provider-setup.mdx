@@ -68,22 +68,21 @@ For production, set your deployment URL via your framework's environment variabl
 
 ## Authentication Integration
 
-For apps with user authentication, wrap `AgentuityProvider` with your identity provider and use `AgentuityClerk` (or similar) to inject auth tokens:
+For apps with user authentication, wrap `AgentuityProvider` with `AuthProvider` from `@agentuity/auth/react`:
 
 ```tsx
-import { ClerkProvider, useAuth } from '@clerk/clerk-react';
 import { AgentuityProvider } from '@agentuity/react';
-import { AgentuityClerk } from '@agentuity/auth/clerk';
+import { AuthProvider, createAuthClient } from '@agentuity/auth/react';
+
+const authClient = createAuthClient();
 
 export default function App() {
   return (
-    <ClerkProvider publishableKey={process.env.AGENTUITY_PUBLIC_CLERK_PUBLISHABLE_KEY!}>
-      <AgentuityProvider>
-        <AgentuityClerk useAuth={useAuth}>
-          <YourApp />
-        </AgentuityClerk>
-      </AgentuityProvider>
-    </ClerkProvider>
+    <AgentuityProvider>
+      <AuthProvider authClient={authClient}>
+        <YourApp />
+      </AuthProvider>
+    </AgentuityProvider>
   );
 }
 ```

@@ -1,25 +1,22 @@
 ---
 title: Adding Authentication
-description: Add user authentication with Agentuity Auth or third-party providers
+description: Add user authentication with Agentuity Auth
 ---
 
-Protect your agents and routes with user authentication. Agentuity provides a first-party auth solution powered by [BetterAuth](https://better-auth.com), or you can integrate third-party providers like Clerk and Auth0.
+Protect your agents and routes with user authentication. Agentuity provides a first-party auth solution powered by [BetterAuth](https://better-auth.com).
 
 ## Agentuity Auth
 
-The `@agentuity/auth` package provides zero-configuration authentication with native integration into agents and routes.
+The `@agentuity/auth` package provides authentication with built-in integration into agents and routes.
 
 ### Quick Start
 
 ```bash
-# Initialize auth in your project
-agentuity project auth init
-
 # Create a database (or use your own)
 agentuity cloud database create --region us
 
-# Run migrations
-agentuity project auth setup
+# Initialize auth (installs deps, generates src/auth.ts)
+agentuity project auth init
 ```
 
 <Callout type="info" title="Template Available">
@@ -155,16 +152,18 @@ export default router;
 | Variable | Description |
 |----------|-------------|
 | `DATABASE_URL` | PostgreSQL connection string |
-| `AGENTUITY_AUTH_SECRET` | Auth secret (generate with `agentuity project auth secret`) |
+| `AGENTUITY_AUTH_SECRET` | Auth secret (generate with `openssl rand -hex 32`) |
 
 ### CLI Commands
 
 ```bash
-agentuity project auth init      # Initialize auth in project
-agentuity project auth setup     # Run database migrations
-agentuity project auth generate  # Generate Drizzle schema
-agentuity project auth secret    # Generate a secure secret
+agentuity project auth init      # Initialize auth, generate src/auth.ts
+agentuity project auth generate  # Generate SQL schema for auth tables
 ```
+
+<Callout type="info" title="Database Migrations">
+If no ORM is detected, `init` prompts to run migrations. If you're using Drizzle or Prisma, run migrations manually with your ORM tools. Use `--skipMigrations` to skip the prompt, then run `agentuity project auth generate` to get the SQL schema.
+</Callout>
 
 ### Database Configuration
 
@@ -193,15 +192,6 @@ export const auth = createAuth({
   database: drizzleAdapter(db, { provider: 'pg', schema: authSchema }),
 });
 ```
-
----
-
-## Third-Party Providers
-
-For external identity providers like Clerk or Auth0, see the [Integrations](/v1/Learn/Cookbook/Integrations) section:
-
-- [Clerk Integration](/v1/Learn/Cookbook/Integrations/clerk): Full-featured auth with social login and user management
-- [Auth0 Integration](/v1/Learn/Cookbook/Integrations/auth0): Enterprise-ready auth with SSO support
 
 ---
 
@@ -242,7 +232,7 @@ const router = createRouter();
 router.use('/api/*', authMiddleware);
 
 router.get('/api/profile', async (c) => {
-  const user = await c.var.auth.requireUser();
+  const user = await c.var.auth.getUser();
   return c.json({ email: user.email });
 });
 
@@ -275,4 +265,3 @@ router.get('/api/content', optionalAuth, async (c) => {
 - [Middleware & Authentication](/v1/Build/Routes/middleware): More middleware patterns
 - [Provider Setup](/v1/Build/Frontend/provider-setup): AgentuityProvider configuration
 - [React Hooks](/v1/Build/Frontend/react-hooks): Building custom UIs
-- [Integrations](/v1/Learn/Cookbook/Integrations): Third-party provider guides

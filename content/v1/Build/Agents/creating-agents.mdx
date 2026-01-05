@@ -282,8 +282,8 @@ handler: async (ctx, input) => {
   // Identifiers
   ctx.sessionId;           // Unique per request (sess_...)
   ctx.thread.id;           // Conversation context (thrd_...)
-  ctx.current.agentId;     // This agent's ID
   ctx.current.name;        // This agent's name
+  ctx.current.agentId;     // Stable ID for namespacing state keys
 
   // State management
   ctx.state.set('key', value);                   // Request-scoped (sync, cleared after response)

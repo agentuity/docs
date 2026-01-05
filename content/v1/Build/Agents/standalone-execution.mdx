@@ -5,6 +5,10 @@ description: Execute agents programmatically for cron jobs, bots, CLI tools, and
 
 Sometimes your agent logic needs to run without an incoming HTTP request. `createAgentContext()` gives standalone code the same infrastructure that HTTP handlers get automatically: tracing, sessions, and storage access.
 
+<Callout type="warning" title="Agentuity Runtime Only">
+`createAgentContext()` requires Agentuity's runtime initialization and only works within the Agentuity runtime (Discord bots, CLI tools, queue workers deployed alongside your agents). It will throw an error if called from external frameworks like Next.js or Express. To access storage from external backends, see [Accessing Storage from External Backends](/v1/Learn/Cookbook/Patterns/external-storage-access).
+</Callout>
+
 ## Basic Usage
 
 ```typescript

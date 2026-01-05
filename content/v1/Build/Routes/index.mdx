@@ -156,6 +156,8 @@ router.post('/', async (c) => {
 });
 ```
 
+Routes can also expose storage operations to external backends like Next.js or Express. Create authenticated routes that read/write to `c.var.kv`, `c.var.vector`, or `c.var.stream`, then call them via HTTP. See [Accessing Storage from External Backends](/v1/Learn/Cookbook/Patterns/external-storage-access) for the complete pattern.
+
 ## Next Steps
 
 - [HTTP Routes](/v1/Build/Routes/http) - REST endpoints, parameters, validation

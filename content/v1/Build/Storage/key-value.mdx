@@ -222,6 +222,10 @@ router.get('/session/:id', async (c) => {
 export default router;
 ```
 
+<Callout type="tip" title="External Backend Access">
+Need to access KV from a Next.js backend or other external service? Create authenticated routes that expose storage operations, then call them via HTTP. See [Accessing Storage from External Backends](/v1/Learn/Cookbook/Patterns/external-storage-access).
+</Callout>
+
 ## Standalone Usage
 
 Use KV storage outside of agent handlers with `createAgentContext()`:

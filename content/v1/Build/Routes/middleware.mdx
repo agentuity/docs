@@ -110,13 +110,14 @@ router.get('/me', jwtAuth, (c) => {
 export default router;
 ```
 
-### Third-Party Auth Providers
+### Authentication Middleware
 
-The `@agentuity/auth` package provides integrated authentication for identity providers like Clerk:
+The `@agentuity/auth` package provides authentication middleware:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
-import { createMiddleware } from '@agentuity/auth/clerk';
+import { createSessionMiddleware } from '@agentuity/auth';
+import { auth } from '../auth';
 
 const router = createRouter();
 
@@ -124,9 +125,9 @@ router.get('/public', (c) => {
   return c.json({ message: 'Public endpoint' });
 });
 
-// Protected route with Clerk auth
-router.get('/protected', createMiddleware(), async (c) => {
-  const user = await c.var.auth.requireUser();
+// Protected route requiring authentication
+router.get('/protected', createSessionMiddleware(auth), async (c) => {
+  const user = await c.var.auth.getUser();
   return c.json({
     userId: user.id,
     email: user.email,
@@ -140,7 +141,7 @@ export default router;
 The `@agentuity/auth` package automatically integrates with `useAPI` and `useWebsocket` hooks, injecting auth tokens into requests.
 
 <Callout type="info" title="Full Authentication Setup">
-For complete setup including client-side configuration and the Clerk template, see [Adding Authentication](/v1/Build/Frontend/authentication).
+For complete setup including client-side configuration, see [Adding Authentication](/v1/Build/Frontend/authentication).
 </Callout>
 
 ## Request Validation
