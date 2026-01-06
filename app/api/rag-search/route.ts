@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { getAgentQaConfig } from '@/lib/env';
+import { queryAgentQa } from '@/lib/api/services';
 import { source } from '@/lib/source';
 
 function documentPathToUrl(docPath: string): string {
@@ -93,31 +93,7 @@ export async function GET(request: NextRequest) {
 	}
 
 	try {
-		const agentConfig = getAgentQaConfig();
-
-		// Prepare headers
-		const headers: Record<string, string> = {
-			'Content-Type': 'application/json',
-		};
-
-		// Add bearer token if provided
-		if (agentConfig.bearerToken) {
-			headers['Authorization'] = `Bearer ${agentConfig.bearerToken}`;
-		}
-
-		const response = await fetch(agentConfig.url, {
-			method: 'POST',
-			headers,
-			body: JSON.stringify({ message: query }),
-		});
-
-		if (!response.ok) {
-			throw new Error(
-				`Agent API error: ${response.status} ${response.statusText}`
-			);
-		}
-
-		const data = await response.json();
+		const data = await queryAgentQa(query);
 		const results = [];
 
 		if (data?.answer?.trim()) {

@@ -70,6 +70,11 @@ declare module '@agentuity/react' {
 	 * Maps route keys (METHOD /path) to their input/output schemas
 	 */
 	export interface RouteRegistry {
+	'POST /api/title_generator': {
+		inputSchema: never;
+		outputSchema: never;
+		stream: false;
+	};
 	'POST /api/doc-qa': {
 		inputSchema: POSTApiDocQaInputSchema;
 		outputSchema: POSTApiDocQaOutputSchema;
@@ -102,7 +107,11 @@ declare module '@agentuity/react' {
 	 * Maps SSE route paths to their schemas
 	 */
 	export interface SSERouteRegistry {
-
+	'/api/agent_pulse': {
+		inputSchema: never;
+		outputSchema: never;
+		stream: false;
+	};
 	}
 
 	/**
@@ -112,6 +121,12 @@ declare module '@agentuity/react' {
 	 * Used by createClient() from @agentuity/core for type-safe RPC calls.
 	 */
 	export interface RPCRouteRegistry {
+		titleGenerator: {
+			/**
+			 * Route: POST /api/title_generator
+			 */
+			post: { input: never; output: never; type: 'api' };
+		};
 		docQa: {
 			/**
 			 * Route: POST /api/doc-qa
@@ -128,6 +143,12 @@ declare module '@agentuity/react' {
 			 */
 			post: { input: POSTApiProcessDocsInput; output: POSTApiProcessDocsOutput; type: 'api' };
 		};
+		agentPulse: {
+			/**
+			 * Route: POST /api/agent_pulse
+			 */
+			eventstream: { input: never; output: never; type: 'sse' };
+		};
 	}
 }
 
@@ -137,6 +158,11 @@ declare module '@agentuity/react' {
  * @internal
  */
 const _rpcRouteMetadata = {
+		"titleGenerator": {
+				"post": {
+						"type": "api"
+				}
+		},
 		"docQa": {
 				"post": {
 						"type": "api"
@@ -148,6 +174,11 @@ const _rpcRouteMetadata = {
 				},
 				"post": {
 						"type": "api"
+				}
+		},
+		"agentPulse": {
+				"eventstream": {
+						"type": "sse"
 				}
 		}
 } as const;
