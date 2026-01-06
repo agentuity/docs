@@ -128,7 +128,16 @@ router.post('/webhook', async (c) => {
 
 ## Request Validation
 
-Use `agent.validator()` for type-safe request validation with full TypeScript support:
+Two validators are available depending on your use case:
+
+| Validator | Import | Use Case |
+|-----------|--------|----------|
+| `agent.validator()` | From agent instance | Routes that call an agent |
+| `validator()` | `@agentuity/runtime` | Standalone routes (no agent) |
+
+### With Agents
+
+Use `agent.validator()` when your route calls an agent:
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
@@ -166,6 +175,115 @@ router.post('/custom',
 - `agent.validator()` — Uses agent's input/output schemas
 - `agent.validator({ output: schema })` — Output-only validation (GET-compatible)
 - `agent.validator({ input: schema, output?: schema })` — Custom schemas
+</Callout>
+
+### Standalone Validation
+
+For routes that don't use an agent, import `validator` directly from `@agentuity/runtime`:
+
+```typescript
+import { createRouter, validator } from '@agentuity/runtime';
+import { s } from '@agentuity/schema';
+
+const router = createRouter();
+
+const createUserSchema = s.object({
+  name: s.string(),
+  email: s.string(),
+  age: s.number(),
+});
+
+router.post('/',
+  validator({ input: createUserSchema }),
+  async (c) => {
+    const data = c.req.valid('json');
+    // data is fully typed: { name: string, email: string, age: number }
+    return c.json({ success: true, user: data });
+  }
+);
+
+export default router;
+```
+
+The standalone validator auto-detects the HTTP method:
+- **GET**: Validates query parameters via `c.req.valid('query')`
+- **POST/PUT/PATCH/DELETE**: Validates JSON body via `c.req.valid('json')`
+
+```typescript
+import { createRouter, validator } from '@agentuity/runtime';
+import * as v from 'valibot';
+
+const router = createRouter();
+
+// GET route: validates query parameters
+const searchSchema = v.object({
+  q: v.string(),
+  limit: v.optional(v.number()),
+});
+
+router.get('/search',
+  validator({ input: searchSchema }),
+  async (c) => {
+    const { q, limit } = c.req.valid('query'); // GET uses query params
+    return c.json({ results: [], query: q, limit });
+  }
+);
+
+export default router;
+```
+
+#### Output Validation
+
+Add output validation to ensure your responses match the expected schema:
+
+```typescript
+import { createRouter, validator } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const router = createRouter();
+
+const userInputSchema = z.object({
+  name: z.string(),
+  email: z.string().email(),
+});
+
+const userOutputSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  createdAt: z.string(),
+});
+
+router.post('/users',
+  validator({ input: userInputSchema, output: userOutputSchema }),
+  async (c) => {
+    const data = c.req.valid('json');
+    const user = {
+      id: crypto.randomUUID(),
+      ...data,
+      createdAt: new Date().toISOString(),
+    };
+    return c.json(user); // Validated against output schema
+  }
+);
+
+export default router;
+```
+
+<Callout type="info" title="Schema Libraries">
+Both validators work with any [Standard Schema](https://standardschema.dev/) library: `@agentuity/schema`, Zod, Valibot, or ArkType. Choose based on your needs: `@agentuity/schema` for zero dependencies, Zod for `.describe()` support with AI SDK, Valibot for minimal bundle size.
+</Callout>
+
+<Callout type="warning" title="Import from @agentuity/runtime">
+Import `validator` from `@agentuity/runtime`, not from `hono/validator`. If you use Hono's validator directly, TypeScript won't know your types and `c.req.valid('json')` will show as `never`.
+
+```typescript
+// Types work
+import { validator } from '@agentuity/runtime';
+
+// Types show as 'never'
+import { validator } from 'hono/validator';
+```
 </Callout>
 
 ## Request Context
@@ -212,7 +330,14 @@ Routes can serve as a bridge between external backends (Next.js, Express) and Ag
 Always validate request bodies, especially for public endpoints:
 
 ```typescript
+// With an agent
 router.post('/api', agent.validator(), async (c) => {
+  const data = c.req.valid('json');
+  // data is guaranteed valid and fully typed
+});
+
+// Without an agent
+router.post('/api', validator({ input: schema }), async (c) => {
   const data = c.req.valid('json');
   // data is guaranteed valid and fully typed
 });
