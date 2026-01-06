@@ -6,6 +6,7 @@
     "build-configuration",
     "deployment",
     "storage",
+    "sandbox",
     "configuration",
     "debugging",
     "ai-commands"

@@ -1,13 +1,13 @@
 ---
-title: Accessing Storage from External Backends
-description: Expose Agentuity storage services to Next.js, Express, or other external backends via HTTP routes
+title: SDK Utilities for External Apps
+description: Use storage, logging, error handling, and schema utilities from external backends like Next.js or Express
 ---
 
-Decouple storage from agent code by exposing KV, Vector, or Stream services through HTTP routes. External backends (Next.js, Express, etc.) call these routes to read and write data.
+Use `@agentuity/server` and `@agentuity/core` utilities in external apps, scripts, or backends that integrate with Agentuity.
 
-## The Pattern
+## Storage Access via HTTP Routes
 
-Create Agentuity routes that expose storage operations, then call them via HTTP from your external backend. Routes have full access to all storage services through `c.var`.
+Expose KV, Vector, or Stream services through HTTP routes. External backends call these routes to read and write data.
 
 ```typescript title="src/api/sessions/route.ts"
 import { createRouter } from '@agentuity/runtime';
@@ -37,7 +37,6 @@ router.post('/:id', async (c) => {
   const sessionId = c.req.param('id');
   const body = await c.req.json<Partial<ChatSession>>();
 
-  // Get existing session or create new one
   const existing = await c.var.kv.get<ChatSession>('sessions', sessionId);
   const session: ChatSession = existing.exists
     ? { ...existing.data, ...body, updatedAt: new Date().toISOString() }
@@ -61,16 +60,15 @@ router.delete('/:id', async (c) => {
 export default router;
 ```
 
-## Securing the Route
+### Securing Storage Routes
 
-Add authentication middleware to protect storage endpoints from unauthorized access.
+Add authentication middleware to protect storage endpoints:
 
 ```typescript title="src/api/sessions/route.ts"
 import { createRouter, createMiddleware } from '@agentuity/runtime';
 
 const router = createRouter();
 
-// API key authentication middleware
 const requireAuth = createMiddleware(async (c, next) => {
   const apiKey = c.req.header('x-api-key');
 
@@ -82,7 +80,6 @@ const requireAuth = createMiddleware(async (c, next) => {
   await next();
 });
 
-// Apply to all routes in this router
 router.use('/*', requireAuth); // [!code highlight]
 
 // Routes now require x-api-key header
@@ -93,9 +90,9 @@ router.get('/:id', async (c) => {
 export default router;
 ```
 
-## Calling from Next.js
+### Calling from Next.js
 
-Create a client in your Next.js app to call the storage routes.
+Create a client in your Next.js app:
 
 ```typescript title="lib/agentuity-client.ts"
 const AGENTUITY_URL = process.env.AGENTUITY_URL!;
@@ -157,7 +154,6 @@ export async function POST(req: Request) {
     updatedAt: new Date().toISOString(),
   };
 
-  // Add new message
   session.messages.push({ role: 'user', content: message });
 
   // Process with your AI logic...
@@ -171,7 +167,7 @@ export async function POST(req: Request) {
 }
 ```
 
-## Other Storage Services
+### Vector Storage
 
 The same pattern works for Vector and Stream storage:
 
@@ -206,20 +202,131 @@ router.post('/upsert', async (c) => {
 export default router;
 ```
 
+<Callout type="info" title="About createAgentContext()">
+`createAgentContext()` is designed for code running within the Agentuity runtime (Discord bots, CLI tools deployed alongside agents). For external backends, use the HTTP pattern above.
+</Callout>
+
+## Logging with createLogger
+
+Create structured loggers for scripts or external services:
+
+```typescript
+import { createLogger } from '@agentuity/server';
+
+// Create a logger with info level, no timestamps, dark color scheme
+const logger = createLogger('info', false, 'dark');
+
+logger.info('Processing request', { userId: '123' });
+logger.error('Failed to connect', { error: err.message });
+
+// Child logger with persistent context
+const requestLogger = logger.child({ requestId: 'req_abc' });
+requestLogger.info('Starting'); // Includes requestId in all logs
+```
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `level` | `'trace' \| 'debug' \| 'info' \| 'warn' \| 'error'` | `'info'` | Minimum log level |
+| `showTimestamp` | `boolean` | `false` | Include ISO timestamps |
+| `colorScheme` | `'light' \| 'dark'` | `'dark'` | Terminal color scheme |
+| `context` | `Record<string, unknown>` | `{}` | Default context for all logs |
+
+## Safe JSON Serialization
+
+`safeStringify` handles circular references and BigInt values that break `JSON.stringify`:
+
+```typescript
+import { safeStringify } from '@agentuity/core';
+
+// Circular references become "[Circular]"
+const obj = { name: 'Alice' };
+obj.self = obj;
+safeStringify(obj); // '{"name":"Alice","self":"[Circular]"}'
+
+// BigInt converts to string
+safeStringify({ id: 9007199254740991n }); // '{"id":"9007199254740991"}'
+
+// Pretty-print with indentation
+safeStringify(data, 2);
+```
+
+## Error Handling Utilities
+
+### RichError
+
+Enhanced errors with context and pretty printing:
+
+```typescript
+import { RichError } from '@agentuity/core';
+
+const error = new RichError({
+  message: 'Request failed',
+  statusCode: 500,
+  endpoint: '/api/users',
+  cause: originalError,
+});
+
+error.plainArgs;     // { statusCode: 500, endpoint: '/api/users' }
+error.cause;         // originalError (the cause chain)
+error.prettyPrint(); // Formatted multi-line output with stack traces
+error.toJSON();      // Serializable object for logging
+error.toString();    // Same as prettyPrint()
+```
+
+### StructuredError
+
+Type-safe, discriminated errors with a `_tag` for pattern matching:
+
+```typescript
+import { StructuredError, isStructuredError } from '@agentuity/core';
+
+// Create error types
+const NotFoundError = StructuredError('NotFound');
+const ValidationError = StructuredError('ValidationError')<{
+  field: string;
+  code: string;
+}>();
+
+// With a default message (message is preset, cannot be overridden)
+const UpgradeRequired = StructuredError('UpgradeRequired', 'Upgrade required to access this feature');
+
+// Throw with context
+throw new ValidationError({
+  field: 'email',
+  code: 'INVALID_FORMAT',
+  message: 'Email format is invalid',
+});
+
+// Type-safe handling
+if (isStructuredError(err) && err._tag === 'ValidationError') {
+  logger.error('Validation failed', { field: err.field, code: err.code });
+}
+```
+
+## Schema Conversion
+
+Convert Zod or Agentuity schemas to JSON Schema for tooling or OpenAPI generation:
+
+```typescript
+import { toJSONSchema } from '@agentuity/server';
+import { z } from 'zod';
+
+const schema = z.object({ name: z.string(), age: z.number() });
+const jsonSchema = toJSONSchema(schema);
+// { type: 'object', properties: { name: { type: 'string' }, age: { type: 'number' } }, ... }
+```
+
 ## Key Points
 
 - **Routes have full access** to `c.var.kv`, `c.var.vector`, and `c.var.stream`
 - **HTTP is the bridge**: External backends call routes via REST
 - **Always authenticate** storage routes with API keys or other auth
 - **This works for any framework**: Next.js, Express, Remix, etc.
-- **`createAgentContext()` won't work** in external frameworks; it requires Agentuity's runtime initialization
-
-<Callout type="info" title="About createAgentContext()">
-`createAgentContext()` is designed for code running within the Agentuity runtime, like Discord bots or CLI tools deployed alongside your agents. For external backends, the HTTP pattern shown above is the standard approach for service-to-service communication.
-</Callout>
 
 ## See Also
 
-- [Key-Value Storage](/v1/Build/Storage/key-value) for KV operations and TTL options
-- [Route Middleware](/v1/Build/Routes/middleware) for authentication patterns
-- [RPC Client](/v1/Build/Frontend/rpc-client) for typed client generation
+- [Key-Value Storage](/v1/Build/Storage/key-value): KV operations and TTL options
+- [Route Middleware](/v1/Build/Routes/middleware): Authentication patterns
+- [RPC Client](/v1/Build/Frontend/rpc-client): Typed client generation

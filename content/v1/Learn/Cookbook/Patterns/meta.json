@@ -4,7 +4,7 @@
     "background-tasks",
     "chat-with-history",
     "cron-with-storage",
-    "external-storage-access",
+    "server-utilities",
     "product-search",
     "tailwind-setup",
     "webhook-handler"

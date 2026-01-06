@@ -26,7 +26,7 @@ Use built-in state (`ctx.state`, `ctx.thread.state`, `ctx.session.state`) for da
 | Agents | `ctx.kv` | See examples below |
 | Routes | `c.var.kv` | See [Using in Routes](#using-in-routes) |
 | Standalone | `createAgentContext()` | See [Standalone Usage](#standalone-usage) |
-| External backends | HTTP routes | [External Storage Access](/v1/Learn/Cookbook/Patterns/external-storage-access) |
+| External backends | HTTP routes | [SDK Utilities for External Apps](/v1/Learn/Cookbook/Patterns/server-utilities) |
 | Frontend | Via routes | [React Hooks](/v1/Build/Frontend/react-hooks) |
 
 <Callout type="info" title="Same API Everywhere">
@@ -237,7 +237,7 @@ export default router;
 ```
 
 <Callout type="tip" title="External Backend Access">
-Need to access KV from a Next.js backend or other external service? Create authenticated routes that expose storage operations, then call them via HTTP. See [Accessing Storage from External Backends](/v1/Learn/Cookbook/Patterns/external-storage-access).
+Need to access KV from a Next.js backend or other external service? Create authenticated routes that expose storage operations, then call them via HTTP. See [SDK Utilities for External Apps](/v1/Learn/Cookbook/Patterns/server-utilities).
 </Callout>
 
 ## Standalone Usage

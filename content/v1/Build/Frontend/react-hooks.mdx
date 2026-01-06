@@ -280,6 +280,42 @@ function SearchResults({ query }: { query: string }) {
 }
 ```
 
+## Auth State with useAuth
+
+Access authentication state for protected components or custom auth logic:
+
+```tsx
+import { useAuth } from '@agentuity/react';
+
+function ProtectedContent() {
+  const { isAuthenticated, authLoading } = useAuth();
+
+  if (authLoading) {
+    return <p>Loading...</p>;
+  }
+
+  if (!isAuthenticated) {
+    return <p>Please sign in to continue.</p>;
+  }
+
+  return <p>Welcome! You have access.</p>;
+}
+```
+
+**Return values:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `isAuthenticated` | `boolean` | True when auth token is set and not loading |
+| `authLoading` | `boolean` | True while auth state is initializing |
+| `authHeader` | `string \| null` | The current Authorization header value |
+| `setAuthHeader` | `(token: string \| null) => void` | Manually set the auth header |
+| `setAuthLoading` | `(loading: boolean) => void` | Control the loading state |
+
+<Callout type="info" title="useAuth vs useAgentuity">
+`useAuth` provides auth-specific state. For non-auth context like `baseUrl`, use `useAgentuity()` instead. See [Authentication](/v1/Build/Frontend/authentication) for integrating with identity providers.
+</Callout>
+
 ## Next Steps
 
 - [Provider Setup](/v1/Build/Frontend/provider-setup): Configure `AgentuityProvider` for deployments

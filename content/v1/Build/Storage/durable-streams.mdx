@@ -28,7 +28,7 @@ Durable streams provide streaming storage for large data exports, audit logs, an
 | Agents | `ctx.stream` | See examples below |
 | Routes | `c.var.stream` | See [Using in Routes](#using-in-routes) |
 | Standalone | `createAgentContext()` | See [Standalone Usage](#standalone-usage) |
-| External backends | HTTP routes | [External Storage Access](/v1/Learn/Cookbook/Patterns/external-storage-access) |
+| External backends | HTTP routes | [SDK Utilities for External Apps](/v1/Learn/Cookbook/Patterns/server-utilities) |
 | Frontend | Via routes | [React Hooks](/v1/Build/Frontend/react-hooks) |
 
 <Callout type="info" title="Same API Everywhere">
@@ -346,7 +346,7 @@ export default router;
 ```
 
 <Callout type="tip" title="External Backend Access">
-Need to create streams from a Next.js backend or other external service? Create authenticated routes that expose stream operations, then call them via HTTP. See [Accessing Storage from External Backends](/v1/Learn/Cookbook/Patterns/external-storage-access).
+Need to create streams from a Next.js backend or other external service? Create authenticated routes that expose stream operations, then call them via HTTP. See [SDK Utilities for External Apps](/v1/Learn/Cookbook/Patterns/server-utilities).
 </Callout>
 
 ## Standalone Usage
