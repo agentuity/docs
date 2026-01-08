@@ -1,0 +1,159 @@
+---
+title: Database
+description: Relational database storage using Bun's native SQL APIs
+---
+
+Database storage provides relational database capabilities using [Bun's native SQL APIs](https://bun.com/docs/runtime/sql). Use it for structured data that benefits from queries, joins, and transactions.
+
+## When to Use Database Storage
+
+| Storage Type | Best For |
+|--------------|----------|
+| **Database** | Structured data, complex queries, transactions, relational data |
+| [Key-Value](/Build/Storage/key-value) | Fast lookups, caching, configuration |
+| [Vector](/Build/Storage/vector) | Semantic search, embeddings, RAG |
+| [Object (S3)](/Build/Storage/object) | Files, images, documents, media |
+| [Durable Streams](/Build/Storage/durable-streams) | Large exports, audit logs |
+
+<Callout type="info" title="Credentials Auto-Injected">
+When you create a database with `agentuity cloud db create`, the `DATABASE_URL` is automatically added to your `.env` file. During deployment, credentials are injected automatically.
+</Callout>
+
+<Callout type="tip" title="Same Code Everywhere">
+Database access uses Bun's native SQL API directly. The same `import { sql } from "bun"` code works identically in agents, routes, and standalone scripts with no wrapper needed.
+</Callout>
+
+## Quick Start
+
+```typescript
+import { sql } from "bun";
+
+// Query with automatic SQL injection protection
+const users = await sql`SELECT * FROM users WHERE active = ${true}`;
+
+// Insert data
+await sql`INSERT INTO users (name, email) VALUES (${"Alice"}, ${"alice@example.com"})`;
+
+// Update data
+await sql`UPDATE users SET active = ${false} WHERE id = ${userId}`;
+
+// Delete data
+await sql`DELETE FROM users WHERE id = ${userId}`;
+```
+
+<Callout type="warn" title="SQL Injection Prevention">
+Always use template literal parameters (`${value}`) for dynamic values. Never concatenate strings into queries.
+</Callout>
+
+## Using in Agents
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { sql } from "bun";
+
+const agent = createAgent('UserQuery', {
+  handler: async (ctx, input) => {
+    const users = await sql`
+      SELECT * FROM users
+      WHERE active = ${true}
+      AND created_at > ${input.since}
+      ORDER BY created_at DESC
+      LIMIT 10
+    `;
+
+    ctx.logger.info("Query results", { count: users.length });
+    return { users };
+  },
+});
+```
+
+## Using in Routes
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { sql } from "bun";
+
+const router = createRouter();
+
+router.get('/users', async (c) => {
+  const limit = parseInt(c.req.query('limit') || '10');
+  const users = await sql`
+    SELECT id, name, email FROM users
+    ORDER BY created_at DESC
+    LIMIT ${limit}
+  `;
+  return c.json({ users });
+});
+
+router.post('/users', async (c) => {
+  const body = await c.req.json();
+  const result = await sql`
+    INSERT INTO users (name, email)
+    VALUES (${body.name}, ${body.email})
+    RETURNING id, name, email
+  `;
+  return c.json({ user: result[0] }, 201);
+});
+
+export default router;
+```
+
+## Transactions
+
+Use transactions for operations that must succeed or fail together:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { sql } from "bun";
+
+const agent = createAgent('MoneyTransfer', {
+  handler: async (ctx, input) => {
+    const { fromAccount, toAccount, amount } = input;
+
+    try {
+      await sql.begin(async (tx) => {
+        await tx`UPDATE accounts SET balance = balance - ${amount} WHERE id = ${fromAccount}`;
+        await tx`UPDATE accounts SET balance = balance + ${amount} WHERE id = ${toAccount}`;
+        await tx`INSERT INTO transfers (from_id, to_id, amount) VALUES (${fromAccount}, ${toAccount}, ${amount})`;
+      });
+
+      ctx.logger.info("Transfer completed", { fromAccount, toAccount, amount });
+      return { success: true };
+    } catch (error) {
+      ctx.logger.error("Transfer failed", { error: error.message });
+      return { error: "Transfer failed" };
+    }
+  },
+});
+```
+
+## Supported Databases
+
+Bun's SQL API supports PostgreSQL, MySQL, and SQLite:
+
+```typescript
+import { SQL } from "bun";
+
+// PostgreSQL (default, uses DATABASE_URL)
+const users = await sql`SELECT * FROM users`;
+
+// Custom PostgreSQL connection
+const postgres = new SQL("postgres://user:pass@localhost:5432/mydb");
+
+// MySQL
+const mysql = new SQL("mysql://user:pass@localhost:3306/mydb");
+
+// SQLite
+const sqlite = new SQL("sqlite://data/app.db");
+```
+
+## Bun SQL Documentation
+
+For complete API documentation including dynamic queries, bulk inserts, savepoints, array operations, error handling, and connection pooling, see the [Bun SQL documentation](https://bun.com/docs/runtime/sql).
+
+## Next Steps
+
+- [Key-Value Storage](/Build/Storage/key-value): Fast caching and session data
+- [Object Storage (S3)](/Build/Storage/object): File and media storage
+- [Vector Storage](/Build/Storage/vector): Semantic search and embeddings
+- [Durable Streams](/Build/Storage/durable-streams): Streaming large data exports

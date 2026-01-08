@@ -1,4 +1,14 @@
 {
 	"title": "Agentuity Docs",
-	"pages": ["v1"]
+	"root": true,
+	"pages": [
+		"Get-Started",
+		"Agents",
+		"APIs",
+		"Routes",
+		"Frontend",
+		"Services",
+		"Learn",
+		"Reference"
+	]
 }

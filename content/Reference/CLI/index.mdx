@@ -1,0 +1,51 @@
+---
+title: CLI Reference
+description: Command-line tools for building, deploying, and managing agents
+---
+
+The Agentuity CLI is your primary interface for building and managing agents. Create projects, deploy to the cloud, inspect sessions, and manage storage from the terminal.
+
+## Installation
+
+```bash
+curl -sSL https://v1.agentuity.sh | sh
+```
+
+See [Getting Started](/Reference/CLI/getting-started) for installation options, authentication, and first steps.
+
+## Command Categories
+
+| Category | Commands | Use For |
+|----------|----------|---------|
+| [Getting Started](/Reference/CLI/getting-started) | `login`, `logout`, `new` | Install, authenticate, create projects |
+| [Development](/Reference/CLI/development) | `dev` | Local development server |
+| [Deployment](/Reference/CLI/deployment) | `deploy`, `cloud project` | Deploy and manage cloud projects |
+| [Storage](/Reference/CLI/storage) | `cloud kv`, `cloud vector`, `cloud object`, `cloud redis` | Manage KV, vector, object, and Redis storage |
+| [Configuration](/Reference/CLI/configuration) | `cloud env`, `cloud secret`, `cloud apikey` | Manage env vars, secrets, and API keys |
+| [Debugging](/Reference/CLI/debugging) | `cloud ssh`, `cloud session` | SSH access, session inspection |
+| [AI Commands](/Reference/CLI/ai-commands) | `ai` | AI coding agent utilities |
+
+## Quick Reference
+
+```bash
+# Development
+agentuity dev                    # Start dev server
+
+# Deployment
+agentuity deploy                 # Deploy to cloud
+
+# Sessions and Debugging
+agentuity cloud session list     # List recent sessions
+agentuity cloud session logs <id> # View session logs
+agentuity cloud ssh              # SSH into deployment
+
+# Storage
+agentuity cloud kv list <ns>     # List KV keys
+agentuity cloud vector list <ns> # List vector namespaces
+```
+
+## Next Steps
+
+- [Getting Started](/Reference/CLI/getting-started): Install and authenticate
+- [Development](/Reference/CLI/development): Run the local dev server
+- [Debugging](/Reference/CLI/debugging): SSH access and session inspection

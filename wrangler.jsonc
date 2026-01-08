@@ -5,7 +5,7 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"account_id": "878030233de9b0cc31eeb778d3461acd",
-	"name": "docs-preview",
+	"name": "docs",
 	"main": ".open-next/worker.js",
 	"compatibility_date": "2024-09-26",
 	"compatibility_flags": ["nodejs_compat"],
@@ -17,8 +17,9 @@
 	"observability": {
 		"enabled": true
 	},
-	// "routes": [
-	// 	{ "pattern": "agentuity.dev", "custom_domain": true },
-	// 	{ "pattern": "www.agentuity.dev", "custom_domain": true }
-	// ]
+	"routes": [
+		{ "pattern": "agentuity.dev", "custom_domain": true },
+		{ "pattern": "www.agentuity.dev", "custom_domain": true },
+		{ "pattern": "preview.agentuity.dev", "custom_domain": true }
+	]
 }
