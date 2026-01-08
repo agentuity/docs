@@ -54,7 +54,7 @@ export const baseOptions: BaseLayoutProps = {
 						target="_blank"
 						rel="noopener noreferrer"
 					>
-						Console
+						App
 					</NavButton>
 					<CommunityButton target="_blank" rel="noopener noreferrer" />
 					<XButton className="h-9" />
