@@ -19,6 +19,10 @@ Database storage provides relational database capabilities using [Bun's native S
 When you create a database with `agentuity cloud db create`, the `DATABASE_URL` is automatically added to your `.env` file. During deployment, credentials are injected automatically.
 </Callout>
 
+<Callout type="tip" title="Same Code Everywhere">
+Database access uses Bun's native SQL API directly. The same `import { sql } from "bun"` code works identically in agents, routes, and standalone scripts with no wrapper needed.
+</Callout>
+
 ## Quick Start
 
 ```typescript

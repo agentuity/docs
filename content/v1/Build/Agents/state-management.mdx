@@ -23,6 +23,10 @@ Thread state uses async lazy-loading for performance. State is only fetched when
 Threads "wrap" sessions. Think of a *thread* as a conversation and a *session* as one message in that conversation. Each request creates a new session, but sessions within the same conversation share a thread.
 </Callout>
 
+<Callout type="info" title="State in Routes">
+Routes have the same state access via `c.var.thread` and `c.var.session`. Use `c.var.thread.state` for conversation context and `c.var.session.state` for request-scoped data. See [HTTP Routes](/v1/Build/Routes/http#request-context) for route examples.
+</Callout>
+
 ### Quick Example
 
 ```typescript

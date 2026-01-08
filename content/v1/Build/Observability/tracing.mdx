@@ -177,6 +177,63 @@ router.post('/customers/:id/notify', async (c) => {
 export default router;
 ```
 
+### Nested Spans in Routes
+
+Use nested spans to track multi-step operations within a route:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { SpanStatusCode } from '@opentelemetry/api';
+
+const router = createRouter();
+
+router.post('/process', async (c) => {
+  return c.var.tracer.startActiveSpan('process-request', async (parentSpan) => {
+    try {
+      const body = await c.req.json();
+      parentSpan.setAttribute('inputSize', JSON.stringify(body).length);
+
+      // Validate input
+      const validated = await c.var.tracer.startActiveSpan('validate', async (span) => {
+        span.setAttribute('fields', Object.keys(body).length);
+        const result = validateInput(body);
+        span.setStatus({ code: SpanStatusCode.OK });
+        return result;
+      });
+
+      // Store in KV
+      await c.var.tracer.startActiveSpan('store-data', async (span) => {
+        span.setAttribute('bucket', 'processed');
+        await c.var.kv.set('processed', validated.id, validated);
+        span.setStatus({ code: SpanStatusCode.OK });
+      });
+
+      // Search related items
+      const related = await c.var.tracer.startActiveSpan('search-related', async (span) => {
+        span.setAttribute('query', validated.category);
+        const results = await c.var.vector.search('items', {
+          query: validated.category,
+          limit: 5,
+        });
+        span.setAttribute('resultsFound', results.length);
+        span.setStatus({ code: SpanStatusCode.OK });
+        return results;
+      });
+
+      parentSpan.setAttribute('relatedCount', related.length);
+      parentSpan.setStatus({ code: SpanStatusCode.OK });
+
+      return c.json({ processed: validated, related });
+    } catch (error) {
+      parentSpan.setStatus({ code: SpanStatusCode.ERROR });
+      throw error;
+    }
+  });
+});
+
+export default router;
+```
+
 ## Viewing Traces
 
 View traces for a session using the CLI:

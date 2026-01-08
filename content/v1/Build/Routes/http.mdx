@@ -92,7 +92,7 @@ router.get('/search', async (c) => {
 
 ## Calling Agents
 
-Import and call agents directly:
+Import and call agents directly. To create agents, see [Creating Agents](/v1/Build/Agents/creating-agents).
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
@@ -317,6 +317,16 @@ c.var.kv.get('bucket', 'key');       // Key-value storage
 c.var.vector.search('ns', opts);     // Vector search
 c.var.stream.create('name', opts);   // Durable streams
 c.var.logger.info('message');        // Logging
+c.var.sandbox.run({ ... });          // Code execution sandbox
+```
+
+**Thread and session (for stateful routes):**
+```typescript
+c.var.thread.id;                     // Thread ID (persists across requests)
+c.var.session.id;                    // Session ID (unique per request)
+await c.var.thread.state.get('key'); // Thread state
+c.var.session.state.get('key');      // Session state
+await c.var.thread.getMetadata();    // Thread metadata
 ```
 
 <Callout type="tip" title="Exposing Storage to External Backends">
@@ -465,9 +475,103 @@ export default router;
 
 Use `stream()` middleware for raw streaming (like AI SDK `textStream`). Use `sse()` middleware when you need named events or auto-reconnection. See [Streaming Responses](/v1/Build/Agents/streaming-responses) for the full guide on streaming agents.
 
+## Routes Without Agents
+
+Not every route needs an agent. Use routes directly for CRUD APIs, webhook handlers, health checks, and proxy endpoints.
+
+### KV-Backed API
+
+```typescript
+import { createRouter, validator } from '@agentuity/runtime';
+import * as v from 'valibot';
+
+const router = createRouter();
+
+const itemSchema = v.object({
+  name: v.string(),
+  value: v.number(),
+});
+
+router.get('/items/:key', async (c) => {
+  const key = c.req.param('key');
+  const result = await c.var.kv.get('items', key);
+
+  if (!result.exists) {
+    return c.json({ error: 'Not found' }, 404);
+  }
+
+  return c.json({ data: result.data });
+});
+
+router.post('/items/:key',
+  validator({ input: itemSchema }),
+  async (c) => {
+    const key = c.req.param('key');
+    const data = c.req.valid('json');
+
+    await c.var.kv.set('items', key, data);
+    c.var.logger.info('Item created', { key });
+
+    return c.json({ success: true, key }, 201);
+  }
+);
+
+router.delete('/items/:key', async (c) => {
+  const key = c.req.param('key');
+  await c.var.kv.delete('items', key);
+
+  return c.json({ success: true });
+});
+
+export default router;
+```
+
+### Webhook Handler
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.post('/webhooks/stripe', async (c) => {
+  const signature = c.req.header('stripe-signature');
+  const payload = await c.req.text();
+
+  // Verify webhook signature
+  if (!verifyStripeSignature(payload, signature)) {
+    c.var.logger.warn('Invalid webhook signature');
+    return c.json({ error: 'Invalid signature' }, 401);
+  }
+
+  const event = JSON.parse(payload);
+
+  // Store event for processing
+  await c.var.kv.set('webhooks', event.id, {
+    type: event.type,
+    data: event.data,
+    receivedAt: new Date().toISOString(),
+  });
+
+  c.var.logger.info('Webhook received', {
+    eventId: event.id,
+    type: event.type,
+  });
+
+  return c.json({ received: true });
+});
+
+export default router;
+```
+
+<Callout type="tip" title="When to Use Agents">
+Use agents when you need LLM orchestration, complex schemas, streaming AI responses, or multi-step workflows. Use pure routes for simple CRUD, webhooks, or data proxying.
+</Callout>
+
 ## Next Steps
 
 - [Middleware](/v1/Build/Routes/middleware): Authentication, rate limiting, logging
 - [Scheduled Jobs (Cron)](/v1/Build/Routes/cron): Run tasks on a schedule
 - [WebSockets](/v1/Build/Routes/websockets): Real-time bidirectional communication
 - [Server-Sent Events](/v1/Build/Routes/sse): Stream updates to clients
+- [Creating Agents](/v1/Build/Agents/creating-agents): Build agents to call from routes
+- [Calling Other Agents](/v1/Build/Agents/calling-other-agents): Multi-agent orchestration patterns

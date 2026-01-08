@@ -271,6 +271,67 @@ router.post('/search', async (c) => {
 export default router;
 ```
 
+### Route-Based RAG
+
+Build a RAG endpoint that searches vectors and generates responses:
+
+```typescript
+import { createRouter, validator } from '@agentuity/runtime';
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+const router = createRouter();
+
+const questionSchema = z.object({
+  question: z.string().describe('User question'),
+});
+
+router.post('/ask',
+  validator({ input: questionSchema }),
+  async (c) => {
+    const { question } = c.req.valid('json');
+
+    // Search for relevant context
+    const results = await c.var.vector.search('knowledge-base', {
+      query: question,
+      limit: 3,
+      similarity: 0.7,
+    });
+
+    if (results.length === 0) {
+      return c.json({
+        answer: "I couldn't find relevant information.",
+        sources: [],
+      });
+    }
+
+    // Build context from search results
+    const context = results
+      .map(r => r.metadata?.content || '')
+      .join('\n\n');
+
+    // Generate answer
+    const { text } = await generateText({
+      model: openai('gpt-5-mini'),
+      prompt: `Answer based on this context:\n\n${context}\n\nQuestion: ${question}`,
+    });
+
+    c.var.logger.info('RAG query completed', {
+      question,
+      sourcesFound: results.length,
+    });
+
+    return c.json({
+      answer: text,
+      sources: results.map(r => r.key),
+    });
+  }
+);
+
+export default router;
+```
+
 <Callout type="tip" title="External Backend Access">
 Need to access vector storage from a Next.js backend or other external service? Create authenticated routes that expose storage operations, then call them via HTTP. See [SDK Utilities for External Apps](/v1/Learn/Cookbook/Patterns/server-utilities).
 </Callout>
