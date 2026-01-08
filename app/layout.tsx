@@ -2,6 +2,7 @@ import { RootProvider } from 'fumadocs-ui/provider';
 import { GeistSans } from 'geist/font/sans';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import VersionedSearchDialog from '@/components/VersionedSearchDialog';
 import { validateEnv } from '@/lib/env';
 import './global.css';
 
@@ -94,7 +95,10 @@ export default function Layout({ children }: { children: ReactNode }) {
 	return (
 		<html lang="en" className={GeistSans.className} suppressHydrationWarning>
 			<body className="flex flex-col min-h-screen antialiased">
-				<RootProvider theme={{ enabled: true, enableSystem: true }}>
+				<RootProvider
+					search={{ SearchDialog: VersionedSearchDialog }}
+					theme={{ enabled: true, enableSystem: true }}
+				>
 					{children}
 				</RootProvider>
 			</body>
