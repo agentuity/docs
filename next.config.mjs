@@ -1,5 +1,6 @@
 import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
 import { createMDX } from 'fumadocs-mdx/next';
+
 // empty pr 3 comment
 
 const withMDX = createMDX();
@@ -11,13 +12,8 @@ const config = {
 	redirects: async () => [
 		{
 			source: '/',
-			destination: '/Introduction',
-			permanent: true,
-		},
-		{
-			source: '/docs',
-			destination: '/',
-			permanent: true,
+			destination: '/Get-Started/what-is-agentuity',
+			permanent: false,
 		},
 	],
 };

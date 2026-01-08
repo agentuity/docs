@@ -1,0 +1,267 @@
+---
+title: Adding Authentication
+description: Add user authentication with Agentuity Auth
+---
+
+Protect your agents and routes with user authentication. Agentuity provides a first-party auth solution powered by [BetterAuth](https://better-auth.com).
+
+## Agentuity Auth
+
+The `@agentuity/auth` package provides authentication with built-in integration into agents and routes.
+
+### Quick Start
+
+```bash
+# Create a database (or use your own)
+agentuity cloud database create --region us
+
+# Initialize auth (installs deps, generates src/auth.ts)
+agentuity project auth init
+```
+
+<Callout type="info" title="Template Available">
+Start with auth pre-configured: `bunx agentuity create my-app --template agentuity-auth`
+</Callout>
+
+### Server Setup
+
+Create an auth instance and middleware:
+
+```typescript title="src/auth.ts"
+import { createAuth, createSessionMiddleware, mountAuthRoutes } from '@agentuity/auth';
+
+export const auth = createAuth({
+  connectionString: process.env.DATABASE_URL,
+  // Uses AGENTUITY_AUTH_SECRET env var by default
+});
+
+export const authMiddleware = createSessionMiddleware(auth);
+export const optionalAuthMiddleware = createSessionMiddleware(auth, { optional: true });
+```
+
+Mount auth routes and protect your API:
+
+```typescript title="src/api/index.ts"
+import { createRouter } from '@agentuity/runtime';
+import { auth, authMiddleware } from '../auth';
+import { mountAuthRoutes } from '@agentuity/auth';
+
+const router = createRouter();
+
+// Mount auth routes (sign-in, sign-up, sign-out, session, etc.)
+router.on(['GET', 'POST'], '/api/auth/*', mountAuthRoutes(auth));
+
+// Protect API routes
+router.use('/api/*', authMiddleware);
+
+router.get('/api/me', async (c) => {
+  const user = await c.var.auth.getUser();
+  return c.json({ id: user.id, email: user.email });
+});
+
+export default router;
+```
+
+### Client Setup
+
+```typescript title="src/web/auth-client.ts"
+import { createAuthClient } from '@agentuity/auth/react';
+
+export const authClient = createAuthClient();
+export const { signIn, signUp, signOut, useSession } = authClient;
+```
+
+```tsx title="src/web/frontend.tsx"
+import { AgentuityProvider } from '@agentuity/react';
+import { AuthProvider, createAuthClient } from '@agentuity/auth/react';
+import { App } from './App';
+
+const authClient = createAuthClient();
+
+export function Root() {
+  return (
+    <AgentuityProvider>
+      <AuthProvider authClient={authClient}>
+        <App />
+      </AuthProvider>
+    </AgentuityProvider>
+  );
+}
+```
+
+### Using Auth in Agents
+
+Auth is available natively on `ctx.auth` when using auth middleware:
+
+```typescript title="src/agent/protected/agent.ts"
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+export default createAgent('Protected Agent', {
+  schema: {
+    input: z.object({ query: z.string() }),
+    output: z.object({ result: z.string(), userId: z.string() }),
+  },
+  handler: async (ctx, input) => {
+    if (!ctx.auth) {
+      ctx.logger.warn('Unauthenticated request');
+      return { result: 'Please sign in', userId: '' };
+    }
+
+    const user = await ctx.auth.getUser();
+    const org = await ctx.auth.getOrg();
+
+    ctx.logger.info('Processing request', { userId: user.id, orgId: org?.id });
+
+    // Check organization roles
+    if (org && (await ctx.auth.hasOrgRole('admin'))) {
+      // Admin-only logic
+    }
+
+    return { result: `Hello ${user.name}`, userId: user.id };
+  },
+});
+```
+
+### API Key Authentication
+
+For programmatic access, use API key middleware:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { createApiKeyMiddleware } from '@agentuity/auth';
+import { auth } from '../auth';
+
+const router = createRouter();
+
+router.use('/api/*', createApiKeyMiddleware(auth));
+
+router.get('/api/data', async (c) => {
+  // Check API key permissions
+  if (!c.var.auth.hasPermission('data', 'read')) {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+  return c.json({ data: '...' });
+});
+
+export default router;
+```
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `AGENTUITY_AUTH_SECRET` | Auth secret (generate with `openssl rand -hex 32`) |
+
+### CLI Commands
+
+```bash
+agentuity project auth init      # Initialize auth, generate src/auth.ts
+agentuity project auth generate  # Generate SQL schema for auth tables
+```
+
+<Callout type="info" title="Database Migrations">
+If no ORM is detected, `init` prompts to run migrations. If you're using Drizzle or Prisma, run migrations manually with your ORM tools. Use `--skipMigrations` to skip the prompt, then run `agentuity project auth generate` to get the SQL schema.
+</Callout>
+
+### Database Configuration
+
+**Connection String (simplest):**
+
+```typescript
+import { createAuth } from '@agentuity/auth';
+
+export const auth = createAuth({
+  connectionString: process.env.DATABASE_URL,
+});
+```
+
+**Bring Your Own Drizzle:**
+
+```typescript
+import { drizzle } from 'drizzle-orm/bun-sql';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import * as authSchema from '@agentuity/auth/schema';
+import * as appSchema from './schema';
+
+const schema = { ...authSchema, ...appSchema };
+const db = drizzle(process.env.DATABASE_URL!, { schema });
+
+export const auth = createAuth({
+  database: drizzleAdapter(db, { provider: 'pg', schema: authSchema }),
+});
+```
+
+---
+
+## Common Patterns
+
+These patterns work with any auth provider.
+
+### Using Auth State in Components
+
+```tsx
+import { useAPI, useAgentuity } from '@agentuity/react';
+
+function Dashboard() {
+  const { isAuthenticated, authLoading } = useAgentuity();
+  const { data, refetch } = useAPI('GET /api/profile');
+
+  if (authLoading) return <div>Loading...</div>;
+  if (!isAuthenticated) return <div>Please sign in</div>;
+
+  return (
+    <div>
+      <h1>Welcome, {data?.name}</h1>
+      <button onClick={() => refetch()}>Refresh</button>
+    </div>
+  );
+}
+```
+
+### Global Route Protection
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { authMiddleware } from '../auth';
+
+const router = createRouter();
+
+// Protect all /api/* routes
+router.use('/api/*', authMiddleware);
+
+router.get('/api/profile', async (c) => {
+  const user = await c.var.auth.getUser();
+  return c.json({ email: user.email });
+});
+
+export default router;
+```
+
+### Optional Authentication
+
+Allow both authenticated and anonymous access:
+
+```typescript
+import { createSessionMiddleware } from '@agentuity/auth';
+import { auth } from '../auth';
+
+const optionalAuth = createSessionMiddleware(auth, { optional: true });
+
+router.get('/api/content', optionalAuth, async (c) => {
+  const user = await c.var.auth.getUser();
+
+  if (user) {
+    return c.json({ content: 'Premium content', userId: user.id });
+  }
+
+  return c.json({ content: 'Public content' });
+});
+```
+
+## Next Steps
+
+- [Middleware & Authentication](/Build/Routes/middleware): More middleware patterns
+- [Provider Setup](/Build/Frontend/provider-setup): AgentuityProvider configuration
+- [React Hooks](/Build/Frontend/react-hooks): Building custom UIs

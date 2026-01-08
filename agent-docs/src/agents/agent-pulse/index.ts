@@ -94,7 +94,7 @@ export default async function Agent(
 		];
 
 		let tools: any;
-		let systemPrompt: string = "";
+		let systemPrompt = "";
 		// Direct LLM access won't require any tools or system prompt
 		if (!parsedRequest.useDirectLLM) {
 			// Create tools with state context

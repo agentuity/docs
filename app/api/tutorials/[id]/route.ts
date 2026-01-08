@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { join } from 'path';
 import { parseTutorialMDXCached } from '@/lib/tutorial/mdx-parser';
 import { TutorialIdParamsSchema } from '@/lib/tutorial/schemas';
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
     });
   } catch (error) {
-    console.error(`Failed to load tutorial:`, error);
+    console.error('Failed to load tutorial:', error);
     return NextResponse.json(
       { success: false, error: 'Tutorial not found' },
       { status: 404 }

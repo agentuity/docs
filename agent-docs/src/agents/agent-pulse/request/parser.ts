@@ -6,9 +6,9 @@ export function parseAgentRequest(
 	ctx: AgentContext
 ): ParsedAgentRequest {
 	try {
-		let message: string = "";
+		let message = "";
 		let conversationHistory: any[] = [];
-		let tutorialData: any = undefined;
+		let tutorialData: any ;
 		let useDirectLLM = false;
 
 		if (jsonData && typeof jsonData === "object" && !Array.isArray(jsonData)) {

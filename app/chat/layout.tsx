@@ -1,7 +1,7 @@
  'use client';
 
 import { usePathname, useRouter } from "next/navigation";
-import { Session } from "./types";
+import type { Session } from "./types";
 import { sessionService } from "./services/sessionService";
 import { SessionSidebar } from "./components/SessionSidebar";
  import { SessionSidebarSkeleton } from './components/SessionSidebarSkeleton';

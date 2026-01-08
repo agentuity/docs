@@ -29,7 +29,7 @@ export async function parseTutorialMDX(filePath: string): Promise<ParsedTutorial
     const [fullMatch, attributes, stepContent] = match;
 
     // Parse attributes
-    const stepNumber = parseInt(extractAttribute(attributes, 'number') || '0');
+    const stepNumber = Number.parseInt(extractAttribute(attributes, 'number') || '0');
     const title = extractAttribute(attributes, 'title') || `Step ${stepNumber}`;
     const estimatedTime = extractAttribute(attributes, 'estimatedTime');
 
@@ -204,7 +204,7 @@ function parseSnippetObject(objectString: string): {
       snippet[key] = cleanValue.slice(1, -1);
     } else if (/^\d+$/.test(cleanValue)) {
       // Number value
-      snippet[key] = parseInt(cleanValue, 10);
+      snippet[key] = Number.parseInt(cleanValue, 10);
     }
   }
 

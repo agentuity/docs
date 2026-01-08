@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { TutorialStateManager } from '@/lib/tutorial/state-manager';
 import { setKVValue } from '@/lib/kv-store';
 import { config } from '@/lib/config';

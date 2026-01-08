@@ -6,7 +6,7 @@ import { AgentuityLogo } from '@/components/icons/AgentuityLogo';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import type { TutorialSnippet } from '../types';
 import { formatTime } from '../utils/dateUtils';
-import { TutorialData } from '../types';
+import type { TutorialData } from '../types';
 
 function transformMdxWithSnippets(mdx: string, snippets: TutorialSnippet[] = []) {
     // Replace each <CodeFromFiles .../> by consuming the appropriate number of snippets

@@ -141,34 +141,8 @@ export default function CopyPageDropdown({
 	};
 
 	const handleViewMarkdown = async () => {
-		const content = await fetchPageContent();
-		if (!content) return;
-
-		const markdownForLLM = formatMarkdownForLLM(content);
-		const blob = new Blob([markdownForLLM], { type: 'text/markdown' });
-		const url = URL.createObjectURL(blob);
-
-		try {
-			const newWindow = window.open(url, '_blank');
-			if (!newWindow) {
-				const link = document.createElement('a');
-				link.href = url;
-				link.download = `${content.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
-				document.body.appendChild(link);
-				link.click();
-				document.body.removeChild(link);
-			}
-		} catch (error) {
-			console.error('Failed to open markdown view:', error);
-			const link = document.createElement('a');
-			link.href = url;
-			link.download = `${content.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
-		}
-
-		setTimeout(() => URL.revokeObjectURL(url), 1000);
+		const mdUrl = `${pathname}.md`;
+		window.open(mdUrl, '_blank');
 		setIsOpen(false);
 	};
 

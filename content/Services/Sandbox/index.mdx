@@ -1,0 +1,124 @@
+---
+title: Running Code in Sandboxes
+description: Run code in isolated, secure containers with configurable resources
+---
+
+Execute code in isolated Linux containers with configurable resource limits, network controls, and execution timeouts.
+
+<Callout type="info" title="Multi-language Execution">
+Your agents are written in TypeScript, but the sandbox can run any language safely. Use `ctx.sandbox.run()` to execute Python, Node.js, shell scripts, or anything available via `apt install` in isolated containers.
+</Callout>
+
+## Key Concepts
+
+| Concept | Description |
+|---------|-------------|
+| **Sandbox** | A running container where you execute commands |
+| **Execution** | A single command run within a sandbox |
+| **Snapshot** | A saved filesystem state used to create new sandboxes |
+
+<Callout type="info" title="Snapshots Are Not Executable">
+A snapshot captures the filesystem state of a sandbox at a point in time. Think of it like a Docker image: you create new sandboxes *from* a snapshot rather than running it directly.
+
+To use snapshots: create a sandbox, configure it, save a snapshot, then create new sandboxes from that snapshot.
+</Callout>
+
+## Two Execution Modes
+
+Choose based on your use case:
+
+### One-shot (`sandbox.run()`)
+
+Creates a sandbox, runs a single command, then destroys the sandbox. Best for stateless code execution.
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const agent = createAgent('CodeRunner', {
+  handler: async (ctx, input) => {
+    const result = await ctx.sandbox.run({
+      command: { exec: ['python3', '-c', 'print("Hello!")'] },
+      resources: { memory: '256Mi', cpu: '500m' },
+    });
+
+    ctx.logger.info('Output', { stdout: result.stdout, exitCode: result.exitCode });
+    return { output: result.stdout, exitCode: result.exitCode };
+  },
+});
+```
+
+### Interactive (`sandbox.create()`)
+
+Creates a persistent sandbox for multiple commands. Best for stateful workflows like dependency installation.
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const agent = createAgent('ProjectBuilder', {
+  handler: async (ctx, input) => {
+    const sandbox = await ctx.sandbox.create({
+      resources: { memory: '1Gi' },
+      network: { enabled: true },  // Required for package installation
+    });
+
+    try {
+      await sandbox.execute({ command: ['npm', 'install'] });
+      await sandbox.execute({ command: ['npm', 'run', 'build'] });
+      return { success: true };
+    } finally {
+      await sandbox.destroy();
+    }
+  },
+});
+```
+
+## Access Patterns
+
+| Context | Access | Example |
+|---------|--------|---------|
+| Agents | `ctx.sandbox` | `await ctx.sandbox.run({...})` |
+| Routes | `c.var.sandbox` | `await c.var.sandbox.create({...})` |
+| CLI | Commands | `agentuity cloud sandbox run ...` |
+
+<Callout type="info" title="Same API Everywhere">
+The sandbox API is identical in agents and routes. `ctx.sandbox.run()` and `c.var.sandbox.run()` work the same way.
+</Callout>
+
+## Configuration Options
+
+| Option | Description | Example |
+|--------|-------------|---------|
+| `resources.memory` | Memory limit (Kubernetes-style) | `'512Mi'`, `'1Gi'` |
+| `resources.cpu` | CPU limit in millicores | `'500m'`, `'1000m'` |
+| `resources.disk` | Disk space limit | `'1Gi'` |
+| `network.enabled` | Allow outbound network | `true` (default: `false`) |
+| `timeout.idle` | Idle timeout before cleanup | `'10m'`, `'1h'` |
+| `timeout.execution` | Max execution time per command | `'5m'`, `'30s'` |
+| `dependencies` | Apt packages to install | `['python3', 'git']` |
+| `env` | Environment variables | `{ NODE_ENV: 'test' }` |
+| `snapshot` | Create from existing snapshot | `'my-env'` or `snp_abc123` |
+
+## When to Use Sandbox
+
+| Use Case | Example |
+|----------|---------|
+| Code execution agents | Run user-provided Python/JavaScript safely |
+| Code validation | Verify generated code compiles and runs |
+| AI coding assistants | Execute code suggested by LLMs |
+| Automated testing | Run tests in clean environments |
+| Build systems | Compile projects in isolated containers |
+
+## Security
+
+Sandboxes provide isolation through:
+
+- **Network disabled by default**: Enable explicitly when needed
+- **Resource limits**: Prevent resource exhaustion
+- **Execution timeouts**: Prevent runaway processes
+- **Filesystem isolation**: Each sandbox has its own workspace
+
+## Next Steps
+
+- [SDK Usage](/Build/Sandbox/sdk-usage): Detailed API for file I/O, streaming, and advanced configuration
+- [Snapshots](/Build/Sandbox/snapshots): Skip dependency installation with pre-configured environments
+- [CLI Commands](/Reference/CLI/sandbox): Debug sandboxes and create snapshots manually

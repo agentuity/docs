@@ -9,7 +9,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { AgentuityLogo } from '@/components/icons/AgentuityLogo';
-import { Session, SessionSidebarProps } from '../types';
+import type { Session, SessionSidebarProps } from '../types';
 
 // Helper function to format relative dates
 const formatRelativeDate = (date: Date): string => {

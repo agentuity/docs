@@ -11,7 +11,7 @@ export class TutorialStateManager {
    * Get the complete tutorial state for a user
    */
   static async getUserTutorialState(userId: string): Promise<UserTutorialState> {
-    const key = this.getTutorialKey(userId);
+    const key = TutorialStateManager.getTutorialKey(userId);
     const response = await getKVValue<UserTutorialState>(key, {
       storeName: config.defaultStoreName
     });
@@ -31,7 +31,7 @@ export class TutorialStateManager {
     currentStep: number,
     totalSteps: number
   ): Promise<void> {
-    const state = await this.getUserTutorialState(userId);
+    const state = await TutorialStateManager.getUserTutorialState(userId);
 
     const existing = state.tutorials[tutorialId];
     const now = new Date().toISOString();
@@ -45,7 +45,7 @@ export class TutorialStateManager {
       ...(currentStep >= totalSteps ? { completedAt: now } : {})
     };
 
-    const key = this.getTutorialKey(userId);
+    const key = TutorialStateManager.getTutorialKey(userId);
     try {
       await setKVValue(key, state, { storeName: config.defaultStoreName });
     } catch (error) {
@@ -61,7 +61,7 @@ export class TutorialStateManager {
    * Returns the most recently accessed tutorial
    */
   static async getCurrentTutorialState(userId: string): Promise<TutorialState | null> {
-    const state = await this.getUserTutorialState(userId);
+    const state = await TutorialStateManager.getUserTutorialState(userId);
 
     const tutorials = Object.values(state.tutorials);
     if (tutorials.length === 0) return null;
@@ -84,7 +84,7 @@ export class TutorialStateManager {
    * Get tutorial progress for a specific tutorial
    */
   static async getTutorialProgress(userId: string, tutorialId: string): Promise<TutorialProgress | null> {
-    const state = await this.getUserTutorialState(userId);
+    const state = await TutorialStateManager.getUserTutorialState(userId);
     return state.tutorials[tutorialId] || null;
   }
 
@@ -92,13 +92,13 @@ export class TutorialStateManager {
    * Mark a tutorial as completed
    */
   static async completeTutorial(userId: string, tutorialId: string): Promise<void> {
-    const state = await this.getUserTutorialState(userId);
+    const state = await TutorialStateManager.getUserTutorialState(userId);
 
     if (state.tutorials[tutorialId]) {
       state.tutorials[tutorialId].completedAt = new Date().toISOString();
       state.tutorials[tutorialId].lastAccessedAt = new Date().toISOString();
 
-      const key = this.getTutorialKey(userId);
+      const key = TutorialStateManager.getTutorialKey(userId);
       await setKVValue(key, state, { storeName: config.defaultStoreName });
     }
   }
@@ -107,7 +107,7 @@ export class TutorialStateManager {
    * Get all completed tutorials for a user
    */
   static async getCompletedTutorials(userId: string): Promise<TutorialProgress[]> {
-    const state = await this.getUserTutorialState(userId);
+    const state = await TutorialStateManager.getUserTutorialState(userId);
     return Object.values(state.tutorials).filter(t => t.completedAt);
   }
 
@@ -115,7 +115,7 @@ export class TutorialStateManager {
    * Get all active (in-progress) tutorials for a user
    */
   static async getActiveTutorials(userId: string): Promise<TutorialProgress[]> {
-    const state = await this.getUserTutorialState(userId);
+    const state = await TutorialStateManager.getUserTutorialState(userId);
     return Object.values(state.tutorials).filter(t => !t.completedAt);
   }
 }
