@@ -7,7 +7,7 @@
  */
 
 import { KeyValueStorageService } from '@agentuity/core';
-import { createServerFetchAdapter, getServiceUrls } from '@agentuity/server';
+import { createServerFetchAdapter, getServiceUrls, createLogger } from '@agentuity/server';
 import { config } from './config';
 
 // Types
@@ -29,31 +29,21 @@ export interface KVDeleteResult {
 }
 
 // Create logger for SDK
-const logger = {
-  trace: console.log,
-  debug: console.log,
-  info: console.log,
-  warn: console.warn,
-  error: console.error,
-  fatal: console.error,
-  child: () => logger, // Return self for chaining
-} as any;
+const logger = createLogger('info');
 
 // Initialize the KV service
 function initializeKVService() {
-  if (!process.env.AGENTUITY_SDK_KEY) {
-    throw new Error('AGENTUITY_SDK_KEY environment variable is required');
+  if (!process.env.AGENTUITY_SDK_KEY || !process.env.AGENTUITY_REGION) {
+    throw new Error('AGENTUITY_SDK_KEY and AGENTUITY_REGION environment variables are required');
   }
 
   const adapter = createServerFetchAdapter({
     headers: {
-      Authorization: `Bearer ${process.env.AGENTUITY_SDK_KEY}`,
-      'User-Agent': 'Next.js App/1.0',
+      Authorization: `Bearer ${process.env.AGENTUITY_SDK_KEY}`
     },
   }, logger);
 
-  const serviceUrls = getServiceUrls();
-  console.log('serviceUrls', serviceUrls);
+  const serviceUrls = getServiceUrls(process.env.AGENTUITY_REGION);
   return new KeyValueStorageService(serviceUrls.keyvalue, adapter);
 }
 
