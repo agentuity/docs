@@ -18,7 +18,6 @@
 		"enabled": true
 	},
 	"routes": [
-		{ "pattern": "agentuity.dev", "custom_domain": true },
-		{ "pattern": "www.agentuity.dev", "custom_domain": true }
+		{ "pattern": "v0.agentuity.dev", "custom_domain": true },
 	]
 }
