@@ -1,0 +1,14 @@
+import { createRouter } from '@agentuity/runtime';
+import docProcessingAgent from '@agent/doc_processing';
+
+const router = createRouter();
+
+// POST /api/process-docs
+router.post('/', docProcessingAgent.validator(), async (c) => {
+    const data = c.req.valid('json');
+    const result = await docProcessingAgent.run(data);
+    return c.json(result);
+});
+
+export default router;
+

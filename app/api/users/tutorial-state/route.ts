@@ -94,14 +94,14 @@ export async function DELETE(request: NextRequest) {
     delete state.tutorials[tutorialId];
 
     // Save the updated state
-    const kvResponse = await setKVValue(`tutorial_state_${userId}`, state, {
-      storeName: config.defaultStoreName
+    const success = await setKVValue(`tutorial_state_${userId}`, state, {
+      storeName: config.kvStoreName
     });
 
-    if (!kvResponse.success) {
+    if (!success) {
       return NextResponse.json(
-        { error: kvResponse.error || 'Failed to reset tutorial state' },
-        { status: kvResponse.statusCode || 500 }
+        { error: 'Failed to reset tutorial state' },
+        { status: 500 }
       );
     }
 

@@ -26,17 +26,11 @@ export async function GET(request: NextRequest) {
     const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), MAX_SESSIONS_LIMIT) : DEFAULT_SESSIONS_LIMIT;
     const cursor = Number.isFinite(parsedCursor) ? Math.max(parsedCursor, 0) : 0;
 
-    const response = await getKVValue<string[]>(userId, { storeName: config.defaultStoreName });
-    if (!response.success) {
-      if (response.statusCode === 404) {
-        return NextResponse.json({ sessions: [], pagination: { cursor, nextCursor: null, hasMore: false, total: 0, limit } });
-      }
-      return NextResponse.json(
-        { error: response.error || 'Failed to retrieve sessions' },
-        { status: response.statusCode || 500 }
-      );
+    const response = await getKVValue<string[]>(userId, { storeName: config.kvStoreName });
+    if (!response.exists) {
+      return NextResponse.json({ sessions: [], pagination: { cursor, nextCursor: null, hasMore: false, total: 0, limit } });
     }
-    
+
     if (!response.data?.length) {
       return NextResponse.json({ sessions: [], pagination: { cursor, nextCursor: null, hasMore: false, total: 0, limit } });
     }
@@ -48,10 +42,10 @@ export async function GET(request: NextRequest) {
     const end = Math.min(start + limit, total);
     const pageIds = sessionIds.slice(start, end);
 
-    const sessionPromises = pageIds.map(sessionId => getKVValue<Session>(sessionId, { storeName: config.defaultStoreName }));
+    const sessionPromises = pageIds.map(sessionId => getKVValue<Session>(sessionId, { storeName: config.kvStoreName }));
     const sessionResults = await Promise.all(sessionPromises);
     const sessions = sessionResults
-      .filter(result => result.success && result.data)
+      .filter(result => result.exists && result.data)
       .map(result => result.data as Session);
 
     const hasMore = end < total;
@@ -102,36 +96,36 @@ export async function POST(request: NextRequest) {
     const sessionKey = `${userId}_${session.sessionId}`;
 
     // Save the session data
-    const sessionResponse = await setKVValue(
+    const sessionSuccess = await setKVValue(
       sessionKey,
       session,
-      { storeName: config.defaultStoreName }
+      { storeName: config.kvStoreName }
     );
 
-    if (!sessionResponse.success) {
+    if (!sessionSuccess) {
       return NextResponse.json(
-        { error: sessionResponse.error || 'Failed to create session' },
-        { status: sessionResponse.statusCode || 500 }
+        { error: 'Failed to create session' },
+        { status: 500 }
       );
     }
 
     // Update the sessions list with just the session ID
-    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: config.defaultStoreName });
-    const sessionIds = allSessionsResponse.success ? allSessionsResponse.data || [] : [];
+    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: config.kvStoreName });
+    const sessionIds = allSessionsResponse.exists ? allSessionsResponse.data || [] : [];
 
     // Add the new session ID to the beginning of the array
     const updatedSessionIds = [sessionKey, ...sessionIds.filter(id => id !== sessionKey)];
 
-    const sessionsListResponse = await setKVValue(
+    const sessionsListSuccess = await setKVValue(
       userId,
       updatedSessionIds,
-      { storeName: config.defaultStoreName }
+      { storeName: config.kvStoreName }
     );
 
-    if (!sessionsListResponse.success) {
+    if (!sessionsListSuccess) {
       return NextResponse.json(
-        { error: sessionsListResponse.error || 'Failed to update sessions list' },
-        { status: sessionsListResponse.statusCode || 500 }
+        { error: 'Failed to update sessions list' },
+        { status: 500 }
       );
     }
 

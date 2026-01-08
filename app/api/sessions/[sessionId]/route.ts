@@ -21,12 +21,12 @@ export async function GET(
     const paramsData = await params;
     const sessionId = paramsData.sessionId;
     const sessionKey = `${userId}_${sessionId}`;
-    const response = await getKVValue<Session>(sessionKey, { storeName: config.defaultStoreName });
+    const response = await getKVValue<Session>(sessionKey, { storeName: config.kvStoreName });
 
-    if (!response.success) {
+    if (!response.exists) {
       return NextResponse.json(
-        { error: response.error || 'Session not found' },
-        { status: response.statusCode || 404 }
+        { error: 'Session not found' },
+        { status: 404 }
       );
     }
 
@@ -84,36 +84,36 @@ export async function PUT(
     }
 
     // Update the individual session
-    const response = await setKVValue(
+    const success = await setKVValue(
       sessionKey,
       session,
-      { storeName: config.defaultStoreName }
+      { storeName: config.kvStoreName }
     );
 
-    if (!response.success) {
+    if (!success) {
       return NextResponse.json(
-        { error: response.error || 'Failed to update session' },
-        { status: response.statusCode || 500 }
+        { error: 'Failed to update session' },
+        { status: 500 }
       );
     }
 
     // Update the master list if needed (ensure the session ID is in the list)
-    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: config.defaultStoreName });
-    const sessionIds = allSessionsResponse.success ? allSessionsResponse.data || [] : [];
+    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: config.kvStoreName });
+    const sessionIds = allSessionsResponse.exists ? allSessionsResponse.data || [] : [];
 
     // If the session ID isn't in the list, add it to the beginning
     if (!sessionIds.includes(sessionKey)) {
       const updatedSessionIds = [sessionKey, ...sessionIds];
 
-      const sessionsListResponse = await setKVValue(
+      const sessionsListSuccess = await setKVValue(
         userId,
         updatedSessionIds,
-        { storeName: config.defaultStoreName }
+        { storeName: config.kvStoreName }
       );
 
-      if (!sessionsListResponse.success) {
+      if (!sessionsListSuccess) {
         // Log the error but don't fail the request
-        console.error('Failed to update sessions list:', sessionsListResponse.error);
+        console.error('Failed to update sessions list');
       }
     }
 
@@ -143,34 +143,34 @@ export async function DELETE(
     const sessionId = paramsData.sessionId;
     const sessionKey = `${userId}_${sessionId}`;
     // Delete the session data
-    const sessionResponse = await deleteKVValue(
+    const sessionDeleteSuccess = await deleteKVValue(
       sessionKey,
-      { storeName: config.defaultStoreName }
+      { storeName: config.kvStoreName }
     );
 
-    if (!sessionResponse.success) {
+    if (!sessionDeleteSuccess) {
       return NextResponse.json(
-        { error: sessionResponse.error || 'Failed to delete session' },
-        { status: sessionResponse.statusCode || 500 }
+        { error: 'Failed to delete session' },
+        { status: 500 }
       );
     }
 
     // Remove from sessions list
-    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: config.defaultStoreName });
-    const sessionIds = allSessionsResponse.success ? allSessionsResponse.data || [] : [];
+    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: config.kvStoreName });
+    const sessionIds = allSessionsResponse.exists ? allSessionsResponse.data || [] : [];
 
     const updatedSessionIds = sessionIds.filter(id => id !== sessionKey);
 
-    const sessionsListResponse = await setKVValue(
+    const sessionsListSuccess = await setKVValue(
       userId,
       updatedSessionIds,
-      { storeName: config.defaultStoreName }
+      { storeName: config.kvStoreName }
     );
 
-    if (!sessionsListResponse.success) {
+    if (!sessionsListSuccess) {
       return NextResponse.json(
-        { error: sessionsListResponse.error || 'Failed to update sessions list' },
-        { status: sessionsListResponse.statusCode || 500 }
+        { error: 'Failed to update sessions list' },
+        { status: 500 }
       );
     }
 
@@ -209,8 +209,8 @@ export async function POST(
     const { message } = validation.data;
 
     // Get current session
-    const sessionResponse = await getKVValue<Session>(sessionKey, { storeName: config.defaultStoreName });
-    if (!sessionResponse.success || !sessionResponse.data) {
+    const sessionResponse = await getKVValue<Session>(sessionKey, { storeName: config.kvStoreName });
+    if (!sessionResponse.exists || !sessionResponse.data) {
       return NextResponse.json(
         { error: 'Session not found' },
         { status: 404 }
@@ -224,36 +224,36 @@ export async function POST(
     };
 
     // Update the individual session
-    const updateResponse = await setKVValue(
+    const updateSuccess = await setKVValue(
       sessionKey,
       updatedSession,
-      { storeName: config.defaultStoreName }
+      { storeName: config.kvStoreName }
     );
 
-    if (!updateResponse.success) {
+    if (!updateSuccess) {
       return NextResponse.json(
-        { error: updateResponse.error || 'Failed to update session' },
-        { status: updateResponse.statusCode || 500 }
+        { error: 'Failed to update session' },
+        { status: 500 }
       );
     }
 
     // Move this session ID to the top of the master list (most recently used)
-    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: config.defaultStoreName });
-    const sessionIds = allSessionsResponse.success ? allSessionsResponse.data || [] : [];
+    const allSessionsResponse = await getKVValue<string[]>(userId, { storeName: config.kvStoreName });
+    const sessionIds = allSessionsResponse.exists ? allSessionsResponse.data || [] : [];
 
     // Remove the current session ID if it exists and add it to the beginning
     const filteredSessionIds = sessionIds.filter(id => id !== sessionKey);
     const updatedSessionIds = [sessionKey, ...filteredSessionIds];
 
-    const sessionsListResponse = await setKVValue(
+    const sessionsListSuccess = await setKVValue(
       userId,
       updatedSessionIds,
-      { storeName: config.defaultStoreName }
+      { storeName: config.kvStoreName }
     );
 
-    if (!sessionsListResponse.success) {
+    if (!sessionsListSuccess) {
       // Log the error but don't fail the request since we already updated the individual session
-      console.error('Failed to update sessions list:', sessionsListResponse.error);
+      console.error('Failed to update sessions list');
     }
 
     return NextResponse.json({ success: true, session: updatedSession });
