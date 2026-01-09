@@ -13,7 +13,7 @@ const config = {
 		{
 			source: '/Get-Started/what-is-agentuity',
 			destination: '/',
-			permanent: true,
+			permanent: false,
 		},
 		{
 			source: '/Introduction',
