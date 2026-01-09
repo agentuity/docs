@@ -8,14 +8,14 @@ import { Lightbulb } from 'lucide-react';
 
 This guide walks you through building a chat agent from scratch using OpenAI.
 
-<Callout type="tip" title="Want a Head Start?">
-Use a template to get a working project instantly:
+<Callout type="info" title="Default Template">
+When you create a project with `agentuity create`, you get a translation agent demonstrating:
 
-```bash
-agentuity create my-app --template vercel-openai
-```
-
-See [available templates](/Reference/CLI/getting-started#available-templates) for options.
+- **AI Gateway**: OpenAI SDK routed through Agentuity (unified billing, no separate API keys)
+- **Thread state**: Persistent translation history across requests
+- **Structured logging**: Observability via `ctx.logger`
+- **Tailwind CSS**: Pre-configured styling
+- **Workbench**: Local testing UI at `/workbench`
 </Callout>
 
 <Card
