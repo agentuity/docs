@@ -108,30 +108,23 @@ Create a project in a specific directory:
 agentuity project create --name my-agent --dir ~/projects/agents
 ```
 
-### Available Templates
+### Default Template
 
-| Template | Description |
-|----------|-------------|
-| `default` | React UI with example agents using `@agentuity/schema` (recommended for getting started) |
-| `tailwind` | React UI with Tailwind CSS pre-configured |
-| `openai` | Uses OpenAI SDK directly for chat completions |
-| `groq` | Uses Groq SDK for fast inference with open-source models |
-| `xai` | Uses AI SDK with xAI provider for Grok models |
-| `vercel-openai` | Uses AI SDK with OpenAI provider |
+Running `agentuity create` scaffolds a project with:
 
-Additional templates coming soon. Run `agentuity create` to see the current options.
+- **Translation agent**: Demonstrates AI Gateway, thread state, and structured logging
+- **API routes**: Shows agent integration and state management endpoints
+- **React frontend**: Pre-configured with Tailwind CSS
+- **Workbench**: Local testing UI at `/workbench`
+- **Evaluations**: Example eval setup for testing agent behavior
 
-To use a specific template:
-
-```bash
-agentuity project create --template openai
-```
+The agent uses the OpenAI SDK routed through Agentuity's AI Gateway, which provides unified billing and observability without requiring separate API keys.
 
 ### Project Creation Options
 
 - `--name <name>`: Project name
 - `--dir <path>`: Directory to create the project in
-- `--template <name>`: Template to use (default: "default")
+- `--template <name>`: Template to use (currently only "default" available)
 - `--no-install`: Skip dependency installation
 - `--no-build`: Skip initial build
 - `--no-register`: Don't register the project with Agentuity Cloud
