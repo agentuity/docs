@@ -15,6 +15,11 @@ const config = {
 			destination: '/Get-Started/what-is-agentuity',
 			permanent: false,
 		},
+		{
+			source: '/Introduction',
+			destination: '/Get-Started/what-is-agentuity',
+			permanent: false,
+		},
 	],
 };
 
