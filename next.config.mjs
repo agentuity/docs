@@ -11,14 +11,14 @@ const config = {
 	serverExternalPackages: ['twoslash', 'typescript'],
 	redirects: async () => [
 		{
-			source: '/',
-			destination: '/Get-Started/what-is-agentuity',
-			permanent: false,
+			source: '/Get-Started/what-is-agentuity',
+			destination: '/',
+			permanent: true,
 		},
 		{
 			source: '/Introduction',
-			destination: '/Get-Started/what-is-agentuity',
-			permanent: false,
+			destination: '/',
+			permanent: true,
 		},
 	],
 };

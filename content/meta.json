@@ -2,6 +2,7 @@
 	"title": "Agentuity Docs",
 	"root": true,
 	"pages": [
+		"index",
 		"Get-Started",
 		"Agents",
 		"APIs",
