@@ -1,8 +1,6 @@
 import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
 import { createMDX } from 'fumadocs-mdx/next';
 
-// empty pr 3 comment
-
 const withMDX = createMDX();
 
 /** @type {import('next').NextConfig} */
@@ -29,11 +27,6 @@ const config = {
 		{
 			source: '/Build/Sandbox/:path*',
 			destination: '/Services/Sandbox/:path*',
-			permanent: true,
-		},
-		{
-			source: '/Build/Sandbox',
-			destination: '/Services/Sandbox',
 			permanent: true,
 		},
 		{
