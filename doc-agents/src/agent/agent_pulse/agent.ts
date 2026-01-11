@@ -1,5 +1,11 @@
 import { createAgent } from '@agentuity/runtime';
 import { s } from '@agentuity/schema';
+import { streamText, stepCountIs } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { buildContext, buildSystemPrompt } from './context-builder';
+import { createTools } from './tools';
+import { createStreamingProcessor } from './streaming-processor';
+import type { ConversationMessage, Action } from './types';
 
 const agent = createAgent('AgentPulse', {
 	description: 'Multi-turn tutorial and documentation assistant using LLM with tools for tutorial navigation and documentation search',
@@ -21,26 +27,55 @@ const agent = createAgent('AgentPulse', {
 				})
 			).describe('Current tutorial state if user is in a tutorial'),
 		}),
-		output: s.object({
-			message: s.string().describe('The assistant response'),
-			tutorialAction: s.optional(
-				s.object({
-					type: s.literal('START_TUTORIAL_STEP'),
-					tutorialId: s.string(),
-					currentStep: s.number(),
-					totalSteps: s.number(),
-				})
-			).describe('Tutorial action if agent initiated a tutorial'),
-		}),
+		output: s.any(),
 	},
 	handler: async (ctx, input) => {
-		ctx.logger.info('AgentPulse received message: %s', input.message);
+		const { message, conversationHistory = [], tutorialData } = input;
 
-		// For now, return a placeholder response
-		// The streaming and LLM logic will be handled in the API route
-		return {
-			message: 'AgentPulse is processing your request...',
-		};
+		ctx.logger.info('AgentPulse received message: %s', message);
+
+		// Create state for managing actions
+		const state: { action: Action | null } = { action: null };
+
+		// Build messages for the conversation
+		const messages: ConversationMessage[] = [
+			...conversationHistory,
+			{ author: 'USER', content: message },
+		];
+
+		// Create tools with state context
+		const tools = await createTools(state, ctx);
+
+		// Build tutorial context and system prompt
+		const tutorialContext = await buildContext(ctx, tutorialData);
+		const systemPrompt = await buildSystemPrompt(tutorialContext, ctx);
+
+		// Generate streaming response using AI SDK
+		// Returns StreamTextResult<any> which contains fullStream for processing
+		const result = streamText({
+			model: openai('gpt-4.1'),
+			messages: messages.map((msg) => ({
+				role: msg.author === 'USER' ? 'user' : 'assistant',
+				content: msg.content,
+			})),
+			tools,
+			system: systemPrompt,
+			stopWhen: stepCountIs(5), // Replaces deprecated maxSteps
+			onStepFinish: async ({ text, toolCalls, toolResults, finishReason, usage }) => {
+				ctx.logger.info('Step finished - reason: %s, toolCalls: %d, toolResults: %d, text: %s',
+					finishReason, toolCalls?.length || 0, toolResults?.length || 0, text || '(no text)');
+			},
+			onFinish: async ({ finishReason, usage, text, steps }) => {
+				ctx.logger.info('=== FINAL COMPLETION ===');
+				ctx.logger.info('Finish reason: %s, Total steps: %d', finishReason, steps?.length || 0);
+				ctx.logger.info('Final text length: %d', text?.length || 0);
+				ctx.logger.info('Final text: %s', text || '(no text generated)');
+			},
+		});
+
+		// Create and return streaming response (ReadableStream)
+		// createStreamingProcessor expects StreamTextResult<any> and returns ReadableStream
+		return createStreamingProcessor(result, state, ctx.logger);
 	},
 });
 

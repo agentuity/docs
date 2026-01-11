@@ -132,10 +132,13 @@ export async function POST(
 
     const agentPayload = {
       message: message.content,
-      conversationHistory: updatedSession.messages.slice(
-        -DEFAULT_CONVERSATION_HISTORY_LIMIT
-      ),
-      tutorialData: currentTutorialState,
+      conversationHistory: updatedSession.messages
+        .slice(-DEFAULT_CONVERSATION_HISTORY_LIMIT)
+        .map(msg => ({
+          author: msg.author,
+          content: msg.content,
+        })),
+      tutorialData: currentTutorialState ?? undefined,
     };
 
     // Create a readable stream to send SSE events to the client

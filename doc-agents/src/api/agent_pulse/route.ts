@@ -1,9 +1,6 @@
-import { createRouter, sse } from '@agentuity/runtime';
-import { streamText } from 'ai';
-import { openai } from '@ai-sdk/openai';
-import { buildContext, buildSystemPrompt } from '@agent/agent_pulse/context-builder';
-import { createTools } from '@agent/agent_pulse/tools';
-import type { ConversationMessage, StreamingChunk } from '@agent/agent_pulse/types';
+import { createRouter } from '@agentuity/runtime';
+import agentPulse from '@agent/agent_pulse';
+import type { ConversationMessage } from '@agent/agent_pulse/types';
 
 interface ParsedRequest {
 	message: string;
@@ -11,6 +8,9 @@ interface ParsedRequest {
 	tutorialData?: { tutorialId: string; currentStep: number };
 }
 
+/**
+ * Parses and validates incoming agent requests
+ */
 function parseAgentRequest(jsonData: any): ParsedRequest {
 	let message = '';
 	let conversationHistory: ConversationMessage[] = [];
@@ -40,111 +40,50 @@ function parseAgentRequest(jsonData: any): ParsedRequest {
 const router = createRouter();
 
 // POST /api/agent-pulse
-router.post(
-	'/',
-	sse(async (c, stream) => {
-		const logger = c.var.logger;
+router.post('/', async (c) => {
+	try {
+		const jsonData = await c.req.json();
+		const parsedRequest = parseAgentRequest(jsonData);
 
-		try {
-			const jsonData = await c.req.json();
-			const parsedRequest = parseAgentRequest(jsonData);
-
-			logger.info('AgentPulse received message: %s', parsedRequest.message);
-
-			// Create state for managing actions
-			const state = { action: null as any };
-
-			// Build messages for the conversation
-			const messages: ConversationMessage[] = [...parsedRequest.conversationHistory, { author: 'USER', content: parsedRequest.message }];
-
-			// Create tools with state context
-			const tools = await createTools(state, {
-				logger,
-				// Provide minimal context for tutorial fetching
-			} as any);
-
-			// Build tutorial context and system prompt
-			const tutorialContext = await buildContext(
+		// Validate request
+		if (!parsedRequest.message || parsedRequest.message.trim() === '') {
+			return c.json(
 				{
-					logger,
-				} as any,
-				parsedRequest.tutorialData
+					error: 'Message is required',
+				},
+				{ status: 400 }
 			);
-			const systemPrompt = await buildSystemPrompt(tutorialContext, {
-				logger,
-			} as any);
+		}
 
-			// Generate streaming response
-			const result = await streamText({
-				model: openai('gpt-4.1'),
-				messages: messages.map((msg) => ({
-					role: msg.author === 'USER' ? 'user' : 'assistant',
-					content: msg.content,
-				})),
-				tools,
-				system: systemPrompt,
-			});
+		// Run agent and get stream
+		const stream = await agentPulse.run({
+			message: parsedRequest.message,
+			conversationHistory: parsedRequest.conversationHistory,
+			tutorialData: parsedRequest.tutorialData,
+		});
 
-			// Stream the response
-			for await (const chunk of result.fullStream) {
-				if (chunk.type === 'text-delta') {
-					const sseChunk: StreamingChunk = {
-						type: 'text-delta',
-						textDelta: chunk.text,
-					};
-					stream.writeSSE({ data: JSON.stringify(sseChunk) });
-				} else if (chunk.type === 'tool-call') {
-					const toolName = chunk.toolName || 'tool';
-					const userFriendlyMessage = getToolStatusMessage(toolName);
-					const sseChunk: StreamingChunk = {
-						type: 'status',
-						message: userFriendlyMessage,
-						category: 'tool',
-					};
-					stream.writeSSE({ data: JSON.stringify(sseChunk) });
-					logger.debug('Tool called: %s', toolName);
-				} else if (chunk.type === 'reasoning-delta') {
-					logger.debug('REASONING: %s', chunk);
-				} else {
-					logger.debug('Skipping chunk type: %s', chunk.type);
-				}
-			}
+		// Return streaming response with proper headers
+		return new Response(stream, {
+			headers: {
+				'Content-Type': 'text/event-stream',
+				'Cache-Control': 'no-cache',
+				'Connection': 'keep-alive',
+			},
+		});
+	} catch (error) {
+		c.var.logger.error('Agent request failed: %s', error instanceof Error ? error.message : String(error));
 
-			// Send tutorial data if available
-			if (state.action) {
-				const tutorialChunk: StreamingChunk = {
-					type: 'tutorial-data',
-					tutorialData: state.action,
-				};
-				stream.writeSSE({ data: JSON.stringify(tutorialChunk) });
-			}
+		// Determine if it's a client error (4xx) or server error (5xx)
+		const statusCode = error instanceof Error && error.message.includes('Invalid') ? 400 : 500;
 
-			// Send finish signal
-			const finishChunk: StreamingChunk = {
-				type: 'finish',
-			};
-			stream.writeSSE({ data: JSON.stringify(finishChunk) });
-		} catch (error) {
-			logger.error('Agent request failed: %s', error instanceof Error ? error.message : String(error));
-			const errorChunk: StreamingChunk = {
-				type: 'error',
+		return c.json(
+			{
 				error: 'Sorry, I encountered an error while processing your request. Please try again.',
 				details: error instanceof Error ? error.message : String(error),
-			};
-			stream.writeSSE({ data: JSON.stringify(errorChunk) });
-		}
-	})
-);
-
-function getToolStatusMessage(toolName: string): string {
-	switch (toolName) {
-		case 'startTutorialAtStep':
-			return 'Starting tutorial...';
-		case 'askDocsAgentTool':
-			return 'Searching documentation...';
-		default:
-			return 'Processing your request...';
+			},
+			{ status: statusCode }
+		);
 	}
-}
+});
 
 export default router;

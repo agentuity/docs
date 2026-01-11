@@ -9,4 +9,3 @@ export { callAgentPulseStreaming, agentPulseService } from './agentPulse';
 export type { AgentPulseRequest, StreamingChunk, AgentPulseCallbacks } from './agentPulse';
 
 export { queryAgentQa, agentQaService } from './agentQa';
-export type { AgentQaResponse } from './agentQa';

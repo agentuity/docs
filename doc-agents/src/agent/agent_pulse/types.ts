@@ -1,3 +1,5 @@
+import type { TutorialSnippet } from './tutorial';
+
 export interface ConversationMessage {
 	author: 'USER' | 'ASSISTANT';
 	content: string;
@@ -36,12 +38,25 @@ export interface Action {
 	totalSteps: number;
 }
 
+// TutorialData matches the frontend's expected format
+export interface TutorialData {
+	tutorialId: string;
+	totalSteps: number;
+	currentStep: number;
+	tutorialStep: {
+		title: string;
+		mdx: string;
+		snippets: TutorialSnippet[];
+		totalSteps: number;
+	};
+}
+
 export interface StreamingChunk {
 	type: 'text-delta' | 'status' | 'tutorial-data' | 'finish' | 'error';
 	textDelta?: string;
 	message?: string;
 	category?: string;
-	tutorialData?: Action;
+	tutorialData?: TutorialData;
 	error?: string;
 	details?: string;
 }

@@ -72,6 +72,8 @@ export async function callAgentPulseStreaming(
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[agentPulse] Error response:', errorText);
         throw new Error(`Agent responded with status: ${response.status}`);
       }
 
@@ -85,9 +87,11 @@ export async function callAgentPulseStreaming(
 
       while (true) {
         const { done, value } = await reader.read();
+
         if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
+        const decoded = decoder.decode(value, { stream: true });
+        buffer += decoded;
 
         // Process complete lines
         const lines = buffer.split('\n');
@@ -96,7 +100,8 @@ export async function callAgentPulseStreaming(
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             try {
-              const chunk = JSON.parse(line.slice(6)) as StreamingChunk;
+              const jsonStr = line.slice(6);
+              const chunk = JSON.parse(jsonStr) as StreamingChunk;
 
               if (chunk.type === 'text-delta' && chunk.textDelta) {
                 callbacks.onTextDelta?.(chunk.textDelta);
@@ -110,7 +115,7 @@ export async function callAgentPulseStreaming(
                 callbacks.onError?.(chunk.error || 'Unknown error');
               }
             } catch (error) {
-              console.error('Error parsing SSE chunk:', error);
+              console.error('[agentPulse] Error parsing SSE chunk:', error);
             }
           }
         }
