@@ -1,6 +1,6 @@
 # React Hooks
 
-Back to end-to-end type safety—what was happening over and over is someone was building an agent and saying "I need APIs" (which Agentuity offers), then "now I need a frontend for this agent or these things." So Agentuity built a client-side frontend package as well.
+Agents, routes, and frontend hooks are the three big building blocks for building agentic software. Back to end-to-end type safety—what was happening over and over is someone was building an agent and saying "I need APIs" (which Agentuity offers), then "now I need a frontend for this agent or these things." So Agentuity built a client-side frontend package as well.
 
 ## The React Package
 

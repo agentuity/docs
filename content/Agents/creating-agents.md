@@ -4,7 +4,7 @@ In the Agentuity SDK, agents are one of the core primitives. An agent is where y
 
 ## Framework Flexibility
 
-Agentuity is not framework-specific. You can use any inference library or SDK you prefer—Mastra, Vercel AI SDK, or the model providers' own SDKs directly. Agentuity doesn't care what you use.
+Agentuity is not framework-specific. You can use any inference library or SDK you prefer—Mastra, Vercel AI SDK, the model providers' own SDKs directly, or even a coding agent SDK like Agent SDK from Claude Code. Agentuity doesn't care what you use.
 
 What Agentuity provides is a wrapper around your inference code that makes it easy to add observability, evaluations, structured logging, authentication, and a bunch of other things—without requiring you to set up the underlying infrastructure yourself.
 
@@ -12,7 +12,7 @@ What Agentuity provides is a wrapper around your inference code that makes it ea
 
 Agents in Agentuity are meant to be infrastructure pieces and wrappers around the inference calls you would make. The SDK provides easy access to logging, observability, OpenTelemetry traces, and cloud services without having to set up a bunch of stuff—Redis, key-value storage, databases, you name it.
 
-Higher-level services like threads are also provided. If there's a conversation going on, Agentuity will automatically group that conversation together in a thread so the back and forth gets lumped all together. That's an important thing to understand about agents—they're the infrastructure wrapper around your inference code that makes it easy to use.
+Higher-level services like threads are also provided. If there's a conversation going on, Agentuity will automatically group that conversation together in a thread so the back and forth gets lumped all together. With agents, you also get observability and sessions built in. That's an important thing to understand about agents—they're the infrastructure wrapper around your inference code that makes it easy to use.
 
 ## Schema-Driven Development
 

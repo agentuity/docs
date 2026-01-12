@@ -1,6 +1,6 @@
 # Deployment Scenarios
 
-There are times when you have a Greenfield application—it's important to be able to start fresh. You can have frontend, routes, agents, all the cloud stuff, easy to deploy. But also you have existing applications.
+There are times when you have a Greenfield application—it's important to be able to start fresh. Using `agentuity create`, you can have frontend, routes, agents, all the cloud stuff, easy to deploy. But also you have existing applications.
 
 ## Existing Applications
 

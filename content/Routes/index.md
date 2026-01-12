@@ -1,6 +1,6 @@
 # Routes
 
-Routes and APIs are another core primitive alongside agents. One thing constantly observed is that people want to build agents, but agents don't live in isolation. Agents have to have lots of different things, including some API or route that you call them or invoke them by.
+Routes and APIs are another core primitive alongside agents—one of the three big building blocks for building what we call agentic software. One thing constantly observed is that people want to build agents, but agents don't live in isolation. Agents have to have lots of different things, including some API or route that you call them or invoke them by.
 
 ## Built on Hono
 

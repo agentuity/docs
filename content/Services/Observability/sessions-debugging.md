@@ -18,6 +18,8 @@ Remember—this is an agent-native platform, so agents should have access to the
 
 On deployments, you can see how your deployments are doing. You can view that whole pane of glass by deployment—this deployment was just done, there was a deployment yesterday, let me compare the two. You can see the artifacts, how it's doing, the logs.
 
+On the observability side, you get things like threads, sessions (OpenTelemetry sessions), evals, logs, and analytics—all within a project.
+
 ## CLI Integration
 
 On most screens there's a terminal icon showing how to interact with everything on screen via the CLI. This is orthogonal—it's a cloud platform with a web app to view things, but you also have a CLI to programmatically access everything. An agent can use the CLI for debugging or setting things up programmatically, which is really useful.
