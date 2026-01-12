@@ -143,63 +143,6 @@ agentuity cloud s3 delete <storage-id>
 
 **In agents:** Use Bun's `s3` API (`import { s3 } from "bun"`). See [Object Storage (S3)](/Storage/object).
 
-## Object Storage (Legacy)
-
-The `cloud obj` commands provide bucket-based object management. For new projects, consider using `cloud s3` instead.
-
-### Interactive REPL
-
-```bash
-agentuity cloud obj repl
-```
-
-### Upload a File
-
-```bash
-# Upload from file path
-agentuity cloud obj put uploads images/logo.png @./logo.png
-
-# Store JSON directly
-agentuity cloud obj put assets config.json '{"api":"https://api.example.com"}'
-
-# With custom content type
-agentuity cloud obj put backups db.sql @~/backup.sql --content-type application/sql
-```
-
-### Download a File
-
-```bash
-agentuity cloud obj get uploads images/logo.png
-agentuity cloud obj get assets config.json
-```
-
-### Delete a File
-
-```bash
-agentuity cloud obj delete uploads old-image.png
-```
-
-### Generate Public URL
-
-```bash
-# Permanent URL
-agentuity cloud obj url uploads images/logo.png
-
-# Temporary URL (expires in 1 hour)
-agentuity cloud obj url uploads private-doc.pdf --expires 3600
-
-# 5-minute presigned URL
-agentuity cloud obj presigned backups db.sql --expires 300
-```
-
-### List Buckets and Files
-
-```bash
-agentuity cloud obj list-buckets
-agentuity cloud obj list-keys uploads
-agentuity cloud obj ls assets  # Using alias
-```
-
 ## Vector Storage
 
 Search and inspect vector embeddings.

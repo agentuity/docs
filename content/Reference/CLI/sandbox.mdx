@@ -20,8 +20,16 @@ All sandbox commands require the `cloud` prefix. For example: `agentuity cloud s
 | `sandbox delete <id>` | Destroy sandbox |
 | `sandbox exec <id> -- <cmd>` | Execute in existing sandbox |
 | `sandbox cp` | Copy files to/from sandbox |
+| `sandbox files <id>` | List files in sandbox |
+| `sandbox mkdir <id> <path>` | Create directory |
+| `sandbox rmdir <id> <path>` | Remove directory |
+| `sandbox rm <id> <path>` | Remove file |
+| `sandbox download <id> <output>` | Download as archive |
+| `sandbox upload <id> <archive>` | Upload and extract archive |
 | `sandbox snapshot` | Manage snapshots |
 | `sandbox execution` | View execution history |
+| `sandbox runtime list` | List available runtimes |
+| `sandbox env <id>` | Manage environment variables |
 
 **Alias:** `sb` (e.g., `agentuity cloud sb list`)
 
@@ -143,7 +151,9 @@ agentuity cloud sandbox delete sbx_abc123 --confirm  # Skip prompt
 
 ## File Operations
 
-Copy files to and from sandboxes.
+### Copy Files
+
+Copy individual files or directories to and from sandboxes.
 
 ```bash
 agentuity cloud sandbox cp <source> <destination>
@@ -158,6 +168,124 @@ agentuity cloud sandbox cp sbx_abc123:/workspace/output.json ./output.json
 
 # Upload a directory
 agentuity cloud sandbox cp ./src sbx_abc123:/workspace/src
+```
+
+### List Files
+
+List files and directories in a sandbox.
+
+```bash
+agentuity cloud sandbox files <sandbox-id> [path] [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `-l, --long` | Show permissions and timestamps |
+| `--json` | JSON output |
+
+**Alias:** `lsf`
+
+```bash
+# List root directory
+agentuity cloud sandbox files sbx_abc123
+
+# List specific directory
+agentuity cloud sandbox files sbx_abc123 /workspace/src
+
+# Long format with details
+agentuity cloud sandbox files sbx_abc123 -l
+```
+
+### Create Directory
+
+```bash
+agentuity cloud sandbox mkdir <sandbox-id> <path> [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `-p, --parents` | Create parent directories as needed |
+
+```bash
+# Create a directory
+agentuity cloud sandbox mkdir sbx_abc123 /workspace/output
+
+# Create nested directories
+agentuity cloud sandbox mkdir sbx_abc123 /workspace/data/processed -p
+```
+
+### Remove Files and Directories
+
+```bash
+# Remove a file
+agentuity cloud sandbox rm <sandbox-id> <path>
+
+# Remove a directory
+agentuity cloud sandbox rmdir <sandbox-id> <path> [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `-r, --recursive` | Remove directory and all contents |
+
+```bash
+# Remove a file
+agentuity cloud sandbox rm sbx_abc123 /workspace/temp.txt
+
+# Remove empty directory
+agentuity cloud sandbox rmdir sbx_abc123 /workspace/old
+
+# Remove directory with contents
+agentuity cloud sandbox rmdir sbx_abc123 /workspace/cache -r
+```
+
+### Download Archive
+
+Download sandbox files as a compressed archive.
+
+```bash
+agentuity cloud sandbox download <sandbox-id> <output-file> [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--path <path>` | Download specific directory (defaults to root) |
+| `--format <format>` | Archive format: `tar.gz` (default) or `zip` |
+
+**Alias:** `dl`
+
+```bash
+# Download entire sandbox
+agentuity cloud sandbox download sbx_abc123 ./backup.tar.gz
+
+# Download as zip
+agentuity cloud sandbox download sbx_abc123 ./backup.zip --format zip
+
+# Download specific directory
+agentuity cloud sandbox download sbx_abc123 ./src.tar.gz --path /workspace/src
+```
+
+### Upload Archive
+
+Upload and extract an archive into a sandbox.
+
+```bash
+agentuity cloud sandbox upload <sandbox-id> <archive-file> [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--path <path>` | Destination path (defaults to root) |
+| `--format <format>` | Archive format (auto-detected if not specified) |
+
+**Alias:** `ul`
+
+```bash
+# Upload and extract to root
+agentuity cloud sandbox upload sbx_abc123 ./project.tar.gz
+
+# Upload to specific directory
+agentuity cloud sandbox upload sbx_abc123 ./deps.zip --path /workspace/node_modules
 ```
 
 ## Snapshot Commands
@@ -315,6 +443,59 @@ All commands support `--json` for machine-readable output:
 agentuity cloud sandbox list --json
 agentuity cloud sandbox get sbx_abc123 --json
 agentuity cloud sandbox snapshot list --json
+```
+
+## Runtime Commands
+
+List available sandbox runtimes.
+
+### List Runtimes
+
+```bash
+agentuity cloud sandbox runtime list [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--limit <n>` | Max results (default: 50, max: 100) |
+| `--offset <n>` | Pagination offset |
+| `--json` | JSON output |
+
+```bash
+# List available runtimes
+agentuity cloud sandbox runtime list
+
+# With pagination
+agentuity cloud sandbox runtime list --limit 10 --offset 20
+```
+
+**Alias:** `rt` (e.g., `agentuity cloud sandbox rt list`)
+
+## Environment Variables
+
+Manage environment variables on a running sandbox.
+
+```bash
+agentuity cloud sandbox env <sandbox-id> [KEY=VALUE...] [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--delete <key>` | Delete variable (repeatable, alias: `-d`) |
+| `--json` | JSON output |
+
+```bash
+# Set an environment variable
+agentuity cloud sandbox env sbx_abc123 MY_VAR=value
+
+# Set multiple variables
+agentuity cloud sandbox env sbx_abc123 VAR1=value1 VAR2=value2
+
+# Delete a variable
+agentuity cloud sandbox env sbx_abc123 --delete MY_VAR
+
+# Delete multiple variables
+agentuity cloud sandbox env sbx_abc123 -d VAR1 -d VAR2
 ```
 
 ## Next Steps
