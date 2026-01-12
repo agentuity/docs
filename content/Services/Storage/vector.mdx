@@ -10,10 +10,10 @@ Vector storage enables semantic search, allowing agents to find information by *
 | Storage Type | Best For |
 |--------------|----------|
 | **Vector** | Semantic search, embeddings, RAG, recommendations |
-| [Key-Value](/Build/Storage/key-value) | Fast lookups, caching, configuration |
-| [Object (S3)](/Build/Storage/object) | Files, images, documents, media |
-| [Database](/Build/Storage/database) | Structured data, complex queries, transactions |
-| [Durable Streams](/Build/Storage/durable-streams) | Large exports, audit logs |
+| [Key-Value](/Storage/key-value) | Fast lookups, caching, configuration |
+| [Object (S3)](/Storage/object) | Files, images, documents, media |
+| [Database](/Storage/database) | Structured data, complex queries, transactions |
+| [Durable Streams](/Storage/durable-streams) | Large exports, audit logs |
 
 ## Access Patterns
 
@@ -23,7 +23,7 @@ Vector storage enables semantic search, allowing agents to find information by *
 | Routes | `c.var.vector` | See [Using in Routes](#using-in-routes) |
 | Standalone | `createAgentContext()` | See [Standalone Usage](#standalone-usage) |
 | External backends | HTTP routes | [SDK Utilities for External Apps](/Learn/Cookbook/Patterns/server-utilities) |
-| Frontend | Via routes | [React Hooks](/Build/Frontend/react-hooks) |
+| Frontend | Via routes | [React Hooks](/Frontend/react-hooks) |
 
 <Callout type="info" title="Same API Everywhere">
 The Vector API is identical in all contexts. `ctx.vector.search()` and `c.var.vector.search()` work the same way. See [Accessing Services](/Reference/sdk-reference#accessing-services) for the full reference.
@@ -363,7 +363,7 @@ async function indexDocuments(files: string[]) {
 }
 ```
 
-See [Running Agents Without HTTP](/Build/Agents/standalone-execution) for more patterns including Discord bots, CLI tools, and queue workers.
+See [Running Agents Without HTTP](/Agents/standalone-execution) for more patterns including Discord bots, CLI tools, and queue workers.
 
 ## Troubleshooting
 
@@ -380,8 +380,8 @@ See [Running Agents Without HTTP](/Build/Agents/standalone-execution) for more p
 
 ## Next Steps
 
-- [Key-Value Storage](/Build/Storage/key-value): Fast caching and configuration
-- [Object Storage (S3)](/Build/Storage/object): File and media storage
-- [Database](/Build/Storage/database): Relational data with queries and transactions
-- [Durable Streams](/Build/Storage/durable-streams): Streaming large data exports
-- [Evaluations](/Build/Agents/evaluations): Quality checks for RAG systems
+- [Key-Value Storage](/Storage/key-value): Fast caching and configuration
+- [Object Storage (S3)](/Storage/object): File and media storage
+- [Database](/Storage/database): Relational data with queries and transactions
+- [Durable Streams](/Storage/durable-streams): Streaming large data exports
+- [Evaluations](/Agents/evaluations): Quality checks for RAG systems

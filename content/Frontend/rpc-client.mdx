@@ -33,7 +33,7 @@ When imported from `@agentuity/react`, the client automatically includes auth he
 </Callout>
 
 <Callout type="info" title="React Apps">
-For React components, consider using [React Hooks](/Build/Frontend/react-hooks) instead. They provide built-in state management, loading states, and automatic cleanup.
+For React components, consider using [React Hooks](/Frontend/react-hooks) instead. They provide built-in state management, loading states, and automatic cleanup.
 </Callout>
 
 ## HTTP Methods
@@ -223,7 +223,7 @@ Generated types live in `src/generated/`. Don't edit these files directly as the
 
 | Use Case | Recommended |
 |----------|-------------|
-| React components | [React Hooks](/Build/Frontend/react-hooks) |
+| React components | [React Hooks](/Frontend/react-hooks) |
 | Non-React apps (Vue, Svelte, vanilla JS) | `createAPIClient` from `./generated/routes` |
 | Server-side JavaScript | `createAPIClient` from `./generated/routes` |
 | CLI tools or scripts | `createAPIClient` from `./generated/routes` |
@@ -234,8 +234,8 @@ External backends like Next.js or Express can use HTTP to call Agentuity routes 
 
 ## Next Steps
 
-- [React Hooks](/Build/Frontend/react-hooks): State-managed hooks for React apps
-- [Provider Setup](/Build/Frontend/provider-setup): Configure `AgentuityProvider` for React
-- [Adding Authentication](/Build/Frontend/authentication): Protect routes with Agentuity Auth
-- [WebSockets](/Build/Routes/websockets): Create WebSocket routes
-- [Server-Sent Events](/Build/Routes/sse): Create SSE routes
+- [React Hooks](/Frontend/react-hooks): State-managed hooks for React apps
+- [Provider Setup](/Frontend/provider-setup): Configure `AgentuityProvider` for React
+- [Adding Authentication](/Frontend/authentication): Protect routes with Agentuity Auth
+- [WebSockets](/Routes/websockets): Create WebSocket routes
+- [Server-Sent Events](/Routes/sse): Create SSE routes

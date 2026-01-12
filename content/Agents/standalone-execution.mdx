@@ -53,7 +53,7 @@ cron.schedule('0 * * * *', async () => {
 ```
 
 <Callout type="info" title="Built-in Cron Support">
-For most scheduled tasks, use the [`cron()` middleware](/Build/Routes/cron) instead. It handles infrastructure automatically without needing `createAgentContext`. Use standalone execution only when you need external cron management.
+For most scheduled tasks, use the [`cron()` middleware](/Routes/cron) instead. It handles infrastructure automatically without needing `createAgentContext`. Use standalone execution only when you need external cron management.
 </Callout>
 
 ## Multiple Agents in Sequence
@@ -106,6 +106,6 @@ Standalone contexts provide the same infrastructure as HTTP request handlers:
 
 ## Next Steps
 
-- [Calling Other Agents](/Build/Agents/calling-other-agents): Agent-to-agent communication patterns
-- [Cron Routes](/Build/Routes/cron): Built-in scheduled task support
-- [State Management](/Build/Agents/state-management): Thread and session state
+- [Calling Other Agents](/Agents/calling-other-agents): Agent-to-agent communication patterns
+- [Cron Routes](/Routes/cron): Built-in scheduled task support
+- [State Management](/Agents/state-management): Thread and session state

@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
 
 ## Alternative: HTTP Routes
 
-If you want to centralize storage logic in your Agentuity project (for [middleware](/Build/Routes/middleware), sharing across multiple apps, or avoiding SDK key distribution), use [HTTP routes](/Build/Routes/http) instead.
+If you want to centralize storage logic in your Agentuity project (for [middleware](/Routes/middleware), sharing across multiple apps, or avoiding SDK key distribution), use [HTTP routes](/Routes/http) instead.
 
 ```typescript title="src/api/sessions/route.ts"
 import { createRouter } from '@agentuity/runtime';
@@ -330,6 +330,6 @@ const jsonSchema = toJSONSchema(schema);
 
 ## See Also
 
-- [HTTP Routes](/Build/Routes/http): Route creation with `createRouter`
-- [Route Middleware](/Build/Routes/middleware): Authentication patterns
-- [RPC Client](/Build/Frontend/rpc-client): Typed client generation
+- [HTTP Routes](/Routes/http): Route creation with `createRouter`
+- [Route Middleware](/Routes/middleware): Authentication patterns
+- [RPC Client](/Frontend/rpc-client): Typed client generation

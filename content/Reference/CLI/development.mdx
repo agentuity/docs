@@ -83,9 +83,9 @@ Local mode disables cloud services (KV, Vector, Object Storage). Use when develo
 
 **What happens in local mode:**
 - No connection to Agentuity cloud
-- Storage APIs disabled unless you provide [custom implementations](/Build/Storage/custom)
+- Storage APIs disabled unless you provide [custom implementations](/Storage/custom)
 - Public URL tunneling disabled
-- Requires your own API keys for AI providers (in `.env`), since the [AI Gateway](/Build/Agents/ai-gateway) is not available
+- Requires your own API keys for AI providers (in `.env`), since the [AI Gateway](/Agents/ai-gateway) is not available
 
 **Bring Your Own Storage:**
 
@@ -102,7 +102,7 @@ const app = createApp({
 });
 ```
 
-See [Custom Storage](/Build/Storage/custom) for implementation details.
+See [Custom Storage](/Storage/custom) for implementation details.
 
 ## Profile-Specific Environment Variables
 
@@ -171,7 +171,7 @@ The `--public` flag creates a secure tunnel through Agentuity's edge network, gi
 
 Access the interactive Workbench at `http://localhost:3500/workbench` to test agents visually. It displays agent schemas, handles input validation, and shows execution results with timing metrics.
 
-See [Testing with Workbench](/Build/Agents/workbench) for setup and configuration.
+See [Testing with Workbench](/Agents/workbench) for setup and configuration.
 
 ## Building Your Project
 
@@ -248,5 +248,5 @@ Understanding the differences between local development and deployed production:
 ## Next Steps
 
 - [Deploying to the Cloud](/Reference/CLI/deployment): Deploy to Agentuity Cloud
-- [Creating Agents](/Build/Agents/creating-agents): Create your first agent
-- [HTTP Routes](/Build/Routes/http): Add HTTP endpoints
+- [Creating Agents](/Agents/creating-agents): Create your first agent
+- [HTTP Routes](/Routes/http): Add HTTP endpoints
