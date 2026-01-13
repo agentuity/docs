@@ -140,3 +140,27 @@ article > p {
 .dark .prose a:not([data-card]) {
 	text-decoration-color: var(--color-cyan-500);
 }
+
+/* SDK Explorer - iframe rendered directly inside DocsLayout */
+.sdk-explorer-wrapper {
+	position: fixed;
+	inset: 0;
+	top: var(--fd-nav-height, 0px);
+	left: var(--fd-sidebar-width, 0px);
+	z-index: 10;
+	background: var(--color-fd-background);
+}
+
+.sdk-explorer-wrapper iframe {
+	width: 100%;
+	height: 100%;
+	border: 0;
+}
+
+/* Mobile: full width, account for nav */
+@media (max-width: 767px) {
+	.sdk-explorer-wrapper {
+		left: 0;
+		top: 56px;
+	}
+}

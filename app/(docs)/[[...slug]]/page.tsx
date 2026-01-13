@@ -17,12 +17,11 @@ import { ThemeImage } from '@/components/ThemeImage';
 import { TypingAnimation } from '@/components/TypingAnimation';
 import { XButton } from '@/components/XButton';
 import { source } from '@/lib/source';
+import CodeFromFiles from '../../../components/CodeFromFiles';
 import { CommunityButton } from '../../../components/Community';
 import CopyPageDropdown from '../../../components/CopyPageDropdown';
 import { NavButton } from '../../../components/NavButton';
-import CodeFromFiles from '../../../components/CodeFromFiles';
 import TutorialStep from '../../../components/TutorialStep';
-
 
 export default async function Page(props: {
 	params: Promise<{ slug?: string[] }>;
@@ -31,6 +30,20 @@ export default async function Page(props: {
 	const page = source.getPage(params.slug);
 
 	if (!page) notFound();
+
+	// Handle SDK Explorer page specially - render directly without DocsPage wrapper
+	const isSDKExplorer = params.slug?.[0] === 'SDK-Explorer';
+
+	if (isSDKExplorer) {
+		const { SDKExplorerIframe } = await import(
+			'@/components/SDKExplorerIframe'
+		);
+		return (
+			<div className="sdk-explorer-wrapper">
+				<SDKExplorerIframe />
+			</div>
+		);
+	}
 
 	const MDX = page.data.body;
 

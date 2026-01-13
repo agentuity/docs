@@ -9,13 +9,13 @@ const config = {
 	serverExternalPackages: ['twoslash', 'typescript'],
 	redirects: async () => [
 		{
-			source: '/Get-Started/what-is-agentuity',
-			destination: '/',
+			source: '/',
+			destination: '/SDK-Explorer',
 			permanent: false,
 		},
 		{
 			source: '/Introduction',
-			destination: '/',
+			destination: '/Get-Started/what-is-agentuity',
 			permanent: true,
 		},
 		{
