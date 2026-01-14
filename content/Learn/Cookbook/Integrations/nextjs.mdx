@@ -1,0 +1,207 @@
+---
+title: Using Agentuity with Next.js
+description: Add AI agents to your Next.js application
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+
+export const GitHubIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="size-full">
+    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+  </svg>
+);
+
+Next.js App Router pairs naturally with Agentuity: you get React Server Components for fast initial loads while Agentuity handles your AI logic in a separate, scalable backend. The `useAPI` hook provides end-to-end type safety from your agent schemas to your React components, catching errors at compile time rather than runtime.
+
+<Cards>
+  <Card
+    href="https://github.com/agentuity/sdk/tree/main/apps/testing/nextjs-app"
+    title="View Example"
+    icon={<GitHubIcon />}
+  >
+    Next.js + Agentuity integration example
+  </Card>
+</Cards>
+
+## Setup
+
+### 1. Configure API Rewrites
+
+During development, Next.js runs on one port while Agentuity runs on another. Rewrites let your frontend call `/api/*` as if the routes were local, while Next.js proxies requests to Agentuity behind the scenes:
+
+```typescript title="next.config.ts"
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
+  rewrites: async () => [
+    {
+      source: '/api/:path*',
+      destination: 'http://localhost:3501/api/:path*', // [!code highlight]
+    },
+  ],
+};
+
+export default nextConfig;
+```
+
+### 2. Configure TypeScript Paths
+
+Enable importing generated route types:
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "paths": {
+      "@agentuity/routes": ["./agentuity/src/generated/routes.ts"]
+    }
+  }
+}
+```
+
+### 3. Set Up Dev Scripts
+
+Run both servers concurrently:
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "concurrently -n next,agent \"bun run dev:next\" \"bun run dev:agent\"",
+    "dev:next": "next dev --port 3001",
+    "dev:agent": "cd agentuity && agentuity dev --port 3501",
+    "build:agent": "cd agentuity && agentuity build --dev"
+  }
+}
+```
+
+## Creating an Agent
+
+Define an agent with typed input and output schemas:
+
+```typescript title="agentuity/src/agent/echo/agent.ts"
+import { createAgent } from '@agentuity/runtime';
+import { s } from '@agentuity/schema';
+
+const EchoInput = s.object({
+  message: s.string().describe('The message to echo back'),
+});
+
+const EchoOutput = s.object({
+  echo: s.string().describe('The echoed message'),
+  timestamp: s.string().describe('When the echo was processed'),
+});
+
+export default createAgent('echo', {
+  description: 'Echoes messages with a timestamp',
+  schema: {
+    input: EchoInput,
+    output: EchoOutput,
+  },
+  handler: async (ctx, { message }) => {
+    ctx.logger.info('Echo request', { message });
+    return {
+      echo: message,
+      timestamp: new Date().toISOString(),
+    };
+  },
+});
+```
+
+## Exposing via API Route
+
+Create an API endpoint that calls the agent:
+
+```typescript title="agentuity/src/api/index.ts"
+import { createRouter } from '@agentuity/runtime';
+import echoAgent from '../agent/echo/agent';
+
+const api = createRouter();
+
+api.post('/echo', echoAgent.validator(), async (c) => {
+  const data = c.req.valid('json');
+  const result = await echoAgent.run(data);
+  return c.json(result);
+});
+
+export default api;
+```
+
+## Calling from Next.js
+
+The `useAPI` hook infers types from your agent schemas automatically. When you call `invoke({ message })`, TypeScript knows exactly what fields are required and what the response will contain:
+
+```tsx title="app/components/EchoDemo.tsx"
+'use client';
+
+import { useState } from 'react';
+import { useAPI, AgentuityProvider } from '@agentuity/react';
+import '@agentuity/routes'; // Import for type augmentation
+
+function EchoDemoInner() {
+  const [message, setMessage] = useState('Hello from Next.js!');
+  const { data, invoke, isLoading, error } = useAPI('POST /api/echo'); // [!code highlight]
+
+  return (
+    <div>
+      <input
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Enter a message"
+      />
+      <button onClick={() => invoke({ message })} disabled={isLoading}>
+        {isLoading ? 'Sending...' : 'Send'}
+      </button>
+
+      {error && <p>Error: {error.message}</p>}
+      {data && (
+        <div>
+          <p>Echo: {data.echo}</p>
+          <p>At: {data.timestamp}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function EchoDemo() {
+  return (
+    <AgentuityProvider>
+      <EchoDemoInner />
+    </AgentuityProvider>
+  );
+}
+```
+
+<Callout type="info" title="Type Safety">
+This type safety flows from your agent's schema definition through the generated `routes.ts` file to your React components. If you change your agent's output shape, TypeScript flags mismatches in your frontend immediately.
+</Callout>
+
+## Running the Project
+
+```bash
+# Generate route types
+bun run build:agent
+
+# Start both servers
+bun run dev
+```
+
+- **Next.js**: http://localhost:3001
+- **Agentuity**: http://localhost:3501
+- **API calls**: Next.js proxies `/api/*` to Agentuity
+
+## Deployment
+
+The API rewrites only work in development. For deployment:
+
+1. **Deploy Agentuity** to the Agentuity platform with `agentuity deploy`
+2. **Update your Next.js app** to call the deployed Agentuity URL directly, or configure your hosting platform's rewrites
+
+<Callout type="warning" title="Environment Configuration">
+Set `NEXT_PUBLIC_AGENTUITY_URL` to your deployed Agentuity project URL and update the `AgentuityProvider` configuration accordingly.
+</Callout>
+
+## Next Steps
+
+- [TanStack Start Integration](/Learn/Cookbook/Integrations/tanstack-start): Alternative React framework with file-based routing
+- [Turborepo Integration](/Learn/Cookbook/Integrations/turborepo): Monorepo setup with shared packages
+- [React Hooks](/Frontend/react-hooks): All available frontend hooks

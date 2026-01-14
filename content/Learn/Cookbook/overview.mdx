@@ -4,7 +4,7 @@ description: Tutorials and patterns for building with Agentuity
 ---
 
 import { Card, Cards } from 'fumadocs-ui/components/card';
-import { Bot, Database, KeyRound } from 'lucide-react';
+import { Bot, Database, KeyRound, Layers, Plug } from 'lucide-react';
 
 ## Tutorials
 
@@ -39,3 +39,44 @@ Copy-paste solutions for common tasks.
 - [Tailwind CSS Setup](/Learn/Cookbook/Patterns/tailwind-setup) — Add Tailwind styling to your frontend
 - [Webhook Handler](/Learn/Cookbook/Patterns/webhook-handler) — Process external webhooks with signature verification
 
+## Integrations
+
+Use Agentuity with your favorite frameworks and services.
+
+<Cards>
+  <Card
+    href="/Learn/Cookbook/Integrations/nextjs"
+    title="Next.js"
+    icon={<Plug />}
+  >
+    Run Agentuity agents alongside a Next.js frontend
+  </Card>
+  <Card
+    href="/Learn/Cookbook/Integrations/tanstack-start"
+    title="TanStack Start"
+    icon={<Plug />}
+  >
+    Type-safe React applications with TanStack Start
+  </Card>
+  <Card
+    href="/Learn/Cookbook/Integrations/turborepo"
+    title="Turborepo"
+    icon={<Layers />}
+  >
+    Monorepo setup with shared types between frontend and agents
+  </Card>
+  <Card
+    href="/Learn/Cookbook/Integrations/clerk"
+    title="Clerk"
+    icon={<KeyRound />}
+  >
+    User authentication with Clerk
+  </Card>
+  <Card
+    href="/Learn/Cookbook/Integrations/auth0"
+    title="Auth0"
+    icon={<KeyRound />}
+  >
+    User authentication with Auth0
+  </Card>
+</Cards>

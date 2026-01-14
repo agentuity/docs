@@ -1,0 +1,352 @@
+---
+title: Using Agentuity with Auth0
+description: Add Auth0 authentication to your Agentuity project
+---
+
+Integrate [Auth0](https://auth0.com) for user authentication when you need enterprise features like SAML/OIDC federation, custom database connections, or advanced security rules.
+
+<Callout type="info" title="First-Party Alternative">
+Agentuity Auth (`@agentuity/auth`) is our recommended authentication solution with built-in session management, organizations, and API keys. Use this guide only if you specifically need Auth0.
+</Callout>
+
+## Overview
+
+The integration has three parts:
+
+1. **Frontend**: Auth0's React SDK handles login flows and token management
+2. **Bridge**: A component that passes Auth0's access token to Agentuity's `useAPI` hook
+3. **Backend**: Hono middleware that verifies JWTs using the `jose` library and Auth0's JWKS endpoint
+
+## Installation
+
+```bash
+bun add @auth0/auth0-react jose
+```
+
+## Client Setup
+
+### 1. Provider Configuration
+
+Wrap your app with both Auth0 and Agentuity providers:
+
+```tsx title="src/web/frontend.tsx"
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { Auth0Provider } from '@auth0/auth0-react';
+import { AgentuityProvider } from '@agentuity/react';
+import { App } from './App';
+import { Auth0Bridge } from './Auth0Bridge';
+
+const AUTH0_DOMAIN = import.meta.env.AGENTUITY_PUBLIC_AUTH0_DOMAIN;
+const AUTH0_CLIENT_ID = import.meta.env.AGENTUITY_PUBLIC_AUTH0_CLIENT_ID;
+const AUTH0_AUDIENCE = import.meta.env.AGENTUITY_PUBLIC_AUTH0_AUDIENCE;
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <Auth0Provider
+      domain={AUTH0_DOMAIN}
+      clientId={AUTH0_CLIENT_ID}
+      authorizationParams={{
+        redirect_uri: window.location.origin,
+        audience: AUTH0_AUDIENCE,
+      }}
+    >
+      <AgentuityProvider>
+        <Auth0Bridge> {/* [!code highlight] */}
+          <App />
+        </Auth0Bridge>
+      </AgentuityProvider>
+    </Auth0Provider>
+  </React.StrictMode>
+);
+```
+
+<Callout type="warning" title="Provider Order">
+`Auth0Bridge` must be inside both `Auth0Provider` and `AgentuityProvider`. The order matters for proper auth state propagation.
+</Callout>
+
+### 2. Auth Bridge Component
+
+The bridge component fetches Auth0's access token and passes it to Agentuity's auth context. Note the use of `getAccessTokenSilently`, which refreshes expired tokens automatically:
+
+```tsx title="src/web/Auth0Bridge.tsx"
+import { useEffect, type ReactNode } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
+import { useAuth } from '@agentuity/react';
+
+interface Auth0BridgeProps {
+  children: ReactNode;
+  refreshInterval?: number;
+}
+
+export function Auth0Bridge({
+  children,
+  refreshInterval = 60000
+}: Auth0BridgeProps) {
+  const { getAccessTokenSilently, isAuthenticated, isLoading } = useAuth0();
+  const { setAuthHeader, setAuthLoading } = useAuth();
+
+  useEffect(() => {
+    if (!setAuthHeader || !setAuthLoading) return;
+
+    const fetchToken = async () => {
+      setAuthLoading(true);
+      try {
+        if (!isLoading && isAuthenticated) {
+          const token = await getAccessTokenSilently();
+          setAuthHeader(token ? `Bearer ${token}` : null); // [!code highlight]
+        } else {
+          setAuthHeader(null);
+        }
+      } catch (error) {
+        console.error('Failed to get Auth0 token:', error);
+        setAuthHeader(null);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
+    fetchToken();
+    const interval = setInterval(fetchToken, refreshInterval);
+    return () => clearInterval(interval);
+  }, [
+    getAccessTokenSilently,
+    isAuthenticated,
+    isLoading,
+    refreshInterval,
+    setAuthHeader,
+    setAuthLoading,
+  ]);
+
+  return <>{children}</>;
+}
+```
+
+### 3. Using Auth in Components
+
+```tsx
+import { useAuth } from '@agentuity/react';
+import { useAuth0 } from '@auth0/auth0-react';
+
+function Header() {
+  const { isAuthenticated, authLoading } = useAuth();
+  const { user, loginWithRedirect, logout } = useAuth0();
+
+  if (authLoading) return <div>Loading...</div>;
+
+  return (
+    <header>
+      {isAuthenticated ? (
+        <>
+          <span>Welcome, {user?.name}!</span>
+          <img src={user?.picture} alt={user?.name} />
+          <button
+            onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
+          >
+            Sign Out
+          </button>
+        </>
+      ) : (
+        <button onClick={() => loginWithRedirect()}>Sign In</button>
+      )}
+    </header>
+  );
+}
+```
+
+## Server Setup
+
+### 1. Auth0 Middleware
+
+The middleware verifies JWTs using Auth0's JWKS (JSON Web Key Set) endpoint. The `jose` library fetches and caches the public keys, handling key rotation automatically:
+
+```typescript title="src/middleware/auth0.ts"
+import type { MiddlewareHandler, Context } from 'hono';
+import * as jose from 'jose';
+
+interface Auth0User {
+  sub: string;
+  email?: string;
+  name?: string;
+  picture?: string;
+  [key: string]: unknown;
+}
+
+interface Auth0AuthContext {
+  user: Auth0User;
+  userId: string;
+}
+
+declare module 'hono' {
+  interface ContextVariableMap {
+    auth0: Auth0AuthContext | null;
+  }
+}
+
+interface Auth0MiddlewareOptions {
+  domain?: string;
+  audience?: string;
+  optional?: boolean;
+}
+
+let jwks: jose.JWTVerifyGetKey | null = null;
+
+async function getJwks(domain: string): Promise<jose.JWTVerifyGetKey> {
+  if (!jwks) {
+    jwks = jose.createRemoteJWKSet(
+      new URL(`https://${domain}/.well-known/jwks.json`)
+    );
+  }
+  return jwks;
+}
+
+export function createAuth0Middleware(
+  options: Auth0MiddlewareOptions = {}
+): MiddlewareHandler {
+  const {
+    domain = process.env.AUTH0_DOMAIN,
+    audience = process.env.AUTH0_AUDIENCE,
+    optional = false,
+  } = options;
+
+  if (!domain) {
+    throw new Error('AUTH0_DOMAIN is required');
+  }
+
+  return async (c: Context, next) => {
+    const authHeader = c.req.header('Authorization');
+
+    if (!authHeader?.startsWith('Bearer ')) {
+      if (optional) {
+        c.set('auth0', null);
+        await next();
+        return;
+      }
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const token = authHeader.slice(7);
+
+    try {
+      const verifier = await getJwks(domain);
+
+      const { payload } = await jose.jwtVerify(token, verifier, {
+        issuer: `https://${domain}/`,
+        audience,
+      });
+
+      const user: Auth0User = {
+        sub: payload.sub!,
+        email: payload.email as string | undefined,
+        name: payload.name as string | undefined,
+        picture: payload.picture as string | undefined,
+        ...payload,
+      };
+
+      c.set('auth0', { user, userId: payload.sub! });
+      await next();
+    } catch (error) {
+      c.var.logger.error('Auth0 verification failed', { error });
+
+      if (optional) {
+        c.set('auth0', null);
+        await next();
+        return;
+      }
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+  };
+}
+```
+
+### 2. Protecting Routes
+
+```typescript title="src/api/index.ts"
+import { createRouter } from '@agentuity/runtime';
+import { createAuth0Middleware } from '../middleware/auth0';
+
+const api = createRouter();
+
+api.use('/api/*', createAuth0Middleware()); // [!code highlight]
+
+api.get('/api/profile', async (c) => {
+  const auth = c.var.auth0!;
+  return c.json({
+    id: auth.userId,
+    email: auth.user.email,
+    name: auth.user.name,
+    picture: auth.user.picture,
+  });
+});
+
+export default api;
+```
+
+### 3. Optional Auth
+
+For routes that work with or without authentication:
+
+```typescript
+api.get('/api/content', createAuth0Middleware({ optional: true }), async (c) => {
+  const auth = c.var.auth0;
+
+  if (auth) {
+    return c.json({ content: 'Premium content', userId: auth.userId });
+  }
+
+  return c.json({ content: 'Public content' });
+});
+```
+
+## Environment Variables
+
+| Variable | Side | Description |
+|----------|------|-------------|
+| `AGENTUITY_PUBLIC_AUTH0_DOMAIN` | Client | Auth0 domain (e.g., `your-tenant.auth0.com`) |
+| `AGENTUITY_PUBLIC_AUTH0_CLIENT_ID` | Client | Auth0 application client ID |
+| `AGENTUITY_PUBLIC_AUTH0_AUDIENCE` | Client | Auth0 API audience (optional) |
+| `AUTH0_DOMAIN` | Server | Auth0 domain (for JWT verification) |
+| `AUTH0_AUDIENCE` | Server | Auth0 API audience (optional) |
+
+### Auth0 Dashboard Setup
+
+1. Create a **Single Page Application** for your frontend
+2. Create an **API** for your backend (required to receive JWTs instead of opaque tokens)
+3. Configure allowed callback URLs, logout URLs, and web origins
+4. Copy the domain, client ID, and API audience values
+
+## Troubleshooting
+
+### Token not being sent
+
+Ensure the providers are in the correct order:
+
+```tsx
+<Auth0Provider>
+  <AgentuityProvider>
+    <Auth0Bridge>
+      <App />
+    </Auth0Bridge>
+  </AgentuityProvider>
+</Auth0Provider>
+```
+
+### "Unauthorized" on protected routes
+
+1. Check that `AUTH0_DOMAIN` and `AUTH0_AUDIENCE` are set on the server
+2. Verify the token is being sent (check Network tab in DevTools)
+3. Ensure the audience matches between client and server
+
+### "consent_required" error
+
+Enable "Allow Skipping User Consent" in your Auth0 API settings for first-party applications.
+
+### Token refresh issues
+
+Auth0 tokens expire based on your API settings. The `Auth0Bridge` refreshes tokens on an interval. You can also force a fresh token with `getAccessTokenSilently({ cacheMode: 'off' })`.
+
+## Next Steps
+
+- [Clerk Integration](/Learn/Cookbook/Integrations/clerk): Alternative auth provider
+- [Middleware](/Routes/middleware): More middleware patterns
+- [React Hooks](/Frontend/react-hooks): Building custom UIs

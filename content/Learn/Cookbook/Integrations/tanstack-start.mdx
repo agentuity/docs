@@ -1,0 +1,239 @@
+---
+title: Using Agentuity with TanStack Start
+description: Build type-safe React applications with TanStack Start and Agentuity
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+
+export const GitHubIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="size-full">
+    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+  </svg>
+);
+
+TanStack Start combines file-based routing with server-side rendering, giving you fast initial page loads and modern React patterns. With Agentuity handling your AI backend, you get the same type-safe `useAPI` hook as Next.js but with TanStack's streaming and data loading capabilities. The main consideration is SSR: since `useAPI` uses browser APIs, you need to defer its execution until hydration completes.
+
+<Cards>
+  <Card
+    href="https://github.com/agentuity/sdk/tree/main/apps/testing/tanstack-start"
+    title="View Example"
+    icon={<GitHubIcon />}
+  >
+    TanStack Start + Agentuity integration example
+  </Card>
+</Cards>
+
+## Setup
+
+### 1. Configure Vite Proxy
+
+Proxy API requests to the Agentuity backend:
+
+```typescript title="vite.config.ts"
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  server: {
+    port: 3000,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3500',
+        changeOrigin: true,
+      },
+    },
+  },
+  resolve: {
+    alias: {
+      '@agentuity/routes': './agentuity/src/generated/routes.ts',
+    },
+  },
+});
+```
+
+### 2. Configure TypeScript Paths
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "paths": {
+      "@agentuity/routes": ["./agentuity/src/generated/routes.ts"]
+    }
+  }
+}
+```
+
+### 3. Set Up Dev Scripts
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "concurrently -n web,agent \"bun run dev:web\" \"bun run dev:agent\"",
+    "dev:web": "vite --port 3000",
+    "dev:agent": "cd agentuity && agentuity dev --port 3500",
+    "build:agent": "cd agentuity && agentuity build --dev"
+  }
+}
+```
+
+## SSR-Safe Client Components
+
+TanStack Start supports SSR, which requires careful handling of client-only code like `useAPI`.
+
+### Lazy Loading Pattern
+
+Wrap client components to avoid hydration mismatches:
+
+```tsx title="src/components/AgentDemo.tsx"
+import { lazy, Suspense, useState, useEffect } from 'react';
+
+const AgentDemoClient = lazy(() => import('./AgentDemoClient')); // [!code highlight]
+
+export function AgentDemo() {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AgentDemoClient />
+    </Suspense>
+  );
+}
+```
+
+### Client Component
+
+```tsx title="src/components/AgentDemoClient.tsx"
+import { useState } from 'react';
+import { useAPI, AgentuityProvider } from '@agentuity/react';
+import '@agentuity/routes';
+
+function AgentDemoInner() {
+  const [message, setMessage] = useState('Hello from TanStack!');
+  const { data, invoke, isLoading, error } = useAPI('POST /api/echo'); // [!code highlight]
+
+  return (
+    <div className="p-4">
+      <input
+        className="border rounded px-2 py-1"
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+      />
+      <button
+        className="ml-2 bg-blue-500 text-white px-4 py-1 rounded"
+        onClick={() => invoke({ message })}
+        disabled={isLoading}
+      >
+        {isLoading ? 'Sending...' : 'Send'}
+      </button>
+
+      {error && <p className="text-red-500 mt-2">{error.message}</p>}
+      {data && (
+        <div className="mt-4">
+          <p><strong>Echo:</strong> {data.echo}</p>
+          <p><strong>Time:</strong> {data.timestamp}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function AgentDemoClient() {
+  return (
+    <AgentuityProvider>
+      <AgentDemoInner />
+    </AgentuityProvider>
+  );
+}
+```
+
+<Callout type="info" title="Why Lazy Loading?">
+TanStack Start renders pages on the server before sending them to the browser. The `useAPI` hook uses `fetch` and other browser APIs that don't exist during server rendering. By lazy loading with an `isClient` check, you ensure React renders a placeholder on the server and only mounts the real component after hydration completes. This prevents the "hydration mismatch" error where server HTML differs from client HTML.
+</Callout>
+
+## Creating an Agent
+
+```typescript title="agentuity/src/agent/echo/agent.ts"
+import { createAgent } from '@agentuity/runtime';
+import { s } from '@agentuity/schema';
+
+export const EchoInput = s.object({
+  message: s.string().describe('Message to echo'),
+});
+
+export const EchoOutput = s.object({
+  echo: s.string(),
+  timestamp: s.string(),
+});
+
+export default createAgent('echo', {
+  description: 'Echoes messages with timestamp',
+  schema: { input: EchoInput, output: EchoOutput },
+  handler: async (ctx, { message }) => {
+    ctx.logger.info('Echo request', { message });
+    return {
+      echo: message,
+      timestamp: new Date().toISOString(),
+    };
+  },
+});
+```
+
+## API Routes
+
+```typescript title="agentuity/src/api/index.ts"
+import { createRouter } from '@agentuity/runtime';
+import echoAgent from '../agent/echo/agent';
+
+const api = createRouter();
+
+api.post('/echo', echoAgent.validator(), async (c) => {
+  const data = c.req.valid('json');
+  return c.json(await echoAgent.run(data));
+});
+
+export default api;
+```
+
+## Type Flow
+
+Agentuity generates TypeScript types from your agent schemas, creating an end-to-end type-safe chain:
+
+1. You define input/output schemas with `@agentuity/schema` in your agent
+2. Running `agentuity build` generates `routes.ts` with TypeScript interfaces matching those schemas
+3. Your frontend imports `@agentuity/routes` which augments the `useAPI` hook's type definitions
+4. When you write `useAPI('POST /api/echo')`, TypeScript knows the exact request and response shapes
+
+```typescript
+// TypeScript knows the exact shape
+const { data } = useAPI('POST /api/echo');
+//      ^? { echo: string; timestamp: string } | undefined
+```
+
+## Running
+
+```bash
+# Generate types first
+bun run build:agent
+
+# Start both servers
+bun run dev
+```
+
+- **Frontend**: http://localhost:3000
+- **Backend**: http://localhost:3500
+
+## Next Steps
+
+- [Turborepo Integration](/Learn/Cookbook/Integrations/turborepo): Scale to a monorepo with shared packages
+- [Next.js Integration](/Learn/Cookbook/Integrations/nextjs): Alternative with Next.js App Router
+- [Streaming Responses](/Agents/streaming-responses): Stream agent output in real time

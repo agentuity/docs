@@ -1,0 +1,212 @@
+---
+title: Using Agentuity with Turborepo
+description: Build monorepo applications with shared types between frontend and agents
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card';
+
+export const GitHubIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="size-full">
+    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+  </svg>
+);
+
+When your project grows beyond a single app, Turborepo keeps everything in sync. Define your schemas once in a shared package, and both your Agentuity agents and frontend import from the same source. Turborepo's task dependencies ensure route types are always generated before your frontend starts, so TypeScript never sees stale definitions.
+
+<Cards>
+  <Card
+    href="https://github.com/agentuity/example-tanstack-turborepo"
+    title="View Full Example"
+    icon={<GitHubIcon />}
+  >
+    TanStack Start + Agentuity + Turborepo template
+  </Card>
+</Cards>
+
+## Why Turborepo?
+
+Without a monorepo tool, you face a timing problem: your frontend needs the generated `routes.ts` file to exist before TypeScript can validate your `useAPI` calls. Running servers manually means hoping you started them in the right order. Turborepo solves this with explicit task dependencies:
+
+- **Shared schemas**: Define validation schemas once in `packages/shared`, import them in both agents and frontend
+- **Task ordering**: The `dependsOn` field guarantees route types exist before the frontend dev server starts
+- **Incremental builds**: Turborepo caches build outputs, so regenerating routes only happens when agent code changes
+
+## Key Configuration
+
+### Turborepo Task Graph
+
+The critical piece: ensure route types are generated before dev starts.
+
+```json title="turbo.json"
+{
+  "tasks": {
+    "build:routes": {
+      "cache": false,
+      "outputs": ["src/generated/**"]
+    },
+    "dev": {
+      "dependsOn": ["@my-monorepo/agentuity#build:routes"], // [!code highlight]
+      "cache": false,
+      "persistent": true
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".agentuity/**"]
+    }
+  }
+}
+```
+
+<Callout type="info" title="Task Dependencies">
+The `#` syntax (`package#task`) creates a cross-package dependency. When you run `bun dev` at the root, Turborepo first runs `build:routes` in the agentuity package, waits for it to complete, then starts both dev servers in parallel. Your frontend's TypeScript sees the generated types from the first keystroke.
+</Callout>
+
+### Agentuity Package
+
+Export generated routes for the frontend to consume:
+
+```json title="apps/agentuity/package.json"
+{
+  "name": "@my-monorepo/agentuity",
+  "exports": {
+    "./routes": "./src/generated/routes.ts"
+  },
+  "scripts": {
+    "dev": "agentuity dev",
+    "build": "agentuity build",
+    "build:routes": "agentuity build --dev"
+  }
+}
+```
+
+### Frontend Package
+
+Import routes as a dev dependency:
+
+```json title="apps/web/package.json"
+{
+  "name": "@my-monorepo/web",
+  "scripts": {
+    "dev": "vite --port 3000"
+  },
+  "dependencies": {
+    "@my-monorepo/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@my-monorepo/agentuity": "workspace:*"
+  }
+}
+```
+
+## Shared Schemas
+
+Define schemas once, use everywhere:
+
+```typescript title="packages/shared/src/schemas.ts"
+import { s } from '@agentuity/schema';
+
+export const LANGUAGES = ['Spanish', 'French', 'German', 'Chinese'] as const;
+
+export const TranslateInput = s.object({
+  text: s.string().describe('Text to translate'),
+  toLanguage: s.enum(LANGUAGES).describe('Target language'),
+});
+
+export const TranslateOutput = s.object({
+  translation: s.string(),
+  originalText: s.string(),
+  language: s.string(),
+});
+```
+
+Use in your agent:
+
+```typescript title="apps/agentuity/src/agent/translate/agent.ts"
+import { createAgent } from '@agentuity/runtime';
+import { TranslateInput, TranslateOutput } from '@my-monorepo/shared';
+
+export default createAgent('translate', {
+  schema: { input: TranslateInput, output: TranslateOutput },
+  handler: async (ctx, { text, toLanguage }) => {
+    // Translation logic...
+    return { translation, originalText: text, language: toLanguage };
+  },
+});
+```
+
+Use the same constants in your frontend:
+
+```tsx title="apps/web/src/components/Translator.tsx"
+import { LANGUAGES } from '@my-monorepo/shared';
+
+function LanguageSelect({ value, onChange }) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)}>
+      {LANGUAGES.map((lang) => (
+        <option key={lang} value={lang}>{lang}</option>
+      ))}
+    </select>
+  );
+}
+```
+
+## Type-Safe API Calls
+
+Import the generated routes for full type inference:
+
+```tsx title="apps/web/src/components/Translator.tsx"
+import { useAPI, AgentuityProvider } from '@agentuity/react';
+import '@my-monorepo/agentuity/routes'; // [!code highlight]
+
+function TranslatorInner() {
+  const { data, invoke, isLoading } = useAPI('POST /api/translate'); // [!code highlight]
+  // TypeScript knows: invoke({ text: string, toLanguage: 'Spanish' | 'French' | ... })
+  // TypeScript knows: data?.translation, data?.originalText, data?.language
+
+  return (
+    <button onClick={() => invoke({ text: 'Hello', toLanguage: 'Spanish' })}>
+      Translate
+    </button>
+  );
+}
+```
+
+## Running the Example
+
+Clone the template and add your credentials:
+
+```bash
+git clone https://github.com/agentuity/example-tanstack-turborepo
+cd example-tanstack-turborepo
+bun install
+
+# Add your SDK key
+cp apps/agentuity/.env.example apps/agentuity/.env
+# Edit .env and add AGENTUITY_SDK_KEY
+
+# Start everything
+bun dev
+```
+
+Turborepo will:
+1. Run `build:routes` in the agentuity app
+2. Start the agentuity dev server
+3. Start the web dev server (with route types available)
+
+## Deployment
+
+Deploy each app independently:
+
+```bash
+# Deploy Agentuity
+cd apps/agentuity && agentuity deploy
+
+# Deploy frontend to your hosting platform
+cd apps/web && bun run build
+# Deploy dist/ to Vercel, Netlify, etc.
+```
+
+## Next Steps
+
+- [TanStack Start Integration](/Learn/Cookbook/Integrations/tanstack-start): Single-project setup without monorepo
+- [Next.js Integration](/Learn/Cookbook/Integrations/nextjs): Use Next.js instead of TanStack Start

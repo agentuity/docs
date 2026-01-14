@@ -1,0 +1,10 @@
+{
+  "title": "Integrations",
+  "pages": [
+    "nextjs",
+    "tanstack-start",
+    "turborepo",
+    "clerk",
+    "auth0"
+  ]
+}

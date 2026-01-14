@@ -1,0 +1,289 @@
+---
+title: Using Agentuity with Clerk
+description: Add Clerk authentication to your Agentuity project
+---
+
+Integrate [Clerk](https://clerk.com) for user authentication when you need its specific features, like pre-built UI components, organization management, or social login providers you already use.
+
+<Callout type="info" title="First-Party Alternative">
+Agentuity Auth (`@agentuity/auth`) is our recommended authentication solution with built-in session management, organizations, and API keys. Use this guide only if you specifically need Clerk.
+</Callout>
+
+## Overview
+
+The integration has three parts:
+
+1. **Frontend**: Clerk's React SDK handles login UI and session state
+2. **Bridge**: A component that passes Clerk's JWT to Agentuity's `useAPI` hook
+3. **Backend**: Hono middleware that verifies JWTs using Clerk's `@clerk/backend` SDK
+
+## Installation
+
+```bash
+bun add @clerk/clerk-react @clerk/backend
+```
+
+## Client Setup
+
+### 1. Provider Configuration
+
+Wrap your app with both Clerk and Agentuity providers:
+
+```tsx title="src/web/frontend.tsx"
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { ClerkProvider } from '@clerk/clerk-react';
+import { AgentuityProvider } from '@agentuity/react';
+import { App } from './App';
+import { ClerkAuthBridge } from './ClerkAuthBridge';
+
+const CLERK_KEY = import.meta.env.AGENTUITY_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <ClerkProvider publishableKey={CLERK_KEY}>
+      <AgentuityProvider>
+        <ClerkAuthBridge> {/* [!code highlight] */}
+          <App />
+        </ClerkAuthBridge>
+      </AgentuityProvider>
+    </ClerkProvider>
+  </React.StrictMode>
+);
+```
+
+<Callout type="warning" title="Provider Order">
+`ClerkAuthBridge` must be inside both `ClerkProvider` and `AgentuityProvider`. The order matters for proper auth state propagation.
+</Callout>
+
+### 2. Auth Bridge Component
+
+The bridge component fetches Clerk's JWT and passes it to Agentuity's auth context. This way, every `useAPI` call automatically includes the `Authorization` header:
+
+```tsx title="src/web/ClerkAuthBridge.tsx"
+import { useEffect, type ReactNode } from 'react';
+import { useAuth as useClerkAuth } from '@clerk/clerk-react';
+import { useAuth } from '@agentuity/react';
+
+interface ClerkAuthBridgeProps {
+  children: ReactNode;
+  refreshInterval?: number;
+}
+
+export function ClerkAuthBridge({
+  children,
+  refreshInterval = 60000
+}: ClerkAuthBridgeProps) {
+  const { getToken, isLoaded, isSignedIn } = useClerkAuth();
+  const { setAuthHeader, setAuthLoading } = useAuth();
+
+  useEffect(() => {
+    if (!setAuthHeader || !setAuthLoading) return;
+
+    const fetchToken = async () => {
+      setAuthLoading(true);
+      try {
+        if (isLoaded && isSignedIn) {
+          const token = await getToken();
+          setAuthHeader(token ? `Bearer ${token}` : null); // [!code highlight]
+        } else {
+          setAuthHeader(null);
+        }
+      } catch (error) {
+        console.error('Failed to get Clerk token:', error);
+        setAuthHeader(null);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
+    fetchToken();
+    const interval = setInterval(fetchToken, refreshInterval);
+    return () => clearInterval(interval);
+  }, [getToken, isLoaded, isSignedIn, refreshInterval, setAuthHeader, setAuthLoading]);
+
+  return <>{children}</>;
+}
+```
+
+### 3. Using Auth in Components
+
+```tsx
+import { useAuth } from '@agentuity/react';
+import { useUser, SignInButton, UserButton } from '@clerk/clerk-react';
+
+function Header() {
+  const { isAuthenticated, authLoading } = useAuth();
+  const { user } = useUser();
+
+  if (authLoading) return <div>Loading...</div>;
+
+  return (
+    <header>
+      {isAuthenticated ? (
+        <>
+          <span>Welcome, {user?.firstName}!</span>
+          <UserButton />
+        </>
+      ) : (
+        <SignInButton />
+      )}
+    </header>
+  );
+}
+```
+
+## Server Setup
+
+### 1. Clerk Middleware
+
+The middleware verifies JWTs using Clerk's backend SDK. Unlike rolling your own JWT verification, `@clerk/backend` handles key rotation and token validation automatically:
+
+```typescript title="src/middleware/clerk.ts"
+import type { MiddlewareHandler, Context } from 'hono';
+import { createClerkClient, type User } from '@clerk/backend';
+
+interface ClerkAuthContext {
+  user: User;
+  userId: string;
+}
+
+declare module 'hono' {
+  interface ContextVariableMap {
+    clerkAuth: ClerkAuthContext | null;
+  }
+}
+
+interface ClerkMiddlewareOptions {
+  secretKey?: string;
+  optional?: boolean;
+}
+
+export function createClerkMiddleware(
+  options: ClerkMiddlewareOptions = {}
+): MiddlewareHandler {
+  const {
+    secretKey = process.env.CLERK_SECRET_KEY,
+    optional = false
+  } = options;
+
+  if (!secretKey) {
+    throw new Error('CLERK_SECRET_KEY is required');
+  }
+
+  const clerk = createClerkClient({ secretKey });
+
+  return async (c: Context, next) => {
+    const authHeader = c.req.header('Authorization');
+
+    if (!authHeader?.startsWith('Bearer ')) {
+      if (optional) {
+        c.set('clerkAuth', null);
+        await next();
+        return;
+      }
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const token = authHeader.slice(7);
+
+    try {
+      const payload = await clerk.verifyToken(token);
+      const user = await clerk.users.getUser(payload.sub);
+
+      c.set('clerkAuth', { user, userId: user.id });
+      await next();
+    } catch (error) {
+      c.var.logger.error('Clerk verification failed', { error });
+
+      if (optional) {
+        c.set('clerkAuth', null);
+        await next();
+        return;
+      }
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+  };
+}
+```
+
+### 2. Protecting Routes
+
+```typescript title="src/api/index.ts"
+import { createRouter } from '@agentuity/runtime';
+import { createClerkMiddleware } from '../middleware/clerk';
+
+const api = createRouter();
+
+api.use('/api/*', createClerkMiddleware()); // [!code highlight]
+
+api.get('/api/profile', async (c) => {
+  const auth = c.var.clerkAuth!;
+  return c.json({
+    id: auth.userId,
+    email: auth.user.emailAddresses[0]?.emailAddress,
+    name: `${auth.user.firstName} ${auth.user.lastName}`,
+  });
+});
+
+export default api;
+```
+
+### 3. Optional Auth
+
+For routes that work with or without authentication:
+
+```typescript
+api.get('/api/content', createClerkMiddleware({ optional: true }), async (c) => {
+  const auth = c.var.clerkAuth;
+
+  if (auth) {
+    // Personalized content for logged-in users
+    return c.json({ content: 'Premium content', userId: auth.userId });
+  }
+
+  // Public content for anonymous users
+  return c.json({ content: 'Public content' });
+});
+```
+
+## Environment Variables
+
+| Variable | Side | Description |
+|----------|------|-------------|
+| `AGENTUITY_PUBLIC_CLERK_PUBLISHABLE_KEY` | Client | Clerk publishable key (bundled into frontend) |
+| `CLERK_SECRET_KEY` | Server | Clerk secret key (never exposed to client) |
+
+Get your keys from the [Clerk Dashboard](https://dashboard.clerk.com).
+
+## Troubleshooting
+
+### Token not being sent
+
+Ensure the providers are in the correct order:
+
+```tsx
+<ClerkProvider>
+  <AgentuityProvider>
+    <ClerkAuthBridge>
+      <App />
+    </ClerkAuthBridge>
+  </AgentuityProvider>
+</ClerkProvider>
+```
+
+### "Unauthorized" on protected routes
+
+1. Check that `CLERK_SECRET_KEY` is set on the server
+2. Verify the token is being sent (check Network tab in DevTools)
+3. Ensure the middleware is applied before your routes
+
+### Token refresh issues
+
+Clerk tokens expire every 60 seconds by default. The `ClerkAuthBridge` refreshes tokens on an interval. Adjust `refreshInterval` if needed.
+
+## Next Steps
+
+- [Auth0 Integration](/Learn/Cookbook/Integrations/auth0): Alternative auth provider
+- [Middleware](/Routes/middleware): More middleware patterns
+- [React Hooks](/Frontend/react-hooks): Building custom UIs
