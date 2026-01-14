@@ -335,6 +335,19 @@ await ctx.sandbox.destroy('sbx_abc123');
 | `timeout` | `string` | Override execution timeout |
 | `signal` | `AbortSignal` | Cancel the execution |
 
+### Execution
+
+Returned by `sandbox.execute()`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `executionId` | `string` | Unique execution ID for debugging |
+| `status` | `string` | `'queued'`, `'running'`, `'completed'`, `'failed'`, `'timeout'`, `'cancelled'` |
+| `exitCode` | `number` | Process exit code (when completed) |
+| `durationMs` | `number` | Execution duration in milliseconds |
+| `stdoutStreamUrl` | `string` | URL to fetch stdout stream |
+| `stderrStreamUrl` | `string` | URL to fetch stderr stream |
+
 ### SandboxRunResult
 
 | Field | Type | Description |
