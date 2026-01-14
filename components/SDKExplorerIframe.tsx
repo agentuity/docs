@@ -42,7 +42,11 @@ export function SDKExplorerIframe() {
 				return;
 			}
 			if (event.data?.type === 'NAVIGATE' && event.data.path) {
-				window.location.href = event.data.path;
+				const path = event.data.path;
+				// Only allow relative paths to prevent open redirects
+				if (typeof path === 'string' && path.startsWith('/') && !path.startsWith('//')) {
+					window.location.href = path;
+				}
 			}
 		};
 		window.addEventListener('message', handleMessage);
