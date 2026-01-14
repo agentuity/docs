@@ -244,10 +244,6 @@ Removing a deployment permanently deletes it. You cannot rollback to a removed d
 
 ## Custom Domains
 
-You can configure custom domains using either the configuration file or CLI commands.
-
-### Option 1: Configuration File
-
 Configure custom domains in `agentuity.json`:
 
 ```json
@@ -313,25 +309,26 @@ After deployment with custom domains, the CLI only shows custom URLs:
 
 The project URL and deployment-specific URLs still exist but custom domains take precedence in the output.
 
-### Option 2: CLI Commands
+## Resource Configuration
 
-Manage custom domains directly from the CLI:
+Configure CPU, memory, and disk limits in `agentuity.json`:
 
-```bash
-# List configured domains
-agentuity cloud domain list
-
-# Add a domain
-agentuity cloud domain add api.example.com
-
-# Remove a domain
-agentuity cloud domain remove api.example.com
-
-# Verify DNS configuration
-agentuity cloud domain verify api.example.com
+```json
+{
+  "deployment": {
+    "resources": {
+      "cpu": "500m",
+      "memory": "512Mi",
+      "disk": "1Gi"
+    },
+    "domains": []
+  }
+}
 ```
 
-Use the configuration file for domains that should persist across deployments. Use CLI commands for quick testing or temporary domains.
+**Defaults:** `cpu: "500m"`, `memory: "500Mi"`, `disk: "500Mi"`. Increase as needed for your workload.
+
+The `domains` array is empty by default. Add custom domains when needed (see [Custom Domains](#custom-domains)).
 
 ## Environment Variables
 

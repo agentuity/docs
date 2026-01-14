@@ -170,7 +170,7 @@ try {
 Start sandboxes from pre-configured snapshots for faster cold starts:
 
 <Callout type="info" title="How Snapshots Work">
-A snapshot is a saved filesystem state, similar to a Docker image. You create sandboxes *from* snapshots rather than running them directly. See [Snapshots](/Sandbox/snapshots) for how to create them.
+A snapshot is a saved filesystem state. You create sandboxes *from* snapshots rather than running them directly. See [Snapshots](/Services/Sandbox/snapshots) for how to create them.
 </Callout>
 
 ```typescript
@@ -269,8 +269,11 @@ export default router;
 
 ```typescript
 const { sandboxes, total } = await ctx.sandbox.list({
-  status: 'idle',  // Filter by status
+  status: 'idle',      // Filter by status
+  projectId: 'proj_x', // Filter by project
+  snapshotId: 'snp_y', // Filter by snapshot
   limit: 10,
+  offset: 0,
 });
 
 for (const info of sandboxes) {
@@ -309,6 +312,9 @@ await ctx.sandbox.destroy('sbx_abc123');
 
 | Option | Type | Description |
 |--------|------|-------------|
+| `runtime` | `string` | Runtime environment: `'bun:1'`, `'python:3.14'` |
+| `name` | `string` | Optional sandbox name |
+| `description` | `string` | Optional description |
 | `resources.memory` | `string` | Memory limit: `'256Mi'`, `'1Gi'` |
 | `resources.cpu` | `string` | CPU in millicores: `'500m'`, `'1000m'` |
 | `resources.disk` | `string` | Disk limit: `'512Mi'`, `'2Gi'` |
@@ -318,6 +324,7 @@ await ctx.sandbox.destroy('sbx_abc123');
 | `dependencies` | `string[]` | Apt packages: `['python3', 'git']` |
 | `snapshot` | `string` | Snapshot ID or tag to restore from |
 | `env` | `Record<string, string>` | Environment variables |
+| `metadata` | `Record<string, unknown>` | User-defined metadata for tracking |
 
 ### ExecuteOptions
 
@@ -327,6 +334,19 @@ await ctx.sandbox.destroy('sbx_abc123');
 | `files` | `FileToWrite[]` | Files to create before execution |
 | `timeout` | `string` | Override execution timeout |
 | `signal` | `AbortSignal` | Cancel the execution |
+
+### Execution
+
+Returned by `sandbox.execute()`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `executionId` | `string` | Unique execution ID for debugging |
+| `status` | `string` | `'queued'`, `'running'`, `'completed'`, `'failed'`, `'timeout'`, `'cancelled'` |
+| `exitCode` | `number` | Process exit code (when completed) |
+| `durationMs` | `number` | Execution duration in milliseconds |
+| `stdoutStreamUrl` | `string` | URL to fetch stdout stream |
+| `stderrStreamUrl` | `string` | URL to fetch stderr stream |
 
 ### SandboxRunResult
 
@@ -340,13 +360,13 @@ await ctx.sandbox.destroy('sbx_abc123');
 
 ## Best Practices
 
-- **Set appropriate resource limits**: Prevent runaway processes from consuming resources
+- **Set [resource limits](#sandboxcreateoptions)**: Control memory and CPU usage for predictable performance
 - **Use timeouts**: Always set execution timeouts for untrusted code
-- **Disable network by default**: Only enable when needed (package installation, API calls)
+- **Enable network when needed**: Required for package installation, API calls, and external requests
 - **Clean up interactive sandboxes**: Use try/finally to ensure `destroy()` is called
 - **Use snapshots for common environments**: Pre-install dependencies to reduce cold start time
 
 ## Next Steps
 
-- [Snapshots](/Sandbox/snapshots): Skip dependency installation with pre-configured environments
+- [Snapshots](/Services/Sandbox/snapshots): Skip dependency installation with pre-configured environments
 - [CLI Commands](/Reference/CLI/sandbox): Debug sandboxes and create snapshots from the terminal
