@@ -199,6 +199,37 @@ const result = await ctx.sandbox.run({
 });
 ```
 
+### Automatic Environment Variables
+
+Every sandbox automatically receives environment variables that provide context about its runtime environment, letting your code access the sandbox ID, public URL, and more:
+
+| Variable | Description |
+|----------|-------------|
+| `AGENTUITY_SANDBOX_ID` | The sandbox's unique identifier |
+| `AGENTUITY_SANDBOX_RUNTIME` | Runtime name (e.g., `python`, `bun`) |
+| `AGENTUITY_SANDBOX_RUNTIME_ID` | Runtime unique identifier |
+| `AGENTUITY_SANDBOX_ORG_ID` | Organization ID |
+| `AGENTUITY_SANDBOX_PROJECT_ID` | Project ID (only when project context exists) |
+| `AGENTUITY_SANDBOX_URL` | Public URL (only when network is enabled) |
+
+```typescript
+const result = await ctx.sandbox.run({
+  command: {
+    exec: ['node', '-e', `
+      console.log('Sandbox:', process.env.AGENTUITY_SANDBOX_ID);
+      console.log('Runtime:', process.env.AGENTUITY_SANDBOX_RUNTIME);
+      if (process.env.AGENTUITY_SANDBOX_URL) {
+        console.log('URL:', process.env.AGENTUITY_SANDBOX_URL);
+      }
+    `],
+  },
+  network: { enabled: true },
+  resources: { memory: '256Mi' },
+});
+```
+
+Note that the code snippet above runs inside an isolated sandbox, not in the agent, so use standard logging (`console.log`, `print`, etc.) rather than `ctx.logger`.
+
 ## Cancelling Execution
 
 Use an `AbortSignal` to cancel long-running commands:
