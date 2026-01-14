@@ -39,9 +39,9 @@
 }
 
 .dark {
-	--color-fd-primary: var(--color-cyan-400);
+	--color-fd-primary: var(--color-cyan-500);
 	--color-fd-primary-foreground: var(--color-black);
-	--color-fd-ring: var(--color-cyan-400);
+	--color-fd-ring: var(--color-cyan-500);
 }
 
 /* make sure empty lines are rendered */
