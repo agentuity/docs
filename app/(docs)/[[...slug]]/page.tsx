@@ -27,21 +27,6 @@ export default async function Page(props: {
 	params: Promise<{ slug?: string[] }>;
 }) {
 	const params = await props.params;
-
-	// Handle SDK Explorer page specially - render directly without DocsPage wrapper
-	const isSDKExplorer = params.slug?.[0] === 'SDK-Explorer';
-
-	if (isSDKExplorer) {
-		const { SDKExplorerIframe } = await import(
-			'@/components/SDKExplorerIframe'
-		);
-		return (
-			<div className="sdk-explorer-wrapper">
-				<SDKExplorerIframe />
-			</div>
-		);
-	}
-
 	const page = source.getPage(params.slug);
 	if (!page) notFound();
 

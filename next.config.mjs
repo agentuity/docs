@@ -10,7 +10,7 @@ const config = {
 	redirects: async () => [
 		{
 			source: '/',
-			destination: '/SDK-Explorer',
+			destination: '/sdk-explorer',
 			permanent: false,
 		},
 		{

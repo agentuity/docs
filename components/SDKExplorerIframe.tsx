@@ -59,7 +59,7 @@ export function SDKExplorerIframe() {
 
 	// Show placeholder until mounted to avoid hydration mismatch
 	if (!mounted) {
-		return <div className="w-full h-full bg-fd-background" />;
+		return <div className="w-full h-full bg-fd-background animate-pulse" />;
 	}
 
 	return (
