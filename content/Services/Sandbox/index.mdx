@@ -5,6 +5,14 @@ description: Run code in isolated, secure containers with configurable resources
 
 Execute code in isolated Linux containers with configurable resource limits, network controls, and execution timeouts.
 
+## Three Ways to Use Sandboxes
+
+| Method | Best For |
+|--------|----------|
+| **[Web App](https://app-v1.agentuity.com)** | Visual management, browsing runtimes and snapshots |
+| **[SDK](/Services/Sandbox/sdk-usage)** | Programmatic use in agents and routes (`ctx.sandbox`) |
+| **[CLI](/Reference/CLI/sandbox)** | Local development, scripting, CI/CD |
+
 <Callout type="info" title="Multi-language Execution">
 Your agents are written in TypeScript, but the sandbox can run any language safely. Use `ctx.sandbox.run()` to execute Python, Node.js, shell scripts, or anything available via `apt install` in isolated containers.
 </Callout>
@@ -13,15 +21,60 @@ Your agents are written in TypeScript, but the sandbox can run any language safe
 
 | Concept | Description |
 |---------|-------------|
-| **Sandbox** | A running container where you execute commands |
-| **Execution** | A single command run within a sandbox |
-| **Snapshot** | A saved filesystem state used to create new sandboxes |
+| **Runtime** | A pre-configured base environment (OS + language tools) provided by Agentuity |
+| **Sandbox** | A running container created from a runtime where you execute commands |
+| **Snapshot** | A saved sandbox state that can be used to create new sandboxes |
 
-<Callout type="info" title="Snapshots Are Not Executable">
-A snapshot captures the filesystem state of a sandbox at a point in time. Think of it like a Docker image: you create new sandboxes *from* a snapshot rather than running it directly.
+These build on each other: **Runtime → Sandbox → Snapshot**. Here's an example of how to use all three:
 
-To use snapshots: create a sandbox, configure it, save a snapshot, then create new sandboxes from that snapshot.
+1. Pick a **runtime** (e.g., `bun:1` or `node:latest`)
+2. Create a **sandbox** from that runtime
+3. Optionally save a **snapshot** to reuse your configured environment
+
+## Runtimes
+
+Runtimes are pre-configured base environments that Agentuity provides. Each includes an operating system, language toolchain, and common utilities.
+
+### Language Runtimes
+
+Use these for general code execution:
+
+| Runtime | Description |
+|---------|-------------|
+| `bun:1` | Bun 1.x with JavaScript/TypeScript support (default) |
+| `node:latest` | Node.js latest version |
+| `node:lts` | Node.js LTS version |
+| `base:latest` | Minimal runtime with essential tools |
+
+### Agent Runtimes
+
+Pre-configured AI coding assistants:
+
+| Runtime | Description |
+|---------|-------------|
+| `claude-code:latest` | Claude Code AI assistant |
+| `amp:latest` | Amp AI coding assistant |
+| `codex:latest` | OpenAI Codex CLI agent |
+| `gemini-cli:latest` | Google Gemini CLI agent |
+| `opencode:latest` | OpenCode AI coding assistant |
+
+<Callout type="tip" title="List Available Runtimes">
+Run `agentuity cloud sandbox runtime list` to see all available runtimes, or view them in the [Agentuity App](https://app-v1.agentuity.com) under **Services > Sandbox > Runtimes**.
 </Callout>
+
+## Snapshots
+
+A snapshot captures the filesystem state of a sandbox. You create new sandboxes *from* a snapshot rather than running it directly.
+
+Snapshots build on top of runtimes. When you create a snapshot, it includes everything from the base runtime plus your installed dependencies and files.
+
+**Workflow:**
+1. Create a sandbox from a runtime
+2. Install dependencies and configure the environment
+3. Save a snapshot
+4. Create new sandboxes from that snapshot (fast, no reinstallation needed)
+
+See [Creating and Using Snapshots](/Services/Sandbox/snapshots) for details.
 
 ## Two Execution Modes
 
@@ -72,22 +125,20 @@ const agent = createAgent('ProjectBuilder', {
 });
 ```
 
-## Access Patterns
+## SDK Access
 
-| Context | Access | Example |
-|---------|--------|---------|
-| Agents | `ctx.sandbox` | `await ctx.sandbox.run({...})` |
-| Routes | `c.var.sandbox` | `await c.var.sandbox.create({...})` |
-| CLI | Commands | `agentuity cloud sandbox run ...` |
+| Context | Access |
+|---------|--------|
+| Agents | `ctx.sandbox` |
+| Routes | `c.var.sandbox` |
 
-<Callout type="info" title="Same API Everywhere">
-The sandbox API is identical in agents and routes. `ctx.sandbox.run()` and `c.var.sandbox.run()` work the same way.
-</Callout>
+The API is identical in both contexts.
 
 ## Configuration Options
 
 | Option | Description | Example |
 |--------|-------------|---------|
+| `runtime` | Runtime environment | `'bun:1'`, `'python:3.14'` |
 | `resources.memory` | Memory limit (Kubernetes-style) | `'512Mi'`, `'1Gi'` |
 | `resources.cpu` | CPU limit in millicores | `'500m'`, `'1000m'` |
 | `resources.disk` | Disk space limit | `'1Gi'` |
@@ -119,6 +170,6 @@ Sandboxes provide isolation through:
 
 ## Next Steps
 
-- [SDK Usage](/Sandbox/sdk-usage): Detailed API for file I/O, streaming, and advanced configuration
-- [Snapshots](/Sandbox/snapshots): Skip dependency installation with pre-configured environments
+- [SDK Usage](/Services/Sandbox/sdk-usage): Detailed API for file I/O, streaming, and advanced configuration
+- [Snapshots](/Services/Sandbox/snapshots): Skip dependency installation with pre-configured environments
 - [CLI Commands](/Reference/CLI/sandbox): Debug sandboxes and create snapshots manually

@@ -247,7 +247,13 @@ agentuity cloud db list
 
 ```bash
 agentuity cloud db create --name my-database
+agentuity cloud db create --name analytics-db --description "Analytics data warehouse"
 ```
+
+| Option | Description |
+|--------|-------------|
+| `--name <name>` | Custom database name |
+| `--description <text>` | Optional database description |
 
 This adds `DATABASE_URL` to your local `.env` file automatically.
 

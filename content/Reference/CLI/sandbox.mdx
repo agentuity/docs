@@ -27,6 +27,8 @@ All sandbox commands require the `cloud` prefix. For example: `agentuity cloud s
 | `sandbox download <id> <output>` | Download as archive |
 | `sandbox upload <id> <archive>` | Upload and extract archive |
 | `sandbox snapshot` | Manage snapshots |
+| `sandbox snapshot build <dir>` | Build snapshot from declarative file |
+| `sandbox snapshot generate` | Generate template snapshot build file |
 | `sandbox execution` | View execution history |
 | `sandbox runtime list` | List available runtimes |
 | `sandbox env <id>` | Manage environment variables |
@@ -51,6 +53,11 @@ agentuity cloud sandbox run [options] -- <command>
 | `--network` | Enable outbound network access |
 | `--timeout <duration>` | Execution timeout (e.g., `30s`, `5m`) |
 | `--snapshot <id-or-tag>` | Create from snapshot |
+| `--runtime <runtime>` | Runtime name (e.g., `bun:1`, `python:3.14`) |
+| `--dependency <package>` | Apt packages to install (repeatable) |
+| `--env <KEY=VALUE>` | Environment variables (repeatable) |
+| `--file <sandbox:local>` | Files to create (repeatable) |
+| `--project-id <id>` | Associate with project |
 | `--json` | JSON output |
 
 ### Examples
@@ -87,6 +94,15 @@ agentuity cloud sandbox create [options]
 | `--network` | Enable outbound network |
 | `--snapshot <id-or-tag>` | Create from snapshot |
 | `--idle-timeout <duration>` | Auto-destroy after idle (e.g., `1h`) |
+| `--runtime <runtime>` | Runtime name (e.g., `bun:1`, `python:3.14`) |
+| `--name <name>` | Sandbox name |
+| `--description <text>` | Sandbox description |
+| `--port <port>` | Port to expose (1024-65535) |
+| `--dependency <package>` | Apt packages to install (repeatable) |
+| `--env <KEY=VALUE>` | Environment variables (repeatable) |
+| `--file <sandbox:local>` | Files to create (repeatable) |
+| `--metadata <json>` | User-defined metadata (JSON) |
+| `--project-id <id>` | Associate with project |
 
 ```bash
 # Create with defaults
@@ -97,6 +113,12 @@ agentuity cloud sandbox create --memory 1Gi --cpu 1000m --network
 
 # Create from snapshot
 agentuity cloud sandbox create --snapshot python-ml
+
+# Create with port exposed to internet
+agentuity cloud sandbox create --port 3000 --network --name my-server
+
+# Create associated with a project
+agentuity cloud sandbox create --project-id proj_abc123
 ```
 
 ### Execute Command
@@ -120,13 +142,18 @@ agentuity cloud sandbox list [options]
 
 | Option | Description |
 |--------|-------------|
-| `--status <status>` | Filter by status (`idle`, `running`, `creating`) |
-| `--limit <n>` | Max results |
+| `--status <status>` | Filter by status (`idle`, `running`, `creating`, `terminated`, `failed`) |
+| `--project-id <id>` | Filter by project |
+| `--all` | List all sandboxes (bypass project filter) |
+| `--limit <n>` | Max results (default: 50, max: 100) |
+| `--offset <n>` | Pagination offset |
 | `--json` | JSON output |
 
 ```bash
 agentuity cloud sandbox list
 agentuity cloud sandbox list --status idle
+agentuity cloud sandbox list --project-id proj_abc123
+agentuity cloud sandbox list --all  # Show all sandboxes
 agentuity cloud sandbox list --json
 ```
 
@@ -147,6 +174,59 @@ agentuity cloud sandbox delete <sandbox-id> [--confirm]
 ```bash
 agentuity cloud sandbox delete sbx_abc123
 agentuity cloud sandbox delete sbx_abc123 --confirm  # Skip prompt
+```
+
+## Port Mapping
+
+Expose a port from a sandbox to the public internet. This allows you to run web servers, APIs, or any network service inside a sandbox and access it from external clients.
+
+### Create with Port
+
+```bash
+agentuity cloud sandbox create --port 3000 --network --name my-server
+```
+
+Port constraints:
+- Must be between 1024 and 65535 (no privileged ports)
+- Requires `--network` flag for outbound access
+- Each sandbox can expose one port
+
+### Access the Public URL
+
+After creating a sandbox with a port, use `get` to retrieve the public URL:
+
+```bash
+agentuity cloud sandbox get sbx_abc123
+```
+
+The output includes the public URL when a port is configured:
+
+```
+ID:       sbx_abc123
+Status:   running
+Port:     3000
+URL:      https://my-server-abc123.agentuity.cloud
+```
+
+### Example: Run a Web Server
+
+```bash
+# Create sandbox with port 3000
+agentuity cloud sandbox create --port 3000 --network --name my-api
+# sbx_abc123
+
+# Upload server code
+agentuity cloud sandbox cp ./server.js sbx_abc123:/home/agentuity/
+
+# Start the server
+agentuity cloud sandbox exec sbx_abc123 -- bun run /home/agentuity/server.js
+
+# Get the public URL
+agentuity cloud sandbox get sbx_abc123
+# URL: https://my-api-abc123.agentuity.cloud
+
+# Test from anywhere
+curl https://my-api-abc123.agentuity.cloud/api/health
 ```
 
 ## File Operations
@@ -360,6 +440,106 @@ agentuity cloud sandbox snapshot delete snp_xyz789
 agentuity cloud sandbox snapshot delete snp_xyz789 --confirm
 ```
 
+### Build Snapshot from File
+
+Build a snapshot from a declarative YAML or JSON file. This provides reproducible, version-controlled snapshot definitions.
+
+```bash
+agentuity cloud sandbox snapshot build <directory> [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--file <file>` | Path to build file (defaults to `agentuity-snapshot.yaml`) |
+| `--tag <tag>` | Snapshot tag (defaults to `latest`) |
+| `--name <name>` | Snapshot name (overrides build file) |
+| `--description <text>` | Snapshot description (overrides build file) |
+| `--env <KEY=VALUE>` | Environment variable substitution (repeatable) |
+| `--metadata <KEY=VALUE>` | Metadata key-value pairs (repeatable) |
+| `--force` | Force rebuild even if content unchanged |
+
+```bash
+# Build from current directory
+agentuity cloud sandbox snapshot build .
+
+# Build with custom file and tag
+agentuity cloud sandbox snapshot build ./project --file custom-build.yaml --tag production
+
+# Build with environment substitution
+agentuity cloud sandbox snapshot build . --env API_KEY=secret --env VERSION=1.0.0
+
+# Force rebuild
+agentuity cloud sandbox snapshot build . --force
+```
+
+#### Build File Format
+
+Create an `agentuity-snapshot.yaml` file. Use glob patterns to include files and prefix with `!` to exclude:
+
+```yaml
+# Required: Schema version
+version: 1
+
+# Required: Runtime environment
+runtime: bun:1
+
+# Optional: Snapshot name
+name: my-snapshot
+
+# Optional: Description
+description: My sandbox snapshot
+
+# Optional: Apt packages to install
+dependencies:
+  - curl
+  - ffmpeg
+  - imagemagick
+
+# Optional: Files to include (supports globs and exclusions)
+# Prefix with ! to exclude files
+files:
+  - "*.js"
+  - src/**
+  - config/*.json
+  - "!**/*.test.js"     # Exclude test files
+  - "!node_modules/**"  # Exclude node_modules
+
+# Optional: Environment variables
+env:
+  NODE_ENV: production
+  API_URL: https://api.example.com
+  SECRET_KEY: ${SECRET_KEY}  # Substituted via --env flag
+
+# Optional: Metadata
+metadata:
+  version: ${VERSION}
+  author: team-name
+```
+
+### Generate Build Template
+
+Generate a template snapshot build file to get started:
+
+```bash
+agentuity cloud sandbox snapshot generate [options]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--format <format>` | Output format: `yaml` (default) or `json` |
+
+```bash
+# Generate YAML template (default)
+agentuity cloud sandbox snapshot generate > agentuity-snapshot.yaml
+
+# Generate JSON template
+agentuity cloud sandbox snapshot generate --format json > agentuity-snapshot.json
+```
+
+<Callout type="tip" title="Getting Started">
+The generated template includes helpful comments explaining each field. See [Creating and Using Snapshots](/Services/Sandbox/snapshots) for workflows and use cases.
+</Callout>
+
 ## Execution History
 
 View past command executions within a sandbox.
@@ -500,6 +680,6 @@ agentuity cloud sandbox env sbx_abc123 -d VAR1 -d VAR2
 
 ## Next Steps
 
-- [Sandbox Overview](/Sandbox): Understand sandbox concepts, security defaults, and when to use each execution mode
-- [SDK Usage](/Sandbox/sdk-usage): Use sandboxes programmatically in agents and routes
-- [Snapshots](/Sandbox/snapshots): Pre-configure environments for faster cold starts
+- [Sandbox Overview](/Services/Sandbox): Understand sandbox concepts, security defaults, and when to use each execution mode
+- [SDK Usage](/Services/Sandbox/sdk-usage): Use sandboxes programmatically in agents and routes
+- [Snapshots](/Services/Sandbox/snapshots): Pre-configure environments for faster cold starts

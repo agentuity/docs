@@ -320,12 +320,15 @@ Configure CPU, memory, and disk limits in `agentuity.json`:
       "cpu": "500m",
       "memory": "512Mi",
       "disk": "1Gi"
-    }
+    },
+    "domains": []
   }
 }
 ```
 
 **Defaults:** `cpu: "500m"`, `memory: "500Mi"`, `disk: "500Mi"`
+
+The `domains` array is empty by default. Add custom domains when needed (see [Custom Domains](#custom-domains)).
 
 ## Environment Variables
 
