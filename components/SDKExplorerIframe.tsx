@@ -29,7 +29,7 @@ export function SDKExplorerIframe() {
 		if (mounted && iframeRef.current?.contentWindow) {
 			iframeRef.current.contentWindow.postMessage(
 				{ type: 'SET_THEME', theme: resolvedTheme },
-				'*'
+				EXPLORER_URL
 			);
 		}
 	}, [resolvedTheme, mounted]);
@@ -37,6 +37,10 @@ export function SDKExplorerIframe() {
 	// Listen for navigation requests from iframe
 	useEffect(() => {
 		const handleMessage = (event: MessageEvent) => {
+			// Validate origin to prevent open redirect
+			if (event.origin !== new URL(EXPLORER_URL).origin) {
+				return;
+			}
 			if (event.data?.type === 'NAVIGATE' && event.data.path) {
 				window.location.href = event.data.path;
 			}

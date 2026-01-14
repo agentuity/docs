@@ -161,6 +161,6 @@ article > p {
 @media (max-width: 767px) {
 	.sdk-explorer-wrapper {
 		left: 0;
-		top: 56px;
+		top: var(--fd-nav-height, 56px);
 	}
 }

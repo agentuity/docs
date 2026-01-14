@@ -27,9 +27,6 @@ export default async function Page(props: {
 	params: Promise<{ slug?: string[] }>;
 }) {
 	const params = await props.params;
-	const page = source.getPage(params.slug);
-
-	if (!page) notFound();
 
 	// Handle SDK Explorer page specially - render directly without DocsPage wrapper
 	const isSDKExplorer = params.slug?.[0] === 'SDK-Explorer';
@@ -44,6 +41,9 @@ export default async function Page(props: {
 			</div>
 		);
 	}
+
+	const page = source.getPage(params.slug);
+	if (!page) notFound();
 
 	const MDX = page.data.body;
 
