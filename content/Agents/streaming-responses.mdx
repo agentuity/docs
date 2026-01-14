@@ -40,7 +40,7 @@ await stream.write('data');
 await stream.close();
 ```
 
-This page focuses on ephemeral streaming with the AI SDK. For persistent streaming patterns, see the [Storage documentation](/Storage/durable-streams).
+This page focuses on ephemeral streaming with the AI SDK. For persistent streaming patterns, see the [Storage documentation](/Services/Storage/durable-streams).
 
 <Callout type="info" title="Two Parts to Streaming">
 Streaming requires both: `schema.stream: true` in your agent (so the handler returns a stream) and `stream()` middleware in your route (so the response is streamed to the client).

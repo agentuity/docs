@@ -83,7 +83,7 @@ Local mode disables cloud services (KV, Vector, Object Storage). Use when develo
 
 **What happens in local mode:**
 - No connection to Agentuity cloud
-- Storage APIs disabled unless you provide [custom implementations](/Storage/custom)
+- Storage APIs disabled unless you provide [custom implementations](/Services/Storage/custom)
 - Public URL tunneling disabled
 - Requires your own API keys for AI providers (in `.env`), since the [AI Gateway](/Agents/ai-gateway) is not available
 
@@ -102,7 +102,7 @@ const app = createApp({
 });
 ```
 
-See [Custom Storage](/Storage/custom) for implementation details.
+See [Custom Storage](/Services/Storage/custom) for implementation details.
 
 ## Profile-Specific Environment Variables
 
