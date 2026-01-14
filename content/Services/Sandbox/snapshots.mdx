@@ -215,14 +215,14 @@ Create snapshots for each language you support:
 
 ```bash
 # Python with common packages
-agentuity cloud sandbox create --network
+agentuity cloud sandbox create --runtime base:latest --network
 agentuity cloud sandbox exec sbx_... -- apt-get update
 agentuity cloud sandbox exec sbx_... -- apt-get install -y python3 python3-pip
 agentuity cloud sandbox exec sbx_... -- pip install numpy pandas requests
 agentuity cloud sandbox snapshot create sbx_... --tag python-data
 
 # Node.js with TypeScript
-agentuity cloud sandbox create --network
+agentuity cloud sandbox create --runtime bun:1 --network
 agentuity cloud sandbox exec sbx_... -- npm install -g typescript tsx
 agentuity cloud sandbox snapshot create sbx_... --tag node-typescript
 ```
