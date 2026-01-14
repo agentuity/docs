@@ -1,5 +1,5 @@
 ---
-title: What is Agentuity
+title: What is Agentuity?
 description: The full-stack platform for building, deploying, and operating AI agents
 ---
 
@@ -8,19 +8,19 @@ Write TypeScript, define routes, and deploy with a single command. We handle the
 Here's a basic example:
 
 ```typescript
-import { createAgent } from "@agentuity/runtime";
-import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
-import { s } from "@agentuity/schema";
+import { createAgent } from '@agentuity/runtime';
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { s } from '@agentuity/schema';
 
-const agent = createAgent("Chat", {
+const agent = createAgent('Chat', {
   schema: {
     input: s.object({ message: s.string() }),
     output: s.object({ response: s.string() }),
   },
   handler: async (ctx, input) => {
     const { text } = await generateText({
-      model: openai("gpt-5-mini"),
+      model: openai('gpt-5-mini'),
       prompt: input.message,
     });
     return { response: text };
@@ -57,11 +57,7 @@ Infrastructure like cron schedules is defined in route code, not config. Rolling
 
 ---
 
-<div className="text-base text-cyan-700 dark:text-cyan-300 mb-6">
-  We're building for a future where agents are the primary way to build and
-  operate software, and where infrastructure is purpose-built for this new
-  paradigm.
-</div>
+<p className="text-base text-cyan-700 dark:text-cyan-300 mb-6">We're building for a future where agents are the primary way to build and operate software, and where infrastructure is purpose-built for this new paradigm.</p>
 
 ## Next Steps
 

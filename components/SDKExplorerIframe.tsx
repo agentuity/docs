@@ -44,7 +44,11 @@ export function SDKExplorerIframe() {
 			if (event.data?.type === 'NAVIGATE' && event.data.path) {
 				const path = event.data.path;
 				// Only allow relative paths to prevent open redirects
-				if (typeof path === 'string' && path.startsWith('/') && !path.startsWith('//')) {
+				if (
+					typeof path === 'string' &&
+					path.startsWith('/') &&
+					!path.startsWith('//')
+				) {
 					window.location.href = path;
 				}
 			}
