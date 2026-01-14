@@ -11,6 +11,7 @@ import { notFound } from 'next/navigation';
 import { CLICommand } from '@/components/CLICommand';
 import { CodeExample } from '@/components/CodeExample';
 import { Mermaid } from '@/components/Mermaid';
+import { SDKExplorerIframe } from '@/components/SDKExplorerIframe';
 import { Sparkle } from '@/components/Sparkle';
 import { Tag } from '@/components/Tag';
 import { ThemeImage } from '@/components/ThemeImage';
@@ -27,6 +28,15 @@ export default async function Page(props: {
 	params: Promise<{ slug?: string[] }>;
 }) {
 	const params = await props.params;
+
+	if (params.slug === undefined) {
+		return (
+			<DocsPage full>
+				<SDKExplorerIframe />
+			</DocsPage>
+		);
+	}
+
 	const page = source.getPage(params.slug);
 	if (!page) notFound();
 
@@ -105,6 +115,14 @@ export async function generateMetadata(props: {
 	params: Promise<{ slug?: string[] }>;
 }) {
 	const params = await props.params;
+
+	if (params.slug === undefined) {
+		return {
+			title: 'SDK Explorer — Agentuity Docs',
+			description: 'Interactive examples showcasing the Agentuity SDK',
+		};
+	}
+
 	const page = source.getPage(params.slug);
 
 	if (!page) notFound();

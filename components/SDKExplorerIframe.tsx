@@ -59,17 +59,19 @@ export function SDKExplorerIframe() {
 
 	// Show placeholder until mounted to avoid hydration mismatch
 	if (!mounted) {
-		return <div className="w-full h-full bg-fd-background animate-pulse" />;
+		return <div className="size-full bg-fd-background" />;
 	}
 
 	return (
-		<iframe
-			ref={iframeRef}
-			src={`${EXPLORER_URL}?theme=${initialTheme}`}
-			title="SDK Explorer"
-			allow="clipboard-read; clipboard-write"
-			onLoad={() => setIframeLoaded(true)}
-			className={`transition-opacity duration-300 ${iframeLoaded ? 'opacity-100' : 'opacity-0'}`}
-		/>
+		<div className="sdk-explorer-wrapper">
+			<iframe
+				ref={iframeRef}
+				src={`${EXPLORER_URL}?theme=${initialTheme}`}
+				title="SDK Explorer"
+				allow="clipboard-read; clipboard-write"
+				onLoad={() => setIframeLoaded(true)}
+				className={`transition-opacity duration-300 ${iframeLoaded ? 'opacity-100' : 'opacity-0'}`}
+			/>
+		</div>
 	);
 }
