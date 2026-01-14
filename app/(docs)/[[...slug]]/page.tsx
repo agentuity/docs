@@ -31,7 +31,7 @@ export default async function Page(props: {
 
 	if (params.slug === undefined) {
 		return (
-			<DocsPage full>
+			<DocsPage full footer={{ enabled: false }}>
 				<SDKExplorerIframe />
 			</DocsPage>
 		);
