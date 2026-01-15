@@ -1,7 +1,7 @@
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-export const agent = createAgent({
+export const agent = createAgent('hello-agent', {
   // Schemas validate input/output (we'll explore these in Module 6)
   schema: {
     input: z.object({
@@ -14,12 +14,11 @@ export const agent = createAgent({
 
   // Metadata helps identify your agent
   metadata: {
-    name: 'Hello Agent',
     description: 'Simple greeting agent for learning v1 basics'
   },
 
-  // Handler receives (c, input) - input is already parsed and validated!
-  handler: async (c, input) => {
+  // Handler receives (ctx, input) - input is already parsed and validated!
+  handler: async (ctx, input) => {
     const name = input.name || 'World';
 
     // Return data directly - no response.json() needed

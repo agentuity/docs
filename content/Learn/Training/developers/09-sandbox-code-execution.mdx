@@ -1,0 +1,973 @@
+---
+title: "Module 9: Sandbox and Code Execution"
+description: "Execute untrusted code safely in isolated containers with the Agentuity Sandbox"
+---
+
+Agents often need to run code they generate or receive from users. Running untrusted code directly is dangerous: it could access your filesystem, make unauthorized network requests, or consume unlimited resources. The Agentuity Sandbox provides isolated containers where code executes safely.
+
+## Why Sandboxes Matter
+
+Consider a code generation agent that writes Python scripts based on user requests. Without isolation:
+- A malicious prompt could generate code that reads sensitive files
+- An infinite loop could crash your agent
+- Memory-hungry code could exhaust system resources
+
+The sandbox solves these problems with:
+- **Isolation**: Code runs in containers with no access to your agent's environment
+- **Resource limits**: CPU, memory, and time constraints prevent runaway execution
+- **Multi-language support**: Run Python, Node.js, and other runtimes
+
+Common use cases include code generation agents, data analysis pipelines, automated testing, and educational coding assistants.
+
+## The Sandbox Service
+
+Access the sandbox through `ctx.sandbox` in your agent handler. The service supports two modes:
+
+| Mode | Use Case |
+|------|----------|
+| **One-shot** | Run code and get results in a single call |
+| **Interactive** | Create persistent sandboxes for multi-step operations |
+
+## Tutorial Steps
+
+Work through these steps to master sandbox execution patterns.
+
+### Step 1: One-Shot Execution
+
+<TutorialStep number={1} title="One-Shot Execution" estimatedTime="5 minutes">
+
+One-shot execution is the simplest pattern: send code, get results. The sandbox creates a temporary container, runs the code, and returns output.
+
+<CodeExample js={`import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+// Map language names to runtime and interpreter
+const RUNTIME_CONFIG = {
+  python: { runtime: 'python:3.14', interpreter: 'python' },
+  node: { runtime: 'bun:1', interpreter: 'bun' },
+} as const;
+
+export default createAgent('code-runner', {
+  schema: {
+    input: z.object({
+      code: z.string(),
+      language: z.enum(['python', 'node']),
+    }),
+    output: z.object({
+      stdout: z.string(),
+      stderr: z.string(),
+      exitCode: z.number(),
+    }),
+  },
+  handler: async (ctx, input) => {
+    ctx.logger.info('Executing code', {
+      language: input.language,
+      codeLength: input.code.length,
+    });
+
+    const config = RUNTIME_CONFIG[input.language];
+    const filename = input.language === 'python' ? 'script.py' : 'script.ts';
+
+    // Run code in isolated container
+    const result = await ctx.sandbox.run({
+      runtime: config.runtime,
+      command: {
+        exec: [config.interpreter, filename],
+        files: [{ path: filename, content: Buffer.from(input.code) }],
+      },
+      timeout: { execution: '30s' },
+    });
+
+    ctx.logger.info('Execution complete', {
+      exitCode: result.exitCode,
+      hasOutput: (result.stdout?.length ?? 0) > 0,
+    });
+
+    return {
+      stdout: result.stdout ?? '',
+      stderr: result.stderr ?? '',
+      exitCode: result.exitCode,
+    };
+  },
+});`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
+
+# Map language names to runtime and interpreter
+RUNTIME_CONFIG = {
+    "python": {"runtime": "python:3.14", "interpreter": "python"},
+    "node": {"runtime": "bun:1", "interpreter": "bun"},
+}
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    data = await request.data.json()
+    code = data["code"]
+    language = data["language"]
+
+    context.logger.info("Executing code", {
+        "language": language,
+        "codeLength": len(code)
+    })
+
+    config = RUNTIME_CONFIG[language]
+    filename = "script.py" if language == "python" else "script.ts"
+
+    # Run code in isolated container
+    result = await context.sandbox.run({
+        "runtime": config["runtime"],
+        "command": {
+            "exec": [config["interpreter"], filename],
+            "files": [{"path": filename, "content": code.encode()}],
+        },
+        "timeout": {"execution": "30s"},
+    })
+
+    context.logger.info("Execution complete", {
+        "exitCode": result.exit_code,
+        "hasOutput": len(result.stdout or "") > 0
+    })
+
+    return response.json({
+        "stdout": result.stdout or "",
+        "stderr": result.stderr or "",
+        "exitCode": result.exit_code
+    })`} />
+
+**What this demonstrates:**
+- Using `ctx.sandbox.run()` for one-shot execution
+- Setting timeouts to prevent runaway code
+- Capturing stdout, stderr, and exit codes
+
+**Try it:**
+1. Start Workbench with `agentuity dev`
+2. Send a simple Python script: `{"code": "print('Hello from sandbox!')", "language": "python"}`
+3. Check the logs to see execution timing
+
+**Key insight:** The sandbox destroys the container after execution. Each call starts fresh with no state from previous runs.
+
+</TutorialStep>
+
+### Step 2: Interactive Sandboxes
+
+<TutorialStep number={2} title="Interactive Sandboxes" estimatedTime="7 minutes">
+
+For multi-step operations, create a persistent sandbox. This lets you write files, execute code, and read results across multiple operations.
+
+<CodeExample js={`import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+// Helper to read a stream into a string
+async function streamToString(stream: ReadableStream<Uint8Array>): Promise<string> {
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks).toString('utf-8');
+}
+
+export default createAgent('data-analyzer', {
+  schema: {
+    input: z.object({
+      csvData: z.string(),
+      analysisScript: z.string(),
+    }),
+    output: z.object({
+      success: z.boolean(),
+      report: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  },
+  handler: async (ctx, input) => {
+    // Create a persistent sandbox for multiple operations
+    const sandbox = await ctx.sandbox.create({
+      runtime: 'python:3.14',
+      name: 'data-analysis',
+    });
+
+    try {
+      ctx.logger.info('Writing files to sandbox');
+
+      // Write input files to the sandbox (content must be Buffer)
+      await sandbox.writeFiles([
+        { path: 'data.csv', content: Buffer.from(input.csvData) },
+        { path: 'analyze.py', content: Buffer.from(input.analysisScript) },
+      ]);
+
+      ctx.logger.info('Executing analysis script');
+
+      // Execute the analysis (command is an array of strings)
+      const execution = await sandbox.execute({
+        command: ['python', 'analyze.py'],
+        timeout: '60s',
+      });
+
+      if (execution.exitCode !== 0) {
+        ctx.logger.warn('Analysis failed', { exitCode: execution.exitCode });
+        return {
+          success: false,
+          error: \`Execution failed with exit code \${execution.exitCode}\`,
+        };
+      }
+
+      // Read the generated report (returns a ReadableStream)
+      const reportStream = await sandbox.readFile('output/report.json');
+      const report = await streamToString(reportStream);
+
+      ctx.logger.info('Analysis complete', {
+        reportSize: report.length,
+      });
+
+      return {
+        success: true,
+        report,
+      };
+    } finally {
+      // Always clean up the sandbox
+      await sandbox.destroy();
+      ctx.logger.info('Sandbox destroyed');
+    }
+  },
+});`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def stream_to_string(stream) -> str:
+    """Helper to read a stream into a string."""
+    chunks = []
+    async for chunk in stream:
+        chunks.append(chunk)
+    return b"".join(chunks).decode("utf-8")
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    data = await request.data.json()
+    csv_data = data["csvData"]
+    analysis_script = data["analysisScript"]
+
+    # Create a persistent sandbox for multiple operations
+    sandbox = await context.sandbox.create({
+        "runtime": "python:3.14",
+        "name": "data-analysis"
+    })
+
+    try:
+        context.logger.info("Writing files to sandbox")
+
+        # Write input files to the sandbox (content must be bytes)
+        await sandbox.write_files([
+            {"path": "data.csv", "content": csv_data.encode()},
+            {"path": "analyze.py", "content": analysis_script.encode()}
+        ])
+
+        context.logger.info("Executing analysis script")
+
+        # Execute the analysis (command is a list of strings)
+        execution = await sandbox.execute({
+            "command": ["python", "analyze.py"],
+            "timeout": "60s"
+        })
+
+        if execution.exit_code != 0:
+            context.logger.warn("Analysis failed", {"exitCode": execution.exit_code})
+            return response.json({
+                "success": False,
+                "error": f"Execution failed with exit code {execution.exit_code}"
+            })
+
+        # Read the generated report (returns a stream)
+        report_stream = await sandbox.read_file("output/report.json")
+        report = await stream_to_string(report_stream)
+
+        context.logger.info("Analysis complete", {
+            "reportSize": len(report)
+        })
+
+        return response.json({
+            "success": True,
+            "report": report
+        })
+    finally:
+        # Always clean up the sandbox
+        await sandbox.destroy()
+        context.logger.info("Sandbox destroyed")`} />
+
+**What this demonstrates:**
+- Creating persistent sandboxes with `ctx.sandbox.create()`
+- Writing multiple files with `sandbox.writeFiles()`
+- Executing scripts with `sandbox.execute()`
+- Reading output files with `sandbox.readFile()`
+- Cleaning up with `sandbox.destroy()` in a finally block
+
+**Try it:**
+1. Send CSV data and a Python script that processes it
+2. Watch the logs to see each operation
+3. Verify the sandbox is destroyed even if errors occur
+
+**Key insight:** Always use try/finally to ensure cleanup. Orphaned sandboxes consume resources until they timeout.
+
+</TutorialStep>
+
+### Step 3: File Operations
+
+<TutorialStep number={3} title="File Operations" estimatedTime="5 minutes">
+
+Sandboxes support rich file operations for complex workflows involving multiple inputs and outputs.
+
+<CodeExample js={`import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+// Helper to read a stream into a string
+async function streamToString(stream: ReadableStream<Uint8Array>): Promise<string> {
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks).toString('utf-8');
+}
+
+export default createAgent('file-processor', {
+  schema: {
+    input: z.object({
+      files: z.array(z.object({
+        name: z.string(),
+        content: z.string(),
+      })),
+      script: z.string(),
+    }),
+    output: z.object({
+      outputs: z.record(z.string()),
+    }),
+  },
+  handler: async (ctx, input) => {
+    const sandbox = await ctx.sandbox.create({
+      runtime: 'bun:1',
+      name: 'file-processor',
+    });
+
+    try {
+      // Write multiple input files (content must be Buffer)
+      await sandbox.writeFiles([
+        ...input.files.map(f => ({
+          path: \`input/\${f.name}\`,
+          content: Buffer.from(f.content),
+        })),
+        { path: 'process.js', content: Buffer.from(input.script) },
+      ]);
+
+      ctx.logger.info('Files written', { count: input.files.length });
+
+      // Execute processing script (command is an array)
+      const execution = await sandbox.execute({
+        command: ['bun', 'process.js'],
+        timeout: '30s',
+      });
+
+      if (execution.exitCode !== 0) {
+        throw new Error(\`Script failed with exit code \${execution.exitCode}\`);
+      }
+
+      // Read all output files
+      // The script should create files in the output/ directory
+      const manifestStream = await sandbox.readFile('output/manifest.json');
+      const manifest = await streamToString(manifestStream);
+      const outputFiles = JSON.parse(manifest) as string[];
+
+      const outputs: Record<string, string> = {};
+      for (const filename of outputFiles) {
+        const fileStream = await sandbox.readFile(\`output/\${filename}\`);
+        outputs[filename] = await streamToString(fileStream);
+      }
+
+      ctx.logger.info('Processing complete', {
+        outputCount: Object.keys(outputs).length,
+      });
+
+      return { outputs };
+    } finally {
+      await sandbox.destroy();
+    }
+  },
+});`} py={`import json
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+async def stream_to_string(stream) -> str:
+    """Helper to read a stream into a string."""
+    chunks = []
+    async for chunk in stream:
+        chunks.append(chunk)
+    return b"".join(chunks).decode("utf-8")
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    data = await request.data.json()
+    files = data["files"]
+    script = data["script"]
+
+    sandbox = await context.sandbox.create({
+        "runtime": "bun:1",
+        "name": "file-processor"
+    })
+
+    try:
+        # Write multiple input files (content must be bytes)
+        file_entries = [
+            {"path": f"input/{f['name']}", "content": f["content"].encode()}
+            for f in files
+        ]
+        file_entries.append({"path": "process.js", "content": script.encode()})
+
+        await sandbox.write_files(file_entries)
+
+        context.logger.info("Files written", {"count": len(files)})
+
+        # Execute processing script (command is a list)
+        execution = await sandbox.execute({
+            "command": ["bun", "process.js"],
+            "timeout": "30s"
+        })
+
+        if execution.exit_code != 0:
+            raise Exception(f"Script failed with exit code {execution.exit_code}")
+
+        # Read all output files
+        # The script should create files in the output/ directory
+        manifest_stream = await sandbox.read_file("output/manifest.json")
+        manifest = await stream_to_string(manifest_stream)
+        output_files = json.loads(manifest)
+
+        outputs = {}
+        for filename in output_files:
+            file_stream = await sandbox.read_file(f"output/{filename}")
+            outputs[filename] = await stream_to_string(file_stream)
+
+        context.logger.info("Processing complete", {
+            "outputCount": len(outputs)
+        })
+
+        return response.json({"outputs": outputs})
+    finally:
+        await sandbox.destroy()`} />
+
+**What this demonstrates:**
+- Organizing files in directories (input/, output/)
+- Writing multiple files in a single operation
+- Reading multiple output files
+- Using a manifest pattern to discover outputs
+
+**Key insight:** Structure your sandbox workspace with clear input/output directories. This makes scripts portable and easier to debug.
+
+</TutorialStep>
+
+### Step 4: Error Handling and Timeouts
+
+<TutorialStep number={4} title="Error Handling and Timeouts" estimatedTime="5 minutes">
+
+Untrusted code can fail in many ways. Handle errors gracefully to provide useful feedback.
+
+<CodeExample js={`import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+// Map language names to runtime and interpreter
+const RUNTIME_CONFIG = {
+  python: { runtime: 'python:3.14', interpreter: 'python' },
+  node: { runtime: 'bun:1', interpreter: 'bun' },
+} as const;
+
+export default createAgent('safe-executor', {
+  schema: {
+    input: z.object({
+      code: z.string(),
+      language: z.enum(['python', 'node']),
+    }),
+    output: z.object({
+      success: z.boolean(),
+      output: z.string().optional(),
+      error: z.string().optional(),
+      errorType: z.enum(['timeout', 'runtime', 'system']).optional(),
+    }),
+  },
+  handler: async (ctx, input) => {
+    ctx.logger.info('Starting safe execution', {
+      language: input.language,
+      codeLength: input.code.length,
+    });
+
+    const config = RUNTIME_CONFIG[input.language];
+    const filename = input.language === 'python' ? 'script.py' : 'script.ts';
+
+    try {
+      const result = await ctx.sandbox.run({
+        runtime: config.runtime,
+        command: {
+          exec: [config.interpreter, filename],
+          files: [{ path: filename, content: Buffer.from(input.code) }],
+        },
+        timeout: { execution: '10s' },
+      });
+
+      // Check for runtime errors (non-zero exit code)
+      if (result.exitCode !== 0) {
+        ctx.logger.warn('Code execution failed', {
+          exitCode: result.exitCode,
+          stderr: (result.stderr ?? '').slice(0, 500), // Log first 500 chars
+        });
+
+        return {
+          success: false,
+          error: result.stderr ?? 'Unknown error',
+          errorType: 'runtime',
+        };
+      }
+
+      ctx.logger.info('Execution succeeded');
+
+      return {
+        success: true,
+        output: result.stdout ?? '',
+      };
+    } catch (error) {
+      // Handle sandbox-level errors (timeouts, resource limits)
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      ctx.logger.error('Sandbox error', { error: errorMessage });
+
+      // Determine error type for better user feedback
+      const isTimeout = errorMessage.toLowerCase().includes('timeout');
+
+      return {
+        success: false,
+        error: isTimeout
+          ? 'Code execution timed out. Check for infinite loops or reduce complexity.'
+          : 'Execution failed due to a system error. Please try again.',
+        errorType: isTimeout ? 'timeout' : 'system',
+      };
+    }
+  },
+});`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
+
+# Map language names to runtime and interpreter
+RUNTIME_CONFIG = {
+    "python": {"runtime": "python:3.14", "interpreter": "python"},
+    "node": {"runtime": "bun:1", "interpreter": "bun"},
+}
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    data = await request.data.json()
+    code = data["code"]
+    language = data["language"]
+
+    context.logger.info("Starting safe execution", {
+        "language": language,
+        "codeLength": len(code)
+    })
+
+    config = RUNTIME_CONFIG[language]
+    filename = "script.py" if language == "python" else "script.ts"
+
+    try:
+        result = await context.sandbox.run({
+            "runtime": config["runtime"],
+            "command": {
+                "exec": [config["interpreter"], filename],
+                "files": [{"path": filename, "content": code.encode()}],
+            },
+            "timeout": {"execution": "10s"},
+        })
+
+        # Check for runtime errors (non-zero exit code)
+        if result.exit_code != 0:
+            context.logger.warn("Code execution failed", {
+                "exitCode": result.exit_code,
+                "stderr": (result.stderr or "")[:500]  # Log first 500 chars
+            })
+
+            return response.json({
+                "success": False,
+                "error": result.stderr or "Unknown error",
+                "errorType": "runtime"
+            })
+
+        context.logger.info("Execution succeeded")
+
+        return response.json({
+            "success": True,
+            "output": result.stdout or ""
+        })
+
+    except Exception as error:
+        # Handle sandbox-level errors (timeouts, resource limits)
+        error_message = str(error)
+
+        context.logger.error("Sandbox error", {"error": error_message})
+
+        # Determine error type for better user feedback
+        is_timeout = "timeout" in error_message.lower()
+
+        return response.json({
+            "success": False,
+            "error": (
+                "Code execution timed out. Check for infinite loops or reduce complexity."
+                if is_timeout
+                else "Execution failed due to a system error. Please try again."
+            ),
+            "errorType": "timeout" if is_timeout else "system"
+        })`} />
+
+**What this demonstrates:**
+- Distinguishing runtime errors from system errors
+- Providing actionable error messages
+- Logging truncated error output for debugging
+- Using error types to help users understand failures
+
+**Try it:**
+1. Send an infinite loop: `{"code": "while True: pass", "language": "python"}`
+2. Watch it timeout and return a helpful error
+3. Send code with a syntax error to see runtime error handling
+
+**Key insight:** Good error handling turns confusing failures into actionable feedback. Users should understand what went wrong and how to fix it.
+
+</TutorialStep>
+
+### Step 5: Security Considerations
+
+<TutorialStep number={5} title="Security Best Practices" estimatedTime="4 minutes">
+
+Even with sandbox isolation, follow security best practices to protect your system and users.
+
+<CodeExample js={`import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+// Maximum code length to prevent resource exhaustion
+const MAX_CODE_LENGTH = 50000;
+
+// Patterns that might indicate malicious intent
+const SUSPICIOUS_PATTERNS = [
+  /subprocess|os\.system|exec\(/i,     // Shell execution
+  /open\s*\([^)]*['"]\s*\/etc/i,       // System file access
+  /socket|urllib|requests\.get/i,       // Network access
+  /import\s+ctypes/i,                   // Low-level access
+];
+
+// Map language names to runtime and interpreter
+const RUNTIME_CONFIG = {
+  python: { runtime: 'python:3.14', interpreter: 'python', ext: 'py' },
+  node: { runtime: 'bun:1', interpreter: 'bun', ext: 'ts' },
+} as const;
+
+export default createAgent('secure-executor', {
+  schema: {
+    input: z.object({
+      code: z.string().max(MAX_CODE_LENGTH),
+      language: z.enum(['python', 'node']),
+    }),
+    output: z.object({
+      success: z.boolean(),
+      output: z.string().optional(),
+      warnings: z.array(z.string()).optional(),
+      blocked: z.boolean().optional(),
+      reason: z.string().optional(),
+    }),
+  },
+  handler: async (ctx, input) => {
+    const warnings: string[] = [];
+
+    // Check for suspicious patterns (warn, don't block by default)
+    for (const pattern of SUSPICIOUS_PATTERNS) {
+      if (pattern.test(input.code)) {
+        warnings.push(\`Code contains pattern that may not work in sandbox: \${pattern.source}\`);
+      }
+    }
+
+    if (warnings.length > 0) {
+      ctx.logger.warn('Suspicious patterns detected', { warnings });
+    }
+
+    const config = RUNTIME_CONFIG[input.language];
+    const filename = \`script.\${config.ext}\`;
+
+    // Execute with strict resource limits
+    const result = await ctx.sandbox.run({
+      runtime: config.runtime,
+      command: {
+        exec: [config.interpreter, filename],
+        files: [{ path: filename, content: Buffer.from(input.code) }],
+      },
+      timeout: { execution: '10s' },
+    });
+
+    // Sanitize output before returning
+    // Remove any paths that might leak system information
+    const sanitizedOutput = (result.stdout ?? '')
+      .replace(/\/home\/\w+/g, '/home/user')
+      .replace(/\/tmp\/[a-zA-Z0-9]+/g, '/tmp/sandbox');
+
+    return {
+      success: result.exitCode === 0,
+      output: sanitizedOutput,
+      warnings: warnings.length > 0 ? warnings : undefined,
+    };
+  },
+});`} py={`import re
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+# Maximum code length to prevent resource exhaustion
+MAX_CODE_LENGTH = 50000
+
+# Patterns that might indicate malicious intent
+SUSPICIOUS_PATTERNS = [
+    r"subprocess|os\.system|exec\(",      # Shell execution
+    r"open\s*\([^)]*['\"]\\s*/etc",       # System file access
+    r"socket|urllib|requests\.get",        # Network access
+    r"import\s+ctypes",                    # Low-level access
+]
+
+# Map language names to runtime and interpreter
+RUNTIME_CONFIG = {
+    "python": {"runtime": "python:3.14", "interpreter": "python", "ext": "py"},
+    "node": {"runtime": "bun:1", "interpreter": "bun", "ext": "ts"},
+}
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    data = await request.data.json()
+    code = data["code"]
+    language = data["language"]
+
+    # Validate code length
+    if len(code) > MAX_CODE_LENGTH:
+        return response.json({
+            "success": False,
+            "blocked": True,
+            "reason": f"Code exceeds maximum length of {MAX_CODE_LENGTH} characters"
+        })
+
+    warnings = []
+
+    # Check for suspicious patterns (warn, don't block by default)
+    for pattern in SUSPICIOUS_PATTERNS:
+        if re.search(pattern, code, re.IGNORECASE):
+            warnings.append(f"Code contains pattern that may not work in sandbox: {pattern}")
+
+    if warnings:
+        context.logger.warn("Suspicious patterns detected", {"warnings": warnings})
+
+    config = RUNTIME_CONFIG[language]
+    filename = f"script.{config['ext']}"
+
+    # Execute with strict resource limits
+    result = await context.sandbox.run({
+        "runtime": config["runtime"],
+        "command": {
+            "exec": [config["interpreter"], filename],
+            "files": [{"path": filename, "content": code.encode()}],
+        },
+        "timeout": {"execution": "10s"},
+    })
+
+    # Sanitize output before returning
+    # Remove any paths that might leak system information
+    sanitized_output = result.stdout or ""
+    sanitized_output = re.sub(r"/home/\w+", "/home/user", sanitized_output)
+    sanitized_output = re.sub(r"/tmp/[a-zA-Z0-9]+", "/tmp/sandbox", sanitized_output)
+
+    return response.json({
+        "success": result.exit_code == 0,
+        "output": sanitized_output,
+        "warnings": warnings if warnings else None
+    })`} />
+
+**Security checklist:**
+- Set strict timeouts (10-30 seconds for most tasks)
+- Limit code size to prevent resource exhaustion
+- Sanitize outputs to avoid leaking system information
+- Log suspicious patterns for monitoring
+- Consider blocking known-dangerous patterns in sensitive environments
+
+**Key insight:** The sandbox provides isolation, but defense in depth is still important. Validate inputs, sanitize outputs, and monitor for abuse.
+
+</TutorialStep>
+
+## Use Case: Code Generation Agent
+
+Here's a complete example that combines an LLM for code generation with sandbox execution for validation.
+
+<CodeExample js={`import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+import { generateText } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
+
+// Map language names to runtime and interpreter
+const RUNTIME_CONFIG = {
+  python: { runtime: 'python:3.14', interpreter: 'python', ext: 'py' },
+  node: { runtime: 'bun:1', interpreter: 'bun', ext: 'ts' },
+} as const;
+
+export default createAgent('code-generator', {
+  schema: {
+    input: z.object({
+      task: z.string().describe('Natural language description of the task'),
+      language: z.enum(['python', 'node']).default('python'),
+    }),
+    output: z.object({
+      code: z.string(),
+      result: z.string(),
+      success: z.boolean(),
+    }),
+  },
+  handler: async (ctx, input) => {
+    ctx.logger.info('Generating code for task', { task: input.task });
+
+    // Step 1: Generate code with LLM
+    const { text: generatedCode } = await generateText({
+      model: anthropic('claude-sonnet-4-5'),
+      system: \`You are a code generator. Write clean, efficient \${input.language} code.
+Output ONLY the code, no explanations or markdown formatting.
+The code should print its result to stdout.\`,
+      prompt: input.task,
+    });
+
+    ctx.logger.info('Code generated', { codeLength: generatedCode.length });
+
+    const config = RUNTIME_CONFIG[input.language];
+    const filename = \`script.\${config.ext}\`;
+
+    // Step 2: Execute in sandbox
+    try {
+      const result = await ctx.sandbox.run({
+        runtime: config.runtime,
+        command: {
+          exec: [config.interpreter, filename],
+          files: [{ path: filename, content: Buffer.from(generatedCode) }],
+        },
+        timeout: { execution: '15s' },
+      });
+
+      if (result.exitCode !== 0) {
+        ctx.logger.warn('Generated code failed', { stderr: result.stderr });
+        return {
+          code: generatedCode,
+          result: \`Error: \${result.stderr ?? 'Unknown error'}\`,
+          success: false,
+        };
+      }
+
+      ctx.logger.info('Code executed successfully');
+
+      return {
+        code: generatedCode,
+        result: result.stdout ?? '',
+        success: true,
+      };
+    } catch (error) {
+      ctx.logger.error('Sandbox execution failed', { error });
+      return {
+        code: generatedCode,
+        result: 'Execution timed out or failed',
+        success: false,
+      };
+    }
+  },
+});`} py={`from anthropic import Anthropic
+from agentuity import AgentRequest, AgentResponse, AgentContext
+
+# Map language names to runtime and interpreter
+RUNTIME_CONFIG = {
+    "python": {"runtime": "python:3.14", "interpreter": "python", "ext": "py"},
+    "node": {"runtime": "bun:1", "interpreter": "bun", "ext": "ts"},
+}
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    data = await request.data.json()
+    task = data["task"]
+    language = data.get("language", "python")
+
+    context.logger.info("Generating code for task", {"task": task})
+
+    # Step 1: Generate code with LLM
+    client = Anthropic()
+    llm_response = client.messages.create(
+        model="claude-sonnet-4-5",
+        max_tokens=2000,
+        system=f"""You are a code generator. Write clean, efficient {language} code.
+Output ONLY the code, no explanations or markdown formatting.
+The code should print its result to stdout.""",
+        messages=[{"role": "user", "content": task}]
+    )
+
+    generated_code = llm_response.content[0].text
+
+    context.logger.info("Code generated", {"codeLength": len(generated_code)})
+
+    config = RUNTIME_CONFIG[language]
+    filename = f"script.{config['ext']}"
+
+    # Step 2: Execute in sandbox
+    try:
+        result = await context.sandbox.run({
+            "runtime": config["runtime"],
+            "command": {
+                "exec": [config["interpreter"], filename],
+                "files": [{"path": filename, "content": generated_code.encode()}],
+            },
+            "timeout": {"execution": "15s"},
+        })
+
+        if result.exit_code != 0:
+            context.logger.warn("Generated code failed", {"stderr": result.stderr})
+            return response.json({
+                "code": generated_code,
+                "result": f"Error: {result.stderr or 'Unknown error'}",
+                "success": False
+            })
+
+        context.logger.info("Code executed successfully")
+
+        return response.json({
+            "code": generated_code,
+            "result": result.stdout or "",
+            "success": True
+        })
+
+    except Exception as error:
+        context.logger.error("Sandbox execution failed", {"error": str(error)})
+        return response.json({
+            "code": generated_code,
+            "result": "Execution timed out or failed",
+            "success": False
+        })`} />
+
+**Try it:**
+1. Send: `{"task": "Calculate the first 10 Fibonacci numbers", "language": "python"}`
+2. Watch the LLM generate code, then see it execute in the sandbox
+3. Try more complex tasks and observe how the agent handles errors
+
+## Sandbox Runtimes
+
+Choose the appropriate runtime for your use case:
+
+| Runtime | Best For | Installed Packages |
+|---------|----------|-------------------|
+| `python:3.14` | Data analysis, ML, scripting, scientific computing | numpy, pandas, matplotlib |
+| `bun:1` | JavaScript/TypeScript, JSON processing, web utilities | Standard Bun modules |
+
+<Callout type="info">
+Runtime environments include common packages. For specialized dependencies, consider using interactive sandboxes where you can install packages before execution.
+</Callout>
+
+## Key Takeaways
+
+- **Sandboxes provide isolation**: Untrusted code runs in containers with no access to your agent's environment
+- **Two execution modes**: One-shot for simple runs, interactive for multi-step operations
+- **Always set timeouts**: Prevent infinite loops from consuming resources
+- **Clean up interactive sandboxes**: Use try/finally to ensure `sandbox.destroy()` runs
+- **Handle errors gracefully**: Distinguish runtime errors from system errors for better user feedback
+- **Defense in depth**: Validate inputs, sanitize outputs, and monitor for abuse even with sandbox isolation
+
+## What's Next
+
+You now know how to safely execute untrusted code in isolated sandboxes. Combined with the agent communication, memory, and observability skills from previous modules, you're ready to build sophisticated agent systems.
+
+In the capstone project, you'll combine everything you've learned to build an advanced multi-agent research system that demonstrates mastery of all the concepts covered in this training.
+
+---
+
+**Ready for the Capstone?** [Module 10: Capstone Project](./10-capstone)

@@ -1,7 +1,7 @@
 import { createAgent } from '@agentuity/runtime';
 import { z } from 'zod';
 
-export const agent = createAgent({
+export const agent = createAgent('hello-agent', {
   schema: {
     input: z.object({ name: z.string().optional() }),
     output: z.object({
@@ -11,16 +11,15 @@ export const agent = createAgent({
     })
   },
   metadata: {
-    name: 'Hello Agent',
     description: 'Greeting agent with memory'
   },
-  handler: async (c, input) => {
-    c.logger.info('Hello agent received a request');
+  handler: async (ctx, input) => {
+    ctx.logger.info('Hello agent received a request');
 
     const name = input.name || 'World';
 
     // Get current greeting count from KV storage
-    const counterResult = await c.kv.get('stats', 'greeting_count');
+    const counterResult = await ctx.kv.get('stats', 'greeting_count');
 
     let count: number;
     if (counterResult.exists) {
@@ -33,9 +32,9 @@ export const agent = createAgent({
     }
 
     // Update the counter in storage
-    await c.kv.set('stats', 'greeting_count', count);
+    await ctx.kv.set('stats', 'greeting_count', count);
 
-    c.logger.info(`Greeting #${count} for ${name}`);
+    ctx.logger.info(`Greeting #${count} for ${name}`);
 
     return {
       message: `Hello, ${name}!`,

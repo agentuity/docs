@@ -1,0 +1,213 @@
+---
+title: "Module 6: Deployment Environments"
+description: From local development to global production
+---
+
+You've built agents with memory, collaboration, and guardrails. Now let's deploy them properly.
+
+## The Agentuity Environment Model
+
+Agentuity provides three distinct environments, each with specific purposes:
+
+### Development Environment
+**Where ideas become agents**
+
+Your local machine running Workbench:
+- Instant feedback with hot reload
+- Full debugging capabilities
+- Observability provided by OpenTelemetry integration
+- Access to Agentuity API features (memory, etc)
+
+```bash
+# Start local development
+agentuity dev
+
+# Test with real-time changes
+# Edit, save, and test immediately
+```
+
+### Staging Environment
+**Where agents prove themselves**
+
+<Callout type="success">
+**Now Available**: Staging environments are here. Test your agents with production-like infrastructure before going live.
+</Callout>
+
+Cloud deployment with test data:
+- Full observability
+- Options for different deployment configurations
+- Ability to use different keys and environment variables
+
+### Production Environment
+**Where agents serve users**
+
+Full-scale deployment:
+- Auto-scaling infrastructure
+- Complete monitoring, with the exact same experience as local development
+
+```bash
+# Deploy to production
+agentuity deploy
+```
+
+## Preview Deployments
+
+**Testing changes in the cloud before production**
+
+<Callout type="success">
+**Preview deployments are here.** Automatically test your PR changes in the cloud before merging.
+</Callout>
+
+Preview deployments allow you to test agent modifications in a cloud environment automatically when you create pull requests, giving you confidence before merging to production.
+
+### How Preview Deployments Work
+
+1. **Enable in Console**: Turn on preview deployments for your repository
+2. **Create Pull Request**: Open a PR with your agent changes
+3. **Automatic Deployment**: Agentuity automatically deploys your changes to a preview environment
+4. **Test with Unique URLs**: Each preview gets unique URLs with git hash tagging
+5. **Merge with Confidence**: Test thoroughly before merging to production
+
+### Setting Up Preview Deployments
+
+Enable preview deployments in your repository settings through the Agentuity console with a simple toggle switch.
+
+### PR Integration
+
+When you create a pull request, Agentuity automatically comments with:
+- Direct links to your preview deployment
+- Curl examples for API testing
+- Deployment logs and monitoring links
+- Configuration details from your agentuity.yaml
+
+### Preview Environment Access
+
+Each preview deployment gets tagged URLs that include your git commit hash, allowing precise testing of specific changes.
+
+<Callout type="info">
+**Current Status**: Preview deployments share production resources for storage (KV, vector, object store). Full resource isolation is coming soon.
+</Callout>
+
+### Benefits for Development Teams
+
+- **Collaborative testing**: Share preview links with team members and stakeholders
+- **Integration validation**: Test with real external APIs in cloud environment
+- **Performance insights**: See how changes perform under cloud conditions
+- **Risk reduction**: Catch issues before they reach production users
+
+## Environment Progression
+
+### Moving Through Environments
+
+The typical flow moves from local development to production with clear validation at each stage:
+
+| Stage | Purpose | Key Focus | Typical Timeline |
+|-------|---------|-----------|------------------|
+| **Local Dev** | Build and iterate rapidly | Feature development | Hours to days |
+| **Preview** | Test changes in cloud | PR validation and team collaboration | Minutes to hours |
+| **Staging** | Validate production readiness | Performance and integration testing | Days to weeks |
+| **Production** | Serve real users | Monitoring and optimization | Ongoing |
+
+### Environment Validation Focus
+
+Each environment emphasizes different aspects of your agent's readiness:
+
+| Focus Area | Development | Preview | Staging | Production |
+|------------|------------|---------|---------|------------|
+| **Functionality** | Core features work | Change validation | Load and stress testing | Success metrics |
+| **Memory and State** | Memory operations function | Data integration testing | Memory performance under load | Response time tracking |
+| **Error Handling** | Validation works | Edge case testing | Rate limiting effective | Error rate monitoring |
+| **Observability** | Debug information available | Cloud behavior verification | Telemetry accuracy | Performance insights |
+| **Integration** | Error messages helpful | Real API testing | External service testing | User experience metrics |
+| **Resilience** | Basic error recovery | Team collaboration | Failover mechanisms | Incident response |
+
+## Enterprise Deployment Options
+
+<Callout type="info">
+**Coming Soon**: Advanced deployment options for enterprise customers with specific compliance and security requirements.
+</Callout>
+
+### Private Cloud Deployments
+
+**Complete infrastructure control via CLI**
+
+<Callout type="info">
+**Coming Soon**: Create and manage your own Agentuity clusters with full control over infrastructure, compliance, and data sovereignty.
+</Callout>
+
+#### Multi-Cloud Support
+Deploy Agentuity infrastructure on your preferred cloud provider with full region selection:
+- **Amazon Web Services (AWS)**: All AWS regions
+- **Microsoft Azure**: Global Azure regions
+- **Google Cloud Platform (GCP)**: Worldwide GCP regions
+- **VMware**: On-premise and private cloud deployments
+
+#### Flexible Cluster Sizing
+Choose the right cluster size for your workload:
+
+| Size | Use Case | Typical Workload |
+|------|----------|------------------|
+| **Dev** | Development and testing | Individual developers, proof of concepts |
+| **Small** | Team deployments | Small teams, departmental use |
+| **Medium** | Production workloads | Multiple teams, moderate scale |
+| **Large** | Enterprise scale | High-volume production, multiple business units |
+
+#### Complete Cluster Management
+Create and manage clusters through the command-line interface with full control over:
+
+- **Cluster Creation**: New cluster provisioning across supported providers
+- **Region Selection**: Choose optimal geographic deployment locations
+- **Machine Management**: List, remove, and monitor individual cluster machines
+- **Status Monitoring**: Real-time cluster health and performance visibility
+
+#### Deployment Options
+- **Automated Setup**: Streamlined cloud provider integration
+- **Manual Setup**: Step-by-step guidance for custom configurations
+- **Full Control**: Complete networking, security, and resource customization
+
+#### Enterprise Benefits
+- **Data Sovereignty**: Keep all data within your infrastructure boundaries
+- **Compliance Control**: Meet specific regulatory and security requirements
+- **Performance Optimization**: Deploy closer to your users and data sources
+- **Cost Management**: Direct control over resource allocation and scaling
+
+### On-Premise Installations
+**VMware-based deployments for complete on-premise control**
+
+Run Agentuity entirely within your data center using VMware infrastructure. Perfect for organizations requiring complete air-gapped deployments or specific hardware control.
+
+## Configuration Management
+
+### Environment-Specific Settings
+
+Different environments need different configurations:
+
+<Callout type="info">
+Environment-specific settings are configured in the Agentuity web console. More information coming soon.
+</Callout>
+
+## Real-World Deployment Lessons
+
+### Enterprise Scale: Salesforce's Journey
+
+When Salesforce deployed agents to handle 50% of support cases, they learned:
+- **Gradual rollout is essential**: Started with 1% of tickets
+- **Human oversight needed initially**: Agents flagged uncertain responses
+- **Continuous improvement**: Daily model updates based on outcomes
+- **Organizational change**: Required retraining support staff
+
+### Financial Services: 100+ GenAI Applications
+
+[CB Insights reports over 100 GenAI applications in financial services](https://www.cbinsights.com/research/report/generative-ai-financial-services-applications-2025/). Banks deploying agents discovered:
+- **Compliance first**: Every response needs audit trails
+- **Failover critical**: Instant human handoff when needed
+- **Cost management**: Token limits per customer interaction
+- **Security paramount**: No customer data in prompts
+
+## What's Next?
+
+You now understand the deployment journey from local development to production. In the next module, we'll learn how to safely execute untrusted code in isolated containers using the Agentuity Sandbox.
+
+---
+
+**Ready for Module 9?** [Sandbox and Code Execution](./09-sandbox-code-execution)

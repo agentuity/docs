@@ -1,0 +1,684 @@
+---
+title: "Module 8: Streaming and Real-time"
+description: Build responsive AI experiences with Server-Sent Events, WebSockets, and durable streams
+---
+
+Waiting for a complete response before showing anything creates a poor user experience. Streaming lets users see AI output as it's generated, making your agents feel responsive and alive.
+
+## Why Streaming Matters for AI
+
+Traditional request-response patterns make users wait for the entire LLM response before seeing anything. For a response that takes 10 seconds to generate, that's 10 seconds of staring at a loading spinner.
+
+Streaming changes this:
+- **Token-by-token output**: Users see text appear as the model generates it
+- **Perceived performance**: Even slow responses feel fast when content appears immediately
+- **Progress awareness**: Users know the system is working, not stuck
+- **Early termination**: Users can stop generation if the response is going in the wrong direction
+
+## Three Streaming Patterns
+
+Agentuity supports three streaming patterns, each suited to different use cases:
+
+| Pattern | Direction | Best For |
+|---------|-----------|----------|
+| **SSE (Server-Sent Events)** | Server to client | AI chat streaming, live updates, progress notifications |
+| **WebSocket** | Bidirectional | Real-time chat, collaborative editing, gaming |
+| **Durable Streams** | Persistent storage | Audit logs, large exports, resumable downloads |
+
+<Callout type="info" title="Routes Location">
+All route handlers live in `src/api/`. SSE and WebSocket endpoints are routes, not agents. Import agents as needed and call them from your routes.
+</Callout>
+
+## Build Streaming Patterns Step-by-Step
+
+These tutorial steps cover each streaming pattern with complete, runnable examples. Start with SSE for most AI streaming use cases.
+
+### Step 1: Server-Sent Events (SSE)
+
+<TutorialStep number={1} title="SSE for AI Streaming" estimatedTime="5 min">
+
+SSE provides one-way streaming from server to client over HTTP. It's the simplest pattern for streaming AI responses.
+
+```typescript
+import { createRouter, sse } from '@agentuity/runtime';
+import { streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+const router = createRouter();
+
+router.get('/stream', sse(async (c, stream) => {
+  c.var.logger.info('Client connected to SSE stream');
+
+  const { textStream } = streamText({
+    model: openai('gpt-5-mini'),
+    prompt: 'Explain what AI agents are in 3 sentences.',
+  });
+
+  let tokenCount = 0;
+  for await (const chunk of textStream) {
+    await stream.writeSSE({
+      event: 'token',
+      data: chunk,
+      id: String(tokenCount++),
+    });
+  }
+
+  // Signal completion to client
+  await stream.writeSSE({ event: 'done', data: 'complete' });
+  stream.close();
+}));
+
+export default router;
+```
+
+**What this demonstrates:**
+- Using `sse()` middleware to handle SSE connections
+- Streaming AI SDK output token by token
+- Named events (`token`, `done`) for client-side filtering
+- Event IDs for client-side ordering and reconnection
+
+**Try it:**
+1. Create this route at `src/api/stream/route.ts`
+2. Run `agentuity dev`
+3. Open `http://localhost:3500/api/stream` in your browser
+4. Watch tokens appear as they're generated
+
+**Key insight:** SSE is simpler than WebSockets for one-way streaming. Browsers handle reconnection automatically.
+
+</TutorialStep>
+
+### Step 2: SSE with User Input
+
+<TutorialStep number={2} title="SSE with POST Requests" estimatedTime="4 min">
+
+Most AI chat interfaces need to send user input. Use POST requests with SSE for chat-style streaming.
+
+```typescript
+import { createRouter, sse } from '@agentuity/runtime';
+import { streamText } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
+import { z } from 'zod';
+import { zValidator } from '@hono/zod-validator';
+
+const router = createRouter();
+
+const ChatInputSchema = z.object({
+  message: z.string().min(1),
+  systemPrompt: z.string().optional(),
+});
+
+router.post('/chat', zValidator('json', ChatInputSchema), sse(async (c, stream) => {
+  const { message, systemPrompt } = c.req.valid('json');
+
+  c.var.logger.info('Starting chat stream', { messageLength: message.length });
+
+  const { textStream, usage } = streamText({
+    model: anthropic('claude-sonnet-4-5'),
+    system: systemPrompt || 'You are a helpful assistant. Be concise and informative.',
+    prompt: message,
+  });
+
+  let id = 0;
+  for await (const chunk of textStream) {
+    await stream.writeSSE({
+      event: 'token',
+      data: chunk,
+      id: String(id++),
+    });
+  }
+
+  // Send usage stats at the end
+  const usageData = await usage;
+  await stream.writeSSE({
+    event: 'usage',
+    data: JSON.stringify({
+      promptTokens: usageData.promptTokens,
+      completionTokens: usageData.completionTokens,
+    }),
+  });
+
+  await stream.writeSSE({ event: 'done', data: 'complete' });
+  stream.close();
+}));
+
+export default router;
+```
+
+**What this demonstrates:**
+- POST request with JSON body for user input
+- Input validation with Zod before streaming
+- Sending metadata (token usage) after streaming completes
+- Multiple event types for different data categories
+
+**Try it:**
+```bash
+curl -N -X POST http://localhost:3500/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What is TypeScript?"}'
+```
+
+**Key insight:** The `-N` flag disables output buffering in curl, showing SSE events as they arrive.
+
+</TutorialStep>
+
+### Step 3: WebSocket Connections
+
+<TutorialStep number={3} title="Bidirectional WebSocket Communication" estimatedTime="6 min">
+
+WebSockets enable bidirectional communication, ideal for chat interfaces where users send multiple messages without restarting the connection.
+
+```typescript
+import { createRouter, websocket } from '@agentuity/runtime';
+import { generateText } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
+
+const router = createRouter();
+
+interface ChatMessage {
+  type: 'message' | 'ping';
+  content?: string;
+}
+
+interface ChatResponse {
+  type: 'response' | 'error' | 'pong';
+  content?: string;
+  error?: string;
+}
+
+router.get('/ws', websocket((c, ws) => {
+  let messageCount = 0;
+
+  ws.onOpen(() => {
+    c.var.logger.info('WebSocket client connected');
+    ws.send(JSON.stringify({ type: 'response', content: 'Connected! Send a message.' }));
+  });
+
+  ws.onMessage(async (event) => {
+    try {
+      const message: ChatMessage = JSON.parse(event.data as string);
+
+      // Handle ping/pong for keep-alive
+      if (message.type === 'ping') {
+        ws.send(JSON.stringify({ type: 'pong' }));
+        return;
+      }
+
+      if (!message.content) {
+        ws.send(JSON.stringify({ type: 'error', error: 'Message content required' }));
+        return;
+      }
+
+      messageCount++;
+      c.var.logger.info('Processing message', { messageCount });
+
+      // Generate response (non-streaming for simplicity)
+      const { text } = await generateText({
+        model: anthropic('claude-haiku-4-5'),
+        prompt: message.content,
+      });
+
+      ws.send(JSON.stringify({ type: 'response', content: text }));
+    } catch (error) {
+      c.var.logger.error('WebSocket message error', { error });
+      ws.send(JSON.stringify({ type: 'error', error: 'Failed to process message' }));
+    }
+  });
+
+  ws.onClose(() => {
+    c.var.logger.info('WebSocket client disconnected', { totalMessages: messageCount });
+  });
+}));
+
+export default router;
+```
+
+**What this demonstrates:**
+- WebSocket connection lifecycle (`onOpen`, `onMessage`, `onClose`)
+- JSON protocol for structured communication
+- Ping/pong for connection keep-alive
+- Error handling within WebSocket context
+- Logging connection statistics
+
+**Try it:**
+```javascript
+const ws = new WebSocket('ws://localhost:3500/api/ws');
+
+ws.onopen = () => {
+  console.log('Connected');
+  ws.send(JSON.stringify({ type: 'message', content: 'Hello!' }));
+};
+
+ws.onmessage = (event) => {
+  console.log('Received:', JSON.parse(event.data));
+};
+```
+
+**Key insight:** WebSockets maintain a persistent connection, reducing latency for back-and-forth communication compared to opening new HTTP requests.
+
+</TutorialStep>
+
+### Step 4: Durable Streams with ctx.stream
+
+<TutorialStep number={4} title="Persistent Streaming Storage" estimatedTime="6 min">
+
+Durable streams store data permanently with public URLs. Use them for audit logs, exports, or any data that needs to persist after the connection closes.
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+import { streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+const agent = createAgent('ReportGenerator', {
+  schema: {
+    input: z.object({
+      topic: z.string(),
+      jobId: z.string(),
+    }),
+    output: z.object({
+      streamUrl: z.string(),
+      streamId: z.string(),
+    }),
+  },
+  handler: async (ctx, input) => {
+    // Create a durable stream for the report
+    const reportStream = await ctx.stream.create('reports', {
+      contentType: 'text/plain',
+      metadata: {
+        jobId: input.jobId,
+        topic: input.topic,
+        startedAt: new Date().toISOString(),
+      },
+    });
+
+    ctx.logger.info('Report stream created', {
+      streamId: reportStream.id,
+      jobId: input.jobId,
+    });
+
+    // Write header
+    await reportStream.write(`Report: ${input.topic}\n`);
+    await reportStream.write(`Generated: ${new Date().toISOString()}\n`);
+    await reportStream.write('---\n\n');
+
+    // Generate content and write to stream
+    const { textStream } = streamText({
+      model: openai('gpt-5-mini'),
+      prompt: `Write a detailed report about: ${input.topic}`,
+    });
+
+    for await (const chunk of textStream) {
+      await reportStream.write(chunk);
+    }
+
+    // Close the stream when done
+    await reportStream.close();
+
+    ctx.logger.info('Report complete', {
+      streamId: reportStream.id,
+      bytesWritten: reportStream.bytesWritten,
+    });
+
+    return {
+      streamUrl: reportStream.url,
+      streamId: reportStream.id,
+    };
+  },
+});
+
+export default agent;
+```
+
+**What this demonstrates:**
+- Creating durable streams with `ctx.stream.create()`
+- Adding metadata for tracking and filtering
+- Writing content incrementally
+- Closing streams properly (required for durability)
+- Returning public URLs for later access
+
+**Try it:**
+1. Call the agent with a topic and job ID
+2. Access the returned `streamUrl` to download the complete report
+3. Use `ctx.stream.list()` to find streams by metadata
+
+**Key insight:** Unlike SSE, durable streams persist data. The URL remains accessible even after the agent completes.
+
+<Callout type="warning" title="Always Close Streams">
+Durable streams must be closed with `stream.close()`. Unclosed streams remain in an incomplete state and may not be fully readable.
+</Callout>
+
+</TutorialStep>
+
+### Step 5: Background Tasks with waitUntil
+
+<TutorialStep number={5} title="Fire-and-Forget Background Work" estimatedTime="4 min">
+
+Use `waitUntil` to run tasks after responding to the client. This keeps response times fast while handling analytics, logging, or other background work.
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import { z } from 'zod';
+import { zValidator } from '@hono/zod-validator';
+
+const router = createRouter();
+
+const TaskSchema = z.object({
+  data: z.string(),
+  userId: z.string(),
+});
+
+router.post('/process', zValidator('json', TaskSchema), async (c) => {
+  const { data, userId } = c.req.valid('json');
+  const taskId = crypto.randomUUID();
+
+  c.var.logger.info('Task received', { taskId, userId });
+
+  // Queue background work
+  c.executionCtx.waitUntil((async () => {
+    try {
+      // Simulate processing
+      await new Promise((r) => setTimeout(r, 2000));
+
+      // Store result in KV
+      await c.var.kv.set('results', taskId, {
+        status: 'completed',
+        processedAt: new Date().toISOString(),
+        dataLength: data.length,
+      });
+
+      c.var.logger.info('Background task complete', { taskId });
+    } catch (error) {
+      c.var.logger.error('Background task failed', { taskId, error });
+
+      await c.var.kv.set('results', taskId, {
+        status: 'failed',
+        error: String(error),
+      });
+    }
+  })());
+
+  // Respond immediately
+  return c.json({
+    taskId,
+    status: 'processing',
+    message: 'Check /results/:taskId for status',
+  });
+});
+
+// Endpoint to check task status
+router.get('/results/:taskId', async (c) => {
+  const taskId = c.req.param('taskId');
+  const result = await c.var.kv.get('results', taskId);
+
+  if (!result.exists) {
+    return c.json({ status: 'pending' });
+  }
+
+  return c.json(await result.data.json());
+});
+
+export default router;
+```
+
+**What this demonstrates:**
+- Using `c.executionCtx.waitUntil()` in routes for background work
+- Responding immediately while work continues
+- Storing results in KV for later retrieval
+- Error handling in background tasks
+
+**Try it:**
+1. POST to `/process` with data
+2. Receive immediate response with `taskId`
+3. Poll `/results/:taskId` to check status
+
+**Key insight:** Background tasks don't block the response. Use them for analytics, notifications, or any work that doesn't need to complete before responding.
+
+</TutorialStep>
+
+### Step 6: AI SDK Streaming Integration
+
+<TutorialStep number={6} title="Streaming Agents with AI SDK" estimatedTime="5 min">
+
+Combine the AI SDK's streaming capabilities with Agentuity's agent framework for chat interfaces that stream directly to clients.
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { streamText } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
+import { z } from 'zod';
+
+const agent = createAgent('StreamingChat', {
+  schema: {
+    input: z.object({
+      message: z.string(),
+      conversationId: z.string().optional(),
+    }),
+    // Enable streaming output
+    stream: true,
+  },
+  handler: async (ctx, input) => {
+    // Retrieve conversation history from thread state
+    const messages = (await ctx.thread.state.get('messages')) || [];
+
+    // Add user message
+    messages.push({ role: 'user', content: input.message });
+
+    ctx.logger.info('Starting streaming response', {
+      conversationId: input.conversationId,
+      historyLength: messages.length,
+    });
+
+    const { textStream, text, usage } = streamText({
+      model: anthropic('claude-sonnet-4-5'),
+      system: 'You are a helpful assistant. Provide clear, concise responses.',
+      messages,
+    });
+
+    // Save conversation history after stream completes
+    ctx.waitUntil(async () => {
+      const fullResponse = await text;
+      messages.push({ role: 'assistant', content: fullResponse });
+      await ctx.thread.state.set('messages', messages);
+
+      const usageData = await usage;
+      ctx.logger.info('Stream complete', {
+        totalTokens: usageData.totalTokens,
+        historyLength: messages.length,
+      });
+    });
+
+    // Return the stream directly
+    return textStream;
+  },
+});
+
+export default agent;
+```
+
+**Route to expose the streaming agent:**
+
+```typescript
+// src/api/chat/route.ts
+import { createRouter, stream } from '@agentuity/runtime';
+import chatAgent from '@agent/streaming-chat';
+
+const router = createRouter();
+
+router.post('/', chatAgent.validator(), stream(async (c) => {
+  const body = c.req.valid('json');
+  return chatAgent.run(body);
+}));
+
+export default router;
+```
+
+**What this demonstrates:**
+- Agent-level streaming with `schema.stream: true`
+- Using `stream()` middleware in routes to pipe agent streams
+- Conversation history management with thread state
+- `ctx.waitUntil()` for post-stream cleanup without blocking
+- Token usage tracking
+
+**Try it:**
+1. POST to `/api/chat` with a message
+2. Watch the response stream token by token
+3. Send follow-up messages to continue the conversation
+4. Check logs for token usage stats
+
+**Key insight:** The `stream()` middleware handles piping the agent's stream to the HTTP response. Without it, the response may be buffered.
+
+</TutorialStep>
+
+## Pattern Comparison
+
+Choose the right streaming pattern for your use case:
+
+| Pattern | Direction | Persistence | Reconnection | Best For |
+|---------|-----------|-------------|--------------|----------|
+| **SSE** | Server to client | None | Auto-reconnect | AI chat, live feeds, notifications |
+| **WebSocket** | Bidirectional | None | Manual | Real-time chat, collaborative tools |
+| **Durable Stream** | Write once, read many | Permanent | N/A (URL access) | Audit logs, exports, batch results |
+| **waitUntil** | Background | Via KV/Stream | N/A | Analytics, notifications, cleanup |
+
+### When to Use Each
+
+**SSE (Server-Sent Events)**
+- Streaming AI responses token by token
+- Live dashboard updates
+- Progress indicators
+- Notification feeds
+
+**WebSocket**
+- Chat applications with frequent back-and-forth
+- Collaborative editing
+- Real-time gaming
+- Any scenario requiring client-initiated messages during connection
+
+**Durable Streams**
+- Audit logs that must persist
+- Large data exports
+- Report generation
+- Any output that needs a permanent URL
+
+**waitUntil**
+- Analytics tracking
+- Email notifications
+- Cache warming
+- Any work that can happen after responding
+
+## Handling Client Disconnection
+
+Always handle early disconnection to prevent resource leaks:
+
+**SSE:**
+```typescript
+router.get('/stream', sse(async (c, stream) => {
+  const interval = setInterval(async () => {
+    await stream.write('heartbeat');
+  }, 1000);
+
+  stream.onAbort(() => {
+    clearInterval(interval);
+    c.var.logger.info('Client disconnected, cleaned up resources');
+  });
+
+  // Keep connection open
+  await new Promise(() => {});
+}));
+```
+
+**WebSocket:**
+```typescript
+router.get('/ws', websocket((c, ws) => {
+  const interval = setInterval(() => {
+    ws.send(JSON.stringify({ type: 'heartbeat' }));
+  }, 5000);
+
+  ws.onClose(() => {
+    clearInterval(interval);
+    c.var.logger.info('WebSocket closed, cleaned up resources');
+  });
+}));
+```
+
+## Client-Side Consumption
+
+### SSE with EventSource
+
+```javascript
+const source = new EventSource('https://your-project.agentuity.cloud/api/stream');
+
+source.addEventListener('token', (e) => {
+  document.getElementById('output').textContent += e.data;
+});
+
+source.addEventListener('done', () => {
+  source.close();
+});
+
+source.onerror = () => {
+  console.log('Connection error or closed');
+  source.close();
+};
+```
+
+### WebSocket Client
+
+```javascript
+const ws = new WebSocket('wss://your-project.agentuity.cloud/api/ws');
+
+ws.onopen = () => {
+  console.log('Connected');
+};
+
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data);
+  handleMessage(message);
+};
+
+ws.onclose = () => {
+  console.log('Disconnected');
+  // Implement reconnection logic if needed
+};
+```
+
+### React Integration
+
+Use Agentuity's React hooks for seamless streaming integration:
+
+```tsx
+import { useAPI } from '@agentuity/react';
+
+function Chat() {
+  const { data, isLoading, invoke } = useAPI('POST /api/chat');
+
+  return (
+    <div>
+      <button onClick={() => invoke({ message: 'Hello!' })}>
+        Send
+      </button>
+      {isLoading && <p>Generating...</p>}
+      {data && <p>{data}</p>}
+    </div>
+  );
+}
+```
+
+For more React patterns, see [React Hooks](/Build/Frontend/react-hooks).
+
+## Key Takeaways
+
+- **SSE is simplest** for one-way AI streaming with automatic reconnection
+- **WebSockets enable bidirectional** communication for interactive applications
+- **Durable streams persist** data with permanent URLs for exports and logs
+- **waitUntil runs background work** without blocking responses
+- **Always handle disconnection** to prevent resource leaks
+- **Use the right pattern** based on direction, persistence, and interactivity needs
+
+## What's Next?
+
+Now that you can build responsive streaming experiences, the next module covers code execution in isolated sandboxes. You'll learn how to safely run user-submitted code and integrate code generation with AI agents.
+
+---
+
+**Ready for Module 9?** [Sandbox and Code Execution](./09-sandbox-code-execution)

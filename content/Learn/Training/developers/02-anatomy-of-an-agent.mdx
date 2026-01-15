@@ -1,0 +1,796 @@
+---
+title: "Module 2: The Anatomy of an Agent"
+description: Understanding the core components that make agents work - triggers, requests, logging, and storage
+---
+
+Now that you've built your first agent, let's dive deeper to understand what makes agents tick. In this module, you'll learn the fundamental building blocks every agent shares, then see them combined in a real-world weather agent.
+
+## The Agent Lifecycle
+
+Every agent interaction follows a predictable lifecycle, from receiving a trigger to returning a response. Understanding this flow is crucial for building effective agents.
+
+<Mermaid chart="
+graph TD
+    A[Trigger Event<br/>HTTP, Cron, Email, etc.] --> B[Parse Request<br/>Extract data and metadata]
+    B --> C[Agent Handler<br/>Your createAgent function executes]
+    C --> D[Process Logic<br/>Business logic and decisions]
+    D --> E[Access Storage<br/>KV, Vector, Object store]
+    E --> F[Generate Response<br/>JSON, text, binary, etc. or handoff to another agent]
+    F --> G[Return to Caller<br/>Client receives result]
+" />
+
+Agents follow this lifecycle regardless of complexity, from simple greeting agents to more complex multi-step (or multi-agent) solutions. Let's explore each phase to understand what makes this lifecycle powerful.
+
+## Planning and Reasoning: The Agent's Brain
+
+What separates agents from simple scripts is their ability to plan and reason. While Agentuity provides the infrastructure (triggers, storage, logging), you implement the logic to make your agent(s) do something useful.
+
+### The Planning Phase
+
+Planning is how agents break down complex requests into actionable steps. According to [OpenAI's practical guide to building agents](https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf), providing smaller, clearer steps from dense resources helps minimize ambiguity and helps the model better follow instructions.
+
+Effective agent planning involves:
+
+1. **Intent Recognition**: Understanding what the user actually wants
+2. **Task Decomposition**: Breaking complex requests into smaller steps
+3. **Resource Assessment**: Determining what tools and data are needed
+4. **Execution Strategy**: Deciding the order and approach for each step
+
+As a result, agents use LLMs to adapt their approach based on context and available resources, rather than use hard-coded logic (i.e. decision trees).
+
+### The Reasoning Loop
+
+The reasoning loop is where agents continuously evaluate and adapt their approach. [Stanford's research on ReAct agents](https://arxiv.org/abs/2210.03629) shows that combining reasoning and acting in iterative loops significantly improves agent performance.
+
+The basic pattern follows:
+1. **Observe** - Analyze current state and available information
+2. **Think** - Reason about the best next action
+3. **Act** - Execute the chosen action
+4. **Reflect** - Evaluate the results and learn
+5. **Repeat** - Continue until goal is achieved or constraints are met
+
+This iterative approach allows agents to handle uncertainty and recover from errors, key capabilities that distinguish agents from simple scripts.
+
+You'll implement these patterns in a basic way, using the anatomy concepts you'll learn next: triggers to determine when to start, logging to track decisions, storage to maintain state, and responses to deliver results.
+
+## Core Components of Agent Anatomy
+
+Now that you understand the theory, let's dive into the practical components. Every agent is built from the same fundamental building blocks:
+
+### 1. Triggers
+
+Agents spring into action when triggered. Agentuity supports multiple trigger types:
+
+| Trigger Type | Description | Use Case |
+|-------------|-------------|----------|
+| **webhook** | HTTP endpoint call | REST APIs, external integrations |
+| **cron** | Scheduled execution | Batch processing, periodic tasks |
+| **manual** | Workbench/CLI invocation | Testing, one-off tasks |
+| **agent** | Called by another agent | Multi-agent workflows |
+| **sms** | SMS message received | Text-based interactions |
+| **email** | Email received | Email automation |
+| **queue** | Message queue event | Async processing |
+
+But these triggers are not mutually exclusive. Agents on Agentuity can be triggered *by multiple triggers*, and can behave differently based on the trigger.
+
+For example, a weather agent might use the following triggers:
+- **Webhook**: Return weather for a user-requested location
+- **Cron**: Update cached weather data for monitoring dashboards
+- **Manual**: Test behavior (locally, via Workbench) during development
+
+### 2. Request and Response
+
+In v1, agents receive typed input based on your schema and return typed output. Routes handle raw HTTP requests and can invoke agents:
+
+**Agent Input/Output:**
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent('Weather', {
+  schema: {
+    input: z.object({ location: z.string() }),
+    output: z.object({ temperature: z.number(), conditions: z.string() }),
+  },
+  handler: async (ctx, input) => {
+    // input is typed as { location: string }
+    return { temperature: 72, conditions: 'Sunny' };
+  },
+});
+```
+
+**Route Request Handling:**
+Routes use [Hono's context](https://hono.dev/docs/api/context) for request/response:
+- `c.req.json()` - Parse JSON body
+- `c.req.text()` - Get plain text
+- `c.req.query('param')` - Get query parameters
+- `c.json(data)`, `c.text(data)`, `c.html(data)` - Response helpers
+
+### 3. The Agent Context
+
+The `ctx` object is your agent's way to access core Agentuity services:
+
+**Logging:**
+- `ctx.logger` - Structured logging with levels (info, warn, error, debug)
+
+**Storage & Data:**
+- `ctx.kv` - Key-value storage for caching and state
+- `ctx.vector` - Vector storage for semantic search
+
+**State Management:**
+- `ctx.state` - Request-scoped state (cleared after response)
+- `ctx.thread.state` - Thread-scoped state (persists across requests in a conversation)
+- `ctx.session.state` - Session-scoped state
+
+**Identifiers:**
+- `ctx.sessionId` - Current session identifier
+- `ctx.thread.id` - Conversation thread identifier
+- `ctx.current.name` - Current agent name
+- `ctx.current.agentId` - Stable agent ID for namespacing
+
+**Background Tasks:**
+- `ctx.waitUntil()` - Run tasks after response is sent
+
+<Callout type="info">
+See the [SDK Reference](/Reference/sdk-reference) for complete API details.
+</Callout>
+
+### 4. Storage for State and Memory
+
+Agentuity provides storage APIs that enable different memory patterns:
+
+- **Session memory (KV with TTL)** - Temporary data that expires (e.g., 5-minute cache)
+- **Persistent memory (KV without TTL)** - Data that survives restarts
+- **Searchable memory (Vector)** - Semantic search and knowledge retrieval
+- **File storage (Object)** - Binary files, documents, images, and media
+
+We'll explore memory patterns in depth in **Module 3: Agent Memory**.
+
+### 5. Framework Awareness
+
+<Callout type="info">
+Agentuity is framework-agnostic. Use any AI framework (LangChain, CrewAI, Vercel AI SDK, etc.) or build custom agents from scratch. The anatomy concepts work with all of them. See [Templates](/Get-Started/project-structure) for starter examples.
+</Callout>
+
+Different frameworks excel at different tasks, but they all use the same Agentuity SDK anatomy:
+- All receive `ctx` (context) and `input` parameters
+- All access logging and storage the same way
+- All return typed responses
+
+As a result, you can choose your framework *based on your use case*, not platform constraints. Plus, you can use multiple frameworks in the same project, or even run agents on different frameworks in the same project.
+
+## Build Agent Anatomy Step-by-Step
+
+Now let's get hands-on. Each step below focuses on one core concept, with simple code you can run immediately in Workbench.
+
+### Step 1: Understanding Triggers
+
+<TutorialStep number={1} title="Understanding Triggers" estimatedTime="3 min">
+
+Every agent needs to know *how* it was triggered. In v1, routes handle HTTP triggers while agents focus on business logic. You can still detect trigger context through metadata passed to your agents.
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent('Trigger Demo', {
+  schema: {
+    input: z.object({
+      source: z.enum(['webhook', 'cron', 'manual', 'agent']).optional(),
+      data: z.any().optional(),
+    }),
+    output: z.object({
+      message: z.string(),
+      processedAt: z.string(),
+    }),
+  },
+  handler: async (ctx, input) => {
+    const source = input.source ?? 'unknown';
+
+    ctx.logger.info('Agent triggered', { source });
+
+    if (source === 'cron') {
+      return {
+        message: 'Running scheduled task',
+        processedAt: new Date().toISOString(),
+      };
+    }
+
+    return {
+      message: `Processed request from ${source}`,
+      processedAt: new Date().toISOString(),
+    };
+  },
+});
+
+export default agent;
+```
+
+**What this demonstrates:**
+- Receiving trigger context through input schema
+- Conditional logic based on trigger source
+- Different responses for different trigger types
+
+**Try it:**
+1. Run this agent in Workbench (manual trigger)
+2. Call from a route (webhook trigger)
+3. Notice how the source changes the response
+
+</TutorialStep>
+
+### Step 2: Working with Input Data
+
+<TutorialStep number={2} title="Working with Input Data" estimatedTime="3 min">
+
+Agents receive validated, typed input based on your schema. Routes handle raw HTTP parsing and pass structured data to agents.
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent('Input Handler', {
+  schema: {
+    input: z.object({
+      message: z.string(),
+      count: z.number().optional(),
+      metadata: z.record(z.string()).optional(),
+    }),
+    output: z.object({
+      received: z.object({
+        message: z.string(),
+        count: z.number(),
+        hasMetadata: z.boolean(),
+      }),
+    }),
+  },
+  handler: async (ctx, input) => {
+    ctx.logger.info('Received input', {
+      messageLength: input.message.length,
+      count: input.count,
+      metadataKeys: input.metadata ? Object.keys(input.metadata) : [],
+    });
+
+    return {
+      received: {
+        message: input.message,
+        count: input.count ?? 0,
+        hasMetadata: !!input.metadata,
+      },
+    };
+  },
+});
+
+export default agent;
+```
+
+**What this demonstrates:**
+- **Type-safe input**: Schema validation happens before handler runs
+- **Optional fields**: Use `.optional()` for fields that may not be present
+- **Logging input details**: Use `ctx.logger` to track what was received
+
+**Try it:**
+1. Send: `{"message": "Hello", "count": 42}` - see typed parsing
+2. Send: `{"message": "Test"}` - see optional field handling
+3. Check the logs to see structured logging in action
+
+</TutorialStep>
+
+### Step 3: Response Formats
+
+<TutorialStep number={3} title="Response Formats" estimatedTime="3 min">
+
+Agent output is defined by your schema. For streaming responses, use the AI SDK with routes or return structured data that routes can stream.
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { generateText, streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+// Structured response agent
+const structuredAgent = createAgent('Structured Response', {
+  schema: {
+    input: z.object({ topic: z.string() }),
+    output: z.object({
+      title: z.string(),
+      summary: z.string(),
+      keyPoints: z.array(z.string()),
+    }),
+  },
+  handler: async (ctx, { topic }) => {
+    const { text } = await generateText({
+      model: openai('gpt-5-mini'),
+      prompt: `Write a brief summary about ${topic}. Include 3 key points.`,
+    });
+
+    return {
+      title: topic,
+      summary: text,
+      keyPoints: ['Point 1', 'Point 2', 'Point 3'],
+    };
+  },
+});
+
+export default structuredAgent;
+```
+
+For streaming in routes:
+
+```typescript
+// In a route file (e.g., src/api/stream/route.ts)
+import { createRouter, stream } from '@agentuity/runtime';
+import { streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+const router = createRouter();
+
+router.post('/stream', stream(async (c) => {
+  const { prompt } = await c.req.json();
+
+  const { textStream } = streamText({
+    model: openai('gpt-5-mini'),
+    prompt,
+  });
+
+  return textStream;
+}));
+
+export default router;
+```
+
+**What this demonstrates:**
+- Returning structured JSON with schema validation
+- Using the AI SDK for text generation
+- Streaming responses through routes
+
+**Try it:**
+1. Call the structured agent with a topic
+2. Test the streaming route with a prompt
+3. Watch content appear progressively in the streaming response
+
+</TutorialStep>
+
+### Step 4: Exploring Agent Context
+
+<TutorialStep number={4} title="Exploring Agent Context" estimatedTime="3 min">
+
+The `ctx` object gives your agent access to platform services and runtime information. Let's explore what's available.
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent('Context Explorer', {
+  schema: {
+    input: z.object({
+      query: z.enum(['agent', 'session', 'services']),
+    }),
+    output: z.any(),
+  },
+  handler: async (ctx, { query }) => {
+    if (query === 'agent') {
+      return {
+        name: ctx.current.name,
+        agentId: ctx.current.agentId,
+      };
+    }
+
+    if (query === 'session') {
+      return {
+        sessionId: ctx.sessionId,
+        threadId: ctx.thread.id,
+      };
+    }
+
+    if (query === 'services') {
+      return {
+        available: [
+          'ctx.logger - Structured logging',
+          'ctx.kv - Key-value storage',
+          'ctx.vector - Vector storage',
+          'ctx.state - Request state',
+          'ctx.thread.state - Thread state',
+          'ctx.waitUntil - Background tasks',
+        ],
+      };
+    }
+
+    return { error: 'Unknown query' };
+  },
+});
+
+export default agent;
+```
+
+**What this demonstrates:**
+- **Agent information**: Access `ctx.current.name` and `ctx.current.agentId`
+- **Session details**: Check `ctx.sessionId` and `ctx.thread.id`
+- **Available services**: Preview platform capabilities
+
+**Try it:**
+1. Send `{"query": "agent"}` - see current agent details
+2. Send `{"query": "session"}` - see session and thread IDs
+3. Send `{"query": "services"}` - see available context services
+
+</TutorialStep>
+
+### Step 5: Structured Logging
+
+<TutorialStep number={5} title="Structured Logging" estimatedTime="3 min">
+
+Effective logging is crucial for debugging and monitoring. Use appropriate log levels and structured data to make your logs searchable and actionable.
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent('Logging Demo', {
+  schema: {
+    input: z.object({
+      action: z.string(),
+      userId: z.string().optional(),
+    }),
+    output: z.object({ logged: z.boolean() }),
+  },
+  handler: async (ctx, input) => {
+    // Different log levels for different purposes
+    ctx.logger.info('Request received', {
+      action: input.action,
+      userId: input.userId,
+      timestamp: Date.now(),
+    });
+
+    ctx.logger.debug('Processing details', {
+      inputLength: JSON.stringify(input).length,
+    });
+
+    if (!input.userId) {
+      ctx.logger.warn('Missing userId', { action: input.action });
+    }
+
+    try {
+      // Simulate processing
+      if (input.action === 'error') {
+        throw new Error('Simulated error');
+      }
+
+      ctx.logger.info('Request completed', {
+        action: input.action,
+        success: true,
+      });
+
+      return { logged: true };
+    } catch (error) {
+      ctx.logger.error('Request failed', {
+        action: input.action,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
+      return { logged: false };
+    }
+  },
+});
+
+export default agent;
+```
+
+**What this demonstrates:**
+- Using different log levels: `info`, `debug`, `warn`, `error`
+- Including structured context in logs (objects with relevant data)
+- Logging throughout the request lifecycle
+
+**Try it:**
+1. Send `{"action": "test", "userId": "user123"}` - see logs at all levels
+2. Send `{"action": "test"}` - see warning for missing userId
+3. Send `{"action": "error"}` - see error logging
+4. Check the Logs tab to see all log levels with structured metadata
+
+**Best Practice:** Include context in every log (agent ID, action, timestamps) to make debugging easier.
+
+</TutorialStep>
+
+### Step 6: Introduction to KV Storage
+
+<TutorialStep number={6} title="Introduction to KV Storage" estimatedTime="4 min">
+
+Key-value storage lets agents store and retrieve data quickly. This step demonstrates the fundamental pattern: check if data exists, retrieve it if found, or generate and store it if not.
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent('KV Storage Demo', {
+  schema: {
+    input: z.object({ key: z.string() }),
+    output: z.object({
+      key: z.string(),
+      value: z.string(),
+      cached: z.boolean(),
+    }),
+  },
+  handler: async (ctx, { key }) => {
+    const cacheKey = `demo_${key.toLowerCase().replace(/\s+/g, '_')}`;
+
+    // Check cache first
+    const cached = await ctx.kv.get('demo-storage', cacheKey);
+    if (cached.exists) {
+      ctx.logger.info('Cache hit', { key: cacheKey });
+      return { key, value: cached.data as string, cached: true };
+    }
+
+    // Generate new value
+    const resultCode = `RESULT-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    ctx.logger.info('Cache miss, storing new value', { key: cacheKey });
+
+    // Store with 5-minute TTL
+    await ctx.kv.set('demo-storage', cacheKey, resultCode, { ttl: 300 });
+
+    return { key, value: resultCode, cached: false };
+  },
+});
+
+export default agent;
+```
+
+**What this demonstrates:**
+- Retrieving data with `ctx.kv.get()`
+- Checking if data exists with `.exists` property
+- Storing data with `ctx.kv.set()` and optional TTL
+
+**Try it:**
+1. Send `{"key": "hello"}` - generates a unique result code and stores it
+2. Send `{"key": "hello"}` again - retrieves the same result code from storage
+3. Send `{"key": "world"}` - different storage key, generates new result
+4. Wait 5 minutes and retry `{"key": "hello"}` - TTL expired, generates new result
+
+**Key Concepts:**
+- **Bucket**: First parameter (`'demo-storage'`) - organizes related data
+- **Key**: Second parameter (unique identifier for the stored data)
+- **TTL**: Time-to-live in seconds (data expires automatically)
+- **Use Cases**: Session state, caching API responses, temporary configuration
+
+<Callout type="info">
+This storage pattern powers many use cases: caching (like the Weather Agent lab you'll build at the end of this module), session management, and more. We'll explore advanced memory patterns in [**Module 3: Agent Memory**](/Learn/Training/developers/03-agent-memory).
+</Callout>
+
+</TutorialStep>
+
+## Lab: Try It All Together
+
+You've learned the core anatomy concepts through focused steps. Now let's see them combined in a real-world agent that uses:
+- **Multiple triggers** (cron, manual, webhook, etc.) with different behaviors
+- **External API integration** (National Weather Service)
+- **Smart caching strategies** (different TTL based on trigger)
+- **Structured logging** throughout
+- **Best practices for error handling**
+
+### What the Weather Agent Does
+
+The weather agent demonstrates **trigger-based behavior**, the same agent code serves different purposes based on how it's triggered:
+
+**Cron Trigger (Monitoring Mode):**
+- Runs automatically on schedule
+- Fetches weather for multiple cities
+- Caches data with 1-hour TTL
+- Returns bulk report with all cities
+
+**Manual Trigger (On-Demand Mode):**
+- Responds to user requests
+- Fetches weather for specific location (based on user request)
+- Caches with 5-minute TTL (for quick repeat queries)
+- Returns single location result
+
+### Key Implementation: Trigger-Based Routing
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const weatherAgent = createAgent('Weather', {
+  schema: {
+    input: z.object({
+      mode: z.enum(['monitor', 'query']).default('query'),
+      location: z.string().optional(),
+    }),
+    output: z.any(),
+  },
+  handler: async (ctx, input) => {
+    if (input.mode === 'monitor') {
+      // Bulk monitoring mode (called from cron route)
+      ctx.logger.info('Running scheduled weather monitoring');
+      return await monitorMultipleCities(ctx);
+    } else {
+      // On-demand single query
+      const location = input.location ?? 'San Francisco, CA';
+      return await getSingleWeather(location, ctx);
+    }
+  },
+});
+```
+
+### Key Implementation: External API Integration
+
+```typescript
+// NWS API two-step process with proper error handling
+async function fetchNWSWeather(
+  lat: number,
+  lon: number,
+  locationName: string,
+  ctx: AgentContext
+): Promise<WeatherResult> {
+  try {
+    // Step 1: Get grid coordinates from lat/lon
+    const pointsUrl = `https://api.weather.gov/points/${lat},${lon}`;
+
+    const pointsResponse = await fetch(pointsUrl, {
+      headers: { 'User-Agent': USER_AGENT },
+      signal: AbortSignal.timeout(10000),  // 10 second timeout
+    });
+
+    if (!pointsResponse.ok) {
+      throw new Error(`NWS points API failed: ${pointsResponse.status}`);
+    }
+
+    const pointsData = await pointsResponse.json() as NWSPointsResponse;
+    const gridProps = pointsData.properties;
+
+    // Validate and extract grid properties
+    if (!gridProps || gridProps.gridId === undefined) {
+      throw new Error('Could not extract grid information from NWS API');
+    }
+
+    // Step 2: Get forecast using grid coordinates
+    const forecastUrl = `https://api.weather.gov/gridpoints/${gridProps.gridId}/${gridProps.gridX},${gridProps.gridY}/forecast`;
+    // ... fetch and process forecast data
+
+  } catch (error) {
+    ctx.logger.error('Weather API failed', {
+      location: locationName,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    throw new Error(`Weather service unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+```
+
+### Key Implementation: Smart Caching Strategies
+
+```typescript
+async function handleQueryMode(
+  location: string,
+  ctx: AgentContext
+) {
+  // Parse location and create cache key
+  const cacheKey = `city_${location.toLowerCase().replace(/\s+/g, '_')}`;
+
+  // Check cache first (5 minutes for manual requests)
+  const cached = await ctx.kv.get('weather', cacheKey);
+  if (cached.exists) {
+    ctx.logger.info('Returning cached weather', { location });
+    return cached.data as WeatherResult;
+  }
+
+  // Fetch fresh data and cache with shorter TTL
+  const coordinates = await geocodeLocation(location);
+  const weather = await fetchNWSWeather(
+    coordinates.lat,
+    coordinates.lon,
+    location,
+    ctx
+  );
+  await ctx.kv.set('weather', cacheKey, weather, { ttl: 300 }); // 5 minutes
+
+  return weather;
+}
+
+async function handleMonitorMode(ctx: AgentContext) {
+  // Bulk processing with longer cache (1 hour for monitoring)
+  const results = [];
+
+  for (const city of MONITORED_CITIES) {
+    const weather = await fetchNWSWeather(city.lat, city.lon, city.name, ctx);
+    await ctx.kv.set(
+      'weather',
+      `city_${city.name.toLowerCase()}`,
+      weather,
+      { ttl: 3600 }
+    );
+    ctx.logger.info('Cached weather', {
+      city: city.name,
+      temperature: weather.temperature,
+    });
+    results.push(weather);
+  }
+
+  return results;
+}
+```
+
+### Build This Agent Yourself
+
+Ready to implement this agent? Follow our complete examples:
+
+<div className="flex flex-wrap gap-3 mb-6">
+  <a href="https://github.com/agentuity/examples/tree/main/training-v1/weather-agent-ts-v1" target="_blank" rel="noopener noreferrer"
+     className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.30 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    TypeScript
+  </a>
+</div>
+
+### What This Agent Demonstrates
+
+- **Trigger-based behavior**: Same agent code behaves differently based on trigger type
+- **External API integration**: Real National Weather Service API calls with proper error handling
+- **Smart caching strategies**: Different TTL based on use case (cron vs manual)
+- **Best practices**: Timeouts, defensive typing, comprehensive logging
+- **AI enhancement**: Optional AI-powered weather interpretation
+
+The complete examples show you how to build real agents that integrate external APIs and use multiple triggers with intelligent caching and error handling.
+
+### Testing Your Weather Agent
+
+1. **Start Workbench:**
+```bash
+agentuity dev
+```
+
+2. **Test the weather agent** with different city names (San Francisco, New York, Los Angeles, Chicago)
+3. **Monitor the execution** in the *Logs* and *Sessions* tabs to see caching behavior
+4. **Try the same request twice** to see cache hits
+
+#### Configuring Cron Triggers
+
+For scheduled execution, create a cron route that invokes your agent:
+
+```typescript
+// src/api/cron/weather-monitor/route.ts
+import { createRouter } from '@agentuity/runtime';
+import weather from '@agent/weather';
+
+const router = createRouter();
+
+router.get('/', async (c) => {
+  const result = await weather.run({ mode: 'monitor' });
+  return c.json(result);
+});
+
+export default router;
+```
+
+Configure the cron schedule in your `agentuity.yaml`:
+
+```yaml
+cron:
+  - route: /cron/weather-monitor
+    schedule: "0 * * * *"  # Every hour
+```
+
+<Callout type="info">
+Learn more about configuring cron routes in the [Cron Routes Guide](/Routes/cron).
+</Callout>
+
+## Key Takeaways
+
+- **Agents receive typed input**: Schema validation happens before your handler runs
+- **ctx provides all services**: Logging, storage, state, and more are accessed through `ctx`
+- **Logging is essential**: Structured logs with appropriate levels help debugging and monitoring
+- **KV storage enables caching**: Simple `get/set` with TTL prevents redundant work
+- **Routes handle HTTP**: Use routes for webhooks and HTTP endpoints, agents for business logic
+- **The weather agent shows it all**: See these concepts combined in working code
+
+## What's Next?
+
+You now understand agent anatomy, the building blocks every agent shares. In **Module 3: Agent Memory**, we'll dive deep into how agents remember, learn, and maintain state across interactions.
+
+**Before moving on:**
+1. Complete all 6 tutorial steps
+2. Build and test the weather agent
+3. Experiment with different triggers and cache TTLs
+4. Review the logs to see patterns emerge
+
+Remember: Anatomy is the foundation. The logic you add on top is what makes your agents unique.
+
+---
+
+**Ready for Module 3?** [Agent Memory](./03-agent-memory)

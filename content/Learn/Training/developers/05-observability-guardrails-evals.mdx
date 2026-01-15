@@ -1,0 +1,481 @@
+---
+title: "Module 5: Observability and Evaluations"
+description: Making agents reliable with logging, tracing, and automated quality measurement
+---
+
+You've built agents that can think, remember, and collaborate. Now it's time to make them reliable and measurable.
+
+## Observability Basics
+
+Before diving into evaluations, ensure your agents have proper observability. This enables debugging and provides the data evaluations need.
+
+<Callout type="info">
+**Automatic Observability**: Agentuity provides built-in OpenTelemetry integration with zero configuration. All agent executions, LLM calls, storage operations, and API calls are tracked automatically and appear in the Sessions tab.
+</Callout>
+
+### Structured Logging with `ctx.logger`
+
+Use `ctx.logger` for all agent logging. Never use `console.log` in agents.
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+export default createAgent('support-agent', {
+  schema: {
+    input: z.object({ query: z.string(), userId: z.string() }),
+    output: z.object({ response: z.string() }),
+  },
+  handler: async (ctx, input) => {
+    ctx.logger.info('Processing support query', {
+      userId: input.userId,
+      queryLength: input.query.length
+    });
+
+    // Business logic here...
+    const response = await processQuery(input.query);
+
+    ctx.logger.info('Query processed successfully', {
+      userId: input.userId,
+      responseLength: response.length
+    });
+
+    return { response };
+  },
+});
+```
+
+### Child Loggers for Context
+
+When debugging complex workflows, child loggers attach context to all subsequent logs.
+
+<CodeFromFiles snippets={[
+  { path: "/examples/training/05-observability-guardrails/step1-child-loggers.ts", lang: "ts", title: "TypeScript" },
+  { path: "/examples/training/05-observability-guardrails/step1-child-loggers.py", lang: "python", title: "Python" }
+]} />
+
+### Custom Tracing with `ctx.tracer`
+
+Track custom operations beyond automatic instrumentation.
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+export default createAgent('data-processor', {
+  schema: {
+    input: z.object({ data: z.array(z.string()) }),
+    output: z.object({ processed: z.number() }),
+  },
+  handler: async (ctx, input) => {
+    const span = ctx.tracer.startSpan('process-batch');
+    span.setAttribute('batch.size', input.data.length);
+
+    try {
+      const results = await Promise.all(
+        input.data.map(item => processItem(item))
+      );
+
+      span.setAttribute('batch.processed', results.length);
+      span.end();
+
+      return { processed: results.length };
+    } catch (error) {
+      span.recordException(error);
+      span.setStatus({ code: 2, message: error.message });
+      span.end();
+      throw error;
+    }
+  },
+});
+```
+
+## Evaluations: Measuring Agent Quality
+
+Evaluations (evals) are automated tests that run after agent execution to measure quality, accuracy, and performance. Unlike unit tests that verify code correctness, evals measure how well your agent performs its intended task.
+
+### Why Evaluations Matter
+
+Agents are non-deterministic. The same input can produce different outputs across runs. Evals help you:
+
+- **Catch regressions** when updating prompts or logic
+- **Measure improvements** as you refine your agents
+- **Validate behavior** across diverse inputs
+- **Build confidence** before deploying changes
+
+### The Eval API
+
+Create evaluations using `agent.createEval()`. Each eval receives the agent's input and output, then returns a result with pass/fail status, a score, and an optional message.
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+
+const agent = createAgent('qa-agent', {
+  schema: {
+    input: z.object({ question: z.string() }),
+    output: z.object({ answer: z.string(), confidence: z.number() }),
+  },
+  handler: async (ctx, input) => {
+    // Agent logic here...
+    return { answer: 'response', confidence: 0.95 };
+  },
+});
+
+// Create evaluations
+const accuracyEval = agent.createEval('accuracy', {
+  description: 'Validates answer quality against expected output',
+  handler: async (ctx, input, output) => {
+    const expected = ctx.metadata?.expectedAnswer;
+    const passed = output.answer.toLowerCase().includes(expected?.toLowerCase() ?? '');
+    return {
+      passed: passed,
+      score: passed ? 1 : 0,
+      reason: passed ? 'Answer matches expected' : 'Answer does not match',
+    };
+  },
+});
+
+const confidenceEval = agent.createEval('confidence-threshold', {
+  description: 'Ensures confidence score meets minimum threshold',
+  handler: async (ctx, input, output) => {
+    const threshold = 0.8;
+    const passed = output.confidence >= threshold;
+    return {
+      passed: passed,
+      score: output.confidence,
+      reason: `Confidence: ${output.confidence} (threshold: ${threshold})`,
+    };
+  },
+});
+
+export default agent;
+```
+
+### Eval Handler Signature
+
+The eval handler receives three arguments:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `ctx` | `EvalContext` | Context with metadata, logger, and utilities |
+| `input` | Agent's input type | The input that was passed to the agent |
+| `output` | Agent's output type | The output the agent returned |
+
+The handler returns an object with:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `passed` | `boolean` | Whether the eval passed |
+| `score` | `number` | Numeric score (typically 0-1) |
+| `reason` | `string` | Optional explanation of the result |
+
+### Scoring Patterns
+
+#### Binary Pass/Fail
+
+For checks with clear right/wrong answers.
+
+```typescript
+const formatEval = agent.createEval('format-check', {
+  description: 'Verifies output contains required fields',
+  handler: async (ctx, input, output) => {
+    const hasAllFields = output.title && output.summary && output.tags;
+    return {
+      passed: hasAllFields,
+      score: hasAllFields ? 1 : 0,
+      reason: hasAllFields ? 'All fields present' : 'Missing required fields',
+    };
+  },
+});
+```
+
+#### Numeric Scoring
+
+For quality measurements on a continuous scale.
+
+```typescript
+const lengthEval = agent.createEval('response-length', {
+  description: 'Scores response length appropriateness',
+  handler: async (ctx, input, output) => {
+    const wordCount = output.response.split(/\s+/).length;
+    const targetMin = 50;
+    const targetMax = 200;
+
+    let score: number;
+    if (wordCount < targetMin) {
+      score = wordCount / targetMin;
+    } else if (wordCount > targetMax) {
+      score = Math.max(0, 1 - (wordCount - targetMax) / targetMax);
+    } else {
+      score = 1;
+    }
+
+    return {
+      passed: score >= 0.7,
+      score,
+      reason: `Word count: ${wordCount} (target: ${targetMin}-${targetMax})`,
+    };
+  },
+});
+```
+
+#### LLM-as-Judge
+
+For subjective quality assessments, use an LLM to evaluate responses.
+
+```typescript
+import { generateObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+const qualityEval = agent.createEval('llm-quality-check', {
+  description: 'Uses LLM to assess response quality',
+  handler: async (ctx, input, output) => {
+    const { object } = await generateObject({
+      model: openai('gpt-5-mini'),
+      schema: z.object({
+        score: z.number().min(0).max(1),
+        reasoning: z.string(),
+      }),
+      prompt: `Rate the quality of this response on a scale of 0-1.
+
+Question: ${input.question}
+Response: ${output.answer}
+
+Consider: relevance, accuracy, clarity, and completeness.`,
+    });
+
+    return {
+      passed: object.score >= 0.7,
+      score: object.score,
+      reason: object.reasoning,
+    };
+  },
+});
+```
+
+### Example: Complete Agent with Evals
+
+Here's a full example showing an agent with multiple evaluations.
+
+```typescript
+// src/agent/summarizer/agent.ts
+import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+const agent = createAgent('summarizer', {
+  schema: {
+    input: z.object({
+      text: z.string(),
+      maxLength: z.number().optional().default(100),
+    }),
+    output: z.object({
+      summary: z.string(),
+      wordCount: z.number(),
+    }),
+  },
+  handler: async (ctx, input) => {
+    ctx.logger.info('Summarizing text', {
+      inputLength: input.text.length,
+      maxLength: input.maxLength,
+    });
+
+    const { text } = await generateText({
+      model: openai('gpt-5-mini'),
+      prompt: `Summarize the following text in ${input.maxLength} words or less:\n\n${input.text}`,
+    });
+
+    const wordCount = text.split(/\s+/).length;
+
+    return { summary: text, wordCount };
+  },
+});
+
+// Eval: Check length constraint
+agent.createEval('length-compliance', {
+  description: 'Verifies summary respects maxLength constraint',
+  handler: async (ctx, input, output) => {
+    const passed = output.wordCount <= input.maxLength;
+    return {
+      passed: passed,
+      score: passed ? 1 : input.maxLength / output.wordCount,
+      reason: `${output.wordCount} words (max: ${input.maxLength})`,
+    };
+  },
+});
+
+// Eval: Check summary captures key content
+agent.createEval('content-coverage', {
+  description: 'Measures how well summary captures source content',
+  handler: async (ctx, input, output) => {
+    // Extract key terms from input (simple approach)
+    const inputWords = new Set(
+      input.text.toLowerCase().split(/\s+/).filter(w => w.length > 5)
+    );
+    const summaryWords = new Set(
+      output.summary.toLowerCase().split(/\s+/)
+    );
+
+    let matches = 0;
+    for (const word of inputWords) {
+      if (summaryWords.has(word)) matches++;
+    }
+
+    const coverage = inputWords.size > 0 ? matches / inputWords.size : 0;
+
+    return {
+      passed: coverage >= 0.3,
+      score: coverage,
+      reason: `Covered ${matches}/${inputWords.size} key terms`,
+    };
+  },
+});
+
+// Eval: Latency check
+agent.createEval('latency', {
+  description: 'Ensures response time is acceptable',
+  handler: async (ctx, input, output) => {
+    const latencyMs = ctx.metadata?.latencyMs ?? 0;
+    const maxLatencyMs = 5000;
+    const passed = latencyMs <= maxLatencyMs;
+
+    return {
+      passed: passed,
+      score: passed ? 1 : maxLatencyMs / latencyMs,
+      reason: `${latencyMs}ms (max: ${maxLatencyMs}ms)`,
+    };
+  },
+});
+
+export default agent;
+```
+
+### Golden Datasets and Test Cases
+
+A golden dataset is a collection of test cases with known expected outputs. Use these to systematically evaluate your agent across diverse scenarios.
+
+```typescript
+// tests/summarizer.eval.ts
+interface TestCase {
+  name: string;
+  input: { text: string; maxLength?: number };
+  expected: {
+    minCoverage: number;
+    maxWords: number;
+  };
+}
+
+const goldenDataset: TestCase[] = [
+  {
+    name: 'short-article',
+    input: {
+      text: 'The quick brown fox jumps over the lazy dog. This sentence contains every letter of the alphabet.',
+      maxLength: 20,
+    },
+    expected: {
+      minCoverage: 0.4,
+      maxWords: 20,
+    },
+  },
+  {
+    name: 'technical-content',
+    input: {
+      text: 'Machine learning is a subset of artificial intelligence...',
+      maxLength: 50,
+    },
+    expected: {
+      minCoverage: 0.5,
+      maxWords: 50,
+    },
+  },
+  // Add more test cases covering edge cases
+];
+```
+
+### Running Evaluations
+
+Run evals locally during development with the CLI.
+
+```bash
+# Run all evals for all agents
+agentuity eval
+
+# Run evals for a specific agent
+agentuity eval --agent summarizer
+
+# Run with verbose output
+agentuity eval --verbose
+```
+
+Eval results appear in the Agentuity Console under each session, showing pass/fail status, scores, and messages.
+
+### CI/CD Integration
+
+Add evals to your CI pipeline to catch regressions before deployment.
+
+```yaml
+# .github/workflows/test.yml
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install
+
+      - name: Run evaluations
+        run: bunx agentuity eval --ci
+        env:
+          AGENTUITY_API_KEY: ${{ secrets.AGENTUITY_API_KEY }}
+```
+
+The `--ci` flag outputs results in a format suitable for CI systems and exits with a non-zero code if any evals fail.
+
+## Best Practices
+
+### Eval Design
+
+- **Test one thing per eval**: Keep evals focused and named clearly
+- **Include diverse test cases**: Cover happy paths, edge cases, and failure modes
+- **Use deterministic checks where possible**: Format validation, length checks, and field presence are more reliable than subjective assessments
+- **Reserve LLM-as-judge for subjective quality**: Use it for tone, helpfulness, and nuanced assessments
+
+### Performance
+
+- **Keep evals fast**: Avoid expensive operations that slow down your feedback loop
+- **Cache golden dataset results**: Store expected outputs to avoid recomputing baselines
+- **Run expensive evals selectively**: Use fast evals in CI, comprehensive evals in nightly runs
+
+### Observability for Evals
+
+- **Log eval inputs and outputs**: Makes debugging failed evals easier
+- **Track scores over time**: Identify trends and regressions
+- **Set up alerts**: Get notified when eval pass rates drop below thresholds
+
+## Key Takeaways
+
+- **Use `ctx.logger` for all agent logging**: Structured logs enable debugging and eval analysis
+- **Create custom spans for performance tracking**: `ctx.tracer` helps identify bottlenecks
+- **Evals measure agent quality**: They catch regressions and validate improvements
+- **Design focused evals**: Each eval should test one specific aspect
+- **Build golden datasets**: Test cases with known outcomes enable systematic evaluation
+- **Integrate evals in CI/CD**: Automated testing prevents deploying broken agents
+- **Combine scoring patterns**: Use binary checks for format, numeric scores for quality
+
+## What's Next?
+
+Now that you understand observability and evaluations, it's time to explore deployment. In the next module, we'll cover Agentuity's deployment environments, from local development through staging to deployment.
+
+---
+
+**Ready for Module 6?** [Deployment Environments](./06-deployment-environments)

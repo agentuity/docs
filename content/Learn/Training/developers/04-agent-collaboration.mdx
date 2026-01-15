@@ -1,0 +1,802 @@
+---
+title: "Module 4: Agent-to-Agent Communication"
+description: Building multi-agent systems that work together
+---
+
+So far, we've built single agents that can reason, act, and remember. But what if one agent can't do everything? What if you need specialized expertise, parallel processing, or simply want to break down complex problems into manageable pieces?
+
+Welcome to the world of multi-agent systems.
+
+## Why Multi-Agent Systems?
+
+According to industry research, multi-agent architectures are becoming the standard for production AI systems. As [Microsoft's Build 2025 announcement](https://blogs.microsoft.com/blog/2025/05/19/microsoft-build-2025-the-age-of-ai-agents-and-building-the-open-agentic-web/) highlighted, the future is about agents working together in an "open agentic web."
+
+Think about how human organizations work:
+- **Specialization**: Different people excel at different tasks
+- **Scalability**: Teams can handle more work than individuals
+- **Reliability**: If one person is unavailable, others can step in
+- **Modularity**: Easy to add new team members with specific skills
+
+The same principles apply to agent systems.
+
+## Agent Communication via Direct Imports
+
+Agentuity provides a simple, type-safe way for agents to call each other through direct imports. Import the agent you want to call and use its `.run()` method.
+
+<CodeExample js={`import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+import enricherAgent from '../enricher/agent';
+
+export default createAgent('coordinator', {
+  schema: {
+    input: z.object({ text: z.string() }),
+    output: z.object({ result: z.string() })
+  },
+  handler: async (ctx, input) => {
+    // Call another agent via direct import
+    const enriched = await enricherAgent.run({
+      text: input.text
+    });
+
+    return { result: enriched.processed };
+  }
+});`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
+from enricher.agent import enricher_agent
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    data = await request.data.json()
+
+    # Call another agent via direct import
+    enriched = await enricher_agent.run({
+        "text": data["text"]
+    })
+
+    return response.json({"result": enriched["processed"]})
+`} />
+
+**Key benefits:**
+- **Type safety**: TypeScript validates inputs and infers output types from agent schemas
+- **Clear dependencies**: Imports make agent relationships explicit
+- **Built-in tracing**: Agent-to-agent calls are automatically traced for debugging
+
+## Build Multi-Agent Communication Step-by-Step
+
+You'll learn the essential patterns for agent communication through four progressive steps.
+
+### Step 1: Basic Agent Calls
+
+<TutorialStep number={1} title="Basic Agent Calls" estimatedTime="3 minutes">
+
+This demonstrates the **coordinator pattern**: one agent orchestrating another to accomplish a task.
+
+<CodeExample js={`import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+import enricherAgent from '../enricher/agent';
+
+export default createAgent('coordinator', {
+  schema: {
+    input: z.object({ text: z.string() }),
+    output: z.object({
+      original: z.string(),
+      enriched: z.object({
+        text: z.string(),
+        sentiment: z.enum(['positive', 'negative', 'neutral']),
+        confidence: z.number()
+      })
+    })
+  },
+  handler: async (ctx, input) => {
+    ctx.logger.info('Coordinator processing request', { text: input.text });
+
+    // Call the enricher agent via direct import
+    const enriched = await enricherAgent.run({
+      text: input.text
+    });
+
+    ctx.logger.info('Received enriched data', {
+      sentiment: enriched.sentiment,
+      confidence: enriched.confidence
+    });
+
+    return {
+      original: input.text,
+      enriched
+    };
+  }
+});`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
+from enricher.agent import enricher_agent
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    data = await request.data.json()
+    text = data["text"]
+
+    context.logger.info("Coordinator processing request", {"text": text})
+
+    # Call the enricher agent via direct import
+    enriched = await enricher_agent.run({
+        "text": text
+    })
+
+    context.logger.info("Received enriched data", {
+        "sentiment": enriched["sentiment"],
+        "confidence": enriched["confidence"]
+    })
+
+    return response.json({
+        "original": text,
+        "enriched": enriched
+    })
+`} />
+
+**What this demonstrates:**
+- Using direct imports to call another agent (`enricherAgent.run()`)
+- Type-safe communication when both agents have schemas
+- Logging to track the coordination flow
+
+**Try it:**
+1. Start Workbench and trigger this agent
+2. Check the logs to see both agents working together
+3. Notice how the coordinator processes the enricher's response
+
+**Key insight:** The coordinator stays in control, processes responses, and can add its own logic before returning.
+
+</TutorialStep>
+
+### Step 2: Sequential Workflows
+
+<TutorialStep number={2} title="Sequential Workflows" estimatedTime="4 minutes">
+
+When one agent's output feeds into another, use sequential calls. This is common for multi-stage processing pipelines.
+
+<CodeExample js={`import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+import enricherAgent from '../enricher/agent';
+import summarizerAgent from '../summarizer/agent';
+
+export default createAgent('pipeline-coordinator', {
+  schema: {
+    input: z.object({ text: z.string() }),
+    output: z.object({
+      original: z.string(),
+      enriched: z.object({
+        sentiment: z.enum(['positive', 'negative', 'neutral']),
+        confidence: z.number(),
+        keyPhrases: z.array(z.string())
+      }),
+      summary: z.object({
+        text: z.string(),
+        wordCount: z.number()
+      })
+    })
+  },
+  handler: async (ctx, input) => {
+    ctx.logger.info('Starting sequential pipeline', { text: input.text });
+
+    // Stage 1: Enrich the text with AI-powered analysis
+    const enriched = await enricherAgent.run({
+      text: input.text
+    });
+    ctx.logger.info('Enrichment complete', {
+      sentiment: enriched.sentiment,
+      confidence: enriched.confidence
+    });
+
+    // Stage 2: Generate summary using enrichment context
+    const summary = await summarizerAgent.run({
+      text: input.text,
+      sentiment: enriched.sentiment,
+      keyPhrases: enriched.keyPhrases
+    });
+    ctx.logger.info('Summarization complete', { wordCount: summary.wordCount });
+
+    return {
+      original: input.text,
+      enriched,
+      summary
+    };
+  }
+});`} py={`from agentuity import AgentRequest, AgentResponse, AgentContext
+from enricher.agent import enricher_agent
+from summarizer.agent import summarizer_agent
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    data = await request.data.json()
+    text = data["text"]
+
+    context.logger.info("Starting sequential pipeline", {"text": text})
+
+    # Stage 1: Enrich the text with AI-powered analysis
+    enriched = await enricher_agent.run({
+        "text": text
+    })
+    context.logger.info("Enrichment complete", {
+        "sentiment": enriched["sentiment"],
+        "confidence": enriched["confidence"]
+    })
+
+    # Stage 2: Generate summary using enrichment context
+    summary = await summarizer_agent.run({
+        "text": text,
+        "sentiment": enriched["sentiment"],
+        "keyPhrases": enriched["keyPhrases"]
+    })
+    context.logger.info("Summarization complete", {"wordCount": summary["wordCount"]})
+
+    return response.json({
+        "original": text,
+        "enriched": enriched,
+        "summary": summary
+    })
+`} />
+
+**What this demonstrates:**
+- Chaining agent calls where output from one feeds into another
+- Building processing pipelines with specialized agents
+- Logging at each stage for visibility
+
+**Try it:**
+1. Send a document for processing
+2. Watch the logs to see each stage complete in sequence
+3. Notice how the summarizer receives context from the enricher
+
+**Key insight:** Sequential workflows let you build complex pipelines where each agent handles one specialized task.
+
+</TutorialStep>
+
+### Step 3: Parallel Execution
+
+<TutorialStep number={3} title="Parallel Execution" estimatedTime="5 minutes">
+
+When agents don't depend on each other's results, run them in parallel for better performance.
+
+<CodeExample js={`import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+import translatorAgent from '../translator/agent';
+import summarizerAgent from '../summarizer/agent';
+
+export default createAgent('content-processor', {
+  schema: {
+    input: z.object({
+      text: z.string(),
+      targetLanguage: z.string().default('Spanish')
+    }),
+    output: z.object({
+      original: z.string(),
+      translation: z.object({
+        language: z.string(),
+        text: z.string()
+      }),
+      summary: z.object({
+        text: z.string(),
+        keyPoints: z.array(z.string())
+      }),
+      executionTime: z.string()
+    })
+  },
+  handler: async (ctx, input) => {
+    const startTime = Date.now();
+    ctx.logger.info('Starting parallel processing', {
+      textLength: input.text.length,
+      targetLanguage: input.targetLanguage
+    });
+
+    // Execute translation and summarization in parallel
+    const [translation, summary] = await Promise.all([
+      translatorAgent.run({
+        text: input.text,
+        targetLanguage: input.targetLanguage
+      }),
+      summarizerAgent.run({
+        text: input.text
+      })
+    ]);
+
+    const executionTime = \`\${Date.now() - startTime}ms\`;
+    ctx.logger.info('Parallel processing complete', { executionTime });
+
+    return {
+      original: input.text,
+      translation,
+      summary,
+      executionTime
+    };
+  }
+});`} py={`import asyncio
+import time
+from agentuity import AgentRequest, AgentResponse, AgentContext
+from translator.agent import translator_agent
+from summarizer.agent import summarizer_agent
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    start_time = time.time()
+
+    data = await request.data.json()
+    text = data["text"]
+    target_language = data.get("targetLanguage", "Spanish")
+
+    context.logger.info("Starting parallel processing", {
+        "textLength": len(text),
+        "targetLanguage": target_language
+    })
+
+    # Execute translation and summarization in parallel
+    translation, summary = await asyncio.gather(
+        translator_agent.run({
+            "text": text,
+            "targetLanguage": target_language
+        }),
+        summarizer_agent.run({
+            "text": text
+        })
+    )
+
+    execution_time = f"{int((time.time() - start_time) * 1000)}ms"
+    context.logger.info("Parallel processing complete", {"executionTime": execution_time})
+
+    return response.json({
+        "original": text,
+        "translation": translation,
+        "summary": summary,
+        "executionTime": execution_time
+    })
+`} />
+
+**What this demonstrates:**
+- Running multiple agents concurrently with `Promise.all` (TypeScript) or `asyncio.gather` (Python)
+- Aggregating results from multiple sources
+- Performance benefits of parallel execution
+
+**Try it:**
+1. Send a text for processing
+2. Watch the logs: both agents start at the same time
+3. Compare execution time with sequential processing
+
+**Key insight:** When agents don't depend on each other's results, parallel execution can dramatically reduce total processing time.
+
+</TutorialStep>
+
+### Step 4: Smart Routing with AI
+
+<TutorialStep number={4} title="Smart Routing with AI" estimatedTime="6 minutes">
+
+Use AI to analyze requests and route them to the appropriate specialist agent. This pattern combines structured outputs with agent communication.
+
+<CodeExample js={`import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+import { generateObject } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
+import supportAgent from '../support/agent';
+import salesAgent from '../sales/agent';
+
+// Define structured schema for routing decisions
+const RoutingDecisionSchema = z.object({
+  agentType: z.enum(['support', 'sales']),
+  tags: z.array(z.string()),
+  confidence: z.number().min(0).max(1),
+  reasoning: z.string()
+});
+
+// Agent map for dynamic routing
+const agents = {
+  support: supportAgent,
+  sales: salesAgent
+} as const;
+
+export default createAgent('smart-router', {
+  schema: {
+    input: z.object({ message: z.string() }),
+    output: z.object({
+      routed: z.boolean(),
+      agentType: z.string().optional(),
+      response: z.string(),
+      confidence: z.number().optional(),
+      reasoning: z.string().optional()
+    })
+  },
+  handler: async (ctx, input) => {
+    ctx.logger.info('Analyzing request for routing', { message: input.message });
+
+    // Use AI with structured output to determine routing
+    const { object: decision } = await generateObject({
+      model: anthropic('claude-sonnet-4-5'),
+      schema: RoutingDecisionSchema,
+      system: \`You are a routing orchestrator. Analyze user messages and determine which
+specialist agent should handle them.
+
+Agent types:
+- support: Customer support, account issues, general help, troubleshooting
+- sales: Pricing, plans, purchasing inquiries, product demos\`,
+      prompt: \`Analyze this user message and determine routing: "\${input.message}"\`
+    });
+
+    ctx.logger.info('Routing decision made', {
+      agentType: decision.agentType,
+      confidence: decision.confidence
+    });
+
+    // Check confidence threshold
+    if (decision.confidence < 0.7) {
+      ctx.logger.warn('Low confidence routing', { confidence: decision.confidence });
+      return {
+        routed: false,
+        response: "I'm not confident about routing this request. Please rephrase or contact support directly.",
+        confidence: decision.confidence,
+        reasoning: decision.reasoning
+      };
+    }
+
+    // Route to appropriate specialist agent using agent map
+    ctx.logger.info('Routing to specialist', { agentType: decision.agentType });
+
+    const result = await agents[decision.agentType].run({
+      message: input.message,
+      context: {
+        tags: decision.tags,
+        confidence: decision.confidence
+      }
+    });
+
+    return {
+      routed: true,
+      agentType: decision.agentType,
+      response: result.response,
+      confidence: decision.confidence,
+      reasoning: decision.reasoning
+    };
+  }
+});`} py={`import json
+from pydantic import BaseModel, Field
+from typing import Literal
+from anthropic import Anthropic
+from agentuity import AgentRequest, AgentResponse, AgentContext
+from support.agent import support_agent
+from sales.agent import sales_agent
+
+class RoutingDecision(BaseModel):
+    agent_type: Literal["support", "sales"]
+    tags: list[str]
+    confidence: float = Field(ge=0.0, le=1.0)
+    reasoning: str
+
+# Agent map for dynamic routing
+agents = {
+    "support": support_agent,
+    "sales": sales_agent
+}
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    data = await request.data.json()
+    message = data["message"]
+
+    context.logger.info("Analyzing request for routing", {"message": message})
+
+    # Use AI to determine routing
+    client = Anthropic()
+    result = client.messages.create(
+        model="claude-sonnet-4-5",
+        max_tokens=500,
+        system="""You are a routing orchestrator. Analyze user messages and determine which
+specialist agent should handle them. Return JSON with: agent_type, tags, confidence, reasoning.
+
+Agent types:
+- support: Customer support, account issues, general help, troubleshooting
+- sales: Pricing, plans, purchasing inquiries, product demos""",
+        messages=[{"role": "user", "content": f'Analyze this user message and determine routing: "{message}"'}]
+    )
+
+    decision_data = json.loads(result.content[0].text)
+    decision = RoutingDecision(**decision_data)
+
+    context.logger.info("Routing decision made", {
+        "agentType": decision.agent_type,
+        "confidence": decision.confidence
+    })
+
+    # Check confidence threshold
+    if decision.confidence < 0.7:
+        context.logger.warn("Low confidence routing", {"confidence": decision.confidence})
+        return response.json({
+            "routed": False,
+            "response": "I'm not confident about routing this request. Please rephrase or contact support directly.",
+            "confidence": decision.confidence,
+            "reasoning": decision.reasoning
+        })
+
+    # Route to appropriate specialist agent using agent map
+    context.logger.info("Routing to specialist", {"agentType": decision.agent_type})
+
+    result = await agents[decision.agent_type].run({
+        "message": message,
+        "context": {
+            "tags": decision.tags,
+            "confidence": decision.confidence
+        }
+    })
+
+    return response.json({
+        "routed": True,
+        "agentType": decision.agent_type,
+        "response": result["response"],
+        "confidence": decision.confidence,
+        "reasoning": decision.reasoning
+    })
+`} />
+
+**What this demonstrates:**
+- Using AI to make routing decisions with structured output
+- Schema validation with Zod (TypeScript) or Pydantic (Python)
+- Confidence thresholds for fallback handling
+- Dynamic agent selection based on AI analysis
+
+**Try it:**
+1. Send different types of requests (support questions, sales inquiries)
+2. Watch the logs to see routing decisions with confidence scores
+3. Try ambiguous requests to see fallback handling
+
+**Key insight:** Structured AI responses transform unreliable outputs into type-safe routing decisions, essential for production multi-agent systems.
+
+</TutorialStep>
+
+## Lab: Conference Concierge System
+
+You've learned the core patterns for agent communication. Now let's see how they combine in a real-world system.
+
+Build a concierge system that routes user requests to different specialized agents based on AI-powered intent analysis. This demonstrates how the patterns you learned work together.
+
+### Advanced Pattern: Smart Orchestration
+
+The tutorial steps covered basic calls, sequential workflows, parallel execution, and smart routing. The Conference Concierge combines these into **smart orchestration**: dynamic decision-making that adapts based on AI analysis.
+
+Unlike simple conditional routing, smart orchestrators:
+- Analyze request complexity before routing
+- Make multi-step decisions based on intermediate results
+- Adapt routing based on confidence scores
+- Maintain conversation context across interactions
+
+Here's how it works:
+
+<CodeExample js={`import { createAgent } from '@agentuity/runtime';
+import { z } from 'zod';
+import { generateObject } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
+import sfLocalGuideAgent from '../sf-local-guide/agent';
+import conferenceExpertAgent from '../conference-expert/agent';
+import devExperienceAgent from '../dev-experience/agent';
+
+const UserIntentSchema = z.object({
+  agentType: z.enum(['sf_local_guide', 'conference_expert', 'dev_experience']),
+  tags: z.array(z.string()),
+  likelyIntent: z.string(),
+  confidence: z.number().min(0).max(1)
+});
+
+// Agent map for dynamic routing
+const agents = {
+  sf_local_guide: sfLocalGuideAgent,
+  conference_expert: conferenceExpertAgent,
+  dev_experience: devExperienceAgent
+} as const;
+
+export default createAgent('concierge', {
+  schema: {
+    input: z.object({ message: z.string(), sessionId: z.string() }),
+    output: z.object({ response: z.string(), routedTo: z.string().optional() })
+  },
+  handler: async (ctx, input) => {
+    // Step 1: Use AI to analyze intent with structured output
+    const { object: intent } = await generateObject({
+      model: anthropic('claude-sonnet-4-5'),
+      schema: UserIntentSchema,
+      system: 'Analyze user intent and route to appropriate agent...',
+      prompt: input.message
+    });
+
+    // Step 2: Decision is automatically validated by Zod
+
+    // Step 3: Make smart routing choices based on confidence
+    if (intent.confidence < 0.7) {
+      return {
+        response: "Let me connect you with a human...",
+        routedTo: "fallback"
+      };
+    }
+
+    // Step 4: Route to validated specialist using agent map
+    const result = await agents[intent.agentType].run({ message: input.message });
+
+    return {
+      response: result.response,
+      routedTo: intent.agentType
+    };
+  }
+});`} py={`import json
+from pydantic import BaseModel, Field
+from typing import Literal
+from anthropic import Anthropic
+from agentuity import AgentRequest, AgentResponse, AgentContext
+from sf_local_guide.agent import sf_local_guide_agent
+from conference_expert.agent import conference_expert_agent
+from dev_experience.agent import dev_experience_agent
+
+class UserIntent(BaseModel):
+    agent_type: Literal["sf_local_guide", "conference_expert", "dev_experience"]
+    tags: list[str]
+    likely_intent: str
+    confidence: float = Field(ge=0.0, le=1.0)
+
+# Agent map for dynamic routing
+agents = {
+    "sf_local_guide": sf_local_guide_agent,
+    "conference_expert": conference_expert_agent,
+    "dev_experience": dev_experience_agent
+}
+
+async def run(request: AgentRequest, response: AgentResponse, context: AgentContext):
+    data = await request.data.json()
+    message = data["message"]
+
+    # Step 1: Use AI to analyze intent with structured output
+    client = Anthropic()
+    result = client.messages.create(
+        model="claude-sonnet-4-5",
+        max_tokens=500,
+        system="Analyze user intent and route to appropriate agent...",
+        messages=[{"role": "user", "content": message}]
+    )
+
+    # Step 2: Validate the decision with Pydantic
+    intent_data = json.loads(result.content[0].text)
+    intent = UserIntent(**intent_data)
+
+    # Step 3: Make smart routing choices based on confidence
+    if intent.confidence < 0.7:
+        return response.json({
+            "response": "Let me connect you with a human...",
+            "routedTo": "fallback"
+        })
+
+    # Step 4: Route to validated specialist using agent map
+    result = await agents[intent.agent_type].run({"message": message})
+
+    return response.json({
+        "response": result["response"],
+        "routedTo": intent.agent_type
+    })
+`} />
+
+### Key Implementation: Conversation Memory
+
+The concierge maintains conversation state across agent interactions using KV storage:
+
+<CodeExample js={`// Retrieve existing conversation context
+const existingContext = await ctx.kv.get('conversations', sessionId);
+const conversationHistory = existingContext.exists
+  ? await existingContext.data.json()
+  : { messages: [], preferences: {} };
+
+// Update conversation record with new intent
+conversationHistory.messages.push({
+  timestamp: new Date().toISOString(),
+  intent: userIntent.agentType,
+  confidence: userIntent.confidence
+});
+
+// Track user preferences for better routing
+if (userIntent.agentType === 'sf_local_guide') {
+  conversationHistory.preferences.locationInterests =
+    (conversationHistory.preferences.locationInterests || 0) + 1;
+}
+
+// Save updated context with TTL
+await ctx.kv.set('conversations', sessionId, conversationHistory, { ttl: 3600 });`} py={`# Retrieve existing conversation context
+existing_context = await context.kv.get("conversations", session_id)
+conversation_history = (
+    await existing_context.data.json() if existing_context.exists
+    else {"messages": [], "preferences": {}}
+)
+
+# Update conversation record with new intent
+conversation_history["messages"].append({
+    "timestamp": datetime.now().isoformat(),
+    "intent": user_intent.agent_type,
+    "confidence": user_intent.confidence
+})
+
+# Track user preferences for better routing
+if user_intent.agent_type == "sf_local_guide":
+    conversation_history["preferences"]["location_interests"] = (
+        conversation_history["preferences"].get("location_interests", 0) + 1
+    )
+
+# Save updated context with TTL
+await context.kv.set("conversations", session_id, conversation_history, {"ttl": 3600})
+`} />
+
+### Build This Project Yourself
+
+Ready to implement this project? You'll need multiple specialized agents for the concierge system.
+
+**Setting up your multi-agent project:**
+
+1. Create agents using the CLI:
+   ```bash
+   agentuity agent create
+   ```
+   Run this command once for each specialist agent (concierge, sf-local-guide, conference-expert, etc.).
+
+2. Follow the complete examples below:
+
+<div className="flex flex-wrap gap-3 mb-6">
+  <a href="https://github.com/agentuity/examples/tree/main/training-v1/concierge-ts-v1" target="_blank" rel="noopener noreferrer"
+     className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors no-underline text-sm font-medium">
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.30 3.297-1.30.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+    TypeScript
+  </a>
+</div>
+
+<Callout type="warning">
+Always use CLI commands to manage agents. Use `agentuity agent delete` to remove agents. Never manually edit agent directories to avoid potential issues.
+</Callout>
+
+### What This System Demonstrates
+
+- **Structured AI responses**: Zod and Pydantic schemas ensure reliable routing decisions
+- **Agent specialization**: Different agents handle SF questions, conference info, and developer support
+- **Conversation memory**: KV storage maintains context across agent interactions
+- **Practical patterns**: Confidence thresholds, fallback handling, and session management
+- **Intent-based routing**: AI analyzes user messages to determine which agent can help best
+
+The complete example shows how to build agent coordination systems that intelligently route users to the right specialists based on validated AI analysis.
+
+### Testing Your Multi-Agent System
+
+Testing multi-agent systems requires understanding the flow across multiple agents.
+
+**Start Workbench:**
+```bash
+agentuity dev
+```
+
+**Key testing scenarios:**
+1. **Test agent calls**: Verify the correct specialist handles requests
+2. **Test parallel execution**: Check that multiple agents run concurrently
+3. **Test error scenarios**: Reference non-existent agents or send malformed data
+
+**Monitoring agent communication:**
+- Filter logs by agent ID to track individual agents
+- Filter by environment (Local/Cloud/Both) to see where requests are processed
+- Follow trace spans to see the full request flow across agents
+
+<Callout type="info">
+For detailed logging capabilities and advanced filtering options, see the [Agent Logging Guide](/v1/building/observability/logging).
+</Callout>
+
+### Deploy Your Multi-Agent System
+
+Once your multi-agent system is built, deploy it:
+
+```bash
+agentuity deploy
+```
+
+The deploy process is identical to single-agent projects. All agents are deployed together and can immediately communicate with each other.
+
+## Key Takeaways
+
+- **Multi-agent systems** enable specialization, scalability, and modularity through coordinated agents
+- **Direct imports** (`import enricherAgent from '../enricher/agent'`) provide type-safe communication between agents
+- **Sequential workflows** chain agents where one output feeds into the next
+- **Parallel execution** runs independent agents concurrently for better performance
+- **Smart routing** uses AI with structured outputs to dynamically select specialist agents
+- **Agentuity simplifies** multi-agent coordination with automatic agent discovery, type safety, and built-in tracing
+
+## What's Next?
+
+Now that you can build multi-agent systems, Module 5 will cover **Observability, Guardrails, & Evals**: how to ensure your agent teams behave safely and predictably.
+
+Questions to consider:
+- How do you prevent agents from taking harmful actions?
+- How do you track what decisions agents are making?
+- How do you ensure compliance and other requirements?
+
+Continue to [Module 5: Observability, Guardrails, & Evals](/Learn/Training/developers/05-observability-guardrails-evals)

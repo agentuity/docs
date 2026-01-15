@@ -1,0 +1,16 @@
+{
+  "title": "Developer Training",
+  "pages": [
+    "index",
+    "01-introduction-to-agents",
+    "02-anatomy-of-an-agent",
+    "03-agent-memory",
+    "04-agent-collaboration",
+    "05-observability-guardrails-evals",
+    "06-deployment-environments",
+    "07-routes-and-triggers",
+    "08-streaming-realtime",
+    "09-sandbox-code-execution",
+    "10-capstone"
+  ]
+}
