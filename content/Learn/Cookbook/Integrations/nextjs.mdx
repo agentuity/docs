@@ -13,15 +13,27 @@ export const GitHubIcon = () => (
 
 Next.js App Router pairs naturally with Agentuity: you get React Server Components for fast initial loads while Agentuity handles your AI logic in a separate, scalable backend. The `useAPI` hook provides end-to-end type safety from your agent schemas to your React components, catching errors at compile time rather than runtime.
 
+## Quick Start
+
+Clone the examples repo:
+
+```bash
+git clone https://github.com/agentuity/examples
+cd examples/integrations/nextjs
+bun install
+```
+
 <Cards>
   <Card
-    href="https://github.com/agentuity/sdk/tree/main/apps/testing/nextjs-app"
-    title="View Example"
+    href="https://github.com/agentuity/examples/tree/main/integrations/nextjs"
+    title="View on GitHub"
     icon={<GitHubIcon />}
   >
-    Next.js + Agentuity integration example
+    Full source code and README
   </Card>
 </Cards>
+
+The walkthrough below covers setup, creating an agent, and calling it from your Next.js app.
 
 ## Setup
 
