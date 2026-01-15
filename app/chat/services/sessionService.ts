@@ -1,4 +1,4 @@
-import { Session, Message, TutorialData } from '../types';
+import type { Session, Message, TutorialData } from '../types';
 
 export interface SessionServiceResponse<T = any> {
   success: boolean;

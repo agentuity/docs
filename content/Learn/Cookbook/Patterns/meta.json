@@ -1,0 +1,12 @@
+{
+  "title": "Patterns",
+  "pages": [
+    "background-tasks",
+    "chat-with-history",
+    "cron-with-storage",
+    "server-utilities",
+    "product-search",
+    "tailwind-setup",
+    "webhook-handler"
+  ]
+}

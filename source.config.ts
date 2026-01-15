@@ -4,6 +4,9 @@ import { transformerTwoslash } from 'fumadocs-twoslash';
 
 export const { docs, meta } = defineDocs({
 	dir: 'content',
+	docs: {
+		files: ['**/*.mdx'],
+	},
 });
 
 export default defineConfig({

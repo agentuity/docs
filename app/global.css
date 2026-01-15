@@ -32,7 +32,7 @@
 	--color-gray-900: var(--color-zinc-900);
 	--color-gray-950: var(--color-zinc-950);
 
-	/* Cyan accents - using production's shades for readability */
+	/* Cyan accents */
 	--color-fd-primary: var(--color-cyan-700);
 	--color-fd-primary-foreground: var(--color-cyan-50);
 	--color-fd-ring: var(--color-cyan-500);
@@ -130,4 +130,13 @@ figure > div:nth-child(2) {
 
 article > p {
 	margin-bottom: 1rem;
+}
+
+/* Content links - cyan branding (700 light, 500 dark) */
+.prose a:not([data-card]) {
+	text-decoration-color: var(--color-cyan-700);
+}
+
+.dark .prose a:not([data-card]) {
+	text-decoration-color: var(--color-cyan-500);
 }

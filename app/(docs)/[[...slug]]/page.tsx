@@ -12,6 +12,7 @@ import { CLICommand } from '@/components/CLICommand';
 import { CodeExample } from '@/components/CodeExample';
 import { Mermaid } from '@/components/Mermaid';
 import { Sparkle } from '@/components/Sparkle';
+import { Tag } from '@/components/Tag';
 import { ThemeImage } from '@/components/ThemeImage';
 import { TypingAnimation } from '@/components/TypingAnimation';
 import { XButton } from '@/components/XButton';
@@ -44,7 +45,7 @@ export default async function Page(props: {
 				path: `content/${page.file.path}`,
 			}}
 		>
-			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
+			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
 				<DocsTitle className="mb-0">{page.data.title}</DocsTitle>
 				<div className="hidden sm:flex justify-end">
 					<CopyPageDropdown enhanced={true} />
@@ -67,6 +68,7 @@ export default async function Page(props: {
 						Sparkle,
 						Tab,
 						Tabs,
+						Tag,
 						ThemeImage,
 						TutorialStep,
 						TypingAnimation,

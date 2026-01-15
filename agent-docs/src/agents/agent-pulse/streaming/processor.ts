@@ -11,7 +11,7 @@ export function createStreamingProcessor(
 	return new ReadableStream({
 		async start(controller) {
 			const encoder = new TextEncoder();
-			let accumulatedContent = "";
+			const accumulatedContent = "";
 
 			try {
 				// Stream only safe, user-facing content

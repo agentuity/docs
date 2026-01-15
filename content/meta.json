@@ -1,13 +1,15 @@
 {
 	"title": "Agentuity Docs",
+	"root": true,
 	"pages": [
-		"Introduction",
-		"Guides",
-		"Cloud",
-		"CLI",
-		"SDKs",
-		"Changelog",
-		"Examples",
-		"Troubleshooting"
+		"index",
+		"Get-Started",
+		"Agents",
+		"APIs",
+		"Routes",
+		"Frontend",
+		"Services",
+		"Learn",
+		"Reference"
 	]
 }

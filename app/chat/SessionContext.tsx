@@ -1,6 +1,6 @@
 'use client';
 import { createContext, useContext } from 'react';
-import { Session } from './types';
+import type { Session } from './types';
 
 interface SessionContextType {
   sessions: Session[];

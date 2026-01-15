@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { baseOptions } from '@/app/layout.config';
 import { source } from '@/lib/source';
 import AISearchToggle from '../../components/AISearchToggle';
+import { SidebarFooter } from '../../components/SidebarFooter';
 
 export default function Layout({ children }: { children: ReactNode }) {
 	return (
@@ -19,6 +20,11 @@ export default function Layout({ children }: { children: ReactNode }) {
 						</div>
 					),
 				},
+			}}
+			sidebar={{
+				tabs: false,
+				// banner: <SidebarBanner />,
+				footer: <SidebarFooter />
 			}}
 		>
 			{children}

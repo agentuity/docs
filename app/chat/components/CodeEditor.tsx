@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 import { Play, Terminal, Square, Power, Code, X } from 'lucide-react';
 
 enum TabType {

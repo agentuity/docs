@@ -1,7 +1,7 @@
 import React from 'react';
 import { readFile } from 'fs/promises';
 import path from 'path';
-import CodeBlock from '@/app/chat/components/CodeBlock';
+import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock';
 import { Tabs, Tab } from 'fumadocs-ui/components/tabs';
 
 export interface CodeFromFilesSnippet {
@@ -25,7 +25,7 @@ function inferLanguageFromExtension(filePath: string): string {
     case '.js': return 'js';
     case '.jsx': return 'jsx';
     case '.json': return 'json';
-    case '.py': return 'python';
+    case '.py': return 'py';
     case '.sh':
     case '.bash': return 'bash';
     case '.yml':
@@ -81,7 +81,7 @@ export default async function CodeFromFiles(props: CodeFromFilesProps) {
       <Tabs items={loaded.map((x) => x.label)}>
         {loaded.map((x, idx) => (
           <Tab key={idx} value={x.label}>
-            <CodeBlock content={x.content} language={x.lang} />
+            <DynamicCodeBlock code={x.content} lang={x.lang} />
           </Tab>
         ))}
       </Tabs>

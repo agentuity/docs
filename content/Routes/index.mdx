@@ -1,0 +1,165 @@
+---
+title: Routing Overview
+description: Define how requests reach your code
+---
+
+Routes define how requests reach your application, whether HTTP calls, scheduled jobs, or real-time connections. Built on [Hono](https://hono.dev), the router provides a familiar API with full TypeScript support.
+
+<Callout type="info" title="Infrastructure as Code">
+Routes are defined in your codebase and automatically discovered. Changes are tracked in Git, reviewed in PRs, and deployed with your code. No UI configuration required.
+</Callout>
+
+## Where Routes Live
+
+All routes live in `src/api/`. Agents and routes are separate concerns:
+
+| Directory | Purpose |
+|-----------|---------|
+| `src/agent/*/` | Agent logic (no routes here) |
+| `src/api/` | All routes: HTTP, cron, WebSocket, SSE, etc. |
+
+Routes import and call agents directly:
+
+```typescript
+// src/api/index.ts
+import { createRouter } from '@agentuity/runtime';
+import slackHandler from '@agent/slack-handler';
+
+const router = createRouter();
+
+router.post('/slack', async (c) => {
+  const payload = await c.req.json();
+  const result = await slackHandler.run(payload);
+  return c.json(result);
+});
+
+export default router;
+```
+
+Routes in `src/api/` are automatically mounted at `/api`. For the full project layout, see [Project Structure](/Get-Started/project-structure).
+
+## Route Types
+
+| Type | Method | Use case |
+|------|--------|----------|
+| [HTTP](/Routes/http) | `router.get()`, `router.post()`, `stream()` middleware | REST APIs, webhooks, LLM streaming |
+| [Middleware](/Routes/middleware) | Hono middleware | Auth, logging, validation |
+| [Cron](/Routes/cron) | `cron()` middleware | Scheduled tasks |
+| [WebSocket](/Routes/websockets) | `websocket()` middleware | Real-time bidirectional |
+| [SSE](/Routes/sse) | `sse()` middleware | Server-sent events |
+
+## Quick Examples
+
+### HTTP
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+import assistant from '@agent/assistant';
+
+const router = createRouter();
+
+router.get('/health', (c) => {
+  return c.json({ status: 'ok', timestamp: Date.now() });
+});
+
+router.post('/chat', assistant.validator(), async (c) => {
+  const data = c.req.valid('json');
+  const result = await assistant.run(data);
+  return c.json(result);
+});
+
+export default router;
+```
+
+### Cron
+
+```typescript
+import { cron } from '@agentuity/runtime';
+import reportGenerator from '@agent/report-generator';
+
+router.post('/daily-report', cron('0 9 * * *', async (c) => {
+  await reportGenerator.run({ type: 'daily' });
+  return c.text('OK');
+}));
+```
+
+### WebSocket
+
+```typescript
+import { websocket } from '@agentuity/runtime';
+import assistant from '@agent/assistant';
+
+router.get('/chat', websocket((c, ws) => {
+  ws.onMessage(async (event) => {
+    const response = await assistant.run(event.data);
+    ws.send(response);
+  });
+}));
+```
+
+### SSE
+
+```typescript
+import { sse } from '@agentuity/runtime';
+
+router.get('/stream', sse(async (c, stream) => {
+  for (let i = 0; i < 5; i++) {
+    await stream.writeSSE({ data: `Message ${i}` });
+  }
+  stream.close();
+}));
+```
+
+## Context Access
+
+<Callout type="info" title="Route vs Agent Context">
+In routes, use [Hono's context](https://hono.dev/docs/api/context): `c.var.logger` or `c.get('logger')`, `c.var.kv`, `c.var.thread`, etc.
+
+In agents, access services directly on `ctx`: `ctx.logger`, `ctx.kv`, `ctx.thread`.
+</Callout>
+
+All route handlers have access to the same context:
+
+```typescript
+import myAgent from '@agent/my-agent';
+import analytics from '@agent/analytics';
+
+router.post('/', async (c) => {
+  // Request data
+  const body = await c.req.json();
+  const header = c.req.header('Authorization');
+
+  // Logging and session
+  c.var.logger.info('Processing request');
+  const sessionId = c.var.sessionId;
+
+  // Thread and session state
+  c.var.thread.state.set('topic', body.topic);
+  const userId = c.var.session.state.get('userId');
+
+  // Storage
+  await c.var.kv.set('cache', 'key', data);
+  const results = await c.var.vector.search('docs', { query: 'search term' });
+
+  // Durable streams
+  const stream = await c.var.stream.create('export', { contentType: 'text/csv' });
+
+  // Call agents (import them at the top of your file)
+  const result = await myAgent.run(body);
+
+  // Background tasks
+  c.waitUntil(async () => {
+    await analytics.run({ event: 'request' });
+  });
+
+  return c.json(result);
+});
+```
+
+Routes can also expose storage operations to external backends like Next.js or Express. Create authenticated routes that read/write to `c.var.kv`, `c.var.vector`, or `c.var.stream`, then call them via HTTP. See [SDK Utilities for External Apps](/Learn/Cookbook/Patterns/server-utilities) for the complete pattern.
+
+## Next Steps
+
+- [HTTP Routes](/Routes/http) - REST endpoints, parameters, validation
+- [Middleware](/Routes/middleware) - Authentication, logging, CORS
+- [When to Use APIs](/APIs/when-to-use) - Choosing between agents and lightweight routes

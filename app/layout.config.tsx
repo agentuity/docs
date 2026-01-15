@@ -8,9 +8,9 @@ import { XButton } from '../components/XButton';
  */
 export const baseOptions: BaseLayoutProps = {
 	nav: {
-		url: '/Introduction',
+		url: '/Get-Started/what-is-agentuity',
 		title: (
-			<div className="flex items-center gap-3 font-medium">
+			<div className="flex items-center gap-3 font-medium ml-2">
 				<svg
 					role="img"
 					aria-label="Agentuity"
@@ -54,7 +54,7 @@ export const baseOptions: BaseLayoutProps = {
 						target="_blank"
 						rel="noopener noreferrer"
 					>
-						Console
+						App
 					</NavButton>
 					<CommunityButton target="_blank" rel="noopener noreferrer" />
 					<XButton className="h-9" />

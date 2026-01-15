@@ -1,0 +1,252 @@
+---
+title: Local Development
+description: Run the development server with hot reload, local mode, and the interactive Workbench.
+---
+
+Run your Agentuity project locally with automatic hot reload, type checking, and the interactive Workbench UI.
+
+## Starting the Dev Server
+
+```bash
+agentuity dev
+# or
+bun run dev
+```
+
+The server starts on port 3500 by default with:
+- Hot reload on file changes
+- TypeScript type checking
+- Public URL tunneling (optional, for webhooks and sharing)
+- Interactive keyboard shortcuts
+
+## Dev Server Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--port` | 3500 (or `PORT` env) | TCP port for the dev server |
+| `--local` | false | Use local services instead of cloud |
+| `--public` | true | Enable public URL tunneling |
+| `--no-public` | - | Disable public URL tunneling |
+| `--interactive` | true | Enable interactive keyboard shortcuts |
+| `--watch <path>` | - | Additional paths to watch for changes (repeatable) |
+| `--profile <name>` | - | Load `.env.<name>` in addition to `.env` |
+
+<Callout type="tip" title="PORT Environment Variable">
+The dev server respects the `PORT` environment variable. The `--port` flag takes precedence if both are set.
+</Callout>
+
+```bash
+# Custom port
+agentuity dev --port 8080
+
+# Local mode (offline development)
+agentuity dev --local
+
+# Disable public URL
+agentuity dev --no-public
+
+# Non-interactive mode (useful for CI/CD)
+agentuity dev --no-interactive
+
+# Watch additional directories (e.g., local packages)
+agentuity dev --watch ../my-shared-lib/dist --watch ../other-package/src
+```
+
+<Callout type="tip" title="Watching External Packages">
+Use `--watch` when developing with local packages outside your project. Changes in watched paths trigger rebuilds just like changes in your source directory.
+</Callout>
+
+## Keyboard Shortcuts
+
+Press keys during development to control the server:
+
+| Key | Action |
+|-----|--------|
+| `h` | Show help |
+| `c` | Clear console |
+| `r` | Restart server |
+| `o` | Show routes |
+| `a` | Show agents |
+| `q` | Quit |
+
+## Local Mode
+
+Use `--local` to develop offline without cloud services:
+
+```bash
+agentuity dev --local
+```
+
+<Callout type="info" title="When to Use Local Mode">
+Local mode disables cloud services (KV, Vector, Object Storage). Use when developing without internet or testing with mock data.
+</Callout>
+
+**What happens in local mode:**
+- No connection to Agentuity cloud
+- Storage APIs disabled unless you provide [custom implementations](/Services/Storage/custom)
+- Public URL tunneling disabled
+- Requires your own API keys for AI providers (in `.env`), since the [AI Gateway](/Agents/ai-gateway) is not available
+
+**Bring Your Own Storage:**
+
+```typescript
+// app.ts
+import { createApp } from '@agentuity/runtime';
+import { MyCustomKV } from './storage';
+
+const app = createApp({
+  services: {
+    useLocal: true,
+    keyvalue: new MyCustomKV(), // Your implementation
+  },
+});
+```
+
+See [Custom Storage](/Services/Storage/custom) for implementation details.
+
+## Profile-Specific Environment Variables
+
+Load different environment variables based on a profile name:
+
+```bash
+# Load .env.staging
+agentuity dev --profile staging
+
+# Load .env.testing
+agentuity dev --profile testing
+```
+
+Profile-specific files are loaded in addition to the base `.env` file. Variables in the profile file override those in `.env`.
+
+**Example setup:**
+
+```bash
+# .env (base, always loaded)
+DATABASE_URL=postgres://localhost:5432/myapp
+LOG_LEVEL=info
+
+# .env.staging (loaded with --profile staging)
+DATABASE_URL=postgres://staging.example.com:5432/myapp
+API_BASE_URL=https://staging-api.example.com
+
+# .env.testing (loaded with --profile testing)
+DATABASE_URL=postgres://localhost:5432/myapp_test
+MOCK_EXTERNAL_APIS=true
+```
+
+<Callout type="tip" title="Profile Use Cases">
+Use profiles to switch between configurations without editing files. Common profiles: `staging`, `testing`, `local`, `demo`.
+</Callout>
+
+## Public URLs
+
+Enable public URLs to share your local dev server or receive webhooks:
+
+```bash
+# Public URL enabled by default
+agentuity dev
+
+# Or explicitly
+agentuity dev --public
+```
+
+The `--public` flag creates a secure tunnel through Agentuity's edge network, giving your local server a public HTTPS URL for testing webhooks, sharing with teammates, or external integrations.
+
+**Example output:**
+```
+⨺ Agentuity DevMode
+  Local:   http://127.0.0.1:3500
+  Public:  https://abc123.devmode.agentuity.com
+
+  Press h for keyboard shortcuts
+```
+
+**Example use cases:**
+- Testing Slack, Discord, or Twilio webhooks
+- Sharing with team members
+- Testing from mobile devices
+- OAuth callback URLs
+
+## Workbench UI
+
+Access the interactive Workbench at `http://localhost:3500/workbench` to test agents visually. It displays agent schemas, handles input validation, and shows execution results with timing metrics.
+
+See [Testing with Workbench](/Agents/workbench) for setup and configuration.
+
+## Building Your Project
+
+Bundle your project for deployment:
+
+```bash
+agentuity build
+```
+
+**What happens during build:**
+1. TypeScript compilation
+2. Bundle agents, routes, and frontend
+3. Generate registry and types
+4. Type check with `tsc`
+5. Create `.agentuity/` output directory
+
+### Build Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--dev` | false | Enable development mode |
+| `--outdir` | `.agentuity` | Output directory |
+| `--skip-type-check` | false | Skip TypeScript type checking |
+
+```bash
+# Skip type checking (faster builds)
+agentuity build --skip-type-check
+
+# Custom output directory
+agentuity build --outdir ./dist
+```
+
+<Callout type="warning" title="Type Check Failures">
+Build fails if TypeScript errors are detected. Fix type errors or use `--skip-type-check` to override (not recommended for deployments).
+</Callout>
+
+## Hot Reload Behavior
+
+The dev server watches for file changes and automatically:
+- Rebuilds on source file changes (`.ts`, `.tsx`, `.js`, `.jsx`)
+- Runs TypeScript type checking
+- Restarts the server
+- Preserves background tasks
+
+**Ignored files:**
+- `node_modules/`
+- `.agentuity/` (build output)
+- Generated files (`*.generated.ts`)
+- Temporary files
+
+**Cooldown period:** 500ms after build completes to prevent restart loops.
+
+## Dev Server Architecture
+
+The dev server uses Vite for frontend hot module replacement (HMR) and Bun for server-side code. All requests go through a single port (3500), so you don't need to manage multiple servers or ports during development.
+
+- **Frontend changes** (React, CSS) reload instantly via Vite HMR
+- **Server changes** (agents, routes) trigger a fast Bun rebuild
+- **WebSocket connections** work seamlessly
+
+## Development vs Production
+
+Understanding the differences between local development and deployed production:
+
+| Aspect | Local (`agentuity dev`) | Production (`agentuity deploy`) |
+|--------|------------------------|--------------------------------|
+| **Storage** | Cloud services (or local with `--local`) | Cloud services always |
+| **AI Gateway** | Available (or BYO keys with `--local`) | Available always |
+| **URL** | `localhost:3500` + optional public tunnel | `*.agentuity.cloud` or custom domain |
+| **Hot Reload** | Yes | No (redeploy required) |
+| **Debugging** | Local logs, Workbench | SSH access, cloud logs |
+| **Environment** | `.env` | `.env.production` (synced to cloud) |
+
+## Next Steps
+
+- [Deploying to the Cloud](/Reference/CLI/deployment): Deploy to Agentuity Cloud
+- [Creating Agents](/Agents/creating-agents): Create your first agent
+- [HTTP Routes](/Routes/http): Add HTTP endpoints

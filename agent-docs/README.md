@@ -52,7 +52,7 @@ Run your project in development mode with:
 agentuity dev
 ```
 
-This will start your project and open a new browser window connecting your agent to the Agentuity Console in DevMode, allowing you to test and debug your agent in real-time.
+This will start your project and open a new browser window connecting your agent to the Agentuity App in DevMode, allowing you to test and debug your agent in real-time.
 
 ## 🌐 Deployment
 
