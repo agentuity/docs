@@ -46,18 +46,7 @@ const config = {
 			permanent: true,
 		},
 	],
-	rewrites: async () => [
-		// Proxy session API calls to Agentuity V1 backend
-		{
-			source: '/api/sessions/:path*',
-			destination: `${process.env.AGENT_BASE_URL}/api/sessions/:path*`,
-		},
-		// Proxy agent_pulse API calls to Agentuity V1 backend
-		{
-			source: '/api/agent_pulse',
-			destination: `${process.env.AGENT_BASE_URL}/api/agent_pulse`,
-		},
-	],
+	// API rewrites are handled by middleware.ts (to inject bearer token)
 };
 
 export default withMDX(config);

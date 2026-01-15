@@ -136,11 +136,6 @@ declare module '@agentuity/react' {
 		outputSchema: never;
 		stream: false;
 	};
-	'GET /api/process-docs': {
-		inputSchema: never;
-		outputSchema: never;
-		stream: false;
-	};
 	'POST /api/process-docs': {
 		inputSchema: POSTApiProcessDocsInputSchema;
 		outputSchema: POSTApiProcessDocsOutputSchema;
@@ -223,10 +218,6 @@ declare module '@agentuity/react' {
 		};
 		processDocs: {
 			/**
-			 * Route: GET /api/process-docs
-			 */
-			get: { input: never; output: never; type: 'api' };
-			/**
 			 * Route: POST /api/process-docs
 			 */
 			post: { input: POSTApiProcessDocsInput; output: POSTApiProcessDocsOutput; type: 'api' };
@@ -280,9 +271,6 @@ const _rpcRouteMetadata = {
 				}
 		},
 		"processDocs": {
-				"get": {
-						"type": "api"
-				},
 				"post": {
 						"type": "api"
 				}

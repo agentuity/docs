@@ -1,5 +1,5 @@
 import { createRouter, validator } from '@agentuity/runtime';
-import { cookieAuth } from '@middleware/auth';
+import { bearerTokenAuth, cookieAuth } from '@middleware/auth';
 import { config } from '../../../config';
 import { SessionSchema, type Session } from '../../../../app/chat/types';
 
@@ -24,7 +24,7 @@ interface MessageRequest {
 /**
  * GET /api/sessions - Get all sessions (paginated)
  */
-router.get('/', cookieAuth, async (c) => {
+router.get('/', bearerTokenAuth, cookieAuth, async (c) => {
 	try {
 		const userId = (c.get as (key: string) => string)('userId');
 
@@ -92,7 +92,7 @@ router.get('/', cookieAuth, async (c) => {
 /**
  * POST /api/sessions - Create a new session
  */
-router.post('/', cookieAuth, validator({ input: SessionSchema }), async (c) => {
+router.post('/', bearerTokenAuth, cookieAuth, validator({ input: SessionSchema }), async (c) => {
 	try {
 		const userId = (c.get as (key: string) => string)('userId');
 
@@ -147,7 +147,7 @@ router.post('/', cookieAuth, validator({ input: SessionSchema }), async (c) => {
 /**
  * GET /api/sessions/:sessionId - Get a specific session
  */
-router.get('/:sessionId', cookieAuth, async (c) => {
+router.get('/:sessionId', bearerTokenAuth, cookieAuth, async (c) => {
 	try {
 		const userId = (c.get as (key: string) => string)('userId');
 		const sessionId = c.req.param('sessionId');
@@ -175,7 +175,7 @@ router.get('/:sessionId', cookieAuth, async (c) => {
 /**
  * PUT /api/sessions/:sessionId - Update a session
  */
-router.put('/:sessionId', cookieAuth, async (c) => {
+router.put('/:sessionId', bearerTokenAuth, cookieAuth, async (c) => {
 	try {
 		const userId = (c.get as (key: string) => string)('userId');
 		const sessionId = c.req.param('sessionId');
@@ -230,7 +230,7 @@ router.put('/:sessionId', cookieAuth, async (c) => {
 /**
  * DELETE /api/sessions/:sessionId - Delete a session
  */
-router.delete('/:sessionId', cookieAuth, async (c) => {
+router.delete('/:sessionId', bearerTokenAuth, cookieAuth, async (c) => {
 	try {
 		const userId = (c.get as (key: string) => string)('userId');
 		const sessionId = c.req.param('sessionId');
@@ -262,7 +262,7 @@ router.delete('/:sessionId', cookieAuth, async (c) => {
 /**
  * POST /api/sessions/:sessionId/messages - Add a message to a session
  */
-router.post('/:sessionId/messages', cookieAuth, async (c) => {
+router.post('/:sessionId/messages', bearerTokenAuth, cookieAuth, async (c) => {
 	try {
 		const userId = (c.get as (key: string) => string)('userId');
 		const sessionId = c.req.param('sessionId');

@@ -112,16 +112,17 @@ export async function syncDocsFromPayload(
 			}));
 
 			// Batch upsert all chunks at once for efficiency
-			const upsertResults = await ctx.vector.upsert(
-				VECTOR_STORE_NAME,
-				...chunksWithMetadata
-			);
-
-			ctx.logger.info(
-				'Upserted %d chunks for file: %s',
-				upsertResults.length,
-				logicalPath
-			);
+			if (chunksWithMetadata.length > 0) {
+				const upsertResults = await ctx.vector.upsert(
+					VECTOR_STORE_NAME,
+					...chunksWithMetadata
+				);
+				ctx.logger.info(
+					'Upserted %d chunks for file: %s',
+					upsertResults.length,
+					logicalPath
+				);
+			}
 
 			processed++;
 			ctx.logger.info(

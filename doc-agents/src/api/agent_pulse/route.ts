@@ -1,5 +1,5 @@
 import { createRouter } from '@agentuity/runtime';
-import { cookieAuth } from '@middleware/auth';
+import { bearerTokenAuth, cookieAuth } from '@middleware/auth';
 import { config } from '../../../config';
 import agentPulse from '@agent/agent_pulse';
 import type { ConversationMessage } from '@agent/agent_pulse/types';
@@ -149,7 +149,7 @@ const SSE_HEADERS = {
 };
 
 // POST /api/agent-pulse
-router.post('/', cookieAuth, async (c) => {
+router.post('/', bearerTokenAuth, cookieAuth, async (c) => {
 	try {
 		const userId = (c.get as (key: string) => string)('userId');
 		const kv = c.var.kv;

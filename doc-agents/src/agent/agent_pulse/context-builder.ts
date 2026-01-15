@@ -43,7 +43,7 @@ function buildCurrentTutorialInfo(tutorials: Tutorial[], tutorialState?: Tutoria
 	if (!currentTutorial) {
 		return '\nWarning: User appears to be in an unknown tutorial.';
 	}
-	if (tutorialState.currentStep > currentTutorial.totalSteps) {
+	if (tutorialState.currentStep >= currentTutorial.totalSteps) {
 		return `\nUser has completed the tutorial: ${currentTutorial.title} (${currentTutorial.totalSteps} steps)`;
 	}
 	return `\nUser is currently on this tutorial: ${currentTutorial.title} (Step ${tutorialState.currentStep} of ${currentTutorial.totalSteps})`;

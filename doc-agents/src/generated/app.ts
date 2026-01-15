@@ -214,10 +214,8 @@ const { default: router_2 } = await import('../api/doc-qa/route.js');
 app.route('/api/doc-qa', router_2);
 const { default: router_3 } = await import('../api/sessions/route.js');
 app.route('/api/sessions', router_3);
-const { default: router_4 } = await import('../api/process-docs/index.js');
+const { default: router_4 } = await import('../api/process-docs/route.js');
 app.route('/api/process-docs', router_4);
-const { default: router_5 } = await import('../api/process-docs/route.js');
-app.route('/api/process-docs', router_5);
 
 // Mount workbench API routes (/_agentuity/workbench/*)
 const workbenchRouter = createWorkbenchRouter();

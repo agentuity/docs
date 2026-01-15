@@ -55,6 +55,7 @@ export function useStreaming({
       // Send to the enhanced messages endpoint
       const response = await fetch(`/api/sessions/${sessionId}/messages`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
