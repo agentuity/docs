@@ -61,11 +61,11 @@ const agent = createAgent('AgentPulse', {
 			tools,
 			system: systemPrompt,
 			stopWhen: stepCountIs(5), // Replaces deprecated maxSteps
-			onStepFinish: async ({ text, toolCalls, toolResults, finishReason, usage }) => {
+			onStepFinish: async ({ text, toolCalls, toolResults, finishReason }) => {
 				ctx.logger.info('Step finished - reason: %s, toolCalls: %d, toolResults: %d, text: %s',
 					finishReason, toolCalls?.length || 0, toolResults?.length || 0, text || '(no text)');
 			},
-			onFinish: async ({ finishReason, usage, text, steps }) => {
+			onFinish: async ({ finishReason, text, steps }) => {
 				ctx.logger.info('=== FINAL COMPLETION ===');
 				ctx.logger.info('Finish reason: %s, Total steps: %d', finishReason, steps?.length || 0);
 				ctx.logger.info('Final text length: %d', text?.length || 0);

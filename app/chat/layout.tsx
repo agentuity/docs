@@ -1,10 +1,11 @@
- 'use client';
+'use client';
 
 import { usePathname, useRouter } from "next/navigation";
+import { AgentuityProvider } from '@agentuity/react';
 import { Session } from "./types";
 import { sessionService } from "./services/sessionService";
 import { SessionSidebar } from "./components/SessionSidebar";
- import { SessionSidebarSkeleton } from './components/SessionSidebarSkeleton';
+import { SessionSidebarSkeleton } from './components/SessionSidebarSkeleton';
 import { SessionContext } from './SessionContext';
 import useSWRInfinite from 'swr/infinite';
 
@@ -65,49 +66,51 @@ import useSWRInfinite from 'swr/infinite';
     const loadMore = () => setSize(size + 1);
 
     return (
-        <div className="agentuity-background flex h-screen text-white overflow-hidden">
-            {/* Sidebar: show skeleton while loading, real sidebar when ready */}
-            {isLoading ? (
-                <SessionSidebarSkeleton />
-            ) : (
-                <SessionSidebar
-                    currentSessionId={sessionId}
-                    sessions={sessions}
-                    onSessionSelect={handleSessionSelect}
-                    onNewSession={handleNewSession}
-                    hasMore={hasMore}
-                    onLoadMore={loadMore}
-                    isLoadingMore={isLoadingMore}
-                />
-            )}
-            {/* Main Content */}
-            <SessionContext.Provider value={{
-                sessions,
-                setSessions: (updater, options = { revalidate: true }) => {
-                    const newData = typeof updater === 'function' ? (updater as any)(sessions) : updater;
-                    mutate(newData, options);
-                },
-                currentSessionId: sessionId,
-                revalidateSessions: () => swrMutate(undefined, { revalidate: true })
-            }}>
-                <div className="flex-1 flex flex-col min-w-0">
-                    {/* Non-blocking error banner */}
-                    {error && (
-                        <div className="absolute top-2 right-2 z-50 bg-red-500/20 border border-red-500/40 text-red-200 text-sm px-3 py-2 rounded-md backdrop-blur">
-                            <div className="flex items-center gap-3">
-                                <span>Failed to load sessions</span>
-                                <button
-                                    onClick={() => setSize(1)}
-                                    className="px-2 py-0.5 text-xs rounded bg-red-500/30 hover:bg-red-500/40 border border-red-500/50"
-                                >
-                                    Retry
-                                </button>
+        <AgentuityProvider>
+            <div className="agentuity-background flex h-screen text-white overflow-hidden">
+                {/* Sidebar: show skeleton while loading, real sidebar when ready */}
+                {isLoading ? (
+                    <SessionSidebarSkeleton />
+                ) : (
+                    <SessionSidebar
+                        currentSessionId={sessionId}
+                        sessions={sessions}
+                        onSessionSelect={handleSessionSelect}
+                        onNewSession={handleNewSession}
+                        hasMore={hasMore}
+                        onLoadMore={loadMore}
+                        isLoadingMore={isLoadingMore}
+                    />
+                )}
+                {/* Main Content */}
+                <SessionContext.Provider value={{
+                    sessions,
+                    setSessions: (updater, options = { revalidate: true }) => {
+                        const newData = typeof updater === 'function' ? (updater as any)(sessions) : updater;
+                        mutate(newData, options);
+                    },
+                    currentSessionId: sessionId,
+                    revalidateSessions: () => swrMutate(undefined, { revalidate: true })
+                }}>
+                    <div className="flex-1 flex flex-col min-w-0">
+                        {/* Non-blocking error banner */}
+                        {error && (
+                            <div className="absolute top-2 right-2 z-50 bg-red-500/20 border border-red-500/40 text-red-200 text-sm px-3 py-2 rounded-md backdrop-blur">
+                                <div className="flex items-center gap-3">
+                                    <span>Failed to load sessions</span>
+                                    <button
+                                        onClick={() => setSize(1)}
+                                        className="px-2 py-0.5 text-xs rounded bg-red-500/30 hover:bg-red-500/40 border border-red-500/50"
+                                    >
+                                        Retry
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    )}
-                    {children}
-                </div>
-            </SessionContext.Provider>
-        </div>
+                        )}
+                        {children}
+                    </div>
+                </SessionContext.Provider>
+            </div>
+        </AgentuityProvider>
     );
 }

@@ -1,4 +1,20 @@
 import { createMiddleware } from 'hono/factory';
+import { getCookie } from 'hono/cookie';
+
+/**
+ * Cookie-only authentication middleware
+ * Validates the chat_user_id cookie is present
+ * Use this for public-facing endpoints that only need user identification
+ */
+export const cookieAuth = createMiddleware(async (c, next) => {
+	const userId = getCookie(c, 'chat_user_id');
+	if (!userId) {
+		c.var.logger.warn('Missing chat_user_id cookie');
+		return c.json({ error: 'Missing chat_user_id cookie' }, 401);
+	}
+	c.set('userId', userId);
+	await next();
+});
 
 /**
  * Bearer token authentication middleware
@@ -27,6 +43,16 @@ export const bearerTokenAuth = createMiddleware(async (c, next) => {
 		c.var.logger.warn('Invalid bearer token');
 		return c.json({ error: 'Invalid bearer token' }, 401);
 	}
+
+	// TODO: With clerk, we can set user apayload here sing c.set('user', payload...)
+	// Use cookie for now
+	const userId = getCookie(c, 'chat_user_id');
+	if (!userId) {
+		c.var.logger.warn('Missing chat_user_id cookie');
+		return c.json({ error: 'Missing chat_user_id cookie' }, 401);
+	}
+
+	c.set('userId', userId);
 
 	// Token is valid, proceed to next handler
 	await next();

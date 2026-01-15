@@ -18,6 +18,7 @@
 		"@agentuity/schema": "latest",
 		"@agentuity/workbench": "latest",
 		"@ai-sdk/openai": "latest",
+		"@hono/zod-validator": "^0.7.6",
 		"ai": "latest",
 		"gray-matter": "^4.0.3",
 		"langchain": "^0.3.28",
