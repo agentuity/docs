@@ -124,16 +124,19 @@ agentuity cloud deployment show dep_abc123xyz --project-id=proj_abc123
 - Active status
 - Tags and custom domains
 - Cloud region
+- DNS records (for custom domain configuration)
 - Git metadata (repo, commit, branch, PR)
 - Build information (SDK version, runtime, platform)
 
 ```
-ID:       dep_abc123xyz
-Project:  proj_456def
-State:    completed
-Active:   Yes
-Created:  12/1/25, 3:45 PM
-Tags:     staging, hotfix-123
+ID:          dep_abc123xyz
+Project:     proj_456def
+State:       completed
+Active:      Yes
+Created:     12/1/25, 3:45 PM
+Tags:        staging, hotfix-123
+Domains:     api.example.com
+DNS Records: api.example.com CNAME p1234567890.agentuity.cloud
 
 Git Information
   Repo:     myorg/myapp
@@ -147,6 +150,10 @@ Build Information
   Platform:  linux
   Arch:      x64
 ```
+
+<Callout type="tip" title="DNS Records">
+When custom domains are configured, the `show` command displays the required DNS records. Use this to verify your CNAME configuration.
+</Callout>
 
 ## Viewing Logs
 

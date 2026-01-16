@@ -62,6 +62,21 @@ Pre-configured AI coding assistants:
 Run `agentuity cloud sandbox runtime list` to see all available runtimes, or view them in the [Agentuity App](https://app-v1.agentuity.com) under **Services > Sandbox > Runtimes**.
 </Callout>
 
+### Runtime Metadata
+
+Each runtime includes metadata for identification and resource planning:
+
+| Field | Description |
+|-------|-------------|
+| `description` | What the runtime provides |
+| `icon` | URL to runtime icon |
+| `brandColor` | Hex color for UI display |
+| `documentationUrl` | Link to runtime documentation |
+| `tags` | Categories like `language`, `ai-agent` |
+| `requirements` | Minimum memory, CPU, disk, and network needs |
+
+View runtime details with `agentuity cloud sandbox runtime list --json`.
+
 ## Snapshots
 
 A snapshot captures the filesystem state of a sandbox. You create new sandboxes *from* a snapshot rather than running it directly.
@@ -143,6 +158,8 @@ The API is identical in both contexts.
 | `resources.cpu` | CPU limit in millicores | `'500m'`, `'1000m'` |
 | `resources.disk` | Disk space limit | `'1Gi'` |
 | `network.enabled` | Allow outbound network | `true` (default: `false`) |
+| `network.port` | Port to expose to internet (1024-65535) | `3000` |
+| `projectId` | Associate sandbox with a project | `'proj_abc123'` |
 | `timeout.idle` | Idle timeout before cleanup | `'10m'`, `'1h'` |
 | `timeout.execution` | Max execution time per command | `'5m'`, `'30s'` |
 | `dependencies` | Apt packages to install | `['python3', 'git']` |

@@ -121,6 +121,49 @@ await sandbox.writeFiles([
 ]);
 ```
 
+### Exposing Ports
+
+Expose a port from the sandbox to make it accessible via a public URL:
+
+```typescript
+const sandbox = await ctx.sandbox.create({
+  network: {
+    enabled: true,
+    port: 3000,  // Expose port 3000 (valid range: 1024-65535)
+  },
+  resources: { memory: '512Mi' },
+});
+
+// Start a web server inside the sandbox
+await sandbox.execute({ command: ['npm', 'run', 'serve'] });
+
+// Get the public URL
+const info = await ctx.sandbox.get(sandbox.id);
+if (info.url) {
+  ctx.logger.info('Server accessible at', { url: info.url, port: info.networkPort });
+}
+```
+
+<Callout type="info" title="Network Required">
+Setting `network.port` requires `network.enabled: true`. The sandbox must have network access to expose ports.
+</Callout>
+
+### Project Association
+
+Associate sandboxes with a project for organization and filtering:
+
+```typescript
+const sandbox = await ctx.sandbox.create({
+  projectId: 'proj_abc123',  // Associate with project
+  resources: { memory: '512Mi' },
+});
+
+// List sandboxes by project
+const { sandboxes } = await ctx.sandbox.list({
+  projectId: 'proj_abc123',
+});
+```
+
 ### Reading Files
 
 Read files from the sandbox as streams:
@@ -350,6 +393,8 @@ await ctx.sandbox.destroy('sbx_abc123');
 | `resources.cpu` | `string` | CPU in millicores: `'500m'`, `'1000m'` |
 | `resources.disk` | `string` | Disk limit: `'512Mi'`, `'2Gi'` |
 | `network.enabled` | `boolean` | Enable outbound network (default: `false`) |
+| `network.port` | `number` | Port to expose to internet (1024-65535) |
+| `projectId` | `string` | Associate sandbox with a project |
 | `timeout.idle` | `string` | Auto-destroy after idle: `'10m'`, `'1h'` |
 | `timeout.execution` | `string` | Max command duration: `'30s'`, `'5m'` |
 | `dependencies` | `string[]` | Apt packages: `['python3', 'git']` |
@@ -388,6 +433,50 @@ Returned by `sandbox.execute()`:
 | `durationMs` | `number` | Execution duration |
 | `stdout` | `string` | Captured stdout (if available) |
 | `stderr` | `string` | Captured stderr (if available) |
+
+### SandboxInfo
+
+Returned by `ctx.sandbox.get()` and in list results:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `sandboxId` | `string` | Unique sandbox identifier |
+| `status` | `string` | `'idle'`, `'busy'`, `'terminated'` |
+| `createdAt` | `string` | ISO timestamp |
+| `snapshotId` | `string` | Source snapshot (if created from snapshot) |
+| `networkPort` | `number` | Port exposed from sandbox (if configured) |
+| `url` | `string` | Public URL (when port is configured) |
+| `user` | `SandboxUserInfo` | User who created the sandbox |
+| `agent` | `SandboxAgentInfo` | Agent that created the sandbox |
+| `project` | `SandboxProjectInfo` | Associated project |
+| `org` | `SandboxOrgInfo` | Organization (always present) |
+
+Access context information from sandbox info:
+
+```typescript
+const info = await ctx.sandbox.get('sbx_abc123');
+
+// Organization is always present
+ctx.logger.info('Organization', { id: info.org.id, name: info.org.name });
+
+// User info (when created by a user)
+if (info.user) {
+  ctx.logger.info('Created by', {
+    userId: info.user.id,
+    name: `${info.user.firstName} ${info.user.lastName}`,
+  });
+}
+
+// Agent info (when created by an agent)
+if (info.agent) {
+  ctx.logger.info('Agent', { id: info.agent.id, name: info.agent.name });
+}
+
+// Project info (when associated with a project)
+if (info.project) {
+  ctx.logger.info('Project', { id: info.project.id, name: info.project.name });
+}
+```
 
 ## Best Practices
 
