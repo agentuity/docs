@@ -2,21 +2,22 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://agentuity.dev/schema/cli/v1/agentuity-snapshot.json",
   "title": "Agentuity Snapshot Build File",
-  "description": "Schema for agentuity-snapshot.yaml files that define reproducible sandbox environments. Build with: agentuity cloud sandbox snapshot build <directory>",
+  "description": "Schema for agentuity-snapshot.yaml files that define reproducible sandbox environments. Build with: agentuity cloud sandbox snapshot build <directory>. Note: At least one of dependencies, files, or env must be specified.",
   "type": "object",
   "properties": {
-    "$schema": {
-      "description": "JSON Schema reference URL",
-      "type": "string"
-    },
     "version": {
-      "description": "Schema version, must be 1",
       "type": "number",
-      "const": 1
+      "const": 1,
+      "description": "Schema version, must be 1"
     },
     "runtime": {
-      "description": "Runtime identifier (name:tag format, e.g., bun:1, node:20, python:3.12)",
-      "type": "string"
+      "type": "string",
+      "description": "Runtime identifier (name:tag format, e.g., bun:1, node:20, python:3.12)"
+    },
+    "name": {
+      "description": "Snapshot name (alphanumeric, underscores, dashes only)",
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$"
     },
     "description": {
       "description": "Human-readable description of the snapshot",
@@ -55,11 +56,16 @@
       "additionalProperties": {
         "type": "string"
       }
+    },
+    "public": {
+      "description": "Whether to make the snapshot publicly accessible (default: false)",
+      "type": "boolean"
+    },
+    "$schema": {
+      "description": "JSON Schema reference URL",
+      "type": "string"
     }
   },
-  "required": [
-    "version",
-    "runtime"
-  ],
+  "required": ["version", "runtime"],
   "additionalProperties": true
 }
