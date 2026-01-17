@@ -1,5 +1,5 @@
 ---
-title: Introduction
+title: What is Agentuity?
 description: The full-stack platform for building, deploying, and operating AI agents
 ---
 
@@ -48,9 +48,9 @@ This agent uses the AI SDK to call OpenAI and respond to messages. Deploy with `
 
 Each agent lives in its own file under `src/agent/`. Routes are defined separately in `src/api/index.ts`:
 
-| File | Purpose |
-|------|---------|
-| `agent.ts` | Agent logic with schema validation |
+| File           | Purpose                              |
+| -------------- | ------------------------------------ |
+| `agent.ts`     | Agent logic with schema validation   |
 | `api/index.ts` | HTTP endpoints that call your agents |
 
 Infrastructure like cron schedules is defined in route code, not config. Rolling back a deployment restores the exact configuration from that version.
