@@ -11,9 +11,9 @@ Learn more at the [Agent Skills Specification](https://agentskills.io/specificat
 
 ## Generated From
 
-- **CLI Version**: 0.0.105
-- **Generated**: 2026-01-15
-- **Total Skills**: 88
+- **CLI Version**: 0.1.20
+- **Generated**: 2026-01-18
+- **Total Skills**: 139
 
 ## Available Skills
 
@@ -21,8 +21,12 @@ Learn more at the [Agent Skills Specification](https://agentskills.io/specificat
 
 | Skill | Command | Description |
 |-------|---------|-------------|
+| [agentuity-cli-auth-apikey](./agentuity-cli-auth-apikey) | `agentuity auth apikey` | Display the API key for the currently authenticated user |
 | [agentuity-cli-auth-login](./agentuity-cli-auth-login) | `agentuity auth login` | Login to the Agentuity Platform using a browser-based authen... |
 | [agentuity-cli-auth-logout](./agentuity-cli-auth-logout) | `agentuity auth logout` | Logout of the Agentuity Cloud Platform |
+| [agentuity-cli-auth-org-current](./agentuity-cli-auth-org-current) | `agentuity auth org current` | Show the current default organization |
+| [agentuity-cli-auth-org-select](./agentuity-cli-auth-org-select) | `agentuity auth org select` | Set the default organization for all commands |
+| [agentuity-cli-auth-org-unselect](./agentuity-cli-auth-org-unselect) | `agentuity auth org unselect` | Clear the default organization preference |
 | [agentuity-cli-auth-ssh-add](./agentuity-cli-auth-ssh-add) | `agentuity auth ssh add` | Add an SSH public key to your account (reads from file or st... |
 | [agentuity-cli-auth-ssh-delete](./agentuity-cli-auth-ssh-delete) | `agentuity auth ssh delete` | Delete an SSH key from your account |
 | [agentuity-cli-auth-ssh-list](./agentuity-cli-auth-ssh-list) | `agentuity auth ssh list` | List all SSH keys on your account |
@@ -57,13 +61,13 @@ Learn more at the [Agent Skills Specification](https://agentskills.io/specificat
 | [agentuity-cli-cloud-deployment-rollback](./agentuity-cli-cloud-deployment-rollback) | `agentuity cloud deployment rollback` | Rollback the latest to the previous deployment |
 | [agentuity-cli-cloud-deployment-show](./agentuity-cli-cloud-deployment-show) | `agentuity cloud deployment show` | Show details about a specific deployment |
 | [agentuity-cli-cloud-deployment-undeploy](./agentuity-cli-cloud-deployment-undeploy) | `agentuity cloud deployment undeploy` | Undeploy the latest deployment |
-| [agentuity-cli-cloud-env-delete](./agentuity-cli-cloud-env-delete) | `agentuity cloud env delete` | Delete an environment variable |
-| [agentuity-cli-cloud-env-get](./agentuity-cli-cloud-env-get) | `agentuity cloud env get` | Get an environment variable value |
-| [agentuity-cli-cloud-env-import](./agentuity-cli-cloud-env-import) | `agentuity cloud env import` | Import environment variables from a file to cloud and local ... |
-| [agentuity-cli-cloud-env-list](./agentuity-cli-cloud-env-list) | `agentuity cloud env list` | List all environment variables |
-| [agentuity-cli-cloud-env-pull](./agentuity-cli-cloud-env-pull) | `agentuity cloud env pull` | Pull environment variables from cloud to local .env.producti... |
-| [agentuity-cli-cloud-env-push](./agentuity-cli-cloud-env-push) | `agentuity cloud env push` | Push environment variables from local .env.production file t... |
-| [agentuity-cli-cloud-env-set](./agentuity-cli-cloud-env-set) | `agentuity cloud env set` | Set an environment variable |
+| [agentuity-cli-cloud-env-delete](./agentuity-cli-cloud-env-delete) | `agentuity cloud env delete` | Delete an environment variable or secret |
+| [agentuity-cli-cloud-env-get](./agentuity-cli-cloud-env-get) | `agentuity cloud env get` | Get an environment variable or secret value |
+| [agentuity-cli-cloud-env-import](./agentuity-cli-cloud-env-import) | `agentuity cloud env import` | Import environment variables and secrets from a file to clou... |
+| [agentuity-cli-cloud-env-list](./agentuity-cli-cloud-env-list) | `agentuity cloud env list` | List all environment variables and secrets |
+| [agentuity-cli-cloud-env-pull](./agentuity-cli-cloud-env-pull) | `agentuity cloud env pull` | Pull environment variables from cloud to local .env file |
+| [agentuity-cli-cloud-env-push](./agentuity-cli-cloud-env-push) | `agentuity cloud env push` | Push environment variables and secrets from local .env file ... |
+| [agentuity-cli-cloud-env-set](./agentuity-cli-cloud-env-set) | `agentuity cloud env set` | Set an environment variable or secret |
 | [agentuity-cli-cloud-keyvalue-create-namespace](./agentuity-cli-cloud-keyvalue-create-namespace) | `agentuity cloud keyvalue create-namespace` | Create a new keyvalue namespace |
 | [agentuity-cli-cloud-keyvalue-delete](./agentuity-cli-cloud-keyvalue-delete) | `agentuity cloud keyvalue delete` | Delete a key from the keyvalue storage |
 | [agentuity-cli-cloud-keyvalue-delete-namespace](./agentuity-cli-cloud-keyvalue-delete-namespace) | `agentuity cloud keyvalue delete-namespace` | Delete a keyvalue namespace and all its keys |
@@ -74,20 +78,63 @@ Learn more at the [Agent Skills Specification](https://agentskills.io/specificat
 | [agentuity-cli-cloud-keyvalue-search](./agentuity-cli-cloud-keyvalue-search) | `agentuity cloud keyvalue search` | Search for keys matching a keyword in a keyvalue namespace |
 | [agentuity-cli-cloud-keyvalue-set](./agentuity-cli-cloud-keyvalue-set) | `agentuity cloud keyvalue set` | Set a key and value in the keyvalue storage |
 | [agentuity-cli-cloud-keyvalue-stats](./agentuity-cli-cloud-keyvalue-stats) | `agentuity cloud keyvalue stats` | Get statistics for keyvalue storage |
+| [agentuity-cli-cloud-queue-ack](./agentuity-cli-cloud-queue-ack) | `agentuity cloud queue ack` | Acknowledge a message (mark as processed) |
+| [agentuity-cli-cloud-queue-create](./agentuity-cli-cloud-queue-create) | `agentuity cloud queue create` | Create a new queue |
+| [agentuity-cli-cloud-queue-delete](./agentuity-cli-cloud-queue-delete) | `agentuity cloud queue delete` | Delete a queue by name |
+| [agentuity-cli-cloud-queue-destinations-create](./agentuity-cli-cloud-queue-destinations-create) | `agentuity cloud queue destinations create` | Create a webhook destination for a queue |
+| [agentuity-cli-cloud-queue-destinations-delete](./agentuity-cli-cloud-queue-destinations-delete) | `agentuity cloud queue destinations delete` | Delete a destination from a queue |
+| [agentuity-cli-cloud-queue-destinations-list](./agentuity-cli-cloud-queue-destinations-list) | `agentuity cloud queue destinations list` | List destinations for a queue |
+| [agentuity-cli-cloud-queue-destinations-update](./agentuity-cli-cloud-queue-destinations-update) | `agentuity cloud queue destinations update` | Update a destination |
+| [agentuity-cli-cloud-queue-dlq-list](./agentuity-cli-cloud-queue-dlq-list) | `agentuity cloud queue dlq list` | List messages in the dead letter queue |
+| [agentuity-cli-cloud-queue-dlq-purge](./agentuity-cli-cloud-queue-dlq-purge) | `agentuity cloud queue dlq purge` | Purge all messages from the dead letter queue |
+| [agentuity-cli-cloud-queue-dlq-replay](./agentuity-cli-cloud-queue-dlq-replay) | `agentuity cloud queue dlq replay` | Replay a message from the dead letter queue |
+| [agentuity-cli-cloud-queue-get](./agentuity-cli-cloud-queue-get) | `agentuity cloud queue get` | Get queue or message details |
+| [agentuity-cli-cloud-queue-list](./agentuity-cli-cloud-queue-list) | `agentuity cloud queue list` | List all queues |
+| [agentuity-cli-cloud-queue-messages](./agentuity-cli-cloud-queue-messages) | `agentuity cloud queue messages` | List messages in a queue or get a specific message |
+| [agentuity-cli-cloud-queue-nack](./agentuity-cli-cloud-queue-nack) | `agentuity cloud queue nack` | Negative acknowledge a message (return to queue for retry) |
+| [agentuity-cli-cloud-queue-pause](./agentuity-cli-cloud-queue-pause) | `agentuity cloud queue pause` | Pause message delivery for a queue |
+| [agentuity-cli-cloud-queue-publish](./agentuity-cli-cloud-queue-publish) | `agentuity cloud queue publish` | Publish a message to a queue |
+| [agentuity-cli-cloud-queue-receive](./agentuity-cli-cloud-queue-receive) | `agentuity cloud queue receive` | Receive (claim) a message from a worker queue |
+| [agentuity-cli-cloud-queue-resume](./agentuity-cli-cloud-queue-resume) | `agentuity cloud queue resume` | Resume message delivery for a paused queue |
+| [agentuity-cli-cloud-queue-sources-create](./agentuity-cli-cloud-queue-sources-create) | `agentuity cloud queue sources create` | Create a source for a queue |
+| [agentuity-cli-cloud-queue-sources-delete](./agentuity-cli-cloud-queue-sources-delete) | `agentuity cloud queue sources delete` | Delete a source from a queue |
+| [agentuity-cli-cloud-queue-sources-get](./agentuity-cli-cloud-queue-sources-get) | `agentuity cloud queue sources get` | Get a source by ID |
+| [agentuity-cli-cloud-queue-sources-list](./agentuity-cli-cloud-queue-sources-list) | `agentuity cloud queue sources list` | List sources for a queue |
+| [agentuity-cli-cloud-queue-sources-update](./agentuity-cli-cloud-queue-sources-update) | `agentuity cloud queue sources update` | Update a source |
+| [agentuity-cli-cloud-queue-stats](./agentuity-cli-cloud-queue-stats) | `agentuity cloud queue stats` | View queue analytics and statistics |
 | [agentuity-cli-cloud-redis-show](./agentuity-cli-cloud-redis-show) | `agentuity cloud redis show` | Show Redis connection URL |
+| [agentuity-cli-cloud-region-current](./agentuity-cli-cloud-region-current) | `agentuity cloud region current` | Show the current default region |
+| [agentuity-cli-cloud-region-select](./agentuity-cli-cloud-region-select) | `agentuity cloud region select` | Set the default cloud region for all commands |
+| [agentuity-cli-cloud-region-unselect](./agentuity-cli-cloud-region-unselect) | `agentuity cloud region unselect` | Clear the default region preference |
+| [agentuity-cli-cloud-sandbox-cp](./agentuity-cli-cloud-sandbox-cp) | `agentuity cloud sandbox cp` | Copy files or directories to or from a sandbox |
+| [agentuity-cli-cloud-sandbox-create](./agentuity-cli-cloud-sandbox-create) | `agentuity cloud sandbox create` | Create an interactive sandbox for multiple executions |
+| [agentuity-cli-cloud-sandbox-delete](./agentuity-cli-cloud-sandbox-delete) | `agentuity cloud sandbox delete` | Delete a sandbox |
+| [agentuity-cli-cloud-sandbox-download](./agentuity-cli-cloud-sandbox-download) | `agentuity cloud sandbox download` | Download files from a sandbox as a compressed archive |
+| [agentuity-cli-cloud-sandbox-env](./agentuity-cli-cloud-sandbox-env) | `agentuity cloud sandbox env` | Set or delete environment variables on a sandbox |
+| [agentuity-cli-cloud-sandbox-exec](./agentuity-cli-cloud-sandbox-exec) | `agentuity cloud sandbox exec` | Execute a command in a running sandbox |
+| [agentuity-cli-cloud-sandbox-execution-get](./agentuity-cli-cloud-sandbox-execution-get) | `agentuity cloud sandbox execution get` | Get information about a specific execution |
+| [agentuity-cli-cloud-sandbox-execution-list](./agentuity-cli-cloud-sandbox-execution-list) | `agentuity cloud sandbox execution list` | List executions for a sandbox |
+| [agentuity-cli-cloud-sandbox-files](./agentuity-cli-cloud-sandbox-files) | `agentuity cloud sandbox files` | List files in a sandbox directory |
+| [agentuity-cli-cloud-sandbox-get](./agentuity-cli-cloud-sandbox-get) | `agentuity cloud sandbox get` | Get information about a sandbox |
+| [agentuity-cli-cloud-sandbox-list](./agentuity-cli-cloud-sandbox-list) | `agentuity cloud sandbox list` | List sandboxes with optional filtering |
+| [agentuity-cli-cloud-sandbox-mkdir](./agentuity-cli-cloud-sandbox-mkdir) | `agentuity cloud sandbox mkdir` | Create a directory in a sandbox |
+| [agentuity-cli-cloud-sandbox-rm](./agentuity-cli-cloud-sandbox-rm) | `agentuity cloud sandbox rm` | Remove a file from a sandbox |
+| [agentuity-cli-cloud-sandbox-rmdir](./agentuity-cli-cloud-sandbox-rmdir) | `agentuity cloud sandbox rmdir` | Remove a directory from a sandbox |
+| [agentuity-cli-cloud-sandbox-run](./agentuity-cli-cloud-sandbox-run) | `agentuity cloud sandbox run` | Run a one-shot command in a sandbox (creates, executes, dest... |
+| [agentuity-cli-cloud-sandbox-runtime-list](./agentuity-cli-cloud-sandbox-runtime-list) | `agentuity cloud sandbox runtime list` | List available sandbox runtimes |
+| [agentuity-cli-cloud-sandbox-snapshot-build](./agentuity-cli-cloud-sandbox-snapshot-build) | `agentuity cloud sandbox snapshot build` | Build a snapshot from a declarative file |
+| [agentuity-cli-cloud-sandbox-snapshot-create](./agentuity-cli-cloud-sandbox-snapshot-create) | `agentuity cloud sandbox snapshot create` | Create a snapshot from a sandbox |
+| [agentuity-cli-cloud-sandbox-snapshot-delete](./agentuity-cli-cloud-sandbox-snapshot-delete) | `agentuity cloud sandbox snapshot delete` | Delete a snapshot |
+| [agentuity-cli-cloud-sandbox-snapshot-get](./agentuity-cli-cloud-sandbox-snapshot-get) | `agentuity cloud sandbox snapshot get` | Get snapshot details |
+| [agentuity-cli-cloud-sandbox-snapshot-list](./agentuity-cli-cloud-sandbox-snapshot-list) | `agentuity cloud sandbox snapshot list` | List snapshots |
+| [agentuity-cli-cloud-sandbox-snapshot-tag](./agentuity-cli-cloud-sandbox-snapshot-tag) | `agentuity cloud sandbox snapshot tag` | Add or update a tag on a snapshot |
+| [agentuity-cli-cloud-sandbox-upload](./agentuity-cli-cloud-sandbox-upload) | `agentuity cloud sandbox upload` | Upload a compressed archive to a sandbox and extract it |
 | [agentuity-cli-cloud-scp-download](./agentuity-cli-cloud-scp-download) | `agentuity cloud scp download` | Download a file using security copy |
 | [agentuity-cli-cloud-scp-upload](./agentuity-cli-cloud-scp-upload) | `agentuity cloud scp upload` | Upload a file using security copy |
-| [agentuity-cli-cloud-secret-delete](./agentuity-cli-cloud-secret-delete) | `agentuity cloud secret delete` | Delete a secret |
-| [agentuity-cli-cloud-secret-get](./agentuity-cli-cloud-secret-get) | `agentuity cloud secret get` | Get a secret value |
-| [agentuity-cli-cloud-secret-import](./agentuity-cli-cloud-secret-import) | `agentuity cloud secret import` | Import secrets from a file to cloud and local .env.productio... |
-| [agentuity-cli-cloud-secret-list](./agentuity-cli-cloud-secret-list) | `agentuity cloud secret list` | List all secrets |
-| [agentuity-cli-cloud-secret-pull](./agentuity-cli-cloud-secret-pull) | `agentuity cloud secret pull` | Pull secrets from cloud to local .env.production file |
-| [agentuity-cli-cloud-secret-push](./agentuity-cli-cloud-secret-push) | `agentuity cloud secret push` | Push secrets from local .env.production file to cloud |
-| [agentuity-cli-cloud-secret-set](./agentuity-cli-cloud-secret-set) | `agentuity cloud secret set` | Set a secret |
 | [agentuity-cli-cloud-session-get](./agentuity-cli-cloud-session-get) | `agentuity cloud session get` | Get details about a specific session |
 | [agentuity-cli-cloud-session-list](./agentuity-cli-cloud-session-list) | `agentuity cloud session list` | List recent sessions |
 | [agentuity-cli-cloud-session-logs](./agentuity-cli-cloud-session-logs) | `agentuity cloud session logs` | Get logs for a specific session |
-| [agentuity-cli-cloud-ssh](./agentuity-cli-cloud-ssh) | `agentuity cloud ssh` | SSH into a cloud project |
+| [agentuity-cli-cloud-ssh](./agentuity-cli-cloud-ssh) | `agentuity cloud ssh` | SSH into a cloud project or sandbox |
 | [agentuity-cli-cloud-storage-create](./agentuity-cli-cloud-storage-create) | `agentuity cloud storage create` | Create a new storage resource |
 | [agentuity-cli-cloud-storage-delete](./agentuity-cli-cloud-storage-delete) | `agentuity cloud storage delete` | Delete a storage resource or file |
 | [agentuity-cli-cloud-storage-download](./agentuity-cli-cloud-storage-download) | `agentuity cloud storage download` | Download a file from storage bucket |
@@ -114,23 +161,27 @@ Learn more at the [Agent Skills Specification](https://agentskills.io/specificat
 |-------|---------|-------------|
 | [agentuity-cli-dev](./agentuity-cli-dev) | `agentuity dev` | Build and run the development server |
 
-### profile
+### git
 
 | Skill | Command | Description |
 |-------|---------|-------------|
-| [agentuity-cli-profile-create](./agentuity-cli-profile-create) | `agentuity profile create` | Create a new configuration profile |
-| [agentuity-cli-profile-current](./agentuity-cli-profile-current) | `agentuity profile current` | Show the name of the currently active profile |
-| [agentuity-cli-profile-delete](./agentuity-cli-profile-delete) | `agentuity profile delete` | Delete a configuration profile |
-| [agentuity-cli-profile-list](./agentuity-cli-profile-list) | `agentuity profile list` | List all available profiles |
-| [agentuity-cli-profile-show](./agentuity-cli-profile-show) | `agentuity profile show` | Show the configuration of a profile |
-| [agentuity-cli-profile-use](./agentuity-cli-profile-use) | `agentuity profile use` | Switch to a different configuration profile |
+| [agentuity-cli-git-account-add](./agentuity-cli-git-account-add) | `agentuity git account add` | Add a GitHub account to your organization |
+| [agentuity-cli-git-account-list](./agentuity-cli-git-account-list) | `agentuity git account list` | List GitHub accounts connected to your organizations |
+| [agentuity-cli-git-account-remove](./agentuity-cli-git-account-remove) | `agentuity git account remove` | Remove a GitHub account from your organization |
+| [agentuity-cli-git-link](./agentuity-cli-git-link) | `agentuity git link` | Link a project to a GitHub repository |
+| [agentuity-cli-git-list](./agentuity-cli-git-list) | `agentuity git list` | List GitHub repositories accessible to your organization |
+| [agentuity-cli-git-status](./agentuity-cli-git-status) | `agentuity git status` | Show GitHub connection status for current project |
+| [agentuity-cli-git-unlink](./agentuity-cli-git-unlink) | `agentuity git unlink` | Unlink a project from its GitHub repository |
 
 ### project
 
 | Skill | Command | Description |
 |-------|---------|-------------|
+| [agentuity-cli-project-auth-generate](./agentuity-cli-project-auth-generate) | `agentuity project auth generate` | Generate SQL schema for Agentuity Auth tables |
+| [agentuity-cli-project-auth-init](./agentuity-cli-project-auth-init) | `agentuity project auth init` | Set up Agentuity Auth for your project |
 | [agentuity-cli-project-create](./agentuity-cli-project-create) | `agentuity project create` | Create a new project |
 | [agentuity-cli-project-delete](./agentuity-cli-project-delete) | `agentuity project delete` | Delete a project |
+| [agentuity-cli-project-import](./agentuity-cli-project-import) | `agentuity project import` | Import or register a local project with Agentuity Cloud |
 | [agentuity-cli-project-list](./agentuity-cli-project-list) | `agentuity project list` | List all projects |
 | [agentuity-cli-project-show](./agentuity-cli-project-show) | `agentuity project show` | Show project detail |
 

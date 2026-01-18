@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-storage-create
 description: Create a new storage resource. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -29,19 +29,19 @@ agentuity cloud storage create
 Create a new cloud storage bucket:
 
 ```bash
-bunx @agentuity/cli cloud storage create
+agentuity cloud storage create
 ```
 
 Alias for "cloud storage create" (shorthand "new"):
 
 ```bash
-bunx @agentuity/cli cloud storage new
+agentuity cloud storage new
 ```
 
 Dry-run: display what would be created without making changes:
 
 ```bash
-bunx @agentuity/cli --dry-run cloud storage create
+agentuity --dry-run cloud storage create
 ```
 
 ## Output

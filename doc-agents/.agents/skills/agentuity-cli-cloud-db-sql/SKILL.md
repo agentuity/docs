@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-db-sql
 description: Execute SQL query on a database. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<name> <query>"
@@ -37,19 +37,19 @@ agentuity cloud db sql <name> <query>
 Execute SQL query:
 
 ```bash
-bunx @agentuity/cli cloud db sql my-database "SELECT * FROM users LIMIT 10"
+agentuity cloud db sql my-database "SELECT * FROM users LIMIT 10"
 ```
 
 Execute query with JSON output:
 
 ```bash
-bunx @agentuity/cli cloud db exec my-database "SELECT COUNT(*) FROM orders" --json
+agentuity cloud db exec my-database "SELECT COUNT(*) FROM orders" --json
 ```
 
 Query with filter:
 
 ```bash
-bunx @agentuity/cli cloud db query my-database "SELECT * FROM products WHERE price > 100"
+agentuity cloud db query my-database "SELECT * FROM products WHERE price > 100"
 ```
 
 ## Output

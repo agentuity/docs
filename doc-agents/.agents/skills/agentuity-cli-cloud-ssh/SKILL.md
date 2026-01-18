@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-ssh
-description: SSH into a cloud project. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+description: SSH into a cloud project or sandbox. Requires authentication. Use for Agentuity cloud platform operations
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "[identifier] [command]"
@@ -12,7 +12,7 @@ metadata:
 
 # Cloud Ssh
 
-SSH into a cloud project
+SSH into a cloud project or sandbox
 
 ## Prerequisites
 
@@ -43,35 +43,41 @@ agentuity cloud ssh [identifier] [command] [options]
 SSH into current project:
 
 ```bash
-bunx @agentuity/cli cloud ssh
+agentuity cloud ssh
 ```
 
 SSH into specific project:
 
 ```bash
-bunx @agentuity/cli cloud ssh proj_abc123xyz
+agentuity cloud ssh proj_abc123xyz
 ```
 
 SSH into specific deployment:
 
 ```bash
-bunx @agentuity/cli cloud ssh deploy_abc123xyz
+agentuity cloud ssh deploy_abc123xyz
+```
+
+SSH into a sandbox:
+
+```bash
+agentuity cloud ssh sbx_abc123xyz
 ```
 
 Run command and exit:
 
 ```bash
-bunx @agentuity/cli cloud ssh 'ps aux'
+agentuity cloud ssh 'ps aux'
 ```
 
 Run command on specific project:
 
 ```bash
-bunx @agentuity/cli cloud ssh proj_abc123xyz 'tail -f /var/log/app.log'
+agentuity cloud ssh proj_abc123xyz 'tail -f /var/log/app.log'
 ```
 
 Show SSH command without executing:
 
 ```bash
-bunx @agentuity/cli cloud ssh --show
+agentuity cloud ssh --show
 ```

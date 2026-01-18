@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-scp-download
 description: Download a file using security copy. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<source> [destination]"
@@ -43,25 +43,25 @@ agentuity cloud scp download <source> [destination] [options]
 Download to current directory:
 
 ```bash
-bunx @agentuity/cli cloud scp download /var/log/app.log
+agentuity cloud scp download /var/log/app.log
 ```
 
 Download to specific path:
 
 ```bash
-bunx @agentuity/cli cloud scp download /var/log/app.log ./logs/
+agentuity cloud scp download /var/log/app.log ./logs/
 ```
 
 Download from specific project:
 
 ```bash
-bunx @agentuity/cli cloud scp download /app/config.json --identifier=proj_abc123xyz
+agentuity cloud scp download /app/config.json --identifier=proj_abc123xyz
 ```
 
 Download multiple files:
 
 ```bash
-bunx @agentuity/cli cloud scp download ~/logs/*.log ./logs/
+agentuity cloud scp download ~/logs/*.log ./logs/
 ```
 
 ## Output

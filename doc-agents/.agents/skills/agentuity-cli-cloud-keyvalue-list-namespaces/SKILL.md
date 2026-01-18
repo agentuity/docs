@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-keyvalue-list-namespaces
 description: List all keyvalue namespaces. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -16,7 +16,6 @@ List all keyvalue namespaces
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Project context required (run from project directory or use `--project-id`)
 
 ## Usage
 
@@ -29,19 +28,19 @@ agentuity cloud keyvalue list-namespaces
 List all namespaces:
 
 ```bash
-bunx @agentuity/cli kv list-namespaces
+agentuity kv list-namespaces
 ```
 
 List namespaces (using alias):
 
 ```bash
-bunx @agentuity/cli kv namespaces
+agentuity kv namespaces
 ```
 
 List namespaces (short alias):
 
 ```bash
-bunx @agentuity/cli kv ns
+agentuity kv ns
 ```
 
 ## Output

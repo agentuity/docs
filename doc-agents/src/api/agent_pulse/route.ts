@@ -1,4 +1,4 @@
-import { createRouter } from '@agentuity/runtime';
+import { createRouter, validator } from '@agentuity/runtime';
 import { bearerTokenAuth, cookieAuth } from '@middleware/auth';
 import { config } from '../../../config';
 import agentPulse from '@agent/agent_pulse';
@@ -12,58 +12,21 @@ import {
 	type Session,
 	type TutorialData,
 } from '../../services/stream-persistence';
+import { z } from 'zod';
 
-interface ParsedRequest {
-	message: string;
-	sessionId?: string;
-	conversationHistory: ConversationMessage[];
-	tutorialData?: { tutorialId: string; currentStep: number };
-}
-
-/**
- * Parses and validates incoming agent requests
- */
-function parseAgentRequest(jsonData: unknown): ParsedRequest {
-	let message = '';
-	let sessionId: string | undefined = undefined;
-	let conversationHistory: ConversationMessage[] = [];
-	let tutorialData: { tutorialId: string; currentStep: number } | undefined = undefined;
-
-	if (jsonData && typeof jsonData === 'object' && !Array.isArray(jsonData)) {
-		const body = jsonData as Record<string, unknown>;
-		message = typeof body.message === 'string' ? body.message : '';
-		sessionId = typeof body.sessionId === 'string' ? body.sessionId : undefined;
-
-		if (Array.isArray(body.conversationHistory)) {
-			conversationHistory = body.conversationHistory.map((msg: unknown) => {
-				const m = msg as Record<string, unknown>;
-				return {
-					author: String(m.author || m.role || 'USER').toUpperCase() as 'USER' | 'ASSISTANT',
-					content: typeof m.content === 'string' ? m.content : '',
-				};
-			});
-		}
-
-		if (body.tutorialData && typeof body.tutorialData === 'object') {
-			const td = body.tutorialData as Record<string, unknown>;
-			if (typeof td.tutorialId === 'string' && typeof td.currentStep === 'number') {
-				tutorialData = {
-					tutorialId: td.tutorialId,
-					currentStep: td.currentStep,
-				};
-			}
-		}
-	} else if (typeof jsonData === 'string') {
-		message = jsonData;
-	}
-
-	return {
-		message,
-		sessionId,
-		conversationHistory,
-		tutorialData,
-	};
-}
+// Schema for agent pulse request
+export const AgentPulseRequestSchema = z.object({
+	message: z.string().min(1, 'Message is required'),
+	sessionId: z.string().optional(),
+	conversationHistory: z.array(z.object({
+		author: z.enum(['USER', 'ASSISTANT']),
+		content: z.string(),
+	})).optional().default([]),
+	tutorialData: z.object({
+		tutorialId: z.string(),
+		currentStep: z.number(),
+	}).optional(),
+});
 
 /**
  * Generate title for a session (async, non-blocking)
@@ -149,35 +112,30 @@ const SSE_HEADERS = {
 };
 
 // POST /api/agent-pulse
-router.post('/', bearerTokenAuth, cookieAuth, async (c) => {
+router.post('/', bearerTokenAuth, cookieAuth, validator({ input: AgentPulseRequestSchema }), async (c) => {
 	try {
 		const userId = (c.get as (key: string) => string)('userId');
 		const kv = c.var.kv;
 		const logger = c.var.logger;
 
-		const jsonData = await c.req.json();
-		const parsedRequest = parseAgentRequest(jsonData);
-
-		// Validate request
-		if (!parsedRequest.message || parsedRequest.message.trim() === '') {
-			return c.json({ error: 'Message is required' }, { status: 400 });
-		}
+		const validatedRequest = c.req.valid('json');
+		const conversationHistory: ConversationMessage[] = validatedRequest.conversationHistory || [];
 
 		// Get current tutorial state if not provided
-		let tutorialData = parsedRequest.tutorialData;
+		let tutorialData = validatedRequest.tutorialData;
 		if (!tutorialData && userId) {
 			tutorialData = (await getCurrentTutorialState(userId, kv)) || undefined;
 		}
 
 		// Run agent and get stream
 		const agentStream = await agentPulse.run({
-			message: parsedRequest.message,
-			conversationHistory: parsedRequest.conversationHistory,
+			message: validatedRequest.message,
+			conversationHistory,
 			tutorialData,
 		});
 
 		// If no sessionId provided, return raw stream (no persistence)
-		if (!parsedRequest.sessionId) {
+		if (!validatedRequest.sessionId) {
 			return new Response(agentStream, { headers: SSE_HEADERS });
 		}
 
@@ -185,7 +143,7 @@ router.post('/', bearerTokenAuth, cookieAuth, async (c) => {
 		const persistedStream = withPersistence(agentStream, {
 			kv,
 			userId,
-			sessionId: parsedRequest.sessionId,
+			sessionId: validatedRequest.sessionId,
 			kvStoreName: config.kvStoreName,
 			logger,
 			onTutorialProgress: async (td: TutorialData) => {
@@ -195,7 +153,7 @@ router.post('/', bearerTokenAuth, cookieAuth, async (c) => {
 			},
 			onSessionSaved: (session: Session) => {
 				// Fire and forget title generation
-				const sessionKey = `${userId}_${parsedRequest.sessionId}`;
+				const sessionKey = `${userId}_${validatedRequest.sessionId}`;
 				void generateAndPersistTitle(sessionKey, session, kv, logger);
 			},
 		});

@@ -1,28 +1,27 @@
 ---
 name: agentuity-cli-cloud-env-import
-description: Import environment variables from a file to cloud and local .env.production. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+description: Import environment variables and secrets from a file to cloud and local .env. Requires authentication. Use for Agentuity cloud platform operations
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<file>"
 metadata:
   command: "agentuity cloud env import"
-  tags: "mutating creates-resource slow api-intensive requires-auth requires-project"
+  tags: "mutating creates-resource slow api-intensive requires-auth"
 ---
 
 # Cloud Env Import
 
-Import environment variables from a file to cloud and local .env.production
+Import environment variables and secrets from a file to cloud and local .env
 
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Project context required (run from project directory or use `--project-id`)
 
 ## Usage
 
 ```bash
-agentuity cloud env import <file>
+agentuity cloud env import <file> [options]
 ```
 
 ## Arguments
@@ -31,18 +30,30 @@ agentuity cloud env import <file>
 |----------|------|----------|-------------|
 | `<file>` | string | Yes | - |
 
+## Options
+
+| Option | Type | Required | Default | Description |
+|--------|------|----------|---------|-------------|
+| `--org` | optionalString | Yes | - | import to organization level (use --org for default org) |
+
 ## Examples
 
-Import environment variables from .env file:
+Import variables from backup file:
 
 ```bash
-bunx @agentuity/cli cloud env import .env
+agentuity cloud env import .env.backup
 ```
 
 Import from .env.local file:
 
 ```bash
-bunx @agentuity/cli cloud env import .env.local
+agentuity cloud env import .env.local
+```
+
+Import to organization level:
+
+```bash
+agentuity cloud env import .env.shared --org
 ```
 
 ## Output
@@ -53,9 +64,12 @@ Returns JSON object:
 {
   "success": "boolean",
   "imported": "number",
+  "envCount": "number",
+  "secretCount": "number",
   "skipped": "number",
   "path": "string",
-  "file": "string"
+  "file": "string",
+  "scope": "string"
 }
 ```
 
@@ -63,6 +77,9 @@ Returns JSON object:
 |-------|------|-------------|
 | `success` | boolean | Whether import succeeded |
 | `imported` | number | Number of items imported |
+| `envCount` | number | Number of env vars imported |
+| `secretCount` | number | Number of secrets imported |
 | `skipped` | number | Number of items skipped |
-| `path` | string | Local file path where variables were saved |
+| `path` | string | Local file path where variables were saved (project scope only) |
 | `file` | string | Source file path |
+| `scope` | string | The scope where variables were imported |

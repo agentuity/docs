@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-vector-stats
 description: Get statistics for vector storage. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "[name]"
@@ -36,17 +36,17 @@ agentuity cloud vector stats [name]
 Show stats for all namespaces:
 
 ```bash
-bunx @agentuity/cli vector stats
+agentuity vector stats
 ```
 
 Show detailed stats for products namespace:
 
 ```bash
-bunx @agentuity/cli vector stats products
+agentuity vector stats products
 ```
 
 Show stats for embeddings:
 
 ```bash
-bunx @agentuity/cli vector stats embeddings
+agentuity vector stats embeddings
 ```

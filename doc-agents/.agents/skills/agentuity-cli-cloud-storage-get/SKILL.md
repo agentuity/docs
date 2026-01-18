@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-storage-get
 description: Show details about a specific storage bucket. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<name>"
@@ -17,7 +17,6 @@ Show details about a specific storage bucket
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Organization context required (`--org-id` or default org)
 
 ## Usage
 
@@ -42,19 +41,19 @@ agentuity cloud storage get <name> [options]
 Get bucket details:
 
 ```bash
-bunx @agentuity/cli cloud storage get my-bucket
+agentuity cloud storage get my-bucket
 ```
 
 Show bucket information:
 
 ```bash
-bunx @agentuity/cli cloud storage show my-bucket
+agentuity cloud storage show my-bucket
 ```
 
 Get bucket with credentials:
 
 ```bash
-bunx @agentuity/cli cloud storage get my-bucket --show-credentials
+agentuity cloud storage get my-bucket --show-credentials
 ```
 
 ## Output
@@ -67,7 +66,9 @@ Returns JSON object:
   "access_key": "string",
   "secret_key": "string",
   "region": "string",
-  "endpoint": "string"
+  "endpoint": "string",
+  "org_id": "string",
+  "org_name": "string"
 }
 ```
 
@@ -78,3 +79,5 @@ Returns JSON object:
 | `secret_key` | string | S3 secret key |
 | `region` | string | S3 region |
 | `endpoint` | string | S3 endpoint URL |
+| `org_id` | string | Organization ID that owns this bucket |
+| `org_name` | string | Organization name that owns this bucket |

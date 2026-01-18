@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-stream-get
 description: Get detailed information about a specific stream. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<id>"
@@ -42,25 +42,25 @@ agentuity cloud stream get <id> [options]
 Get stream details:
 
 ```bash
-bunx @agentuity/cli stream get stream-id-123
+agentuity stream get stream-id-123
 ```
 
 Get stream as JSON:
 
 ```bash
-bunx @agentuity/cli stream get stream-id-123 --json
+agentuity stream get stream-id-123 --json
 ```
 
 Download stream to file:
 
 ```bash
-bunx @agentuity/cli stream get stream-id-123 --output stream.dat
+agentuity stream get stream-id-123 --output stream.dat
 ```
 
 Download stream (short flag):
 
 ```bash
-bunx @agentuity/cli stream get stream-id-123 -o stream.dat
+agentuity stream get stream-id-123 -o stream.dat
 ```
 
 ## Output

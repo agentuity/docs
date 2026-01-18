@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-thread-list
 description: List recent threads. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -30,31 +30,38 @@ agentuity cloud thread list [options]
 | `--count` | number | No | `10` | Number of threads to list (1–100) |
 | `--orgId` | string | Yes | - | Filter by organization ID |
 | `--projectId` | string | Yes | - | Filter by project ID |
+| `--all` | boolean | Yes | - | List all threads regardless of project context |
 
 ## Examples
 
 List 10 most recent threads:
 
 ```bash
-bunx @agentuity/cli cloud thread list
+agentuity cloud thread list
 ```
 
 List 25 most recent threads:
 
 ```bash
-bunx @agentuity/cli cloud thread list --count=25
+agentuity cloud thread list --count=25
 ```
 
 Filter by project:
 
 ```bash
-bunx @agentuity/cli cloud thread list --project-id=proj_*
+agentuity cloud thread list --project-id=proj_*
 ```
 
 Filter by organization:
 
 ```bash
-bunx @agentuity/cli cloud thread list --org-id=org_*
+agentuity cloud thread list --org-id=org_*
+```
+
+List all threads regardless of project context:
+
+```bash
+agentuity cloud thread list --all
 ```
 
 ## Output

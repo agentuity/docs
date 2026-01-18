@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-keyvalue-delete
 description: Delete a key from the keyvalue storage. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<namespace> <key>"
@@ -17,7 +17,6 @@ Delete a key from the keyvalue storage
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Project context required (run from project directory or use `--project-id`)
 
 ## Usage
 
@@ -37,19 +36,19 @@ agentuity cloud keyvalue delete <namespace> <key>
 Delete user data:
 
 ```bash
-bunx @agentuity/cli kv delete production user:123
+agentuity kv delete production user:123
 ```
 
 Delete cached session:
 
 ```bash
-bunx @agentuity/cli kv delete cache session:abc
+agentuity kv delete cache session:abc
 ```
 
 Delete homepage cache (using alias):
 
 ```bash
-bunx @agentuity/cli kv rm staging cache:homepage
+agentuity kv rm staging cache:homepage
 ```
 
 ## Output

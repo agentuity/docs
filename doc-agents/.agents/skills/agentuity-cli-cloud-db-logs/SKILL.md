@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-db-logs
 description: Get query logs for a specific database. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<database>"
@@ -17,7 +17,6 @@ Get query logs for a specific database
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Organization context required (`--org-id` or default org)
 
 ## Usage
 
@@ -52,55 +51,55 @@ agentuity cloud db logs <database> [options]
 View query logs for database:
 
 ```bash
-bunx @agentuity/cli cloud db logs my-database
+agentuity cloud db logs my-database
 ```
 
 Limit to 50 log entries:
 
 ```bash
-bunx @agentuity/cli cloud db logs my-database --limit=50
+agentuity cloud db logs my-database --limit=50
 ```
 
 Show only queries with errors:
 
 ```bash
-bunx @agentuity/cli cloud db logs my-database --has-error
+agentuity cloud db logs my-database --has-error
 ```
 
 Filter by username:
 
 ```bash
-bunx @agentuity/cli cloud db logs my-database --username=user123
+agentuity cloud db logs my-database --username=user123
 ```
 
 Filter by SQL command type:
 
 ```bash
-bunx @agentuity/cli cloud db logs my-database --command=SELECT
+agentuity cloud db logs my-database --command=SELECT
 ```
 
 Filter by session ID:
 
 ```bash
-bunx @agentuity/cli cloud db logs my-database --session-id=sess_abc123
+agentuity cloud db logs my-database --session-id=sess_abc123
 ```
 
 Show session ID column:
 
 ```bash
-bunx @agentuity/cli cloud db logs my-database --show-session-id
+agentuity cloud db logs my-database --show-session-id
 ```
 
 Show username column:
 
 ```bash
-bunx @agentuity/cli cloud db logs my-database --show-username
+agentuity cloud db logs my-database --show-username
 ```
 
 Show full formatted SQL on separate lines:
 
 ```bash
-bunx @agentuity/cli cloud db logs my-database --pretty
+agentuity cloud db logs my-database --pretty
 ```
 
 ## Output

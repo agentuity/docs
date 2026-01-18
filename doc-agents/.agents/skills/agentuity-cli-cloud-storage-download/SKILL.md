@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-storage-download
 description: Download a file from storage bucket. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<name> <filename> [output]"
@@ -17,7 +17,6 @@ Download a file from storage bucket
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Organization context required (`--org-id` or default org)
 
 ## Usage
 
@@ -44,25 +43,25 @@ agentuity cloud storage download <name> <filename> [output] [options]
 Download file from bucket:
 
 ```bash
-bunx @agentuity/cli cloud storage download my-bucket file.txt
+agentuity cloud storage download my-bucket file.txt
 ```
 
 Download file to specific path:
 
 ```bash
-bunx @agentuity/cli cloud storage download my-bucket file.txt output.txt
+agentuity cloud storage download my-bucket file.txt output.txt
 ```
 
 Download file to stdout:
 
 ```bash
-bunx @agentuity/cli cloud storage download my-bucket file.txt - > output.txt
+agentuity cloud storage download my-bucket file.txt - > output.txt
 ```
 
 Download metadata only:
 
 ```bash
-bunx @agentuity/cli cloud storage download my-bucket file.txt --metadata
+agentuity cloud storage download my-bucket file.txt --metadata
 ```
 
 ## Output

@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-auth-ssh-delete
 description: Delete an SSH key from your account. Requires authentication. Use for managing authentication credentials
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "[fingerprints...]"
@@ -41,25 +41,25 @@ agentuity auth ssh delete [fingerprints...] [options]
 Delete item:
 
 ```bash
-bunx @agentuity/cli auth ssh delete
+agentuity auth ssh delete
 ```
 
 Delete item:
 
 ```bash
-bunx @agentuity/cli auth ssh delete <fingerprint>
+agentuity auth ssh delete <fingerprint>
 ```
 
 Delete item:
 
 ```bash
-bunx @agentuity/cli --explain auth ssh delete abc123
+agentuity --explain auth ssh delete abc123
 ```
 
 Delete item:
 
 ```bash
-bunx @agentuity/cli --dry-run auth ssh delete abc123
+agentuity --dry-run auth ssh delete abc123
 ```
 
 ## Output

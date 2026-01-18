@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-deploy
 description: Deploy project to the Agentuity Cloud. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -29,35 +29,32 @@ agentuity cloud deploy [options]
 
 | Option | Type | Required | Default | Description |
 |--------|------|----------|---------|-------------|
-| `--tag` | array | No | `["latest"]` | One or more tags to add to the deployment |
 | `--logsUrl` | string | Yes | - | The url to the CI build logs |
 | `--trigger` | string | No | `"cli"` | The trigger that caused the build |
-| `--commitUrl` | string | Yes | - | The url to the CI commit |
-| `--message` | string | Yes | - | The message to associate with this deployment |
-| `--provider` | string | Yes | - | The CI provider name (attempts to autodetect) |
 | `--event` | string | No | `"manual"` | The event that triggered the deployment |
 | `--pullRequestNumber` | number | Yes | - | the pull request number |
-| `--pullRequestCommentId` | string | Yes | - | the pull request comment id |
-| `--pullRequestURL` | string | Yes | - | the pull request url |
+| `--pullRequestUrl` | string | Yes | - | the pull request url |
+| `--message` | string | Yes | - | The message to associate with this build |
+| `--commit` | string | Yes | - | The git commit SHA |
+| `--branch` | string | Yes | - | The git branch |
+| `--repo` | string | Yes | - | The git repo URL |
+| `--provider` | string | Yes | - | The git provider (github, gitlab, bitbucket) |
+| `--commitUrl` | string | Yes | - | The URL to the commit |
+| `--reportFile` | string | Yes | - | file path to save build report JSON with errors, warnings, and diagnostics |
+| `--childMode` | boolean | No | `false` | Internal: run as forked child process |
 
 ## Examples
 
 Deploy current project:
 
 ```bash
-bunx @agentuity/cli cloud deploy
+agentuity cloud deploy
 ```
 
 Deploy with verbose output:
 
 ```bash
-bunx @agentuity/cli cloud deploy --log-level=debug
-```
-
-Deploy with specific tags:
-
-```bash
-bunx @agentuity/cli cloud deploy --tag a --tag b
+agentuity cloud deploy --log-level=debug
 ```
 
 ## Output

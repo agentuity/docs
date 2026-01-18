@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-keyvalue-keys
 description: List all keys in a keyvalue namespace. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<name>"
@@ -17,7 +17,6 @@ List all keys in a keyvalue namespace
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Project context required (run from project directory or use `--project-id`)
 
 ## Usage
 
@@ -36,19 +35,19 @@ agentuity cloud keyvalue keys <name>
 List all keys in production:
 
 ```bash
-bunx @agentuity/cli kv keys production
+agentuity kv keys production
 ```
 
 List all cached keys (using alias):
 
 ```bash
-bunx @agentuity/cli kv ls cache
+agentuity kv ls cache
 ```
 
 List all staging keys:
 
 ```bash
-bunx @agentuity/cli kv list staging
+agentuity kv list staging
 ```
 
 ## Output

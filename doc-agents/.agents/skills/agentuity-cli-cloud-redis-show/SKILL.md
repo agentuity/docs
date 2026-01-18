@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-redis-show
 description: Show Redis connection URL. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -35,19 +35,19 @@ agentuity cloud redis show [options]
 Show Redis connection URL:
 
 ```bash
-bunx @agentuity/cli cloud redis show
+agentuity cloud redis show
 ```
 
 Show Redis URL with credentials visible:
 
 ```bash
-bunx @agentuity/cli cloud redis show --show-credentials
+agentuity cloud redis show --show-credentials
 ```
 
 Show Redis URL as JSON:
 
 ```bash
-bunx @agentuity/cli --json cloud redis show
+agentuity --json cloud redis show
 ```
 
 ## Output

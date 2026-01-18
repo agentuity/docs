@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-auth-ssh-add
 description: Add an SSH public key to your account (reads from file or stdin). Requires authentication. Use for managing authentication credentials
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -34,25 +34,25 @@ agentuity auth ssh add [options]
 Add SSH key interactively:
 
 ```bash
-bunx @agentuity/cli auth ssh add
+agentuity auth ssh add
 ```
 
 Add SSH key from file:
 
 ```bash
-bunx @agentuity/cli auth ssh add --file ~/.ssh/id_ed25519.pub
+agentuity auth ssh add --file ~/.ssh/id_ed25519.pub
 ```
 
 Add deploy key from file:
 
 ```bash
-bunx @agentuity/cli auth ssh add --file ./deploy_key.pub
+agentuity auth ssh add --file ./deploy_key.pub
 ```
 
 Add SSH key from stdin:
 
 ```bash
-cat ~/.ssh/id_rsa.pub | bunx @agentuity/cli auth ssh add
+cat ~/.ssh/id_rsa.pub | agentuity auth ssh add
 ```
 
 ## Output

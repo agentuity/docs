@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-agent-list
 description: List agents for a project. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -35,19 +35,19 @@ agentuity cloud agent list [options]
 List items:
 
 ```bash
-bunx @agentuity/cli cloud agent list
+agentuity cloud agent list
 ```
 
 Use verbose option:
 
 ```bash
-bunx @agentuity/cli cloud agent list --verbose
+agentuity cloud agent list --verbose
 ```
 
 Show output in JSON format:
 
 ```bash
-bunx @agentuity/cli --json cloud agent list
+agentuity --json cloud agent list
 ```
 
 ## Output

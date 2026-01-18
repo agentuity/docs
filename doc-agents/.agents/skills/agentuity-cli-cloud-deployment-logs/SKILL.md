@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-deployment-logs
 description: View logs for a specific deployment. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<deployment_id>"
@@ -44,25 +44,25 @@ agentuity cloud deployment logs <deployment_id> [options]
 View logs for deployment:
 
 ```bash
-bunx @agentuity/cli cloud deployment logs deploy_abc123xyz
+agentuity cloud deployment logs deploy_abc123xyz
 ```
 
 Limit to 50 log entries:
 
 ```bash
-bunx @agentuity/cli cloud deployment logs deploy_abc123xyz --limit=50
+agentuity cloud deployment logs deploy_abc123xyz --limit=50
 ```
 
 Hide timestamps:
 
 ```bash
-bunx @agentuity/cli cloud deployment logs deploy_abc123xyz --no-timestamps
+agentuity cloud deployment logs deploy_abc123xyz --no-timestamps
 ```
 
 View logs with specific project:
 
 ```bash
-bunx @agentuity/cli cloud deployment logs deploy_abc123xyz --project-id=proj_abc123xyz
+agentuity cloud deployment logs deploy_abc123xyz --project-id=proj_abc123xyz
 ```
 
 ## Output

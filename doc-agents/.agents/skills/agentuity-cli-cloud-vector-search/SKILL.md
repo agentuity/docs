@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-vector-search
 description: Search for vectors using semantic similarity. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<namespace> <query>"
@@ -45,31 +45,31 @@ agentuity cloud vector search <namespace> <query> [options]
 Search for similar products:
 
 ```bash
-bunx @agentuity/cli vector search products "comfortable office chair"
+agentuity vector search products "comfortable office chair"
 ```
 
 Search knowledge base:
 
 ```bash
-bunx @agentuity/cli vector list knowledge-base "machine learning"
+agentuity vector list knowledge-base "machine learning"
 ```
 
 Limit results:
 
 ```bash
-bunx @agentuity/cli vector search docs "API documentation" --limit 5
+agentuity vector search docs "API documentation" --limit 5
 ```
 
 Set minimum similarity:
 
 ```bash
-bunx @agentuity/cli vector search products "ergonomic" --similarity 0.8
+agentuity vector search products "ergonomic" --similarity 0.8
 ```
 
 Filter by metadata:
 
 ```bash
-bunx @agentuity/cli vector ls embeddings "neural networks" --metadata category=ai
+agentuity vector ls embeddings "neural networks" --metadata category=ai
 ```
 
 ## Output

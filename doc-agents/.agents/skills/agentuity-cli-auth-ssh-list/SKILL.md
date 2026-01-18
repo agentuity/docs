@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-auth-ssh-list
 description: List all SSH keys on your account. Requires authentication. Use for managing authentication credentials
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -28,19 +28,19 @@ agentuity auth ssh list
 List items:
 
 ```bash
-bunx @agentuity/cli auth ssh list
+agentuity auth ssh list
 ```
 
 List items:
 
 ```bash
-bunx @agentuity/cli auth ssh ls
+agentuity auth ssh ls
 ```
 
 Show output in JSON format:
 
 ```bash
-bunx @agentuity/cli --json auth ssh list
+agentuity --json auth ssh list
 ```
 
 ## Output

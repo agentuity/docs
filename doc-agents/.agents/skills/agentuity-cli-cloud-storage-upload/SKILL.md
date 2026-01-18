@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-storage-upload
 description: Upload a file to storage bucket. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<name> <filename>"
@@ -17,7 +17,6 @@ Upload a file to storage bucket
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Organization context required (`--org-id` or default org)
 
 ## Usage
 
@@ -44,31 +43,31 @@ agentuity cloud storage upload <name> <filename> [options]
 Upload file to bucket:
 
 ```bash
-bunx @agentuity/cli cloud storage upload my-bucket file.txt
+agentuity cloud storage upload my-bucket file.txt
 ```
 
 Upload file with content type:
 
 ```bash
-bunx @agentuity/cli cloud storage put my-bucket file.txt --content-type text/plain
+agentuity cloud storage put my-bucket file.txt --content-type text/plain
 ```
 
 Upload file with custom object key:
 
 ```bash
-bunx @agentuity/cli cloud storage upload my-bucket file.txt --key custom-name.txt
+agentuity cloud storage upload my-bucket file.txt --key custom-name.txt
 ```
 
 Upload from stdin:
 
 ```bash
-cat file.txt | bunx @agentuity/cli cloud storage upload my-bucket -
+cat file.txt | agentuity cloud storage upload my-bucket -
 ```
 
 Upload from stdin with custom key:
 
 ```bash
-cat data.json | bunx @agentuity/cli cloud storage upload my-bucket - --key data.json
+cat data.json | agentuity cloud storage upload my-bucket - --key data.json
 ```
 
 ## Output

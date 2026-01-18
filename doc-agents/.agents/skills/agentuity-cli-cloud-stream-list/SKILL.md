@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-stream-list
 description: List recent streams with optional filtering. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -38,31 +38,31 @@ agentuity cloud stream list [options]
 List all streams:
 
 ```bash
-bunx @agentuity/cli cloud stream list
+agentuity cloud stream list
 ```
 
 List 50 most recent streams:
 
 ```bash
-bunx @agentuity/cli cloud stream ls --size 50
+agentuity cloud stream ls --size 50
 ```
 
 Filter by name:
 
 ```bash
-bunx @agentuity/cli cloud stream list --name agent-logs
+agentuity cloud stream list --name agent-logs
 ```
 
 Filter by metadata:
 
 ```bash
-bunx @agentuity/cli cloud stream list --metadata type=export
+agentuity cloud stream list --metadata type=export
 ```
 
 Output as JSON:
 
 ```bash
-bunx @agentuity/cli cloud stream ls --json
+agentuity cloud stream ls --json
 ```
 
 ## Output

@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-keyvalue-search
 description: Search for keys matching a keyword in a keyvalue namespace. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<name> <keyword>"
@@ -17,7 +17,6 @@ Search for keys matching a keyword in a keyvalue namespace
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Project context required (run from project directory or use `--project-id`)
 
 ## Usage
 
@@ -37,19 +36,19 @@ agentuity cloud keyvalue search <name> <keyword>
 Find all user-related keys:
 
 ```bash
-bunx @agentuity/cli kv search production user
+agentuity kv search production user
 ```
 
 Find all session keys in cache:
 
 ```bash
-bunx @agentuity/cli kv search cache session
+agentuity kv search cache session
 ```
 
 Find all config keys:
 
 ```bash
-bunx @agentuity/cli kv search staging config
+agentuity kv search staging config
 ```
 
 ## Output

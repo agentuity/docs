@@ -92,7 +92,11 @@ export function withPersistence(
 					if (tutorial) {
 						capturedTutorialData = tutorial;
 						if (onTutorialProgress) {
-							await onTutorialProgress(tutorial);
+							try {
+								await onTutorialProgress(tutorial);
+							} catch (e) {
+								logger.warn('onTutorialProgress callback failed: %s', e instanceof Error ? e.message : String(e));
+							}
 						}
 					}
 				}

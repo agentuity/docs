@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-db-delete
 description: Delete a database resource. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "[name]"
@@ -17,7 +17,6 @@ Delete a database resource
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Organization context required (`--org-id` or default org)
 
 ## Usage
 
@@ -42,25 +41,25 @@ agentuity cloud db delete [name] [options]
 Delete item:
 
 ```bash
-bunx @agentuity/cli cloud db delete my-database
+agentuity cloud db delete my-database
 ```
 
 Delete item:
 
 ```bash
-bunx @agentuity/cli cloud db rm my-database
+agentuity cloud db rm my-database
 ```
 
 Delete item:
 
 ```bash
-bunx @agentuity/cli cloud db delete
+agentuity cloud db delete
 ```
 
 Delete item:
 
 ```bash
-bunx @agentuity/cli --dry-run cloud db delete my-database
+agentuity --dry-run cloud db delete my-database
 ```
 
 ## Output

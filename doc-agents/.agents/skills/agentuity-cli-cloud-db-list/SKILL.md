@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-db-list
 description: List database resources. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -16,7 +16,6 @@ List database resources
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Organization context required (`--org-id` or default org)
 
 ## Usage
 
@@ -36,25 +35,25 @@ agentuity cloud db list [options]
 List items:
 
 ```bash
-bunx @agentuity/cli cloud db list
+agentuity cloud db list
 ```
 
 Show output in JSON format:
 
 ```bash
-bunx @agentuity/cli --json cloud db list
+agentuity --json cloud db list
 ```
 
 List items:
 
 ```bash
-bunx @agentuity/cli cloud db ls
+agentuity cloud db ls
 ```
 
 Use show credentials option:
 
 ```bash
-bunx @agentuity/cli cloud db list --show-credentials
+agentuity cloud db list --show-credentials
 ```
 
 ## Output

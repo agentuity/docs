@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-scp-upload
 description: Upload a file using security copy. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<source> [destination]"
@@ -43,25 +43,25 @@ agentuity cloud scp upload <source> [destination] [options]
 Upload to remote home directory:
 
 ```bash
-bunx @agentuity/cli cloud scp upload ./config.json
+agentuity cloud scp upload ./config.json
 ```
 
 Upload to specific path:
 
 ```bash
-bunx @agentuity/cli cloud scp upload ./config.json /app/config.json
+agentuity cloud scp upload ./config.json /app/config.json
 ```
 
 Upload to specific project:
 
 ```bash
-bunx @agentuity/cli cloud scp upload ./config.json --identifier=proj_abc123xyz
+agentuity cloud scp upload ./config.json --identifier=proj_abc123xyz
 ```
 
 Upload multiple files:
 
 ```bash
-bunx @agentuity/cli cloud scp upload ./logs/*.log ~/logs/
+agentuity cloud scp upload ./logs/*.log ~/logs/
 ```
 
 ## Output

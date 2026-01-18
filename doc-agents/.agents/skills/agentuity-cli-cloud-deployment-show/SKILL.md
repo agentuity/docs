@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-deployment-show
 description: Show details about a specific deployment. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<deployment_id>"
@@ -42,13 +42,13 @@ agentuity cloud deployment show <deployment_id> [options]
 Show deployment details by ID:
 
 ```bash
-bunx @agentuity/cli cloud deployment show dep_abc123xyz
+agentuity cloud deployment show dep_abc123xyz
 ```
 
 Show deployment for specific project:
 
 ```bash
-bunx @agentuity/cli cloud deployment show deployment-2024-11-20 --project-id=proj_abc123xyz
+agentuity cloud deployment show deployment-2024-11-20 --project-id=proj_abc123xyz
 ```
 
 ## Output
@@ -70,6 +70,7 @@ Returns JSON object:
   "resourceStorage": "unknown",
   "deploymentLogsURL": "unknown",
   "buildLogsURL": "unknown",
+  "dnsRecords": "array",
   "metadata": "object"
 }
 ```
@@ -89,4 +90,5 @@ Returns JSON object:
 | `resourceStorage` | unknown | the storage name |
 | `deploymentLogsURL` | unknown | the url to the deployment logs |
 | `buildLogsURL` | unknown | the url to the build logs |
+| `dnsRecords` | array | DNS records for custom domains |
 | `metadata` | object | Deployment metadata |

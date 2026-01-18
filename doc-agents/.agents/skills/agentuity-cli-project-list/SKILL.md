@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-project-list
 description: List all projects. Requires authentication. Use for project management operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -28,19 +28,19 @@ agentuity project list
 List projects (human-readable):
 
 ```bash
-bunx @agentuity/cli project list
+agentuity project list
 ```
 
 List projects in JSON format:
 
 ```bash
-bunx @agentuity/cli --json project list
+agentuity --json project list
 ```
 
 Alias for "project list" — list projects (human-readable):
 
 ```bash
-bunx @agentuity/cli project ls
+agentuity project ls
 ```
 
 ## Output

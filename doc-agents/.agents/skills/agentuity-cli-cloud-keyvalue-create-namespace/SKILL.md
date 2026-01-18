@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-keyvalue-create-namespace
 description: Create a new keyvalue namespace. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<name>"
@@ -17,7 +17,6 @@ Create a new keyvalue namespace
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Project context required (run from project directory or use `--project-id`)
 
 ## Usage
 
@@ -36,19 +35,19 @@ agentuity cloud keyvalue create-namespace <name>
 Create production namespace:
 
 ```bash
-bunx @agentuity/cli kv create-namespace production
+agentuity kv create-namespace production
 ```
 
 Create staging namespace (using alias):
 
 ```bash
-bunx @agentuity/cli kv create staging
+agentuity kv create staging
 ```
 
 Create cache namespace:
 
 ```bash
-bunx @agentuity/cli kv create cache
+agentuity kv create cache
 ```
 
 ## Output

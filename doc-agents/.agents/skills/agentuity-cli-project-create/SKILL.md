@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-project-create
 description: Create a new project. Use for project management operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -33,37 +33,40 @@ agentuity project create [options]
 | `--build` | boolean | No | `true` | Run bun run build after installing (use --no-build to skip) |
 | `--confirm` | boolean | Yes | - | Skip confirmation prompts |
 | `--register` | boolean | No | `true` | Register the project, if authenticated (use --no-register to skip) |
+| `--database` | string | Yes | - | Database action: "skip", "new", or existing database name |
+| `--storage` | string | Yes | - | Storage action: "skip", "new", or existing bucket name |
+| `--enableAuth` | boolean | Yes | - | Enable Agentuity Auth |
 
 ## Examples
 
 Create new item:
 
 ```bash
-bunx @agentuity/cli project create
+agentuity project create
 ```
 
 Create new item:
 
 ```bash
-bunx @agentuity/cli project create --name my-ai-agent
+agentuity project create --name my-ai-agent
 ```
 
 Create new item:
 
 ```bash
-bunx @agentuity/cli project create --name customer-service-bot --dir ~/projects/agent
+agentuity project create --name customer-service-bot --dir ~/projects/agent
 ```
 
 Use no install option:
 
 ```bash
-bunx @agentuity/cli project create --template basic --no-install
+agentuity project create --template basic --no-install
 ```
 
 Use no register option:
 
 ```bash
-bunx @agentuity/cli project new --no-register
+agentuity project new --no-register
 ```
 
 ## Output
@@ -73,9 +76,11 @@ Returns JSON object:
 ```json
 {
   "success": "boolean",
+  "error": "string",
   "name": "string",
   "path": "string",
   "projectId": "string",
+  "orgId": "string",
   "template": "string",
   "installed": "boolean",
   "built": "boolean",
@@ -86,9 +91,11 @@ Returns JSON object:
 | Field | Type | Description |
 |-------|------|-------------|
 | `success` | boolean | Whether the operation succeeded |
+| `error` | string | Error message if setup failed |
 | `name` | string | Project name |
 | `path` | string | Project directory path |
 | `projectId` | string | Project ID if registered |
+| `orgId` | string | Organization ID if registered |
 | `template` | string | Template used |
 | `installed` | boolean | Whether dependencies were installed |
 | `built` | boolean | Whether the project was built |

@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-keyvalue-repl
 description: Start an interactive repl for working with keyvalue database. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -16,7 +16,6 @@ Start an interactive repl for working with keyvalue database
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Project context required (run from project directory or use `--project-id`)
 
 ## Usage
 
@@ -29,5 +28,5 @@ agentuity cloud keyvalue repl
 Start interactive KV session:
 
 ```bash
-bunx @agentuity/cli kv repl
+agentuity kv repl
 ```

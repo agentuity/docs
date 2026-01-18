@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-auth-logout
 description: Logout of the Agentuity Cloud Platform. Use for managing authentication credentials
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -24,11 +24,11 @@ agentuity auth logout
 Logout from account:
 
 ```bash
-bunx @agentuity/cli auth logout
+agentuity auth logout
 ```
 
 Logout from account:
 
 ```bash
-bunx @agentuity/cli logout
+agentuity logout
 ```

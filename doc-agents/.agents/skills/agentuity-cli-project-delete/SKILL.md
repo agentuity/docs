@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-project-delete
 description: Delete a project. Requires authentication. Use for project management operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "[id]"
@@ -41,37 +41,37 @@ agentuity project delete [id] [options]
 Delete item:
 
 ```bash
-bunx @agentuity/cli project delete
+agentuity project delete
 ```
 
 Delete item:
 
 ```bash
-bunx @agentuity/cli project delete proj_abc123def456
+agentuity project delete proj_abc123def456
 ```
 
 Use confirm option:
 
 ```bash
-bunx @agentuity/cli project delete proj_abc123def456 --confirm
+agentuity project delete proj_abc123def456 --confirm
 ```
 
 Delete item:
 
 ```bash
-bunx @agentuity/cli project rm proj_abc123def456
+agentuity project rm proj_abc123def456
 ```
 
 Delete item:
 
 ```bash
-bunx @agentuity/cli --explain project delete proj_abc123def456
+agentuity --explain project delete proj_abc123def456
 ```
 
 Delete item:
 
 ```bash
-bunx @agentuity/cli --dry-run project delete proj_abc123def456
+agentuity --dry-run project delete proj_abc123def456
 ```
 
 ## Output

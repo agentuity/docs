@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-keyvalue-set
 description: Set a key and value in the keyvalue storage. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<namespace> <key> <value> [ttl]"
@@ -17,7 +17,6 @@ Set a key and value in the keyvalue storage
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Project context required (run from project directory or use `--project-id`)
 
 ## Usage
 
@@ -39,19 +38,19 @@ agentuity cloud keyvalue set <namespace> <key> <value> [ttl]
 Store user data:
 
 ```bash
-bunx @agentuity/cli kv set production user:123 '{"name":"Alice","email":"alice@example.com"}'
+agentuity kv set production user:123 '{"name":"Alice","email":"alice@example.com"}'
 ```
 
 Store session with 1h TTL:
 
 ```bash
-bunx @agentuity/cli kv set cache session:abc "session-data-here" --ttl 3600
+agentuity kv set cache session:abc "session-data-here" --ttl 3600
 ```
 
 Cache homepage for 10m:
 
 ```bash
-bunx @agentuity/cli kv set staging cache:homepage "<!DOCTYPE html>..." --ttl 600
+agentuity kv set staging cache:homepage "<!DOCTYPE html>..." --ttl 600
 ```
 
 ## Output

@@ -1,28 +1,27 @@
 ---
 name: agentuity-cli-cloud-env-set
-description: Set an environment variable. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+description: Set an environment variable or secret. Requires authentication. Use for Agentuity cloud platform operations
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<key> <value>"
 metadata:
   command: "agentuity cloud env set"
-  tags: "mutating updates-resource slow requires-auth requires-project"
+  tags: "mutating updates-resource slow requires-auth"
 ---
 
 # Cloud Env Set
 
-Set an environment variable
+Set an environment variable or secret
 
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Project context required (run from project directory or use `--project-id`)
 
 ## Usage
 
 ```bash
-agentuity cloud env set <key> <value>
+agentuity cloud env set <key> <value> [options]
 ```
 
 ## Arguments
@@ -32,24 +31,37 @@ agentuity cloud env set <key> <value>
 | `<key>` | string | Yes | - |
 | `<value>` | string | Yes | - |
 
+## Options
+
+| Option | Type | Required | Default | Description |
+|--------|------|----------|---------|-------------|
+| `--secret` | boolean | No | `false` | store as a secret (encrypted and masked in UI) |
+| `--org` | optionalString | Yes | - | set at organization level (use --org for default org, or --org <orgId> for specific org) |
+
 ## Examples
 
-Run production command:
+Set environment variable:
 
 ```bash
-bunx @agentuity/cli env set NODE_ENV production
+agentuity env set NODE_ENV production
 ```
 
-Run 3000 command:
+Set port number:
 
 ```bash
-bunx @agentuity/cli env set PORT 3000
+agentuity env set PORT 3000
 ```
 
-Run debug command:
+Set a secret value:
 
 ```bash
-bunx @agentuity/cli env set LOG_LEVEL debug
+agentuity env set API_KEY "sk_..." --secret
+```
+
+Set an organization-wide secret:
+
+```bash
+agentuity env set OPENAI_API_KEY "sk_..." --secret --org
 ```
 
 ## Output
@@ -60,7 +72,9 @@ Returns JSON object:
 {
   "success": "boolean",
   "key": "string",
-  "path": "string"
+  "path": "string",
+  "secret": "boolean",
+  "scope": "string"
 }
 ```
 
@@ -68,4 +82,6 @@ Returns JSON object:
 |-------|------|-------------|
 | `success` | boolean | Whether the operation succeeded |
 | `key` | string | Environment variable key |
-| `path` | string | Local file path where env var was saved |
+| `path` | string | Local file path where env var was saved (project scope only) |
+| `secret` | boolean | Whether the value was stored as a secret |
+| `scope` | string | The scope where the variable was set |

@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-apikey-create
 description: Create a new API key. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -37,19 +37,19 @@ agentuity cloud apikey create [options]
 Create API key with 1 year expiration:
 
 ```bash
-bunx @agentuity/cli cloud apikey create --name "My API Key" --expires-at 1y
+agentuity cloud apikey create --name "My API Key" --expires-at 1y
 ```
 
 Create API key with 30 day expiration:
 
 ```bash
-bunx @agentuity/cli cloud apikey create --name "Short-lived Key" --expires-at 30d
+agentuity cloud apikey create --name "Short-lived Key" --expires-at 30d
 ```
 
 Create API key with specific date and skip confirmation:
 
 ```bash
-bunx @agentuity/cli cloud apikey create --name "Production Key" --expires-at 2026-01-01T00:00:00Z --confirm
+agentuity cloud apikey create --name "Production Key" --expires-at 2026-01-01T00:00:00Z --confirm
 ```
 
 ## Output

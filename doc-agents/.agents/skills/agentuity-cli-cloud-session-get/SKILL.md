@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-session-get
 description: Get details about a specific session. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<session_id>"
@@ -35,7 +35,7 @@ agentuity cloud session get <session_id>
 Get a session by ID:
 
 ```bash
-bunx @agentuity/cli cloud session get sess_abc123xyz
+agentuity cloud session get sess_abc123xyz
 ```
 
 ## Output

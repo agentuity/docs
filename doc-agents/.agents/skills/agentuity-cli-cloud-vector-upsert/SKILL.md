@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-vector-upsert
 description: Add or update vectors in the vector storage. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<namespace> [key]"
@@ -46,31 +46,31 @@ agentuity cloud vector upsert <namespace> [key] [options]
 Upsert a single vector with document text:
 
 ```bash
-bunx @agentuity/cli vector upsert products doc1 --document "Comfortable office chair"
+agentuity vector upsert products doc1 --document "Comfortable office chair"
 ```
 
 Upsert with metadata:
 
 ```bash
-bunx @agentuity/cli vector upsert products doc1 --document "Chair" --metadata '{"category":"furniture"}'
+agentuity vector upsert products doc1 --document "Chair" --metadata '{"category":"furniture"}'
 ```
 
 Upsert with pre-computed embeddings:
 
 ```bash
-bunx @agentuity/cli vector upsert embeddings vec1 --embeddings "[0.1, 0.2, 0.3]"
+agentuity vector upsert embeddings vec1 --embeddings "[0.1, 0.2, 0.3]"
 ```
 
 Bulk upsert from JSON file:
 
 ```bash
-bunx @agentuity/cli vector upsert products --file vectors.json
+agentuity vector upsert products --file vectors.json
 ```
 
 Bulk upsert from stdin:
 
 ```bash
-cat vectors.json | bunx @agentuity/cli vector upsert products -
+cat vectors.json | agentuity vector upsert products -
 ```
 
 ## Output

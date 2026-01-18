@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-deployment-undeploy
 description: Undeploy the latest deployment. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -36,17 +36,17 @@ agentuity cloud deployment undeploy [options]
 Undeploy with confirmation:
 
 ```bash
-bunx @agentuity/cli cloud deployment undeploy
+agentuity cloud deployment undeploy
 ```
 
 Undeploy without confirmation:
 
 ```bash
-bunx @agentuity/cli cloud deployment undeploy --force
+agentuity cloud deployment undeploy --force
 ```
 
 Undeploy specific project:
 
 ```bash
-bunx @agentuity/cli cloud deployment undeploy --project-id=proj_abc123xyz
+agentuity cloud deployment undeploy --project-id=proj_abc123xyz
 ```

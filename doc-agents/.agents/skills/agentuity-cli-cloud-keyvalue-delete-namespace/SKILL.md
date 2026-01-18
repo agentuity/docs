@@ -1,13 +1,13 @@
 ---
 name: agentuity-cli-cloud-keyvalue-delete-namespace
 description: Delete a keyvalue namespace and all its keys. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<name> <confirm>"
 metadata:
   command: "agentuity cloud keyvalue delete-namespace"
-  tags: "destructive deletes-resource slow requires-auth requires-project"
+  tags: "destructive deletes-resource slow requires-auth"
 ---
 
 # Cloud Keyvalue Delete-namespace
@@ -17,7 +17,6 @@ Delete a keyvalue namespace and all its keys
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Project context required (run from project directory or use `--project-id`)
 
 ## Usage
 
@@ -37,19 +36,19 @@ agentuity cloud keyvalue delete-namespace <name> <confirm>
 Delete staging namespace (interactive):
 
 ```bash
-bunx @agentuity/cli kv delete-namespace staging
+agentuity kv delete-namespace staging
 ```
 
 Delete cache without confirmation:
 
 ```bash
-bunx @agentuity/cli kv rm-namespace cache --confirm
+agentuity kv rm-namespace cache --confirm
 ```
 
 Force delete production:
 
 ```bash
-bunx @agentuity/cli kv delete-namespace production --confirm
+agentuity kv delete-namespace production --confirm
 ```
 
 ## Output

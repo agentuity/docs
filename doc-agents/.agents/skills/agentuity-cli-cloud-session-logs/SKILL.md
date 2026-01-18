@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-session-logs
 description: Get logs for a specific session. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<session_id>"
@@ -43,13 +43,13 @@ agentuity cloud session logs <session_id> [options]
 View logs for session:
 
 ```bash
-bunx @agentuity/cli cloud session logs sess_abc123xyz
+agentuity cloud session logs sess_abc123xyz
 ```
 
 Hide timestamps:
 
 ```bash
-bunx @agentuity/cli cloud session logs sess_abc123xyz --no-timestamps
+agentuity cloud session logs sess_abc123xyz --no-timestamps
 ```
 
 ## Output

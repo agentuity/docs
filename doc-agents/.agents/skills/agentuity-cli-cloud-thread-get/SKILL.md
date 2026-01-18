@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-thread-get
 description: Get details about a specific thread. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<thread_id>"
@@ -35,7 +35,7 @@ agentuity cloud thread get <thread_id>
 Get a thread by ID:
 
 ```bash
-bunx @agentuity/cli cloud thread get thrd_abc123xyz
+agentuity cloud thread get thrd_abc123xyz
 ```
 
 ## Output

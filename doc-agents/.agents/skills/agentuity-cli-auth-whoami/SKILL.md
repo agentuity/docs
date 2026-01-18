@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-auth-whoami
 description: Display information about the currently authenticated user. Requires authentication. Use for managing authentication credentials
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -28,13 +28,13 @@ agentuity auth whoami
 Show current user:
 
 ```bash
-bunx @agentuity/cli auth whoami
+agentuity auth whoami
 ```
 
 Show output in JSON format:
 
 ```bash
-bunx @agentuity/cli --json auth whoami
+agentuity --json auth whoami
 ```
 
 ## Output

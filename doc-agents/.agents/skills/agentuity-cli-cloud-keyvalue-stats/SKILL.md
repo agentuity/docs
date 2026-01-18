@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-keyvalue-stats
 description: Get statistics for keyvalue storage. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "[name]"
@@ -17,7 +17,6 @@ Get statistics for keyvalue storage
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Project context required (run from project directory or use `--project-id`)
 
 ## Usage
 
@@ -36,17 +35,17 @@ agentuity cloud keyvalue stats [name]
 Show stats for all namespaces:
 
 ```bash
-bunx @agentuity/cli kv stats
+agentuity kv stats
 ```
 
 Show stats for production namespace:
 
 ```bash
-bunx @agentuity/cli kv stats production
+agentuity kv stats production
 ```
 
 Show stats for cache namespace:
 
 ```bash
-bunx @agentuity/cli kv stats cache
+agentuity kv stats cache
 ```

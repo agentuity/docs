@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-deployment-remove
 description: Remove a specific deployment. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<deployment_id>"
@@ -43,19 +43,19 @@ agentuity cloud deployment remove <deployment_id> [options]
 Remove with confirmation:
 
 ```bash
-bunx @agentuity/cli cloud deployment remove dep_abc123xyz
+agentuity cloud deployment remove dep_abc123xyz
 ```
 
 Remove without confirmation:
 
 ```bash
-bunx @agentuity/cli cloud deployment remove dep_abc123xyz --force
+agentuity cloud deployment remove dep_abc123xyz --force
 ```
 
 Remove deployment from specific project:
 
 ```bash
-bunx @agentuity/cli cloud deployment remove deployment-2024-11-20 --project-id=proj_abc123xyz
+agentuity cloud deployment remove deployment-2024-11-20 --project-id=proj_abc123xyz
 ```
 
 ## Output

@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-db-get
 description: Show details about a specific database. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<name>"
@@ -17,7 +17,6 @@ Show details about a specific database
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Organization context required (`--org-id` or default org)
 
 ## Usage
 
@@ -44,35 +43,35 @@ agentuity cloud db get <name> [options]
 Get database details:
 
 ```bash
-bunx @agentuity/cli cloud db get my-database
+agentuity cloud db get my-database
 ```
 
 Show database information:
 
 ```bash
-bunx @agentuity/cli cloud db show my-database
+agentuity cloud db show my-database
 ```
 
 Get database with credentials:
 
 ```bash
-bunx @agentuity/cli cloud db get my-database --show-credentials
+agentuity cloud db get my-database --show-credentials
 ```
 
 Get table schemas from the database:
 
 ```bash
-bunx @agentuity/cli cloud db get my-database --show-tables
+agentuity cloud db get my-database --show-tables
 ```
 
 Get table schemas as SQL CREATE statements:
 
 ```bash
-bunx @agentuity/cli cloud db get my-database --show-tables --sql
+agentuity cloud db get my-database --show-tables --sql
 ```
 
 Get table schemas as JSON:
 
 ```bash
-bunx @agentuity/cli cloud db get my-database --show-tables --json
+agentuity cloud db get my-database --show-tables --json
 ```

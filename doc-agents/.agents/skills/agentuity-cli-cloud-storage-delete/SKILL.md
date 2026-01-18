@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-storage-delete
 description: Delete a storage resource or file. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "[name] [filename]"
@@ -17,7 +17,6 @@ Delete a storage resource or file
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Organization context required (`--org-id` or default org)
 
 ## Usage
 
@@ -43,25 +42,25 @@ agentuity cloud storage delete [name] [filename] [options]
 Delete a storage bucket:
 
 ```bash
-bunx @agentuity/cli cloud storage delete my-bucket
+agentuity cloud storage delete my-bucket
 ```
 
 Delete a file from a bucket:
 
 ```bash
-bunx @agentuity/cli cloud storage rm my-bucket file.txt
+agentuity cloud storage rm my-bucket file.txt
 ```
 
 Interactive selection to delete a bucket:
 
 ```bash
-bunx @agentuity/cli cloud storage delete
+agentuity cloud storage delete
 ```
 
 Dry-run: show what would be deleted without making changes:
 
 ```bash
-bunx @agentuity/cli --dry-run cloud storage delete my-bucket
+agentuity --dry-run cloud storage delete my-bucket
 ```
 
 ## Output

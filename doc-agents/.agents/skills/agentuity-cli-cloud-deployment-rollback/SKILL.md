@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-deployment-rollback
 description: Rollback the latest to the previous deployment. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -35,13 +35,13 @@ agentuity cloud deployment rollback [options]
 Rollback to previous deployment:
 
 ```bash
-bunx @agentuity/cli cloud deployment rollback
+agentuity cloud deployment rollback
 ```
 
 Rollback specific project:
 
 ```bash
-bunx @agentuity/cli cloud deployment rollback --project-id=proj_abc123xyz
+agentuity cloud deployment rollback --project-id=proj_abc123xyz
 ```
 
 ## Output

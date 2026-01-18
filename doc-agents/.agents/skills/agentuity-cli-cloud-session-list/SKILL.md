@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-session-list
 description: List recent sessions. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -29,6 +29,7 @@ agentuity cloud session list [options]
 |--------|------|----------|---------|-------------|
 | `--count` | number | No | `10` | Number of sessions to list (1–100) |
 | `--projectId` | string | Yes | - | Filter by project ID |
+| `--all` | boolean | Yes | - | List all sessions regardless of project context |
 | `--deploymentId` | string | Yes | - | Filter by deployment ID |
 | `--trigger` | string | Yes | - | Filter by trigger type (api, cron, webhook) |
 | `--env` | string | Yes | - | Filter by environment |
@@ -44,49 +45,55 @@ agentuity cloud session list [options]
 List 10 most recent sessions:
 
 ```bash
-bunx @agentuity/cli cloud session list
+agentuity cloud session list
 ```
 
 List 25 most recent sessions:
 
 ```bash
-bunx @agentuity/cli cloud session list --count=25
+agentuity cloud session list --count=25
 ```
 
 Filter by project:
 
 ```bash
-bunx @agentuity/cli cloud session list --project-id=proj_*
+agentuity cloud session list --project-id=proj_*
 ```
 
 Filter by deployment:
 
 ```bash
-bunx @agentuity/cli cloud session list --deployment-id=*
+agentuity cloud session list --deployment-id=*
 ```
 
 Only successful sessions:
 
 ```bash
-bunx @agentuity/cli cloud session list --success=true
+agentuity cloud session list --success=true
 ```
 
 Only production sessions:
 
 ```bash
-bunx @agentuity/cli cloud session list --devmode=false
+agentuity cloud session list --devmode=false
 ```
 
 Only API triggered sessions:
 
 ```bash
-bunx @agentuity/cli cloud session list --trigger=api
+agentuity cloud session list --trigger=api
 ```
 
 Only production environment:
 
 ```bash
-bunx @agentuity/cli cloud session list --env=production
+agentuity cloud session list --env=production
+```
+
+List all sessions regardless of project context:
+
+```bash
+agentuity cloud session list --all
 ```
 
 ## Output

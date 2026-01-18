@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-db-create
 description: Create a new database resource. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -29,31 +29,32 @@ agentuity cloud db create [options]
 | Option | Type | Required | Default | Description |
 |--------|------|----------|---------|-------------|
 | `--name` | string | Yes | - | Custom database name |
+| `--description` | string | Yes | - | Optional database description |
 
 ## Examples
 
 Create new item:
 
 ```bash
-bunx @agentuity/cli cloud db create
+agentuity cloud db create
 ```
 
 Run new command:
 
 ```bash
-bunx @agentuity/cli cloud db new
+agentuity cloud db new
 ```
 
 Create new item:
 
 ```bash
-bunx @agentuity/cli cloud db create --name my-db
+agentuity cloud db create --name my-db
 ```
 
 Create new item:
 
 ```bash
-bunx @agentuity/cli --dry-run cloud db create
+agentuity --dry-run cloud db create
 ```
 
 ## Output

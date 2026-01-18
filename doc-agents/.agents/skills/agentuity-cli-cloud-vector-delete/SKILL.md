@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-vector-delete
 description: Delete one or more vectors by key. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<namespace> <keys...>"
@@ -43,19 +43,19 @@ agentuity cloud vector delete <namespace> <keys...> [options]
 Delete a single vector (interactive):
 
 ```bash
-bunx @agentuity/cli vector delete products chair-001
+agentuity vector delete products chair-001
 ```
 
 Delete multiple vectors without confirmation:
 
 ```bash
-bunx @agentuity/cli vector rm knowledge-base doc-123 doc-456 --confirm
+agentuity vector rm knowledge-base doc-123 doc-456 --confirm
 ```
 
 Bulk delete without confirmation:
 
 ```bash
-bunx @agentuity/cli vector del embeddings old-profile-1 old-profile-2 --confirm
+agentuity vector del embeddings old-profile-1 old-profile-2 --confirm
 ```
 
 ## Output

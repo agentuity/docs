@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-vector-list-namespaces
 description: List all vector namespaces. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -29,19 +29,19 @@ agentuity cloud vector list-namespaces
 List all namespaces:
 
 ```bash
-bunx @agentuity/cli vector list-namespaces
+agentuity vector list-namespaces
 ```
 
 List namespaces (using alias):
 
 ```bash
-bunx @agentuity/cli vector namespaces
+agentuity vector namespaces
 ```
 
 List namespaces (short alias):
 
 ```bash
-bunx @agentuity/cli vector ns
+agentuity vector ns
 ```
 
 ## Output

@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-storage-list
 description: List storage resources or files in a bucket. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "[name] [prefix]"
@@ -44,37 +44,37 @@ agentuity cloud storage list [name] [prefix] [options]
 List items:
 
 ```bash
-bunx @agentuity/cli cloud storage list
+agentuity cloud storage list
 ```
 
 List items:
 
 ```bash
-bunx @agentuity/cli cloud storage list my-bucket
+agentuity cloud storage list my-bucket
 ```
 
 List items:
 
 ```bash
-bunx @agentuity/cli cloud storage list my-bucket path/prefix
+agentuity cloud storage list my-bucket path/prefix
 ```
 
 Show output in JSON format:
 
 ```bash
-bunx @agentuity/cli --json cloud storage list
+agentuity --json cloud storage list
 ```
 
 List items:
 
 ```bash
-bunx @agentuity/cli cloud storage ls
+agentuity cloud storage ls
 ```
 
 Use show credentials option:
 
 ```bash
-bunx @agentuity/cli cloud storage list --show-credentials
+agentuity cloud storage list --show-credentials
 ```
 
 ## Output

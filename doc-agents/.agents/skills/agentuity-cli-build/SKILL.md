@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-build
 description: Build Agentuity application for deployment
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -24,17 +24,17 @@ agentuity build
 Build the project:
 
 ```bash
-bunx @agentuity/cli build
+agentuity build
 ```
 
 Run in development mode:
 
 ```bash
-bunx @agentuity/cli build --dev
+agentuity build --dev
 ```
 
 Bundle the project:
 
 ```bash
-bunx @agentuity/cli bundle
+agentuity bundle
 ```

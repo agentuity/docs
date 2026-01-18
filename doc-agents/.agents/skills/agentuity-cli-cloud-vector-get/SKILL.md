@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-vector-get
 description: Get a specific vector entry by key. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<namespace> <key>"
@@ -37,19 +37,19 @@ agentuity cloud vector get <namespace> <key>
 Get a specific product vector:
 
 ```bash
-bunx @agentuity/cli vector get products chair-001
+agentuity vector get products chair-001
 ```
 
 Get a document from knowledge base:
 
 ```bash
-bunx @agentuity/cli vector get knowledge-base doc-123
+agentuity vector get knowledge-base doc-123
 ```
 
 Get user profile embedding:
 
 ```bash
-bunx @agentuity/cli vector get embeddings user-profile-456
+agentuity vector get embeddings user-profile-456
 ```
 
 ## Output

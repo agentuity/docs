@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-apikey-delete
 description: Delete an API key (soft delete). Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<id>"
@@ -35,19 +35,19 @@ agentuity cloud apikey delete <id>
 Delete item:
 
 ```bash
-bunx @agentuity/cli cloud apikey delete <id>
+agentuity cloud apikey delete <id>
 ```
 
 Run <id> command:
 
 ```bash
-bunx @agentuity/cli cloud apikey del <id>
+agentuity cloud apikey del <id>
 ```
 
 Delete item:
 
 ```bash
-bunx @agentuity/cli cloud apikey rm <id>
+agentuity cloud apikey rm <id>
 ```
 
 ## Output

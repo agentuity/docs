@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-vector-delete-namespace
 description: Delete a vector namespace and all its vectors. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<name>"
@@ -42,19 +42,19 @@ agentuity cloud vector delete-namespace <name> [options]
 Delete staging namespace (interactive):
 
 ```bash
-bunx @agentuity/cli vector delete-namespace staging
+agentuity vector delete-namespace staging
 ```
 
 Delete cache without confirmation:
 
 ```bash
-bunx @agentuity/cli vector rm-namespace cache --confirm
+agentuity vector rm-namespace cache --confirm
 ```
 
 Force delete old-data namespace:
 
 ```bash
-bunx @agentuity/cli vector delete-namespace old-data --confirm
+agentuity vector delete-namespace old-data --confirm
 ```
 
 ## Output

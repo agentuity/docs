@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-stream-delete
 description: Delete a stream by ID (soft delete). Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<id>"
@@ -36,19 +36,19 @@ agentuity cloud stream delete <id>
 Delete a stream:
 
 ```bash
-bunx @agentuity/cli stream delete stream-id-123
+agentuity stream delete stream-id-123
 ```
 
 Delete stream (using alias):
 
 ```bash
-bunx @agentuity/cli stream rm stream-id-456
+agentuity stream rm stream-id-456
 ```
 
 Delete stream (using alias):
 
 ```bash
-bunx @agentuity/cli stream del stream-id-789
+agentuity stream del stream-id-789
 ```
 
 ## Output

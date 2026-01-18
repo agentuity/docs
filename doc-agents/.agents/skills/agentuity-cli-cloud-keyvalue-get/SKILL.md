@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-keyvalue-get
 description: Get a value from the keyvalue storage. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<namespace> <key>"
@@ -17,7 +17,6 @@ Get a value from the keyvalue storage
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Project context required (run from project directory or use `--project-id`)
 
 ## Usage
 
@@ -37,19 +36,19 @@ agentuity cloud keyvalue get <namespace> <key>
 Get user data:
 
 ```bash
-bunx @agentuity/cli kv get production user:123
+agentuity kv get production user:123
 ```
 
 Get cached session:
 
 ```bash
-bunx @agentuity/cli kv get cache session:abc
+agentuity kv get cache session:abc
 ```
 
 Get homepage cache:
 
 ```bash
-bunx @agentuity/cli kv get staging cache:homepage
+agentuity kv get staging cache:homepage
 ```
 
 ## Output

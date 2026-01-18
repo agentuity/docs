@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-project-show
 description: Show project detail. Requires authentication. Use for project management operations
-version: "0.0.105"
+version: "0.1.20"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<id>"
@@ -35,19 +35,19 @@ agentuity project show <id>
 Show details:
 
 ```bash
-bunx @agentuity/cli project show proj_abc123def456
+agentuity project show proj_abc123def456
 ```
 
 Show output in JSON format:
 
 ```bash
-bunx @agentuity/cli --json project show proj_abc123def456
+agentuity --json project show proj_abc123def456
 ```
 
 Get item details:
 
 ```bash
-bunx @agentuity/cli project get proj_abc123def456
+agentuity project get proj_abc123def456
 ```
 
 ## Output

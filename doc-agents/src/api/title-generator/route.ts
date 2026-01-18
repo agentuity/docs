@@ -1,13 +1,22 @@
-import { createRouter } from '@agentuity/runtime';
+import { createRouter, validator } from '@agentuity/runtime';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
 
 const router = createRouter();
 
-interface ConversationMessage {
-	author: 'USER' | 'ASSISTANT';
-	content: string;
-}
+// Schema for conversation message
+export const ConversationMessageSchema = z.object({
+	author: z.enum(['USER', 'ASSISTANT']),
+	content: z.string(),
+});
+
+// Schema for title generator request
+export const TitleGeneratorRequestSchema = z.object({
+	conversationHistory: z.array(ConversationMessageSchema),
+});
+
+type ConversationMessage = z.infer<typeof ConversationMessageSchema>;
 
 function sanitizeTitle(input: string): string {
 	if (!input) return '';
@@ -51,14 +60,9 @@ function formatHistory(messages: ConversationMessage[]): string {
 }
 
 // POST /api/title-generator
-router.post('/', async (c) => {
+router.post('/', validator({ input: TitleGeneratorRequestSchema }), async (c) => {
 	try {
-		const body = await c.req.json();
-		const conversationHistory = body.conversationHistory as ConversationMessage[];
-
-		if (!conversationHistory || !Array.isArray(conversationHistory)) {
-			return c.json({ error: 'conversationHistory is required and must be an array' }, 400);
-		}
+		const { conversationHistory } = c.req.valid('json');
 
 		if (conversationHistory.length === 0) {
 			return c.json({ title: 'New chat' });

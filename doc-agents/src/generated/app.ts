@@ -12,6 +12,7 @@ import {
   getAppState,
   getAppConfig,
   register,
+  getSpanProcessors,
   createServices,
   runAgentSetups,
   getThreadProvider,
@@ -21,14 +22,17 @@ import {
   setGlobalRouter,
   enableProcessExitProtection,
   hasWaitUntilPending,
+  loadBuildMetadata,
   createWorkbenchRouter,
+  bootstrapRuntimeEnv,
+  patchBunS3ForStorageDev,
 } from '@agentuity/runtime';
 import type { Context } from 'hono';
-import { websocket } from 'hono/bun';
-import { serveStatic } from 'hono/bun';
+import { websocket, serveStatic } from 'hono/bun';
 import { readFileSync, existsSync } from 'node:fs';
 import { type LogLevel } from '@agentuity/core';
-import { bootstrapRuntimeEnv } from '@agentuity/runtime';
+import { injectAnalytics, registerAnalyticsRoutes } from './webanalytics.js';
+import { analyticsConfig } from './analytics-config.js';
 
 // Runtime mode detection helper
 // Dynamic string concatenation prevents Bun.build from inlining NODE_ENV at build time
@@ -44,9 +48,17 @@ if (isDevelopment()) {
 	await bootstrapRuntimeEnv({ projectDir: import.meta.dir + '/../..' });
 }
 
+// Step 0.25: load our runtime metadata and cache it
+loadBuildMetadata();
+
+// Step 0.5: Patch Bun's S3 client for Agentuity storage endpoints
+// Agentuity storage uses virtual-hosted-style URLs (*.storage.dev)
+// This patches s3.file() to automatically set virtualHostedStyle: true
+patchBunS3ForStorageDev();
+
 // Step 1: Initialize telemetry and services
 const serverUrl = `http://127.0.0.1:${process.env.PORT || '3500'}`;
-const otel = register({ processors: [], logLevel: (process.env.AGENTUITY_LOG_LEVEL || 'info') as LogLevel });
+const otel = register({ processors: getSpanProcessors(), logLevel: (process.env.AGENTUITY_LOG_LEVEL || 'info') as LogLevel });
 
 // Step 2: Create router and set as global
 const app = createRouter();
@@ -62,11 +74,17 @@ app.use('*', createBaseMiddleware({
 	meter: otel.meter,
 }));
 
-app.use('/_agentuity/*', createCorsMiddleware());
+app.use('/_agentuity/workbench/*', createCorsMiddleware());
 app.use('/api/*', createCorsMiddleware());
 
 // Critical: otelMiddleware creates session/thread/waitUntilHandler
-app.use('/_agentuity/*', createOtelMiddleware());
+// Only apply to routes that need full session tracking:
+// - /api/* routes (agent/API invocations)
+// - /_agentuity/workbench/* routes (workbench API)
+// Explicitly excluded (no session tracking, no Catalyst events):
+// - /_agentuity/webanalytics/* (web analytics - uses lightweight cookie-only middleware)
+// - /_agentuity/health, /_agentuity/ready, /_agentuity/idle (health checks)
+app.use('/_agentuity/workbench/*', createOtelMiddleware());
 app.use('/api/*', createOtelMiddleware());
 
 // Critical: agentMiddleware sets up agent context
@@ -74,6 +92,10 @@ app.use('/api/*', createAgentMiddleware(''));
 
 // Step 4: Import user's app.ts (runs createApp, gets state/config)
 await import('../../app.js');
+
+// Step 4.5: Import agent registry to ensure all agents are registered
+// This is needed for workbench metadata to return JSON schemas
+await import('./registry.js');
 
 // Step 5: Initialize providers
 const appState = getAppState();
@@ -100,6 +122,7 @@ if (!isDevelopment()) {
 	};
 	const idleHandler = (c: Context) => {
 		// Check if server is idle (no pending requests/connections)
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const server = (globalThis as any).__AGENTUITY_SERVER__;
 		if (!server) return c.text('NO', 200, { 'Content-Type': 'text/plain; charset=utf-8' });
 		
@@ -146,26 +169,25 @@ if (isDevelopment()) {
 	});
 }
 
+// Register analytics routes
+registerAnalyticsRoutes(app);
+
 // Asset proxy routes - Development mode only (proxies to Vite asset server)
 if (isDevelopment() && process.env.VITE_PORT) {
 	const VITE_ASSET_PORT = parseInt(process.env.VITE_PORT, 10);
 
 	const proxyToVite = async (c: Context) => {
 		const viteUrl = `http://127.0.0.1:${VITE_ASSET_PORT}${c.req.path}`;
-		const controller = new AbortController();
-		const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
 		try {
 			otel.logger.debug(`[Proxy] ${c.req.method} ${c.req.path} -> Vite:${VITE_ASSET_PORT}`);
-			const res = await fetch(viteUrl, { signal: controller.signal });
-			clearTimeout(timeout);
+			const res = await fetch(viteUrl, { signal: AbortSignal.timeout(10000) });
 			otel.logger.debug(`[Proxy] ${c.req.path} -> ${res.status} (${res.headers.get('content-type')})`);
 			return new Response(res.body, {
 				status: res.status,
 				headers: res.headers,
 			});
 		} catch (err) {
-			clearTimeout(timeout);
-			if (err instanceof Error && err.name === 'AbortError') {
+			if (err instanceof Error && err.name === 'TimeoutError') {
 				otel.logger.error(`Vite proxy timeout: ${c.req.path}`);
 				return c.text('Vite asset server timeout', 504);
 			}
@@ -208,47 +230,45 @@ if (isDevelopment() && process.env.VITE_PORT) {
 // Mount API routes
 const { default: router_0 } = await import('../api/agent_pulse/route.js');
 app.route('/api/agent_pulse', router_0);
-const { default: router_1 } = await import('../api/title-generator/route.js');
-app.route('/api/title-generator', router_1);
-const { default: router_2 } = await import('../api/doc-qa/route.js');
-app.route('/api/doc-qa', router_2);
+const { default: router_1 } = await import('../api/doc-qa/route.js');
+app.route('/api/doc-qa', router_1);
+const { default: router_2 } = await import('../api/process-docs/route.js');
+app.route('/api/process-docs', router_2);
 const { default: router_3 } = await import('../api/sessions/route.js');
 app.route('/api/sessions', router_3);
-const { default: router_4 } = await import('../api/process-docs/route.js');
-app.route('/api/process-docs', router_4);
+const { default: router_4 } = await import('../api/title-generator/route.js');
+app.route('/api/title-generator', router_4);
 
-// Mount workbench API routes (/_agentuity/workbench/*)
-const workbenchRouter = createWorkbenchRouter();
-app.route('/', workbenchRouter);
+const hasWorkbenchConfig = true;
+const hasWorkbench = isDevelopment() && hasWorkbenchConfig;
+if (hasWorkbench) {
+	// Mount workbench API routes (/_agentuity/workbench/*)
+	const workbenchRouter = createWorkbenchRouter();
+	app.route('/', workbenchRouter);
+}
 
-// Workbench routes - Runtime mode detection
-// Both dev and prod run from .agentuity/app.js (dev bundles before running)
-// So workbench-src is always in the same directory
-const workbenchSrcDir = import.meta.dir + '/workbench-src';
-const workbenchIndexPath = import.meta.dir + '/workbench/index.html';
-const workbenchIndex = existsSync(workbenchIndexPath) 
-	? readFileSync(workbenchIndexPath, 'utf-8')
-	: '';
-
-if (isDevelopment()) {
+if (hasWorkbench) {
 	// Development mode: Let Vite serve source files with HMR
-	app.get('/workbench', async (c: Context) => {
-		const html = await Bun.file(workbenchSrcDir + '/index.html').text();
-		// Rewrite script/css paths to use Vite's @fs protocol
-		const withVite = html
-			.replace('src="./main.tsx"', `src="/@fs${workbenchSrcDir}/main.tsx"`)
-			.replace('href="./styles.css"', `href="/@fs${workbenchSrcDir}/styles.css"`);
-		return c.html(withVite);
-	});
-} else {
-	// Production mode: Serve pre-built assets
-	if (workbenchIndex) {
-		app.get('/workbench', (c: Context) => c.html(workbenchIndex));
-		app.get('/workbench/*', serveStatic({ root: import.meta.dir + '/workbench' }));
+	if (isDevelopment()) {
+		const workbenchSrcDir = import.meta.dir + '/workbench-src';
+		const workbenchIndexPath = import.meta.dir + '/workbench-src/index.html';
+		app.get('/workbench', async (c: Context) => {
+			const html = await Bun.file(workbenchIndexPath).text();
+			// Rewrite script/css paths to use Vite's @fs protocol
+			const withVite = html
+				.replace('src="./main.tsx"', `src="/@fs${workbenchSrcDir}/main.tsx"`)
+				.replace('href="./styles.css"', `href="/@fs${workbenchSrcDir}/styles.css"`);
+			return c.html(withVite);
+		});
+	} else {
+		// Production mode disables the workbench assets
 	}
 }
 
 // Web routes - Runtime mode detection (dev proxies to Vite, prod serves static)
+// Note: Session/thread cookies are set by /_agentuity/webanalytics/session.js (loaded via script tag)
+// This keeps the HTML response static and cacheable
+
 if (isDevelopment()) {
 	// Development mode: Proxy HTML from Vite to enable React Fast Refresh
 	const VITE_ASSET_PORT = parseInt(process.env.VITE_PORT || '5173', 10);
@@ -261,12 +281,15 @@ if (isDevelopment()) {
 			const res = await fetch(viteUrl, { signal: AbortSignal.timeout(10000) });
 
 			// Get HTML text and transform relative paths to absolute
-			const html = await res.text();
-			const transformedHtml = html
+			let html = await res.text();
+			html = html
 				.replace(/src="\.\//g, 'src="/src/web/')
 				.replace(/href="\.\//g, 'href="/src/web/');
 
-			return new Response(transformedHtml, {
+			// Inject analytics config and script (session/thread read from cookies by beacon)
+			html = injectAnalytics(html, analyticsConfig);
+
+			return new Response(html, {
 				status: res.status,
 				headers: res.headers,
 			});
@@ -281,7 +304,9 @@ if (isDevelopment()) {
 	// 404 for unmatched API/system routes
 	app.all('/_agentuity/*', (c: Context) => c.notFound());
 	app.all('/api/*', (c: Context) => c.notFound());
-	
+	if (!hasWorkbench) {
+		app.all('/workbench/*', (c: Context) => c.notFound());
+	}
 	
 	// SPA fallback - serve index.html for client-side routing
 	app.get('*', (c: Context) => {
@@ -295,15 +320,24 @@ if (isDevelopment()) {
 } else {
 	// Production mode: Serve static files from bundled output
 	const indexHtmlPath = import.meta.dir + '/client/index.html';
-	const indexHtml = existsSync(indexHtmlPath)
+	const baseIndexHtml = existsSync(indexHtmlPath)
 		? readFileSync(indexHtmlPath, 'utf-8')
 		: '';
 	
-	if (!indexHtml) {
+	if (!baseIndexHtml) {
 		otel.logger.warn('Production HTML not found at %s', indexHtmlPath);
 	}
+
+	const prodHtmlHandler = (c: Context) => {
+		if (!baseIndexHtml) {
+			return c.text('Production build incomplete', 500);
+		}
+		// Inject analytics config and script (session/thread loaded via session.js)
+		const html = injectAnalytics(baseIndexHtml, analyticsConfig);
+		return c.html(html);
+	};
 	
-	app.get('/', (c: Context) => indexHtml ? c.html(indexHtml) : c.text('Production build incomplete', 500));
+	app.get('/', prodHtmlHandler);
 
 	// Serve static assets from /assets/* (Vite bundled output)
 	app.use('/assets/*', serveStatic({ root: import.meta.dir + '/client' }));
@@ -314,7 +348,9 @@ if (isDevelopment()) {
 	// 404 for unmatched API/system routes (IMPORTANT: comes before SPA fallback)
 	app.all('/_agentuity/*', (c: Context) => c.notFound());
 	app.all('/api/*', (c: Context) => c.notFound());
-	
+	if (!hasWorkbench) {
+		app.all('/workbench/*', (c: Context) => c.notFound());
+	}
 
 	// SPA fallback with asset protection
 	app.get('*', (c: Context) => {
@@ -323,7 +359,7 @@ if (isDevelopment()) {
 		if (/\.[a-zA-Z0-9]+$/.test(path)) {
 			return c.notFound();
 		}
-		return c.html(indexHtml);
+		return prodHtmlHandler(c);
 	});
 }
 
@@ -349,6 +385,7 @@ if (typeof Bun !== 'undefined') {
 	});
 	
 	// Make server available globally for health checks
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	(globalThis as any).__AGENTUITY_SERVER__ = server;
 	
 	otel.logger.info(`Server listening on http://127.0.0.1:${port}`);
