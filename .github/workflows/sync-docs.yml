@@ -62,9 +62,9 @@ jobs:
 
       - name: Build and send payload
         env:
-          AGENTUITY_TOKEN: ${{ secrets.AGENTUITY_TOKEN }}
+          AGENT_BEARER_TOKEN: ${{ secrets.AGENT_BEARER_TOKEN }}
         run: |
           set -euo pipefail
           cat changed-files.txt | \
             ./bin/build-payload.sh "${{ github.repository }}" incremental | \
-            ./bin/send-webhook.sh "https://p0f83a312791b60ff.agentuity.run/api/process-docs" "Bearer $AGENTUITY_TOKEN"
+            ./bin/send-webhook.sh "https://p0f83a312791b60ff.agentuity.run/api/process-docs" "Bearer $AGENT_BEARER_TOKEN"
