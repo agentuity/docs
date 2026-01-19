@@ -21,10 +21,6 @@ export function createStreamingProcessor<TOOLS extends Record<string, Tool>>(
 		transform(chunk, controller) {
 			try {
 				switch (chunk.type) {
-					case 'start-step':
-						logger.info('=== STARTING STEP ===');
-						break;
-
 					case 'text-delta':
 						if (chunk.text) {
 							controller.enqueue(
@@ -46,31 +42,19 @@ export function createStreamingProcessor<TOOLS extends Record<string, Tool>>(
 									category: 'tool',
 								})
 							);
-							logger.debug('Tool called: %s', toolName);
 						}
 						break;
 
+					case 'start-step':
 					case 'reasoning-delta':
-						logger.debug('REASONING: %s', chunk.text);
-						break;
-
 					case 'tool-result':
-						logger.debug('Tool result received for: %s', chunk.toolName);
-						break;
-
 					case 'finish-step':
-						logger.debug('=== FINISHED STEP with reason: %s ===', chunk.finishReason);
-						break;
-
 					case 'finish':
-						logger.debug('=== STREAM COMPLETE: finishReason=%s', chunk.finishReason);
-						break;
-
 					case 'start':
 					case 'tool-input-start':
 					case 'tool-input-delta':
 					case 'tool-input-end':
-						logger.debug('Internal chunk type: %s', chunk.type);
+						// Internal chunk types - no logging needed in production
 						break;
 
 					default:
@@ -90,10 +74,8 @@ export function createStreamingProcessor<TOOLS extends Record<string, Tool>>(
 
 		async flush(controller) {
 			try {
-				logger.debug('=== STREAM COMPLETE ===');
-
 				// Process tutorial state and fetch complete tutorial data if available
-				const finalTutorialData = await handleTutorialState(state, logger);
+				const finalTutorialData = await handleTutorialState(state, { logger });
 
 				// Send tutorial data if available
 				if (finalTutorialData) {
@@ -103,7 +85,6 @@ export function createStreamingProcessor<TOOLS extends Record<string, Tool>>(
 							tutorialData: finalTutorialData,
 						})
 					);
-					logger.debug('Sent tutorial data chunk with step content');
 				}
 
 				// Send finish signal

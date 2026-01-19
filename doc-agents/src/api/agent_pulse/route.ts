@@ -86,7 +86,7 @@ ${historyText}`;
 			title = title.slice(1, -1).trim();
 		}
 		if (title.length > 60) title = title.slice(0, 60).trim();
-		title = title.charAt(0).toUpperCase() + title.slice(1).toLowerCase();
+		title = title.charAt(0).toUpperCase() + title.slice(1);
 
 		// Re-fetch and set title only if still empty
 		const latest = await (kv.get as (store: string, key: string) => Promise<{ exists: boolean; data?: Session }>)(config.kvStoreName, sessionKey);
@@ -95,8 +95,6 @@ ${historyText}`;
 		if (current.title) return;
 		current.title = title || 'New chat';
 		await kv.set(config.kvStoreName, sessionKey, current);
-
-		logger.info('Generated title for session %s: %s', sessionKey, title);
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
 		logger.error('Title generation failed: %s', msg);

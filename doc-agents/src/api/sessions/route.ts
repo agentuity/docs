@@ -92,19 +92,12 @@ router.post('/', bearerTokenAuth, cookieAuth, validator({ input: SessionSchema }
 
         const session = c.req.valid('json');
 
-        // Process any messages to ensure timestamps are in ISO string format
         if (session.messages && session.messages.length > 0) {
-            session.messages = session.messages.map((message) => {
-                if (message.timestamp) {
-                    // Ensure timestamp is ISO string
-                    const date = new Date(message.timestamp);
-                    return {
-                        ...message,
-                        timestamp: date.toISOString(),
-                    };
-                }
-                return message;
-            });
+            const now = new Date().toISOString();
+            session.messages = session.messages.map((message) => ({
+                ...message,
+                timestamp: now,
+            }));
         }
 
         const sessionKey = `${userId}_${session.sessionId}`;
@@ -181,18 +174,13 @@ router.put('/:sessionId', bearerTokenAuth, cookieAuth, validator({ input: Sessio
             return c.json({ error: 'Session ID mismatch' }, { status: 400 });
         }
 
-        // Process any messages to ensure timestamps are in ISO string format
+        // Generate server-side timestamps for messages that don't have one
         if (session.messages && session.messages.length > 0) {
-            session.messages = session.messages.map((message) => {
-                if (message.timestamp) {
-                    const date = new Date(message.timestamp);
-                    return {
-                        ...message,
-                        timestamp: date.toISOString(),
-                    };
-                }
-                return message;
-            });
+            const now = new Date().toISOString();
+            session.messages = session.messages.map((message) => ({
+                ...message,
+                timestamp: now,
+            }));
         }
 
         // Update the individual session
@@ -270,10 +258,16 @@ router.post('/:sessionId/messages', bearerTokenAuth, cookieAuth, validator({ inp
             return c.json({ error: 'Session not found' }, { status: 404 });
         }
 
+        // Generate server-side timestamp
+        const messageWithTimestamp = {
+            ...message,
+            timestamp: new Date().toISOString(),
+        };
+
         const session = sessionResponse.data;
         const updatedSession: Session = {
             ...session,
-            messages: [...session.messages, message],
+            messages: [...session.messages, messageWithTimestamp],
         };
 
         // Update the individual session

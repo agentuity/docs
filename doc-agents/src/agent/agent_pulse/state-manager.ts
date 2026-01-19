@@ -15,7 +15,6 @@ export async function handleTutorialState(
 		}
 
 		const action = state.action;
-		ctx.logger.info('Processing tutorial action: %s', JSON.stringify(action, null, 2));
 
 		switch (action.type) {
 			case ActionType.START_TUTORIAL_STEP:
@@ -35,7 +34,6 @@ export async function handleTutorialState(
 								totalSteps: tutorialStep.data.tutorialStep.totalSteps,
 							},
 						};
-						ctx.logger.info('Tutorial state processed successfully');
 						return tutorialData;
 					} else {
 						// Handle API errors gracefully

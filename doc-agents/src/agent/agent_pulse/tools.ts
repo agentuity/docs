@@ -41,7 +41,6 @@ export async function createTools(state: ToolState, agentContext: any) {
 				currentStep: stepNumber,
 				totalSteps: tutorialResponse.data.totalSteps,
 			};
-			agentContext.logger.info('Added start_tutorial action to state for: %s at step %d', tutorialId, stepNumber);
 			return `Starting "${data.title}". Total steps: ${data.totalSteps} \n\n Description: ${data.description}`;
 		},
 	});
@@ -57,7 +56,6 @@ export async function createTools(state: ToolState, agentContext: any) {
 			query: z.string().describe('The question or query to send to the query function'),
 		}),
 		execute: async ({ query }) => {
-			agentContext.logger.info('Querying doc-qa agent with: %s', query);
 			try {
 				const response = await docQAAgent.run({
 					message: query,

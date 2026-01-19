@@ -106,7 +106,6 @@ ${tutorialContext}
 
 Stream your reasoning steps clearly.`;
 
-		ctx.logger.debug('Built system prompt with tutorial context');
 		return systemPrompt;
 	} catch (error) {
 		ctx.logger.error(

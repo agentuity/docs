@@ -209,7 +209,6 @@ async function saveAssistantMessage(
 
 		// Save session
 		await kv.set(storeName, sessionKey, session);
-		logger.info('Saved assistant message to session: %s', sessionKey);
 
 		return session;
 	} catch (error) {

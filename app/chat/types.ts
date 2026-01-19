@@ -30,7 +30,6 @@ export const MessageSchema = z.object({
   id: z.string().min(1),
   author: z.enum(['USER', 'ASSISTANT']),
   content: z.string(),
-  timestamp: z.string(),
   tutorialData: TutorialDataSchema.optional()
 });
 

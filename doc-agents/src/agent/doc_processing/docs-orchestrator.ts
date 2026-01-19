@@ -16,7 +16,7 @@ async function removeVectorsByPath(
 
 	while (true) {
 		const vectors = await ctx.vector.search(vectorStoreName, {
-			query: 'A',
+			query: 'anything',
 			limit: 100,
 			metadata: { path: logicalPath },
 		});
@@ -146,7 +146,7 @@ export async function clearVectorDb(ctx: any) {
 	ctx.logger.info('Clearing all vectors from store: %s', VECTOR_STORE_NAME);
 	while (true) {
 		const batch = await ctx.vector.search(VECTOR_STORE_NAME, {
-			query: ' ',
+			query: 'anything',
 			limit: 1000,
 		});
 		if (batch.length === 0) break;
