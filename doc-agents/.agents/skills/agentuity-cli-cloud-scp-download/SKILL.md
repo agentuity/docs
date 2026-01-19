@@ -43,25 +43,25 @@ agentuity cloud scp download <source> [destination] [options]
 Download to current directory:
 
 ```bash
-agentuity cloud scp download /var/log/app.log
+bunx @agentuity/cli cloud scp download /var/log/app.log
 ```
 
 Download to specific path:
 
 ```bash
-agentuity cloud scp download /var/log/app.log ./logs/
+bunx @agentuity/cli cloud scp download /var/log/app.log ./logs/
 ```
 
 Download from specific project:
 
 ```bash
-agentuity cloud scp download /app/config.json --identifier=proj_abc123xyz
+bunx @agentuity/cli cloud scp download /app/config.json --identifier=proj_abc123xyz
 ```
 
 Download multiple files:
 
 ```bash
-agentuity cloud scp download ~/logs/*.log ./logs/
+bunx @agentuity/cli cloud scp download ~/logs/*.log ./logs/
 ```
 
 ## Output

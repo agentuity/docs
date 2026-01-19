@@ -41,7 +41,7 @@ agentuity cloud queue dlq purge <queue_name> [options]
 Purge all DLQ messages:
 
 ```bash
-agentuity cloud queue dlq purge my-queue --confirm
+bunx @agentuity/cli cloud queue dlq purge my-queue --confirm
 ```
 
 ## Output

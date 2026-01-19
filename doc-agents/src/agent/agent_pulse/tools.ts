@@ -63,7 +63,7 @@ export async function createTools(state: ToolState, agentContext: any) {
 				return response;
 			} catch (error) {
 				agentContext.logger.error('Error calling doc-qa agent: %s', error);
-				return { answer: 'Failed to retrieve documentation', documents: [] };
+				return { answer: 'Failed to retrieve documentation', documents: [] as { url: string; title: string }[] };
 			}
 		},
 	});

@@ -35,17 +35,17 @@ agentuity git list [options]
 List all accessible GitHub repositories:
 
 ```bash
-agentuity git list
+bunx @agentuity/cli git list
 ```
 
 List repos for a specific organization:
 
 ```bash
-agentuity git list --org org_abc123
+bunx @agentuity/cli git list --org org_abc123
 ```
 
 List repos in JSON format:
 
 ```bash
-agentuity --json git list
+bunx @agentuity/cli --json git list
 ```

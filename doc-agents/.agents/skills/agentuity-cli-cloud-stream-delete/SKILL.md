@@ -36,19 +36,19 @@ agentuity cloud stream delete <id>
 Delete a stream:
 
 ```bash
-agentuity stream delete stream-id-123
+bunx @agentuity/cli stream delete stream-id-123
 ```
 
 Delete stream (using alias):
 
 ```bash
-agentuity stream rm stream-id-456
+bunx @agentuity/cli stream rm stream-id-456
 ```
 
 Delete stream (using alias):
 
 ```bash
-agentuity stream del stream-id-789
+bunx @agentuity/cli stream del stream-id-789
 ```
 
 ## Output

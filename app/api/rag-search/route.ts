@@ -112,23 +112,30 @@ export async function GET(request: NextRequest) {
 			Array.isArray(data.documents) &&
 			data.documents.length > 0
 		) {
-			const uniqueDocuments = [...new Set(data.documents as string[])];
+			// Deduplicate by URL
+			const seenUrls = new Set<string>();
+			const uniqueDocuments = data.documents.filter((doc) => {
+				if (seenUrls.has(doc.url)) return false;
+				seenUrls.add(doc.url);
+				return true;
+			});
 
-			uniqueDocuments.forEach((docPath: string, index: number) => {
+			uniqueDocuments.forEach((doc, index: number) => {
 				try {
-					const url = documentPathToUrl(docPath);
-					const metadata = getDocumentMetadata(docPath);
-					const snippet = getDocumentSnippet(docPath);
+					const url = documentPathToUrl(doc.url);
+
+					const title = doc.title || getDocumentMetadata(doc.url).title;
+					const snippet = getDocumentSnippet(doc.url);
 
 					results.push({
 						id: `doc-${Date.now()}-${index}`,
 						url: url,
-						title: metadata.title,
+						title: title,
 						content: snippet,
 						type: 'document',
 					});
 				} catch (error) {
-					console.warn(`Failed to process document ${docPath}:`, error);
+					console.warn(`Failed to process document ${doc.url}:`, error);
 				}
 			});
 		}

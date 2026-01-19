@@ -43,13 +43,13 @@ agentuity cloud sandbox snapshot tag <snapshotId> [tag] [options]
 Tag a snapshot as "latest":
 
 ```bash
-agentuity cloud sandbox snapshot tag snp_abc123 latest
+bunx @agentuity/cli cloud sandbox snapshot tag snp_abc123 latest
 ```
 
 Remove a tag from a snapshot:
 
 ```bash
-agentuity cloud sandbox snapshot tag snp_abc123 --clear
+bunx @agentuity/cli cloud sandbox snapshot tag snp_abc123 --clear
 ```
 
 ## Output

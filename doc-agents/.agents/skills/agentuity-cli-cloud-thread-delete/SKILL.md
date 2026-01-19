@@ -35,5 +35,5 @@ agentuity cloud thread delete <thread_id>
 Delete a thread by ID:
 
 ```bash
-agentuity cloud thread delete thrd_abc123xyz
+bunx @agentuity/cli cloud thread delete thrd_abc123xyz
 ```

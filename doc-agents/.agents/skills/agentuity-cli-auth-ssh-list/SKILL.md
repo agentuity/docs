@@ -28,19 +28,19 @@ agentuity auth ssh list
 List items:
 
 ```bash
-agentuity auth ssh list
+bunx @agentuity/cli auth ssh list
 ```
 
 List items:
 
 ```bash
-agentuity auth ssh ls
+bunx @agentuity/cli auth ssh ls
 ```
 
 Show output in JSON format:
 
 ```bash
-agentuity --json auth ssh list
+bunx @agentuity/cli --json auth ssh list
 ```
 
 ## Output

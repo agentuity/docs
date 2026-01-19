@@ -56,19 +56,19 @@ agentuity cloud sandbox run <command...> [options]
 Run a simple command:
 
 ```bash
-agentuity cloud sandbox run -- echo "hello world"
+bunx @agentuity/cli cloud sandbox run -- echo "hello world"
 ```
 
 Run with resource limits:
 
 ```bash
-agentuity cloud sandbox run --memory 1Gi --cpu 1000m -- bun run index.ts
+bunx @agentuity/cli cloud sandbox run --memory 1Gi --cpu 1000m -- bun run index.ts
 ```
 
 Run with network access enabled:
 
 ```bash
-agentuity cloud sandbox run --network -- curl https://api.example.com
+bunx @agentuity/cli cloud sandbox run --network -- curl https://api.example.com
 ```
 
 ## Output

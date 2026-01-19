@@ -35,7 +35,7 @@ agentuity cloud queue sources list <queue_name>
 List queue sources:
 
 ```bash
-agentuity cloud queue sources list my-queue
+bunx @agentuity/cli cloud queue sources list my-queue
 ```
 
 ## Output

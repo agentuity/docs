@@ -45,19 +45,19 @@ agentuity cloud queue publish <queue_name> <payload> [options]
 Publish a JSON message:
 
 ```bash
-agentuity cloud queue publish my-queue '{"task":"process"}'
+bunx @agentuity/cli cloud queue publish my-queue '{"task":"process"}'
 ```
 
 Publish with metadata:
 
 ```bash
-agentuity cloud queue publish my-queue '{"task":"process"}' --metadata '{"priority":"high"}'
+bunx @agentuity/cli cloud queue publish my-queue '{"task":"process"}' --metadata '{"priority":"high"}'
 ```
 
 Publish with 1h TTL:
 
 ```bash
-agentuity cloud queue publish my-queue "hello" --ttl 3600
+bunx @agentuity/cli cloud queue publish my-queue "hello" --ttl 3600
 ```
 
 ## Output

@@ -34,25 +34,25 @@ agentuity auth ssh add [options]
 Add SSH key interactively:
 
 ```bash
-agentuity auth ssh add
+bunx @agentuity/cli auth ssh add
 ```
 
 Add SSH key from file:
 
 ```bash
-agentuity auth ssh add --file ~/.ssh/id_ed25519.pub
+bunx @agentuity/cli auth ssh add --file ~/.ssh/id_ed25519.pub
 ```
 
 Add deploy key from file:
 
 ```bash
-agentuity auth ssh add --file ./deploy_key.pub
+bunx @agentuity/cli auth ssh add --file ./deploy_key.pub
 ```
 
 Add SSH key from stdin:
 
 ```bash
-cat ~/.ssh/id_rsa.pub | agentuity auth ssh add
+cat ~/.ssh/id_rsa.pub | bunx @agentuity/cli auth ssh add
 ```
 
 ## Output

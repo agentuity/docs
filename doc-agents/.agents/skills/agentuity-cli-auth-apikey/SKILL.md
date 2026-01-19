@@ -28,13 +28,13 @@ agentuity auth apikey
 Print the API key:
 
 ```bash
-agentuity auth apikey
+bunx @agentuity/cli auth apikey
 ```
 
 Output API key in JSON format:
 
 ```bash
-agentuity --json auth apikey
+bunx @agentuity/cli --json auth apikey
 ```
 
 ## Output

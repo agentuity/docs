@@ -46,13 +46,13 @@ agentuity cloud queue create <queue_type> [options]
 Create a worker queue named my-tasks:
 
 ```bash
-agentuity cloud queue create worker --name my-tasks
+bunx @agentuity/cli cloud queue create worker --name my-tasks
 ```
 
 Create a pubsub queue with 24h TTL:
 
 ```bash
-agentuity cloud queue create pubsub --name events --ttl 86400
+bunx @agentuity/cli cloud queue create pubsub --name events --ttl 86400
 ```
 
 ## Output

@@ -46,7 +46,7 @@ agentuity cloud queue destinations update <queue_name> <destination_id> [options
 Disable a destination:
 
 ```bash
-agentuity cloud queue destinations update my-queue dest_abc123 --disabled
+bunx @agentuity/cli cloud queue destinations update my-queue dest_abc123 --disabled
 ```
 
 ## Output

@@ -24,7 +24,7 @@ agentuity auth org unselect
 Clear default organization:
 
 ```bash
-agentuity auth org unselect
+bunx @agentuity/cli auth org unselect
 ```
 
 ## Output

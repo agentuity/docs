@@ -24,11 +24,11 @@ agentuity cloud region current
 Show default region:
 
 ```bash
-agentuity cloud region current
+bunx @agentuity/cli cloud region current
 ```
 
 Show output in JSON format:
 
 ```bash
-agentuity cloud region current --json
+bunx @agentuity/cli cloud region current --json
 ```

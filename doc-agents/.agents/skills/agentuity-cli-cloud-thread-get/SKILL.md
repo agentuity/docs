@@ -35,7 +35,7 @@ agentuity cloud thread get <thread_id>
 Get a thread by ID:
 
 ```bash
-agentuity cloud thread get thrd_abc123xyz
+bunx @agentuity/cli cloud thread get thrd_abc123xyz
 ```
 
 ## Output

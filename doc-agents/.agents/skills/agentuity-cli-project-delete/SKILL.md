@@ -41,37 +41,37 @@ agentuity project delete [id] [options]
 Delete item:
 
 ```bash
-agentuity project delete
+bunx @agentuity/cli project delete
 ```
 
 Delete item:
 
 ```bash
-agentuity project delete proj_abc123def456
+bunx @agentuity/cli project delete proj_abc123def456
 ```
 
 Use confirm option:
 
 ```bash
-agentuity project delete proj_abc123def456 --confirm
+bunx @agentuity/cli project delete proj_abc123def456 --confirm
 ```
 
 Delete item:
 
 ```bash
-agentuity project rm proj_abc123def456
+bunx @agentuity/cli project rm proj_abc123def456
 ```
 
 Delete item:
 
 ```bash
-agentuity --explain project delete proj_abc123def456
+bunx @agentuity/cli --explain project delete proj_abc123def456
 ```
 
 Delete item:
 
 ```bash
-agentuity --dry-run project delete proj_abc123def456
+bunx @agentuity/cli --dry-run project delete proj_abc123def456
 ```
 
 ## Output

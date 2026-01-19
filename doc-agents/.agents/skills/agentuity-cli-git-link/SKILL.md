@@ -40,49 +40,49 @@ agentuity git link [options]
 Link current project to a GitHub repository:
 
 ```bash
-agentuity git link
+bunx @agentuity/cli git link
 ```
 
 Link to a specific repo non-interactively:
 
 ```bash
-agentuity git link --repo owner/repo --branch main --confirm
+bunx @agentuity/cli git link --repo owner/repo --branch main --confirm
 ```
 
 Link from the current directory:
 
 ```bash
-agentuity git link --root .
+bunx @agentuity/cli git link --root .
 ```
 
 Link to a specific branch:
 
 ```bash
-agentuity git link --branch main
+bunx @agentuity/cli git link --branch main
 ```
 
 Enable preview deployments on PRs:
 
 ```bash
-agentuity git link --preview true
+bunx @agentuity/cli git link --preview true
 ```
 
 Disable automatic deployments on push:
 
 ```bash
-agentuity git link --deploy false
+bunx @agentuity/cli git link --deploy false
 ```
 
 Link a subdirectory in a monorepo:
 
 ```bash
-agentuity git link --root packages/my-agent
+bunx @agentuity/cli git link --root packages/my-agent
 ```
 
 Link and return JSON result:
 
 ```bash
-agentuity --json git link --repo owner/repo --branch main --confirm
+bunx @agentuity/cli --json git link --repo owner/repo --branch main --confirm
 ```
 
 ## Output

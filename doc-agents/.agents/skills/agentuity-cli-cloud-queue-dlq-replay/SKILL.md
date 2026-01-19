@@ -36,7 +36,7 @@ agentuity cloud queue dlq replay <queue_name> <message_id>
 Replay a DLQ message:
 
 ```bash
-agentuity cloud queue dlq replay my-queue msg-123
+bunx @agentuity/cli cloud queue dlq replay my-queue msg-123
 ```
 
 ## Output

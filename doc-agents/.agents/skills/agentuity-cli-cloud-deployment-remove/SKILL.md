@@ -43,19 +43,19 @@ agentuity cloud deployment remove <deployment_id> [options]
 Remove with confirmation:
 
 ```bash
-agentuity cloud deployment remove dep_abc123xyz
+bunx @agentuity/cli cloud deployment remove dep_abc123xyz
 ```
 
 Remove without confirmation:
 
 ```bash
-agentuity cloud deployment remove dep_abc123xyz --force
+bunx @agentuity/cli cloud deployment remove dep_abc123xyz --force
 ```
 
 Remove deployment from specific project:
 
 ```bash
-agentuity cloud deployment remove deployment-2024-11-20 --project-id=proj_abc123xyz
+bunx @agentuity/cli cloud deployment remove deployment-2024-11-20 --project-id=proj_abc123xyz
 ```
 
 ## Output

@@ -24,11 +24,11 @@ agentuity auth org current
 Show default organization:
 
 ```bash
-agentuity auth org current
+bunx @agentuity/cli auth org current
 ```
 
 Show output in JSON format:
 
 ```bash
-agentuity auth org current --json
+bunx @agentuity/cli auth org current --json
 ```

@@ -28,19 +28,19 @@ agentuity cloud keyvalue list-namespaces
 List all namespaces:
 
 ```bash
-agentuity kv list-namespaces
+bunx @agentuity/cli kv list-namespaces
 ```
 
 List namespaces (using alias):
 
 ```bash
-agentuity kv namespaces
+bunx @agentuity/cli kv namespaces
 ```
 
 List namespaces (short alias):
 
 ```bash
-agentuity kv ns
+bunx @agentuity/cli kv ns
 ```
 
 ## Output

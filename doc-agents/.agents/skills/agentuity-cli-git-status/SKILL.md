@@ -29,13 +29,13 @@ agentuity git status
 Show GitHub status for current project:
 
 ```bash
-agentuity git status
+bunx @agentuity/cli git status
 ```
 
 Get status in JSON format:
 
 ```bash
-agentuity --json git status
+bunx @agentuity/cli --json git status
 ```
 
 ## Output

@@ -41,25 +41,25 @@ agentuity auth ssh delete [fingerprints...] [options]
 Delete item:
 
 ```bash
-agentuity auth ssh delete
+bunx @agentuity/cli auth ssh delete
 ```
 
 Delete item:
 
 ```bash
-agentuity auth ssh delete <fingerprint>
+bunx @agentuity/cli auth ssh delete <fingerprint>
 ```
 
 Delete item:
 
 ```bash
-agentuity --explain auth ssh delete abc123
+bunx @agentuity/cli --explain auth ssh delete abc123
 ```
 
 Delete item:
 
 ```bash
-agentuity --dry-run auth ssh delete abc123
+bunx @agentuity/cli --dry-run auth ssh delete abc123
 ```
 
 ## Output

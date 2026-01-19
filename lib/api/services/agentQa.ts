@@ -9,9 +9,14 @@ interface AgentQaRequest {
   message: string;
 }
 
+interface DocumentReference {
+  url: string;
+  title: string;
+}
+
 interface AgentQaResponse {
   answer: string;
-  documents?: string[];
+  documents?: DocumentReference[];
 }
 
 const AGENT_QA_TIMEOUT = 30000; // 30 seconds

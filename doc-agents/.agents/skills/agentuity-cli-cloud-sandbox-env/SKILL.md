@@ -43,19 +43,19 @@ agentuity cloud sandbox env <sandboxId> [vars...] [options]
 Set an environment variable:
 
 ```bash
-agentuity cloud sandbox env sbx_abc123 MY_VAR=value
+bunx @agentuity/cli cloud sandbox env sbx_abc123 MY_VAR=value
 ```
 
 Set multiple environment variables:
 
 ```bash
-agentuity cloud sandbox env sbx_abc123 VAR1=value1 VAR2=value2
+bunx @agentuity/cli cloud sandbox env sbx_abc123 VAR1=value1 VAR2=value2
 ```
 
 Delete an environment variable:
 
 ```bash
-agentuity cloud sandbox env sbx_abc123 --delete MY_VAR
+bunx @agentuity/cli cloud sandbox env sbx_abc123 --delete MY_VAR
 ```
 
 ## Output

@@ -6,9 +6,14 @@ import { retrieveRelevantDocs } from './retriever';
 import type { Answer } from './types';
 
 // Zod schema for AI SDK compatibility
+const DocumentReferenceSchemaZod = z.object({
+	url: z.string(),
+	title: z.string(),
+});
+
 const AnswerSchemaZod = z.object({
 	answer: z.string(),
-	documents: z.array(z.string()),
+	documents: z.array(DocumentReferenceSchemaZod),
 });
 
 export default async function answerQuestion(
@@ -50,13 +55,20 @@ Your role is to be as helpful as possible and try to assist user by answering th
 === OUTPUT FORMAT ===
 Return **valid JSON only** matching this TypeScript type:
 
+type DocumentReference = {
+  url: string;     // Path with optional heading anchor
+  title: string;   // Human-readable title for the document
+}
+
 type LlmAnswer = {
-  answer: string;        // The reply in MDX format or the clarifying question
-  documents: string[];   // Paths of documents actually cited
+  answer: string;              // The reply in MDX format or the clarifying question
+  documents: DocumentReference[];   // Documents actually cited
 }
 
 The "answer" field should contain properly formatted MDX content that will render beautifully in a documentation site.
-The "documents" field must contain the path to the documents you used to answer the question. On top of the path, you may include a specific heading of the document so that the navigation will take the user to the exact point of the document you reference. To format the heading, use the following convention: append the heading to the path using a hash symbol (#) followed by the heading text, replacing spaces with hyphens (-) and converting all characters to lowercase. If there are multiple identical headings, append an index to the heading in the format -index (e.g., #example-3 for the third occurrence of "Example"). For example, if the document path is "/docs/guide" and the heading is "Getting Started", the formatted path would be "/docs/guide#getting-started".
+The "documents" field must contain references to the documents you used to answer the question:
+- "url": The path to the document. You may include a specific heading anchor to link to the exact section. Format: append the heading using a hash symbol (#) followed by the heading text, replacing spaces with hyphens (-) and converting to lowercase. Example: "/docs/guide#getting-started"
+- "title": Use the document's title from the <DOCS> content. Each document in <DOCS> has a "title" field - use that exact value. If citing a specific section, you may append the section name in parentheses, e.g. "Getting Started (Quickstart Guide)"
 If you cited no documents, return an empty array. Do NOT wrap the JSON in Markdown or add any extra keys.
 
 === MDX FORMATTING EXAMPLES ===

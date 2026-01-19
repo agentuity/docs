@@ -35,13 +35,13 @@ agentuity cloud region select [region]
 Select default region:
 
 ```bash
-agentuity cloud region select
+bunx @agentuity/cli cloud region select
 ```
 
 Set specific region as default:
 
 ```bash
-agentuity cloud region select usc
+bunx @agentuity/cli cloud region select usc
 ```
 
 ## Output

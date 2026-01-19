@@ -44,19 +44,19 @@ agentuity cloud sandbox download <sandboxId> <output> [options]
 Download sandbox files as tar.gz archive:
 
 ```bash
-agentuity cloud sandbox download sbx_abc123 ./backup.tar.gz
+bunx @agentuity/cli cloud sandbox download sbx_abc123 ./backup.tar.gz
 ```
 
 Download sandbox files as zip archive:
 
 ```bash
-agentuity cloud sandbox download sbx_abc123 ./backup.zip --format zip
+bunx @agentuity/cli cloud sandbox download sbx_abc123 ./backup.zip --format zip
 ```
 
 Download only a specific directory:
 
 ```bash
-agentuity cloud sandbox download sbx_abc123 ./backup.tar.gz --path /subdir
+bunx @agentuity/cli cloud sandbox download sbx_abc123 ./backup.tar.gz --path /subdir
 ```
 
 ## Output

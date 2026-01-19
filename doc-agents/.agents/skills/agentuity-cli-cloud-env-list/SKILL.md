@@ -37,31 +37,31 @@ agentuity cloud env list [options]
 List all variables (project + org merged):
 
 ```bash
-agentuity env list
+bunx @agentuity/cli env list
 ```
 
 Show unmasked values:
 
 ```bash
-agentuity env list --no-mask
+bunx @agentuity/cli env list --no-mask
 ```
 
 List only secrets:
 
 ```bash
-agentuity env list --secrets
+bunx @agentuity/cli env list --secrets
 ```
 
 List only env vars:
 
 ```bash
-agentuity env list --env-only
+bunx @agentuity/cli env list --env-only
 ```
 
 List only organization-level variables:
 
 ```bash
-agentuity env list --org
+bunx @agentuity/cli env list --org
 ```
 
 ## Output

@@ -56,31 +56,31 @@ agentuity cloud sandbox snapshot build <directory> [options]
 Build a snapshot from the current directory using agentuity-snapshot.yaml:
 
 ```bash
-agentuity cloud sandbox snapshot build .
+bunx @agentuity/cli cloud sandbox snapshot build .
 ```
 
 Build using a custom build file:
 
 ```bash
-agentuity cloud sandbox snapshot build ./project --file custom-build.yaml
+bunx @agentuity/cli cloud sandbox snapshot build ./project --file custom-build.yaml
 ```
 
 Build with environment variable substitution and custom tag:
 
 ```bash
-agentuity cloud sandbox snapshot build . --env API_KEY=secret --tag production
+bunx @agentuity/cli cloud sandbox snapshot build . --env API_KEY=secret --tag production
 ```
 
 Validate the build file without uploading:
 
 ```bash
-agentuity cloud sandbox snapshot build . --dry-run
+bunx @agentuity/cli cloud sandbox snapshot build . --dry-run
 ```
 
 Force rebuild even if content is unchanged:
 
 ```bash
-agentuity cloud sandbox snapshot build . --force
+bunx @agentuity/cli cloud sandbox snapshot build . --force
 ```
 
 ## Output

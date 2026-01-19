@@ -43,17 +43,17 @@ agentuity cloud queue messages <queue_name> [message_id] [options]
 List messages in a queue:
 
 ```bash
-agentuity cloud queue messages my-queue
+bunx @agentuity/cli cloud queue messages my-queue
 ```
 
 List first 10 messages:
 
 ```bash
-agentuity cloud queue messages my-queue --limit 10
+bunx @agentuity/cli cloud queue messages my-queue --limit 10
 ```
 
 Get a specific message by ID:
 
 ```bash
-agentuity cloud queue messages my-queue msg_abc123
+bunx @agentuity/cli cloud queue messages my-queue msg_abc123
 ```

@@ -35,13 +35,13 @@ agentuity cloud agent get <agent_id>
 Get item details:
 
 ```bash
-agentuity cloud agent get agent_abc123
+bunx @agentuity/cli cloud agent get agent_abc123
 ```
 
 Show output in JSON format:
 
 ```bash
-agentuity --json cloud agent get agent_abc123
+bunx @agentuity/cli --json cloud agent get agent_abc123
 ```
 
 ## Output

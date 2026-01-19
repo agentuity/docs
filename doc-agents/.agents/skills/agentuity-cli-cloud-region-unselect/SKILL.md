@@ -24,7 +24,7 @@ agentuity cloud region unselect
 Clear default region:
 
 ```bash
-agentuity cloud region unselect
+bunx @agentuity/cli cloud region unselect
 ```
 
 ## Output

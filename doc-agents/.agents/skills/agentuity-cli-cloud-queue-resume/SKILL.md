@@ -35,7 +35,7 @@ agentuity cloud queue resume <name>
 Resume a paused queue:
 
 ```bash
-agentuity cloud queue resume my-queue
+bunx @agentuity/cli cloud queue resume my-queue
 ```
 
 ## Output

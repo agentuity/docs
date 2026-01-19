@@ -36,7 +36,7 @@ agentuity cloud sandbox snapshot get <snapshotId>
 Get details for a snapshot:
 
 ```bash
-agentuity cloud sandbox snapshot get snp_abc123
+bunx @agentuity/cli cloud sandbox snapshot get snp_abc123
 ```
 
 ## Output

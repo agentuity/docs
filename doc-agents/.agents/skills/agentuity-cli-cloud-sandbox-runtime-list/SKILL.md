@@ -36,7 +36,7 @@ agentuity cloud sandbox runtime list [options]
 List all available runtimes:
 
 ```bash
-agentuity cloud sandbox runtime list
+bunx @agentuity/cli cloud sandbox runtime list
 ```
 
 ## Output

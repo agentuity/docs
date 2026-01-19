@@ -82,7 +82,11 @@ export function App() {
 										<strong>Sources:</strong>
 										<ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
 											{result.documents.map((doc, idx) => (
-												<li key={idx}>{doc}</li>
+												<li key={idx}>
+													<a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa' }}>
+														{doc.title}
+													</a>
+												</li>
 											))}
 										</ul>
 									</div>

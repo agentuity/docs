@@ -36,7 +36,7 @@ agentuity cloud queue sources get <queue_name> <source_id>
 Get source details:
 
 ```bash
-agentuity cloud queue sources get my-queue qsrc_abc123
+bunx @agentuity/cli cloud queue sources get my-queue qsrc_abc123
 ```
 
 ## Output

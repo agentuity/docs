@@ -43,7 +43,7 @@ agentuity cloud queue destinations create <queue_name> [options]
 Create a webhook destination:
 
 ```bash
-agentuity cloud queue destinations create my-queue --url https://example.com/webhook
+bunx @agentuity/cli cloud queue destinations create my-queue --url https://example.com/webhook
 ```
 
 ## Output

@@ -35,25 +35,25 @@ agentuity cloud db list [options]
 List items:
 
 ```bash
-agentuity cloud db list
+bunx @agentuity/cli cloud db list
 ```
 
 Show output in JSON format:
 
 ```bash
-agentuity --json cloud db list
+bunx @agentuity/cli --json cloud db list
 ```
 
 List items:
 
 ```bash
-agentuity cloud db ls
+bunx @agentuity/cli cloud db ls
 ```
 
 Use show credentials option:
 
 ```bash
-agentuity cloud db list --show-credentials
+bunx @agentuity/cli cloud db list --show-credentials
 ```
 
 ## Output

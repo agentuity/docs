@@ -36,7 +36,7 @@ agentuity cloud queue nack <queue_name> <message_id>
 Return message to queue for retry:
 
 ```bash
-agentuity cloud queue nack my-queue msg-123
+bunx @agentuity/cli cloud queue nack my-queue msg-123
 ```
 
 ## Output

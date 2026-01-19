@@ -42,25 +42,25 @@ agentuity cloud storage delete [name] [filename] [options]
 Delete a storage bucket:
 
 ```bash
-agentuity cloud storage delete my-bucket
+bunx @agentuity/cli cloud storage delete my-bucket
 ```
 
 Delete a file from a bucket:
 
 ```bash
-agentuity cloud storage rm my-bucket file.txt
+bunx @agentuity/cli cloud storage rm my-bucket file.txt
 ```
 
 Interactive selection to delete a bucket:
 
 ```bash
-agentuity cloud storage delete
+bunx @agentuity/cli cloud storage delete
 ```
 
 Dry-run: show what would be deleted without making changes:
 
 ```bash
-agentuity --dry-run cloud storage delete my-bucket
+bunx @agentuity/cli --dry-run cloud storage delete my-bucket
 ```
 
 ## Output

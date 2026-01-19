@@ -51,55 +51,55 @@ agentuity cloud db logs <database> [options]
 View query logs for database:
 
 ```bash
-agentuity cloud db logs my-database
+bunx @agentuity/cli cloud db logs my-database
 ```
 
 Limit to 50 log entries:
 
 ```bash
-agentuity cloud db logs my-database --limit=50
+bunx @agentuity/cli cloud db logs my-database --limit=50
 ```
 
 Show only queries with errors:
 
 ```bash
-agentuity cloud db logs my-database --has-error
+bunx @agentuity/cli cloud db logs my-database --has-error
 ```
 
 Filter by username:
 
 ```bash
-agentuity cloud db logs my-database --username=user123
+bunx @agentuity/cli cloud db logs my-database --username=user123
 ```
 
 Filter by SQL command type:
 
 ```bash
-agentuity cloud db logs my-database --command=SELECT
+bunx @agentuity/cli cloud db logs my-database --command=SELECT
 ```
 
 Filter by session ID:
 
 ```bash
-agentuity cloud db logs my-database --session-id=sess_abc123
+bunx @agentuity/cli cloud db logs my-database --session-id=sess_abc123
 ```
 
 Show session ID column:
 
 ```bash
-agentuity cloud db logs my-database --show-session-id
+bunx @agentuity/cli cloud db logs my-database --show-session-id
 ```
 
 Show username column:
 
 ```bash
-agentuity cloud db logs my-database --show-username
+bunx @agentuity/cli cloud db logs my-database --show-username
 ```
 
 Show full formatted SQL on separate lines:
 
 ```bash
-agentuity cloud db logs my-database --pretty
+bunx @agentuity/cli cloud db logs my-database --pretty
 ```
 
 ## Output

@@ -37,31 +37,31 @@ agentuity cloud thread list [options]
 List 10 most recent threads:
 
 ```bash
-agentuity cloud thread list
+bunx @agentuity/cli cloud thread list
 ```
 
 List 25 most recent threads:
 
 ```bash
-agentuity cloud thread list --count=25
+bunx @agentuity/cli cloud thread list --count=25
 ```
 
 Filter by project:
 
 ```bash
-agentuity cloud thread list --project-id=proj_*
+bunx @agentuity/cli cloud thread list --project-id=proj_*
 ```
 
 Filter by organization:
 
 ```bash
-agentuity cloud thread list --org-id=org_*
+bunx @agentuity/cli cloud thread list --org-id=org_*
 ```
 
 List all threads regardless of project context:
 
 ```bash
-agentuity cloud thread list --all
+bunx @agentuity/cli cloud thread list --all
 ```
 
 ## Output

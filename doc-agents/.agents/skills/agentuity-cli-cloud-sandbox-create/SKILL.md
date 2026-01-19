@@ -50,37 +50,37 @@ agentuity cloud sandbox create [options]
 Create a sandbox with default settings:
 
 ```bash
-agentuity cloud sandbox create
+bunx @agentuity/cli cloud sandbox create
 ```
 
 Create a sandbox with Python runtime:
 
 ```bash
-agentuity cloud sandbox create --runtime python:3.14
+bunx @agentuity/cli cloud sandbox create --runtime python:3.14
 ```
 
 Create a sandbox with resource limits:
 
 ```bash
-agentuity cloud sandbox create --memory 1Gi --cpu 1000m
+bunx @agentuity/cli cloud sandbox create --memory 1Gi --cpu 1000m
 ```
 
 Create a sandbox with network and custom timeout:
 
 ```bash
-agentuity cloud sandbox create --network --idle-timeout 30m
+bunx @agentuity/cli cloud sandbox create --network --idle-timeout 30m
 ```
 
 Create a sandbox with a specific environment variable:
 
 ```bash
-agentuity cloud sandbox create --env KEY=VAL
+bunx @agentuity/cli cloud sandbox create --env KEY=VAL
 ```
 
 Create a sandbox associated with a specific project:
 
 ```bash
-agentuity cloud sandbox create --project-id proj_123
+bunx @agentuity/cli cloud sandbox create --project-id proj_123
 ```
 
 ## Output

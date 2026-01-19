@@ -21,12 +21,18 @@ export interface AgentPulseRequest {
   tutorialData?: TutorialState;
 }
 
+export interface Source {
+  url: string;
+  title: string;
+}
+
 export interface StreamingChunk {
-  type: 'text-delta' | 'status' | 'tutorial-data' | 'finish' | 'error';
+  type: 'text-delta' | 'status' | 'tutorial-data' | 'sources' | 'finish' | 'error';
   textDelta?: string;
   message?: string;
   category?: string;
   tutorialData?: any;
+  sources?: Source[];
   error?: string;
   details?: string;
 }
@@ -35,6 +41,7 @@ export interface AgentPulseCallbacks {
   onTextDelta?: (text: string) => void;
   onStatus?: (message: string, category?: string) => void;
   onTutorialData?: (data: any) => void;
+  onSources?: (sources: Source[]) => void;
   onFinish?: () => void;
   onError?: (error: string) => void;
 }
@@ -109,6 +116,8 @@ export async function callAgentPulseStreaming(
                 callbacks.onStatus?.(chunk.message || '', chunk.category);
               } else if (chunk.type === 'tutorial-data' && chunk.tutorialData) {
                 callbacks.onTutorialData?.(chunk.tutorialData);
+              } else if (chunk.type === 'sources' && chunk.sources) {
+                callbacks.onSources?.(chunk.sources);
               } else if (chunk.type === 'finish') {
                 callbacks.onFinish?.();
               } else if (chunk.type === 'error') {

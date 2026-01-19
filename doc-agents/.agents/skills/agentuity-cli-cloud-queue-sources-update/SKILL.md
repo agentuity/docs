@@ -47,7 +47,7 @@ agentuity cloud queue sources update <queue_name> <source_id> [options]
 Disable a source:
 
 ```bash
-agentuity cloud queue sources update my-queue qsrc_abc123 --disabled
+bunx @agentuity/cli cloud queue sources update my-queue qsrc_abc123 --disabled
 ```
 
 ## Output

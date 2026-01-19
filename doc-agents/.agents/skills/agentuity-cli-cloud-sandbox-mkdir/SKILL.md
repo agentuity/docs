@@ -43,13 +43,13 @@ agentuity cloud sandbox mkdir <sandboxId> <path> [options]
 Create a directory in the sandbox:
 
 ```bash
-agentuity cloud sandbox mkdir sbx_abc123 /path/to/dir
+bunx @agentuity/cli cloud sandbox mkdir sbx_abc123 /path/to/dir
 ```
 
 Create nested directories recursively:
 
 ```bash
-agentuity cloud sandbox mkdir sbx_abc123 /path/to/nested/dir -p
+bunx @agentuity/cli cloud sandbox mkdir sbx_abc123 /path/to/nested/dir -p
 ```
 
 ## Output

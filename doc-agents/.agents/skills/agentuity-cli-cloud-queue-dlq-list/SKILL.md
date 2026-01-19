@@ -42,7 +42,7 @@ agentuity cloud queue dlq list <queue_name> [options]
 List DLQ messages:
 
 ```bash
-agentuity cloud queue dlq list my-queue
+bunx @agentuity/cli cloud queue dlq list my-queue
 ```
 
 ## Output

@@ -1,5 +1,5 @@
 import type { StreamTextResult, Tool } from 'ai';
-import type { StreamingChunk, Action } from './types';
+import type { StreamingChunk, Action, Source } from './types';
 import { handleTutorialState } from './state-manager';
 
 /**
@@ -12,6 +12,8 @@ export function createStreamingProcessor<TOOLS extends Record<string, Tool>>(
 	logger: any
 ): ReadableStream {
 	const encoder = new TextEncoder();
+	// Track accumulated sources from tool results (deduplicated by URL)
+	const accumulatedSources = new Map<string, Source>();
 
 	const formatEvent = (chunk: StreamingChunk): Uint8Array => {
 		return encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`);
@@ -45,9 +47,20 @@ export function createStreamingProcessor<TOOLS extends Record<string, Tool>>(
 						}
 						break;
 
+						if (chunk.toolName === 'askDocsAgentTool' && chunk.output?.documents) {
+							for (const doc of chunk.output.documents) {
+								if (doc.url && !accumulatedSources.has(doc.url)) {
+									accumulatedSources.set(doc.url, {
+										url: doc.url,
+										title: doc.title || doc.url,
+									});
+								}
+							}
+						}
+						break;
+
 					case 'start-step':
 					case 'reasoning-delta':
-					case 'tool-result':
 					case 'finish-step':
 					case 'finish':
 					case 'start':
@@ -58,7 +71,7 @@ export function createStreamingProcessor<TOOLS extends Record<string, Tool>>(
 						break;
 
 					default:
-						logger.debug('Unhandled chunk type: %s', chunk.type);
+						logger.info('Unhandled chunk type: %s', chunk.type);
 				}
 			} catch (error) {
 				logger.error('Error transforming chunk: %s', error instanceof Error ? error.message : String(error));
@@ -83,6 +96,15 @@ export function createStreamingProcessor<TOOLS extends Record<string, Tool>>(
 						formatEvent({
 							type: 'tutorial-data',
 							tutorialData: finalTutorialData,
+						})
+					);
+				}
+
+				if (accumulatedSources.size > 0) {
+					controller.enqueue(
+						formatEvent({
+							type: 'sources',
+							sources: Array.from(accumulatedSources.values()),
 						})
 					);
 				}

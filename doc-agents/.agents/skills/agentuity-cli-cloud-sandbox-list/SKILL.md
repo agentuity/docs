@@ -39,31 +39,31 @@ agentuity cloud sandbox list [options]
 List all sandboxes:
 
 ```bash
-agentuity cloud sandbox list
+bunx @agentuity/cli cloud sandbox list
 ```
 
 List running sandboxes:
 
 ```bash
-agentuity cloud sandbox list --status running
+bunx @agentuity/cli cloud sandbox list --status running
 ```
 
 List sandboxes for a specific project:
 
 ```bash
-agentuity cloud sandbox list --project-id proj_123
+bunx @agentuity/cli cloud sandbox list --project-id proj_123
 ```
 
 List with pagination:
 
 ```bash
-agentuity cloud sandbox list --limit 10 --offset 20
+bunx @agentuity/cli cloud sandbox list --limit 10 --offset 20
 ```
 
 List all sandboxes regardless of project context:
 
 ```bash
-agentuity cloud sandbox list --all
+bunx @agentuity/cli cloud sandbox list --all
 ```
 
 ## Output

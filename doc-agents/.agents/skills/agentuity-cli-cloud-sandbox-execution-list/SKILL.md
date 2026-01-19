@@ -42,13 +42,13 @@ agentuity cloud sandbox execution list <sandboxId> [options]
 List executions for a sandbox:
 
 ```bash
-agentuity cloud sandbox execution list snbx_abc123
+bunx @agentuity/cli cloud sandbox execution list snbx_abc123
 ```
 
 List with a limit:
 
 ```bash
-agentuity cloud sandbox execution list snbx_abc123 --limit 10
+bunx @agentuity/cli cloud sandbox execution list snbx_abc123 --limit 10
 ```
 
 ## Output

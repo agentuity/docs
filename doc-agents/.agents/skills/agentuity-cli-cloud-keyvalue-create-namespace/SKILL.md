@@ -35,19 +35,19 @@ agentuity cloud keyvalue create-namespace <name>
 Create production namespace:
 
 ```bash
-agentuity kv create-namespace production
+bunx @agentuity/cli kv create-namespace production
 ```
 
 Create staging namespace (using alias):
 
 ```bash
-agentuity kv create staging
+bunx @agentuity/cli kv create staging
 ```
 
 Create cache namespace:
 
 ```bash
-agentuity kv create cache
+bunx @agentuity/cli kv create cache
 ```
 
 ## Output

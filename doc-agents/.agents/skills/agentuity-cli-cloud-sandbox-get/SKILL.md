@@ -36,7 +36,7 @@ agentuity cloud sandbox get <sandboxId>
 Get sandbox information:
 
 ```bash
-agentuity cloud sandbox get abc123
+bunx @agentuity/cli cloud sandbox get abc123
 ```
 
 ## Output

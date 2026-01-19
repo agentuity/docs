@@ -36,7 +36,7 @@ agentuity cloud queue ack <queue_name> <message_id>
 Acknowledge a message:
 
 ```bash
-agentuity cloud queue ack my-queue msg-123
+bunx @agentuity/cli cloud queue ack my-queue msg-123
 ```
 
 ## Output

@@ -41,19 +41,19 @@ agentuity cloud env import <file> [options]
 Import variables from backup file:
 
 ```bash
-agentuity cloud env import .env.backup
+bunx @agentuity/cli cloud env import .env.backup
 ```
 
 Import from .env.local file:
 
 ```bash
-agentuity cloud env import .env.local
+bunx @agentuity/cli cloud env import .env.local
 ```
 
 Import to organization level:
 
 ```bash
-agentuity cloud env import .env.shared --org
+bunx @agentuity/cli cloud env import .env.shared --org
 ```
 
 ## Output

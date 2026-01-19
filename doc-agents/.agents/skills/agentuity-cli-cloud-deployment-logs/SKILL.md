@@ -44,25 +44,25 @@ agentuity cloud deployment logs <deployment_id> [options]
 View logs for deployment:
 
 ```bash
-agentuity cloud deployment logs deploy_abc123xyz
+bunx @agentuity/cli cloud deployment logs deploy_abc123xyz
 ```
 
 Limit to 50 log entries:
 
 ```bash
-agentuity cloud deployment logs deploy_abc123xyz --limit=50
+bunx @agentuity/cli cloud deployment logs deploy_abc123xyz --limit=50
 ```
 
 Hide timestamps:
 
 ```bash
-agentuity cloud deployment logs deploy_abc123xyz --no-timestamps
+bunx @agentuity/cli cloud deployment logs deploy_abc123xyz --no-timestamps
 ```
 
 View logs with specific project:
 
 ```bash
-agentuity cloud deployment logs deploy_abc123xyz --project-id=proj_abc123xyz
+bunx @agentuity/cli cloud deployment logs deploy_abc123xyz --project-id=proj_abc123xyz
 ```
 
 ## Output

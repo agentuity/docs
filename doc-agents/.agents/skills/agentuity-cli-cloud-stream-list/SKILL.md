@@ -38,31 +38,31 @@ agentuity cloud stream list [options]
 List all streams:
 
 ```bash
-agentuity cloud stream list
+bunx @agentuity/cli cloud stream list
 ```
 
 List 50 most recent streams:
 
 ```bash
-agentuity cloud stream ls --size 50
+bunx @agentuity/cli cloud stream ls --size 50
 ```
 
 Filter by name:
 
 ```bash
-agentuity cloud stream list --name agent-logs
+bunx @agentuity/cli cloud stream list --name agent-logs
 ```
 
 Filter by metadata:
 
 ```bash
-agentuity cloud stream list --metadata type=export
+bunx @agentuity/cli cloud stream list --metadata type=export
 ```
 
 Output as JSON:
 
 ```bash
-agentuity cloud stream ls --json
+bunx @agentuity/cli cloud stream ls --json
 ```
 
 ## Output

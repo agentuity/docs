@@ -35,13 +35,13 @@ agentuity cloud queue list [options]
 List all queues:
 
 ```bash
-agentuity cloud queue list
+bunx @agentuity/cli cloud queue list
 ```
 
 List all queues (alias):
 
 ```bash
-agentuity cloud queue ls
+bunx @agentuity/cli cloud queue ls
 ```
 
 ## Output

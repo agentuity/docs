@@ -36,11 +36,11 @@ agentuity cloud queue get <queue_name> [message_id]
 Get queue details:
 
 ```bash
-agentuity cloud queue get my-queue
+bunx @agentuity/cli cloud queue get my-queue
 ```
 
 Get message details:
 
 ```bash
-agentuity cloud queue get my-queue msg_abc123
+bunx @agentuity/cli cloud queue get my-queue msg_abc123
 ```

@@ -34,19 +34,19 @@ agentuity project auth generate [options]
 Generate SQL schema and save to agentuity-auth-schema.sql:
 
 ```bash
-agentuity project auth generate
+bunx @agentuity/cli project auth generate
 ```
 
 Generate schema to a custom path:
 
 ```bash
-agentuity project auth generate --output ./migrations/auth.sql
+bunx @agentuity/cli project auth generate --output ./migrations/auth.sql
 ```
 
 Output SQL to stdout:
 
 ```bash
-agentuity project auth generate --output -
+bunx @agentuity/cli project auth generate --output -
 ```
 
 ## Output

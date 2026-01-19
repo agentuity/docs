@@ -29,19 +29,19 @@ agentuity cloud storage create
 Create a new cloud storage bucket:
 
 ```bash
-agentuity cloud storage create
+bunx @agentuity/cli cloud storage create
 ```
 
 Alias for "cloud storage create" (shorthand "new"):
 
 ```bash
-agentuity cloud storage new
+bunx @agentuity/cli cloud storage new
 ```
 
 Dry-run: display what would be created without making changes:
 
 ```bash
-agentuity --dry-run cloud storage create
+bunx @agentuity/cli --dry-run cloud storage create
 ```
 
 ## Output

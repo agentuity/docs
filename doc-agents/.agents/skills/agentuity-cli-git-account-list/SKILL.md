@@ -28,13 +28,13 @@ agentuity git account list
 List all connected GitHub accounts:
 
 ```bash
-agentuity git account list
+bunx @agentuity/cli git account list
 ```
 
 List accounts in JSON format:
 
 ```bash
-agentuity --json git account list
+bunx @agentuity/cli --json git account list
 ```
 
 ## Output

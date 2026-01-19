@@ -41,25 +41,25 @@ agentuity cloud db delete [name] [options]
 Delete item:
 
 ```bash
-agentuity cloud db delete my-database
+bunx @agentuity/cli cloud db delete my-database
 ```
 
 Delete item:
 
 ```bash
-agentuity cloud db rm my-database
+bunx @agentuity/cli cloud db rm my-database
 ```
 
 Delete item:
 
 ```bash
-agentuity cloud db delete
+bunx @agentuity/cli cloud db delete
 ```
 
 Delete item:
 
 ```bash
-agentuity --dry-run cloud db delete my-database
+bunx @agentuity/cli --dry-run cloud db delete my-database
 ```
 
 ## Output

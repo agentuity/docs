@@ -41,7 +41,7 @@ agentuity cloud queue delete <name> [options]
 Delete a queue (requires confirmation):
 
 ```bash
-agentuity cloud queue delete my-queue --confirm
+bunx @agentuity/cli cloud queue delete my-queue --confirm
 ```
 
 ## Output

@@ -41,13 +41,13 @@ agentuity cloud queue receive <queue_name> [options]
 Receive next message:
 
 ```bash
-agentuity cloud queue receive my-queue
+bunx @agentuity/cli cloud queue receive my-queue
 ```
 
 Receive with 60s visibility timeout:
 
 ```bash
-agentuity cloud queue receive my-queue --timeout 60
+bunx @agentuity/cli cloud queue receive my-queue --timeout 60
 ```
 
 ## Output

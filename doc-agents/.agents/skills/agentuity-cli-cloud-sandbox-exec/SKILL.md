@@ -44,13 +44,13 @@ agentuity cloud sandbox exec <sandboxId> <command...> [options]
 Execute a command in a sandbox:
 
 ```bash
-agentuity cloud sandbox exec abc123 -- echo "hello"
+bunx @agentuity/cli cloud sandbox exec abc123 -- echo "hello"
 ```
 
 Execute with timeout:
 
 ```bash
-agentuity cloud sandbox exec abc123 --timeout 5m -- bun run build
+bunx @agentuity/cli cloud sandbox exec abc123 --timeout 5m -- bun run build
 ```
 
 ## Output

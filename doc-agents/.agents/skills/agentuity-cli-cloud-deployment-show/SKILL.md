@@ -42,13 +42,13 @@ agentuity cloud deployment show <deployment_id> [options]
 Show deployment details by ID:
 
 ```bash
-agentuity cloud deployment show dep_abc123xyz
+bunx @agentuity/cli cloud deployment show dep_abc123xyz
 ```
 
 Show deployment for specific project:
 
 ```bash
-agentuity cloud deployment show deployment-2024-11-20 --project-id=proj_abc123xyz
+bunx @agentuity/cli cloud deployment show deployment-2024-11-20 --project-id=proj_abc123xyz
 ```
 
 ## Output

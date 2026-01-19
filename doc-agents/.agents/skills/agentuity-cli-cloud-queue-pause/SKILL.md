@@ -35,7 +35,7 @@ agentuity cloud queue pause <name>
 Pause a queue:
 
 ```bash
-agentuity cloud queue pause my-queue
+bunx @agentuity/cli cloud queue pause my-queue
 ```
 
 ## Output

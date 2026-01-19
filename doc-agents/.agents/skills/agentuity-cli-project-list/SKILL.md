@@ -28,19 +28,19 @@ agentuity project list
 List projects (human-readable):
 
 ```bash
-agentuity project list
+bunx @agentuity/cli project list
 ```
 
 List projects in JSON format:
 
 ```bash
-agentuity --json project list
+bunx @agentuity/cli --json project list
 ```
 
 Alias for "project list" — list projects (human-readable):
 
 ```bash
-agentuity project ls
+bunx @agentuity/cli project ls
 ```
 
 ## Output

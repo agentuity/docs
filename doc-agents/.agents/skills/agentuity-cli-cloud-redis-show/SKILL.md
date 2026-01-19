@@ -35,19 +35,19 @@ agentuity cloud redis show [options]
 Show Redis connection URL:
 
 ```bash
-agentuity cloud redis show
+bunx @agentuity/cli cloud redis show
 ```
 
 Show Redis URL with credentials visible:
 
 ```bash
-agentuity cloud redis show --show-credentials
+bunx @agentuity/cli cloud redis show --show-credentials
 ```
 
 Show Redis URL as JSON:
 
 ```bash
-agentuity --json cloud redis show
+bunx @agentuity/cli --json cloud redis show
 ```
 
 ## Output

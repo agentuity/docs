@@ -37,7 +37,7 @@ agentuity cloud sandbox rm <sandboxId> <path>
 Remove a file from the sandbox:
 
 ```bash
-agentuity cloud sandbox rm sbx_abc123 /path/to/file.txt
+bunx @agentuity/cli cloud sandbox rm sbx_abc123 /path/to/file.txt
 ```
 
 ## Output

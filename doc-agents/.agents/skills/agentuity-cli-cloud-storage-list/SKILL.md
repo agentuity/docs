@@ -44,37 +44,37 @@ agentuity cloud storage list [name] [prefix] [options]
 List items:
 
 ```bash
-agentuity cloud storage list
+bunx @agentuity/cli cloud storage list
 ```
 
 List items:
 
 ```bash
-agentuity cloud storage list my-bucket
+bunx @agentuity/cli cloud storage list my-bucket
 ```
 
 List items:
 
 ```bash
-agentuity cloud storage list my-bucket path/prefix
+bunx @agentuity/cli cloud storage list my-bucket path/prefix
 ```
 
 Show output in JSON format:
 
 ```bash
-agentuity --json cloud storage list
+bunx @agentuity/cli --json cloud storage list
 ```
 
 List items:
 
 ```bash
-agentuity cloud storage ls
+bunx @agentuity/cli cloud storage ls
 ```
 
 Use show credentials option:
 
 ```bash
-agentuity cloud storage list --show-credentials
+bunx @agentuity/cli cloud storage list --show-credentials
 ```
 
 ## Output

@@ -43,13 +43,13 @@ agentuity cloud sandbox rmdir <sandboxId> <path> [options]
 Remove an empty directory from the sandbox:
 
 ```bash
-agentuity cloud sandbox rmdir sbx_abc123 /path/to/dir
+bunx @agentuity/cli cloud sandbox rmdir sbx_abc123 /path/to/dir
 ```
 
 Remove a directory and all its contents recursively:
 
 ```bash
-agentuity cloud sandbox rmdir sbx_abc123 /path/to/dir -r
+bunx @agentuity/cli cloud sandbox rmdir sbx_abc123 /path/to/dir -r
 ```
 
 ## Output

@@ -10,12 +10,18 @@
  */
 
 // Types
+export interface Source {
+	url: string;
+	title: string;
+}
+
 export interface Message {
 	id: string;
 	author: 'USER' | 'ASSISTANT';
 	content: string;
 	timestamp: string;
 	tutorialData?: TutorialData;
+	sources?: Source[];
 }
 
 export interface Session {
@@ -67,6 +73,7 @@ export function withPersistence(
 
 	let accumulated = '';
 	let capturedTutorialData: TutorialData | null = null;
+	let capturedSources: Source[] = [];
 
 	const decoder = new TextDecoder();
 	const encoder = new TextEncoder();
@@ -99,6 +106,11 @@ export function withPersistence(
 							}
 						}
 					}
+
+					const sources = extractSources(text);
+					if (sources.length > 0) {
+						capturedSources = sources;
+					}
 				}
 
 				// Phase 2: Stream ended - save to KV
@@ -108,6 +120,7 @@ export function withPersistence(
 					sessionKey,
 					accumulated,
 					capturedTutorialData,
+					capturedSources,
 					logger
 				);
 
@@ -124,6 +137,8 @@ export function withPersistence(
 					);
 				}
 			} catch (error) {
+				// Cancel the source reader to signal upstream to stop and release resources
+				await reader.cancel().catch(() => {});
 				logger.error(
 					'Stream persistence error: %s',
 					error instanceof Error ? error.message : String(error)
@@ -176,6 +191,21 @@ function extractTutorialData(text: string): TutorialData | null {
 }
 
 /**
+ * Extract sources from sources events.
+ */
+function extractSources(text: string): Source[] {
+	const match = text.match(/"type":"sources","sources":(\[[^\]]*\])/);
+	if (match && match[1]) {
+		try {
+			return JSON.parse(match[1]) as Source[];
+		} catch {
+			return [];
+		}
+	}
+	return [];
+}
+
+/**
  * Save assistant message to session in KV.
  */
 async function saveAssistantMessage(
@@ -184,6 +214,7 @@ async function saveAssistantMessage(
 	sessionKey: string,
 	content: string,
 	tutorialData: TutorialData | null,
+	sources: Source[],
 	logger: Logger
 ): Promise<Session | null> {
 	try {
@@ -202,6 +233,7 @@ async function saveAssistantMessage(
 			content,
 			timestamp: new Date().toISOString(),
 			...(tutorialData && { tutorialData }),
+			...(sources.length > 0 && { sources }),
 		};
 
 		// Add message to session

@@ -36,19 +36,19 @@ agentuity cloud env pull [options]
 Pull from project:
 
 ```bash
-agentuity env pull
+bunx @agentuity/cli env pull
 ```
 
 Overwrite local with cloud values:
 
 ```bash
-agentuity env pull --force
+bunx @agentuity/cli env pull --force
 ```
 
 Pull from organization:
 
 ```bash
-agentuity env pull --org
+bunx @agentuity/cli env pull --org
 ```
 
 ## Output

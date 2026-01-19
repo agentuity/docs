@@ -35,11 +35,11 @@ agentuity cloud apikey list [options]
 List items:
 
 ```bash
-agentuity cloud apikey list
+bunx @agentuity/cli cloud apikey list
 ```
 
 List items:
 
 ```bash
-agentuity cloud apikey ls
+bunx @agentuity/cli cloud apikey ls
 ```

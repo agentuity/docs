@@ -36,7 +36,7 @@ agentuity cloud sandbox execution get <executionId>
 Get execution information:
 
 ```bash
-agentuity cloud sandbox execution get exec_abc123
+bunx @agentuity/cli cloud sandbox execution get exec_abc123
 ```
 
 ## Output

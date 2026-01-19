@@ -43,31 +43,31 @@ agentuity cloud storage upload <name> <filename> [options]
 Upload file to bucket:
 
 ```bash
-agentuity cloud storage upload my-bucket file.txt
+bunx @agentuity/cli cloud storage upload my-bucket file.txt
 ```
 
 Upload file with content type:
 
 ```bash
-agentuity cloud storage put my-bucket file.txt --content-type text/plain
+bunx @agentuity/cli cloud storage put my-bucket file.txt --content-type text/plain
 ```
 
 Upload file with custom object key:
 
 ```bash
-agentuity cloud storage upload my-bucket file.txt --key custom-name.txt
+bunx @agentuity/cli cloud storage upload my-bucket file.txt --key custom-name.txt
 ```
 
 Upload from stdin:
 
 ```bash
-cat file.txt | agentuity cloud storage upload my-bucket -
+cat file.txt | bunx @agentuity/cli cloud storage upload my-bucket -
 ```
 
 Upload from stdin with custom key:
 
 ```bash
-cat data.json | agentuity cloud storage upload my-bucket - --key data.json
+cat data.json | bunx @agentuity/cli cloud storage upload my-bucket - --key data.json
 ```
 
 ## Output

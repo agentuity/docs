@@ -1,5 +1,10 @@
 import type { TutorialSnippet } from './tutorial';
 
+export interface Source {
+	url: string;
+	title: string;
+}
+
 export interface ConversationMessage {
 	author: 'USER' | 'ASSISTANT';
 	content: string;
@@ -52,11 +57,12 @@ export interface TutorialData {
 }
 
 export interface StreamingChunk {
-	type: 'text-delta' | 'status' | 'tutorial-data' | 'finish' | 'error';
+	type: 'text-delta' | 'status' | 'tutorial-data' | 'sources' | 'finish' | 'error';
 	textDelta?: string;
 	message?: string;
 	category?: string;
 	tutorialData?: TutorialData;
+	sources?: Source[];
 	error?: string;
 	details?: string;
 }

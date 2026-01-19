@@ -42,13 +42,13 @@ agentuity cloud sandbox snapshot delete <snapshotId> [options]
 Delete a snapshot:
 
 ```bash
-agentuity cloud sandbox snapshot delete snp_abc123
+bunx @agentuity/cli cloud sandbox snapshot delete snp_abc123
 ```
 
 Delete without confirmation prompt:
 
 ```bash
-agentuity cloud sandbox snapshot rm snp_abc123 --confirm
+bunx @agentuity/cli cloud sandbox snapshot rm snp_abc123 --confirm
 ```
 
 ## Output

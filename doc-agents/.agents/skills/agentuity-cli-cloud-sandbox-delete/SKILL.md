@@ -42,13 +42,13 @@ agentuity cloud sandbox delete <sandboxId> [options]
 Delete a sandbox:
 
 ```bash
-agentuity cloud sandbox delete abc123
+bunx @agentuity/cli cloud sandbox delete abc123
 ```
 
 Delete without confirmation prompt:
 
 ```bash
-agentuity cloud sandbox delete abc123 --confirm
+bunx @agentuity/cli cloud sandbox delete abc123 --confirm
 ```
 
 ## Output

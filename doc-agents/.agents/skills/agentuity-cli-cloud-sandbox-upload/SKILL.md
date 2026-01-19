@@ -44,19 +44,19 @@ agentuity cloud sandbox upload <sandboxId> <archive> [options]
 Upload and extract a tar.gz archive to sandbox root:
 
 ```bash
-agentuity cloud sandbox upload sbx_abc123 ./archive.tar.gz
+bunx @agentuity/cli cloud sandbox upload sbx_abc123 ./archive.tar.gz
 ```
 
 Upload and extract a zip archive to a specific directory:
 
 ```bash
-agentuity cloud sandbox upload sbx_abc123 ./archive.zip --path /subdir
+bunx @agentuity/cli cloud sandbox upload sbx_abc123 ./archive.zip --path /subdir
 ```
 
 Upload with explicit format specification:
 
 ```bash
-agentuity cloud sandbox upload sbx_abc123 ./archive.bin --format tar.gz
+bunx @agentuity/cli cloud sandbox upload sbx_abc123 ./archive.bin --format tar.gz
 ```
 
 ## Output

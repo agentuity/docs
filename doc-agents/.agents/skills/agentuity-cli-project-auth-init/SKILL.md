@@ -35,7 +35,7 @@ agentuity project auth init [options]
 Set up Agentuity Auth with database selection:
 
 ```bash
-agentuity project auth init
+bunx @agentuity/cli project auth init
 ```
 
 ## Output

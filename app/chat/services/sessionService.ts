@@ -1,4 +1,4 @@
-import type { Session, Message, TutorialData } from '../types';
+import type { Session, Message, TutorialData, Source } from '../types';
 
 export interface SessionServiceResponse<T = any> {
   success: boolean;
@@ -271,6 +271,7 @@ export class SessionService {
     callbacks: {
       onTextDelta?: (text: string) => void,
       onTutorialData?: (tutorialData: TutorialData) => void,
+      onSources?: (sources: Source[]) => void,
       onFinish?: (session: Session) => void,
       onError?: (error: string) => void
     }
@@ -323,6 +324,8 @@ export class SessionService {
                 callbacks.onTextDelta?.(data.textDelta);
               } else if (data.type === 'tutorial-data' && data.tutorialData) {
                 callbacks.onTutorialData?.(data.tutorialData);
+              } else if (data.type === 'sources' && data.sources) {
+                callbacks.onSources?.(data.sources);
               } else if (data.type === 'finish') {
                 // AI done streaming - session comes in session-saved event
               } else if (data.type === 'session-saved') {
@@ -350,6 +353,8 @@ export class SessionService {
                 callbacks.onTextDelta?.(data.textDelta);
               } else if (data.type === 'tutorial-data' && data.tutorialData) {
                 callbacks.onTutorialData?.(data.tutorialData);
+              } else if (data.type === 'sources' && data.sources) {
+                callbacks.onSources?.(data.sources);
               } else if (data.type === 'finish') {
                 // AI done streaming - session comes in session-saved event
               } else if (data.type === 'session-saved') {
@@ -380,6 +385,7 @@ export class SessionService {
     callbacks: {
       onTextDelta?: (text: string) => void,
       onTutorialData?: (tutorialData: TutorialData) => void,
+      onSources?: (sources: Source[]) => void,
       onFinish?: (session: Session) => void,
       onError?: (error: string) => void
     }

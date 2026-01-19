@@ -43,19 +43,19 @@ agentuity cloud vector delete <namespace> <keys...> [options]
 Delete a single vector (interactive):
 
 ```bash
-agentuity vector delete products chair-001
+bunx @agentuity/cli vector delete products chair-001
 ```
 
 Delete multiple vectors without confirmation:
 
 ```bash
-agentuity vector rm knowledge-base doc-123 doc-456 --confirm
+bunx @agentuity/cli vector rm knowledge-base doc-123 doc-456 --confirm
 ```
 
 Bulk delete without confirmation:
 
 ```bash
-agentuity vector del embeddings old-profile-1 old-profile-2 --confirm
+bunx @agentuity/cli vector del embeddings old-profile-1 old-profile-2 --confirm
 ```
 
 ## Output

@@ -36,19 +36,19 @@ agentuity git account remove [options]
 Remove a GitHub account from your organization:
 
 ```bash
-agentuity git account remove
+bunx @agentuity/cli git account remove
 ```
 
 Remove a specific account without prompts:
 
 ```bash
-agentuity git account remove --org org_abc --account int_xyz --confirm
+bunx @agentuity/cli git account remove --org org_abc --account int_xyz --confirm
 ```
 
 Remove and return JSON result:
 
 ```bash
-agentuity --json git account remove --org org_abc --account int_xyz --confirm
+bunx @agentuity/cli --json git account remove --org org_abc --account int_xyz --confirm
 ```
 
 ## Output

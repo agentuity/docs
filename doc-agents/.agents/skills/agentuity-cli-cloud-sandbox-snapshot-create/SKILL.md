@@ -45,25 +45,25 @@ agentuity cloud sandbox snapshot create <sandboxId> [options]
 Create a snapshot from a sandbox:
 
 ```bash
-agentuity cloud sandbox snapshot create sbx_abc123
+bunx @agentuity/cli cloud sandbox snapshot create sbx_abc123
 ```
 
 Create a tagged snapshot:
 
 ```bash
-agentuity cloud sandbox snapshot create sbx_abc123 --tag latest
+bunx @agentuity/cli cloud sandbox snapshot create sbx_abc123 --tag latest
 ```
 
 Create a named snapshot with description:
 
 ```bash
-agentuity cloud sandbox snapshot create sbx_abc123 --name "My Snapshot" --description "Initial setup"
+bunx @agentuity/cli cloud sandbox snapshot create sbx_abc123 --name "My Snapshot" --description "Initial setup"
 ```
 
 Create a public snapshot:
 
 ```bash
-agentuity cloud sandbox snapshot create sbx_abc123 --public
+bunx @agentuity/cli cloud sandbox snapshot create sbx_abc123 --public
 ```
 
 ## Output

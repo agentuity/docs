@@ -35,13 +35,13 @@ agentuity project import [options]
 Import project in current directory:
 
 ```bash
-agentuity project import
+bunx @agentuity/cli project import
 ```
 
 Import project from specified directory:
 
 ```bash
-agentuity project import --dir ./my-agent
+bunx @agentuity/cli project import --dir ./my-agent
 ```
 
 ## Output

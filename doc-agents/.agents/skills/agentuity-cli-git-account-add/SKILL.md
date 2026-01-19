@@ -34,13 +34,13 @@ agentuity git account add [options]
 Add a GitHub account to your organization:
 
 ```bash
-agentuity git account add
+bunx @agentuity/cli git account add
 ```
 
 Add to a specific organization:
 
 ```bash
-agentuity git account add --org org_abc123
+bunx @agentuity/cli git account add --org org_abc123
 ```
 
 ## Output

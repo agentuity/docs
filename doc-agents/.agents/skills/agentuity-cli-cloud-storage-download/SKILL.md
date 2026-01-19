@@ -43,25 +43,25 @@ agentuity cloud storage download <name> <filename> [output] [options]
 Download file from bucket:
 
 ```bash
-agentuity cloud storage download my-bucket file.txt
+bunx @agentuity/cli cloud storage download my-bucket file.txt
 ```
 
 Download file to specific path:
 
 ```bash
-agentuity cloud storage download my-bucket file.txt output.txt
+bunx @agentuity/cli cloud storage download my-bucket file.txt output.txt
 ```
 
 Download file to stdout:
 
 ```bash
-agentuity cloud storage download my-bucket file.txt - > output.txt
+bunx @agentuity/cli cloud storage download my-bucket file.txt - > output.txt
 ```
 
 Download metadata only:
 
 ```bash
-agentuity cloud storage download my-bucket file.txt --metadata
+bunx @agentuity/cli cloud storage download my-bucket file.txt --metadata
 ```
 
 ## Output

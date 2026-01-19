@@ -36,19 +36,19 @@ agentuity cloud keyvalue search <name> <keyword>
 Find all user-related keys:
 
 ```bash
-agentuity kv search production user
+bunx @agentuity/cli kv search production user
 ```
 
 Find all session keys in cache:
 
 ```bash
-agentuity kv search cache session
+bunx @agentuity/cli kv search cache session
 ```
 
 Find all config keys:
 
 ```bash
-agentuity kv search staging config
+bunx @agentuity/cli kv search staging config
 ```
 
 ## Output

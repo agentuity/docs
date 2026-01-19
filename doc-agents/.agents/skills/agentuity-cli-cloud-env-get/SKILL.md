@@ -42,25 +42,25 @@ agentuity cloud env get <key> [options]
 Get environment variable:
 
 ```bash
-agentuity env get NODE_ENV
+bunx @agentuity/cli env get NODE_ENV
 ```
 
 Get a secret value:
 
 ```bash
-agentuity env get API_KEY
+bunx @agentuity/cli env get API_KEY
 ```
 
 Show unmasked value:
 
 ```bash
-agentuity env get API_KEY --no-mask
+bunx @agentuity/cli env get API_KEY --no-mask
 ```
 
 Get org-level variable:
 
 ```bash
-agentuity env get OPENAI_API_KEY --org
+bunx @agentuity/cli env get OPENAI_API_KEY --org
 ```
 
 ## Output

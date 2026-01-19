@@ -36,7 +36,7 @@ agentuity cloud queue destinations delete <queue_name> <destination_id>
 Delete a destination:
 
 ```bash
-agentuity cloud queue destinations delete my-queue dest-123
+bunx @agentuity/cli cloud queue destinations delete my-queue dest-123
 ```
 
 ## Output

@@ -41,19 +41,19 @@ agentuity cloud env delete <key> [options]
 Delete variable:
 
 ```bash
-agentuity env delete OLD_FEATURE_FLAG
+bunx @agentuity/cli env delete OLD_FEATURE_FLAG
 ```
 
 Delete a secret:
 
 ```bash
-agentuity env rm API_KEY
+bunx @agentuity/cli env rm API_KEY
 ```
 
 Delete org-level secret:
 
 ```bash
-agentuity env rm OPENAI_API_KEY --org
+bunx @agentuity/cli env rm OPENAI_API_KEY --org
 ```
 
 ## Output

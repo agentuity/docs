@@ -43,25 +43,25 @@ agentuity cloud sandbox files <sandboxId> [path] [options]
 List files in the sandbox root directory:
 
 ```bash
-agentuity cloud sandbox files sbx_abc123
+bunx @agentuity/cli cloud sandbox files sbx_abc123
 ```
 
 List files in a specific directory:
 
 ```bash
-agentuity cloud sandbox files sbx_abc123 /path/to/dir
+bunx @agentuity/cli cloud sandbox files sbx_abc123 /path/to/dir
 ```
 
 List files with permissions and modification time:
 
 ```bash
-agentuity cloud sandbox files sbx_abc123 -l
+bunx @agentuity/cli cloud sandbox files sbx_abc123 -l
 ```
 
 List files with JSON output:
 
 ```bash
-agentuity cloud sandbox files sbx_abc123 --json
+bunx @agentuity/cli cloud sandbox files sbx_abc123 --json
 ```
 
 ## Output

@@ -36,19 +36,19 @@ agentuity cloud keyvalue delete <namespace> <key>
 Delete user data:
 
 ```bash
-agentuity kv delete production user:123
+bunx @agentuity/cli kv delete production user:123
 ```
 
 Delete cached session:
 
 ```bash
-agentuity kv delete cache session:abc
+bunx @agentuity/cli kv delete cache session:abc
 ```
 
 Delete homepage cache (using alias):
 
 ```bash
-agentuity kv rm staging cache:homepage
+bunx @agentuity/cli kv rm staging cache:homepage
 ```
 
 ## Output

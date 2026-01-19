@@ -46,23 +46,23 @@ agentuity cloud queue stats [name] [options]
 View org-level analytics for all queues:
 
 ```bash
-agentuity cloud queue stats
+bunx @agentuity/cli cloud queue stats
 ```
 
 View detailed analytics for a specific queue:
 
 ```bash
-agentuity cloud queue stats --name my-queue
+bunx @agentuity/cli cloud queue stats --name my-queue
 ```
 
 Stream real-time stats (Ctrl+C to exit):
 
 ```bash
-agentuity cloud queue stats --live
+bunx @agentuity/cli cloud queue stats --live
 ```
 
 Stream queue stats every 10 seconds:
 
 ```bash
-agentuity cloud queue stats --name my-queue --live --interval 10
+bunx @agentuity/cli cloud queue stats --name my-queue --live --interval 10
 ```

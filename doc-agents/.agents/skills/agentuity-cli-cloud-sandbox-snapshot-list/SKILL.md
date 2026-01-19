@@ -37,13 +37,13 @@ agentuity cloud sandbox snapshot list [options]
 List all snapshots:
 
 ```bash
-agentuity cloud sandbox snapshot list
+bunx @agentuity/cli cloud sandbox snapshot list
 ```
 
 List snapshots for a specific sandbox:
 
 ```bash
-agentuity cloud sandbox snapshot list --sandbox sbx_abc123
+bunx @agentuity/cli cloud sandbox snapshot list --sandbox sbx_abc123
 ```
 
 ## Output

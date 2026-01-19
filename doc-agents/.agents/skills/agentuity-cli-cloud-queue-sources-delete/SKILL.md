@@ -36,7 +36,7 @@ agentuity cloud queue sources delete <queue_name> <source_id>
 Delete a source:
 
 ```bash
-agentuity cloud queue sources delete my-queue qsrc_abc123
+bunx @agentuity/cli cloud queue sources delete my-queue qsrc_abc123
 ```
 
 ## Output

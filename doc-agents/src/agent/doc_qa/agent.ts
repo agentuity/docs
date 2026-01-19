@@ -10,7 +10,10 @@ const agent = createAgent('DocQA', {
 		}),
 		output: s.object({
 			answer: s.string(),
-			documents: s.array(s.string()),
+			documents: s.array(s.object({
+				url: s.string(),
+				title: s.string(),
+			})),
 		}),
 	},
 	handler: async (ctx, input) => {

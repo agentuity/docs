@@ -35,13 +35,13 @@ agentuity auth org select [org_id]
 Select default organization:
 
 ```bash
-agentuity auth org select
+bunx @agentuity/cli auth org select
 ```
 
 Set specific organization as default:
 
 ```bash
-agentuity auth org select org_abc123
+bunx @agentuity/cli auth org select org_abc123
 ```
 
 ## Output

@@ -44,7 +44,7 @@ agentuity cloud queue sources create <queue_name> [options]
 Create a source with header authentication:
 
 ```bash
-agentuity cloud queue sources create my-queue --name webhook-1 --auth-type header --auth-value "X-API-Key:secret123"
+bunx @agentuity/cli cloud queue sources create my-queue --name webhook-1 --auth-type header --auth-value "X-API-Key:secret123"
 ```
 
 ## Output

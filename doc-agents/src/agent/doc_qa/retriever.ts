@@ -11,6 +11,7 @@ async function expandPathGroup(
 	path: string,
 	pathChunks: Array<{
 		path: string;
+		title: string;
 		content: string;
 		relevanceScore?: number;
 		chunkIndex?: number;
@@ -104,8 +105,12 @@ async function expandPathGroup(
 			bestScore
 		);
 
+		// Use the title from the first chunk (all chunks from same doc have same title)
+		const title = pathChunks[0]?.title || path;
+
 		return {
 			path,
+			title,
 			content: expandedContent,
 			relevanceScore: bestScore,
 			chunkRange,
@@ -137,6 +142,7 @@ export async function retrieveRelevantDocs(
 		// Process each relevant chunk and expand with context
 		const relevantChunks: Array<{
 			path: string;
+			title: string;
 			content: string;
 			relevanceScore?: number;
 			chunkIndex?: number;
@@ -152,6 +158,10 @@ export async function retrieveRelevantDocs(
 				typeof vector.metadata.path === 'string'
 					? vector.metadata.path
 					: undefined;
+			const title =
+				typeof vector.metadata.title === 'string'
+					? vector.metadata.title
+					: path || 'Documentation';
 			const text =
 				typeof vector.metadata.text === 'string' ? vector.metadata.text : '';
 			const chunkIndex =
@@ -176,6 +186,7 @@ export async function retrieveRelevantDocs(
 
 			relevantChunks.push({
 				path,
+				title,
 				content: text,
 				relevanceScore,
 				chunkIndex: chunkIndex,
@@ -187,6 +198,7 @@ export async function retrieveRelevantDocs(
 			string,
 			Array<{
 				path: string;
+				title: string;
 				content: string;
 				relevanceScore?: number;
 				chunkIndex?: number;

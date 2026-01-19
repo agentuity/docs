@@ -44,25 +44,25 @@ agentuity cloud sandbox cp <source> <destination> [options]
 Copy a local file to a sandbox:
 
 ```bash
-agentuity cloud sandbox cp ./local-file.txt snbx_abc123:/path/to/file.txt
+bunx @agentuity/cli cloud sandbox cp ./local-file.txt snbx_abc123:/path/to/file.txt
 ```
 
 Copy a file from a sandbox to local:
 
 ```bash
-agentuity cloud sandbox cp snbx_abc123:/path/to/file.txt ./local-file.txt
+bunx @agentuity/cli cloud sandbox cp snbx_abc123:/path/to/file.txt ./local-file.txt
 ```
 
 Copy a local directory to a sandbox recursively:
 
 ```bash
-agentuity cloud sandbox cp --recursive ./local-dir snbx_abc123:/path/to/dir
+bunx @agentuity/cli cloud sandbox cp --recursive ./local-dir snbx_abc123:/path/to/dir
 ```
 
 Copy a directory from a sandbox to local recursively:
 
 ```bash
-agentuity cloud sandbox cp -r snbx_abc123:/path/to/dir ./local-dir
+bunx @agentuity/cli cloud sandbox cp -r snbx_abc123:/path/to/dir ./local-dir
 ```
 
 ## Output

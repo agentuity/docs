@@ -48,13 +48,13 @@ agentuity cloud deploy [options]
 Deploy current project:
 
 ```bash
-agentuity cloud deploy
+bunx @agentuity/cli cloud deploy
 ```
 
 Deploy with verbose output:
 
 ```bash
-agentuity cloud deploy --log-level=debug
+bunx @agentuity/cli cloud deploy --log-level=debug
 ```
 
 ## Output

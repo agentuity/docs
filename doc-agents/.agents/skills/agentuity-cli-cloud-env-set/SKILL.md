@@ -43,25 +43,25 @@ agentuity cloud env set <key> <value> [options]
 Set environment variable:
 
 ```bash
-agentuity env set NODE_ENV production
+bunx @agentuity/cli env set NODE_ENV production
 ```
 
 Set port number:
 
 ```bash
-agentuity env set PORT 3000
+bunx @agentuity/cli env set PORT 3000
 ```
 
 Set a secret value:
 
 ```bash
-agentuity env set API_KEY "sk_..." --secret
+bunx @agentuity/cli env set API_KEY "sk_..." --secret
 ```
 
 Set an organization-wide secret:
 
 ```bash
-agentuity env set OPENAI_API_KEY "sk_..." --secret --org
+bunx @agentuity/cli env set OPENAI_API_KEY "sk_..." --secret --org
 ```
 
 ## Output

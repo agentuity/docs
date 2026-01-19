@@ -35,7 +35,7 @@ agentuity cloud queue destinations list <queue_name>
 List queue destinations:
 
 ```bash
-agentuity cloud queue destinations list my-queue
+bunx @agentuity/cli cloud queue destinations list my-queue
 ```
 
 ## Output

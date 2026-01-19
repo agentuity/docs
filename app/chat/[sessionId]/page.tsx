@@ -77,6 +77,18 @@ export default function ChatSessionPage() {
             });
           },
 
+          onSources: (sources) => {
+            setSession(prev => {
+              if (!prev) return prev;
+              const updatedMessages = prev.messages.map(msg =>
+                msg.id === assistantMessage.id
+                  ? { ...msg, sources }
+                  : msg
+              );
+              return { ...prev, messages: updatedMessages };
+            });
+          },
+
           onFinish: (finalSession) => {
             setSession(finalSession);
             setSessions(prev => prev.map(s => s.sessionId === sessionId ? finalSession : s));

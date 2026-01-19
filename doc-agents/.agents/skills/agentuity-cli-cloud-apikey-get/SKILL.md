@@ -35,5 +35,5 @@ agentuity cloud apikey get <id>
 Get item details:
 
 ```bash
-agentuity cloud apikey get <id>
+bunx @agentuity/cli cloud apikey get <id>
 ```

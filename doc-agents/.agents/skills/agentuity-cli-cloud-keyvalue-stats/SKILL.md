@@ -35,17 +35,17 @@ agentuity cloud keyvalue stats [name]
 Show stats for all namespaces:
 
 ```bash
-agentuity kv stats
+bunx @agentuity/cli kv stats
 ```
 
 Show stats for production namespace:
 
 ```bash
-agentuity kv stats production
+bunx @agentuity/cli kv stats production
 ```
 
 Show stats for cache namespace:
 
 ```bash
-agentuity kv stats cache
+bunx @agentuity/cli kv stats cache
 ```

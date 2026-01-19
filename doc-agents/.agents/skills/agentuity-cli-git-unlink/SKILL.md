@@ -35,19 +35,19 @@ agentuity git unlink [options]
 Unlink current project from GitHub:
 
 ```bash
-agentuity git unlink
+bunx @agentuity/cli git unlink
 ```
 
 Unlink without confirmation prompt:
 
 ```bash
-agentuity git unlink --confirm
+bunx @agentuity/cli git unlink --confirm
 ```
 
 Unlink and return JSON result:
 
 ```bash
-agentuity --json git unlink --confirm
+bunx @agentuity/cli --json git unlink --confirm
 ```
 
 ## Output

@@ -35,13 +35,13 @@ agentuity cloud env push [options]
 Push all variables to cloud (project):
 
 ```bash
-agentuity env push
+bunx @agentuity/cli env push
 ```
 
 Push all variables to organization:
 
 ```bash
-agentuity env push --org
+bunx @agentuity/cli env push --org
 ```
 
 ## Output
