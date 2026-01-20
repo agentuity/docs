@@ -37,6 +37,19 @@ To make the search feature work, you must set up `.env.local` with the following
 4. **Update `AGENTUITY_API_KEY`:**
    If you are a contributor from outside the Agentuity organization, ensure that you update the `AGENTUITY_API_KEY` in your `.env.local` file with your specific SDK key from the `agentuity dev` run.
 
+## GitHub Actions Secrets
+
+The following secrets need to be configured in GitHub repository settings for the CI/CD workflows to function:
+
+| Secret | Description |
+|--------|-------------|
+| `AGENT_BEARER_TOKEN` | Bearer token for authenticating with the `process-docs` API endpoint. This must match the `AGENT_BEARER_TOKEN` environment variable configured in your Agentuity deployment. |
+
+To set up:
+1. Go to your GitHub repository → Settings → Secrets and variables → Actions
+2. Click "New repository secret"
+3. Add `AGENT_BEARER_TOKEN` with the same value configured in the Agentuity environment
+
 ## Running Docs Application
 
 ```bash

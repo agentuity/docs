@@ -46,6 +46,7 @@ const config = {
 			permanent: true,
 		},
 	],
+	// API rewrites are handled by middleware.ts (to inject bearer token)
 };
 
 export default withMDX(config);
