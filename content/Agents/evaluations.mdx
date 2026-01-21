@@ -9,9 +9,9 @@ Evaluations (evals) are automated tests that run after your agent completes. The
 
 Most evaluation tools test the LLM: did the model respond appropriately? That's fine for chatbots, but agents aren't single LLM calls. They're entire runs with multiple model calls, tool executions, and orchestration working together.
 
-When an agent fails, the problem is often not the model output. It might be a tool call that returned bad data, a state bug that corrupted context, or an orchestration issue that called the wrong agent. Testing just the LLM response misses all of this.
+Agent failures can happen anywhere in the run—a tool call that returned bad data, a state bug that corrupted context, and more. Testing just the LLM response misses most of this.
 
-Agentuity evals test the whole run, not just model outputs. And they run on every session in production, not just during development. You catch issues with real traffic, not synthetic test cases.
+Agentuity evals test the whole run—every tool call, state change, and orchestration step. They run on every session in production, so you catch issues with real traffic.
 
 **The result:**
 

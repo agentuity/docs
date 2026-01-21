@@ -7,11 +7,11 @@ Every request to your agents gets a unique session ID (`sess_...`). Sessions lin
 
 ## Why Sessions?
 
-Traditional observability tracks individual HTTP requests. That works for stateless web servers, but agents aren't single requests. A single conversation might span dozens of LLM calls, tool executions, and orchestration steps across multiple interactions.
+Traditional observability tracks individual HTTP requests. That works for stateless web servers. Agents go beyond single requests—a conversation might span dozens of LLM calls, tool executions, and orchestration steps across multiple interactions.
 
 Without sessions, debugging becomes guesswork. You see individual logs but can't connect them. Was that error from the same conversation? What happened before it failed? Which user was affected?
 
-Agentuity tracks all of this automatically. Every run ties to a session. Every conversation thread is preserved. You get full context into what happened, when, and why, without writing tracking code.
+Agentuity tracks all of this automatically. Every run ties to a session. Every conversation thread is preserved. You get full context into what happened, when, and why—*without* writing tracking code.
 
 **In practice:**
 
