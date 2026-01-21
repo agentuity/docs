@@ -1,8 +1,11 @@
 'use client';
 
+import { AgentuityProvider } from '@agentuity/react';
 import { Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import CustomSearchDialog from './CustomSearchDialog';
+
+const DOC_AGENTS_BASE_URL = process.env.NEXT_PUBLIC_DOC_AGENTS_URL;
 
 export default function AISearchToggle() {
 	const [isOpen, setIsOpen] = useState(false);
@@ -22,7 +25,9 @@ export default function AISearchToggle() {
 			>
 				<Sparkles className="size-4 text-fd-muted-foreground" />
 			</button>
-			<CustomSearchDialog open={isOpen} onOpenChange={setIsOpen} />
+			<AgentuityProvider baseUrl={DOC_AGENTS_BASE_URL}>
+				<CustomSearchDialog open={isOpen} onOpenChange={setIsOpen} />
+			</AgentuityProvider>
 		</>
 	);
 }
