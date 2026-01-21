@@ -2,18 +2,7 @@ import { RootProvider } from 'fumadocs-ui/provider';
 import { GeistSans } from 'geist/font/sans';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { validateEnv } from '@/lib/env';
 import './global.css';
-
-// Validate environment variables at startup (server-side only)
-if (typeof window === 'undefined') {
-	const isValid = validateEnv();
-	if (!isValid) {
-		console.warn(
-			'Environment validation failed during build – this is expected at build time'
-		);
-	}
-}
 
 export const metadata: Metadata = {
 	metadataBase: new URL('https://www.agentuity.dev'),

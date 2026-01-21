@@ -26,12 +26,20 @@ export const TutorialDataSchema = z.object({
 
 export type TutorialData = z.infer<typeof TutorialDataSchema>;
 
+export const SourceSchema = z.object({
+  url: z.string(),
+  title: z.string()
+});
+
+export type Source = z.infer<typeof SourceSchema>;
+
 export const MessageSchema = z.object({
   id: z.string().min(1),
   author: z.enum(['USER', 'ASSISTANT']),
   content: z.string(),
-  timestamp: z.string(),
-  tutorialData: TutorialDataSchema.optional()
+  timestamp: z.string().optional(),
+  tutorialData: TutorialDataSchema.optional(),
+  sources: z.array(SourceSchema).optional()
 });
 
 export type Message = z.infer<typeof MessageSchema>;
@@ -72,30 +80,14 @@ export const ExecuteRequestSchema = z.object({
 export type ExecuteRequest = z.infer<typeof ExecuteRequestSchema>;
 
 export const StreamingChunkSchema = z.object({
-  type: z.enum(['text-delta', 'status', 'tutorial-data', 'error', 'finish']),
+  type: z.enum(['text-delta', 'status', 'tutorial-data', 'sources', 'error', 'finish']),
   textDelta: z.string().optional(),
   message: z.string().optional(),
   category: z.string().optional(),
   tutorialData: TutorialDataSchema.optional(),
+  sources: z.array(SourceSchema).optional(),
   error: z.string().optional(),
   details: z.string().optional()
 });
 
 export type StreamingChunk = z.infer<typeof StreamingChunkSchema>;
-
-// // Agent request type
-// export interface AgentStreamingRequest {
-//   message: string;
-//   conversationHistory: Message[];
-//   tutorialData?: TutorialData;
-// }
-
-// export interface ChatMessageProps {
-//   message: Message;
-//   onCodeExecute: (code: string, filename: string) => Promise<void>;
-//   onCodeChange: (code: string, filename: string) => void;
-//   executionState: ExecutionState;
-// }
-
-// export type ExecutionState = 'idle' | 'running' | 'completed' | 'error';
-
