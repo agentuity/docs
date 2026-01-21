@@ -3,7 +3,7 @@ title: Durable Streams
 description: Streaming storage for large exports, audit logs, and real-time data
 ---
 
-Durable streams provide streaming storage for large data exports, audit logs, and real-time processing. Streams follow a **write-once, read-many** pattern: once data is written and the stream is closed, the content is immutable and can be accessed via a permanent public URL.
+Durable streams provide streaming storage for large data exports, audit logs, and real-time processing. Streams follow a **write-once, read-many** pattern: once data is written and the stream is closed, the content is immutable and accessible via URL until deleted.
 
 ## Why Durable Streams?
 
@@ -18,7 +18,7 @@ Durable streams solve this by decoupling the data from the connection. Instead o
 - **Refresh-safe**: If someone refreshes the page mid-stream, the URL still works and the content is preserved. The expensive work you already did isn't wasted.
 - **Background processing**: Return the stream URL immediately and write data asynchronously with `ctx.waitUntil()`. Your handler responds fast while the stream continues writing.
 - **Shareable URLs**: A stream is just a URL. You can share it, open it on another device, or have multiple viewers access the same output.
-- **Permanent artifacts**: Once closed, streams are immutable and accessible via their public URL. Useful for audit logs, exports, and generated reports.
+- **Durable artifacts**: Once closed, streams are immutable and remain accessible via their public URL. Useful for audit logs, exports, and generated reports.
 
 ## When to Use Durable Streams
 

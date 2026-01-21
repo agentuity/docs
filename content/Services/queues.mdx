@@ -235,11 +235,11 @@ agentuity cloud queue dlq purge order-processing
 Programmatically:
 
 ```typescript
-import {
-  listDeadLetterMessages,
-  replayDeadLetterMessage,
-  purgeDeadLetter,
-} from '@agentuity/server';
+import { createApp, createAgentContext } from '@agentuity/runtime';
+import { listDeadLetterMessages, replayDeadLetterMessage } from '@agentuity/server';
+
+await createApp();
+const ctx = createAgentContext();
 
 // List failed messages
 const { messages } = await listDeadLetterMessages(client, 'order-processing');
@@ -255,6 +255,8 @@ for (const msg of messages) {
   await replayDeadLetterMessage(client, 'order-processing', msg.id);
 }
 ```
+
+This example uses `createAgentContext()` for logging and tracing. See [Running Agents Without HTTP](/Agents/standalone-execution) for more on standalone execution.
 
 ## HTTP Ingestion Sources
 
