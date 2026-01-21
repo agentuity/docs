@@ -30,7 +30,7 @@ export function middleware(request: NextRequest) {
 	}
 
 	// Proxy API requests to Agentuity backend with bearer token
-	if (pathname.startsWith('/api/sessions') || pathname === '/api/agent_pulse') {
+	if (pathname.startsWith('/api/sessions') || pathname === '/api/agent_pulse' || pathname === '/api/doc-qa') {
 		if (!AGENT_BASE_URL || !AGENT_BEARER_TOKEN) {
 			return NextResponse.json(
 				{ error: 'Server misconfigured: missing AGENT_BASE_URL or AGENT_BEARER_TOKEN' },

@@ -69,11 +69,11 @@ export function useMessages() {
 					sources:
 						result.documents && result.documents.length > 0
 							? result.documents.map((doc, index) => ({
-									id: `doc-${Date.now()}-${index}`,
-									title: doc.title,
-									url: doc.url || '#',
-									content: '',
-								}))
+								id: `doc-${Date.now()}-${index}`,
+								title: doc.title,
+								url: doc.url || '#',
+								content: '',
+							}))
 							: undefined,
 				};
 
