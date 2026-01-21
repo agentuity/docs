@@ -6,6 +6,9 @@ import { useState } from 'react';
 import CustomSearchDialog from './CustomSearchDialog';
 
 const DOC_AGENTS_BASE_URL = process.env.NEXT_PUBLIC_DOC_AGENTS_URL;
+const DOC_AGENTS_AUTH_HEADER = process.env.NEXT_PUBLIC_DOC_AGENTS_BEARER_TOKEN
+	? `Bearer ${process.env.NEXT_PUBLIC_DOC_AGENTS_BEARER_TOKEN}`
+	: undefined;
 
 export default function AISearchToggle() {
 	const [isOpen, setIsOpen] = useState(false);
@@ -25,7 +28,7 @@ export default function AISearchToggle() {
 			>
 				<Sparkles className="size-4 text-fd-muted-foreground" />
 			</button>
-			<AgentuityProvider baseUrl={DOC_AGENTS_BASE_URL}>
+			<AgentuityProvider baseUrl={DOC_AGENTS_BASE_URL} authHeader={DOC_AGENTS_AUTH_HEADER}>
 				<CustomSearchDialog open={isOpen} onOpenChange={setIsOpen} />
 			</AgentuityProvider>
 		</>
