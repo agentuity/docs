@@ -33,8 +33,8 @@ const logger = createLogger('info');
 
 // Initialize the KV service
 function initializeKVService() {
-  if (!process.env.AGENTUITY_SDK_KEY || !process.env.AGENTUITY_REGION) {
-    throw new Error('AGENTUITY_SDK_KEY and AGENTUITY_REGION environment variables are required');
+  if (!process.env.AGENTUITY_SDK_KEY) {
+    throw new Error('AGENTUITY_SDK_KEY environment variable is required');
   }
 
   const adapter = createServerFetchAdapter({
@@ -43,7 +43,7 @@ function initializeKVService() {
     },
   }, logger);
 
-  const serviceUrls = getServiceUrls(process.env.AGENTUITY_REGION);
+  const serviceUrls = getServiceUrls(config.agentuityRegion);
   return new KeyValueStorageService(serviceUrls.keyvalue, adapter);
 }
 

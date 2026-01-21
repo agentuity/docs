@@ -30,21 +30,26 @@ export function middleware(request: NextRequest) {
 	}
 
 	// Proxy API requests to Agentuity backend with bearer token
-	if (pathname.startsWith('/api/sessions') || pathname === '/api/agent_pulse') {
-		if (!AGENT_BASE_URL || !AGENT_BEARER_TOKEN) {
+	if (pathname.startsWith('/api/sessions') || pathname === '/api/agent_pulse' || pathname === '/api/doc-qa') {
+		const missingVars = [];
+		if (!AGENT_BASE_URL) missingVars.push('AGENT_BASE_URL');
+		if (!AGENT_BEARER_TOKEN) missingVars.push('AGENT_BEARER_TOKEN');
+
+		if (missingVars.length > 0) {
+			console.error(`[middleware] Missing required env vars: ${missingVars.join(', ')}`);
 			return NextResponse.json(
-				{ error: 'Server misconfigured: missing AGENT_BASE_URL or AGENT_BEARER_TOKEN' },
+				{ error: `Server misconfigured: missing ${missingVars.join(', ')}` },
 				{ status: 503 }
 			);
 		}
 
 		const destinationUrl = new URL(pathname + request.nextUrl.search, AGENT_BASE_URL);
 
+		console.log(`[middleware] Proxying ${pathname} -> ${destinationUrl.toString()}`);
+
 		// Create headers with bearer token
 		const headers = new Headers(request.headers);
-		if (AGENT_BEARER_TOKEN) {
-			headers.set('Authorization', `Bearer ${AGENT_BEARER_TOKEN}`);
-		}
+		headers.set('Authorization', `Bearer ${AGENT_BEARER_TOKEN}`);
 
 		const response = NextResponse.rewrite(destinationUrl, {
 			request: { headers },
