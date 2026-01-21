@@ -5,6 +5,21 @@ description: Streaming storage for large exports, audit logs, and real-time data
 
 Durable streams provide streaming storage for large data exports, audit logs, and real-time processing. Streams follow a **write-once, read-many** pattern: once data is written and the stream is closed, the content is immutable and can be accessed via a permanent public URL.
 
+## Why Durable Streams?
+
+WebSocket and SSE connections are straightforward to set up, but they're fragile in practice. Tabs get suspended, networks disconnect, pages get refreshed. When the connection drops, any in-flight data is lost—unless you build custom reconnection logic on top.
+
+This becomes a real problem when you're streaming LLM responses. Token streaming is often the primary UI for chat applications, and agentic apps stream tool outputs and progress events over long-running sessions. If someone refreshes mid-generation, you're faced with two bad options: re-run an expensive inference call, or lose the response entirely.
+
+Durable streams solve this by decoupling the data from the connection. Instead of streaming directly to the client, you write to persistent storage and return a URL. The stream continues writing in the background regardless of what happens on the client side.
+
+**What this gives you:**
+
+- **Refresh-safe**: If someone refreshes the page mid-stream, the URL still works and the content is preserved. The expensive work you already did isn't wasted.
+- **Background processing**: Return the stream URL immediately and write data asynchronously with `ctx.waitUntil()`. Your handler responds fast while the stream continues writing.
+- **Shareable URLs**: A stream is just a URL. You can share it, open it on another device, or have multiple viewers access the same output.
+- **Permanent artifacts**: Once closed, streams are immutable and accessible via their public URL. Useful for audit logs, exports, and generated reports.
+
 ## When to Use Durable Streams
 
 | Storage Type | Best For |

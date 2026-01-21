@@ -5,6 +5,21 @@ description: Automatically test and validate agent outputs for quality and compl
 
 Evaluations (evals) are automated tests that run after your agent completes. They validate output quality, check compliance, and monitor performance without blocking agent responses.
 
+## Why Evals?
+
+Most evaluation tools test the LLM: did the model respond appropriately? That's fine for chatbots, but agents aren't single LLM calls. They're entire runs with multiple model calls, tool executions, and orchestration working together.
+
+When an agent fails, the problem is often not the model output. It might be a tool call that returned bad data, a state bug that corrupted context, or an orchestration issue that called the wrong agent. Testing just the LLM response misses all of this.
+
+Agentuity evals test the whole run, not just model outputs. And they run on every session in production, not just during development. You catch issues with real traffic, not synthetic test cases.
+
+**The result:**
+
+- **Full-run evaluation**: Test the entire agent execution, not just LLM responses
+- **Production monitoring**: Evals run on every session automatically, catching issues with real users
+- **Async by default**: Evals don't block responses, so users aren't waiting
+- **Preset library**: Common checks (PII, safety, hallucination) available out of the box
+
 Evals come in two types: **binary** (pass/fail) for yes/no criteria, and **score** (0-1) for quality gradients.
 
 <Callout type="info" title="Where Scores Appear">

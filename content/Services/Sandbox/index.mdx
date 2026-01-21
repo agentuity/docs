@@ -5,6 +5,21 @@ description: Run code in isolated, secure containers with configurable resources
 
 Execute code in isolated Linux containers with configurable resource limits, network controls, and execution timeouts.
 
+## Why Sandboxes?
+
+Agents that reason about code need somewhere safe to execute it. Whether generating Python scripts, validating builds, or running user-provided code, you can't let arbitrary execution happen on your infrastructure.
+
+The pattern keeps repeating: spin up a secure environment, run code, tear it down. Without proper isolation, a single bad script could access sensitive data, exhaust resources, or compromise your systems.
+
+Agentuity sandboxes handle this automatically. Every execution runs in an isolated container with its own filesystem, configurable resource limits, and network controls. When execution completes, the environment is destroyed.
+
+**What this gives you:**
+
+- **Security by default**: Network disabled, filesystem isolated, resource limits enforced
+- **No infrastructure management**: Containers spin up and tear down automatically
+- **Multi-language support**: Your agents are TypeScript, but sandboxes can run Python, Node.js, shell scripts, or anything available via `apt install`
+- **Consistent environments**: Use snapshots to get the same setup every time, with dependencies pre-installed
+
 ## Three Ways to Use Sandboxes
 
 | Method | Best For |

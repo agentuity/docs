@@ -5,6 +5,19 @@ description: Deploy your agents to Agentuity Cloud with automatic infrastructure
 
 Deploy your Agentuity project to the cloud with a single command. The platform handles infrastructure, scaling, and monitoring automatically.
 
+## Why Deploy to Agentuity?
+
+Deploying agents isn't like deploying a web app. Agents need long-running processes, persistent storage, sandbox environments, and observability built in. Setting this up yourself means stitching together containers, databases, secret management, and monitoring.
+
+Agentuity handles all of this automatically. You push code, and the platform provisions everything your agents need: compute, storage, networking, and observability. No infrastructure configuration, no Docker files, no Kubernetes.
+
+**What this gives you:**
+
+- **Single-command deployment**: `agentuity deploy` handles build, upload, and provisioning
+- **Automatic HTTPS**: Every deployment gets secure URLs with SSL certificates
+- **Built-in rollback**: Revert to any previous deployment instantly
+- **Zero infrastructure management**: No containers, orchestration, or scaling to configure
+
 ## Deploy Your Project
 
 ```bash
