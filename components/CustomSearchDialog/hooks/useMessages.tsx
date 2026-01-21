@@ -13,15 +13,24 @@ interface DocQaResponse {
 	}>;
 }
 
+const DOC_QA_ENDPOINT = '/api/doc-qa';
+
 async function queryDocQa(message: string): Promise<DocQaResponse> {
-	const response = await fetch('/api/doc-qa', {
+	const response = await fetch(DOC_QA_ENDPOINT, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ message }),
 	});
 
 	if (!response.ok) {
-		throw new Error(`API request failed: ${response.statusText}`);
+		const errorText = await response.text().catch(() => response.statusText);
+		console.error(`[doc-qa] API request failed:`, {
+			endpoint: DOC_QA_ENDPOINT,
+			status: response.status,
+			statusText: response.statusText,
+			error: errorText,
+		});
+		throw new Error(`API request failed: ${response.status} ${response.statusText}`);
 	}
 
 	return response.json();
