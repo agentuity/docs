@@ -35,9 +35,12 @@ function buildHeaders(
 export async function apiRequest<T = any>(
   endpoint: string,
   options: ApiRequestOptions = {},
-  baseUrl: string = config.agentBaseUrl,
+  baseUrl: string | undefined = config.agentBaseUrl,
   bearerToken?: string
 ): Promise<T> {
+  if (!baseUrl) {
+    throw new ApiError('AGENT_BASE_URL environment variable is not configured', 500);
+  }
   const url = buildUrl(baseUrl, endpoint);
   const headers = buildHeaders(options.headers, bearerToken);
   const timeout = options.timeout ?? DEFAULT_TIMEOUT;
