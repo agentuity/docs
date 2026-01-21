@@ -1,6 +1,5 @@
 'use client';
 
-import { useAPI } from '@agentuity/react';
 import { useCallback, useEffect, useState } from 'react';
 import type { Message } from '../types';
 
@@ -14,9 +13,23 @@ interface DocQaResponse {
 	}>;
 }
 
+async function queryDocQa(message: string): Promise<DocQaResponse> {
+	const response = await fetch('/api/doc-qa', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ message }),
+	});
+
+	if (!response.ok) {
+		throw new Error(`API request failed: ${response.statusText}`);
+	}
+
+	return response.json();
+}
+
 export function useMessages() {
 	const [messages, setMessages] = useState<Message[]>([]);
-	const { invoke, isLoading: loading } = useAPI<DocQaResponse>('POST /api/doc-qa');
+	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
 		try {
@@ -56,9 +69,10 @@ export function useMessages() {
 		};
 
 		setMessages((prev) => [...prev, userMessage]);
+		setLoading(true);
 
 		try {
-			const result = await invoke({ message: query.trim() });
+			const result = await queryDocQa(query.trim());
 
 			if (result?.answer) {
 				const aiMessage: Message = {
@@ -99,8 +113,10 @@ export function useMessages() {
 				timestamp: new Date(),
 			};
 			setMessages((prev) => [...prev, errorMessage]);
+		} finally {
+			setLoading(false);
 		}
-	}, [invoke]);
+	}, []);
 
 	const handleRetry = useCallback(() => {
 		const lastUserMessage = [...messages]

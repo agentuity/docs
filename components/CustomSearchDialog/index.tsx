@@ -1,7 +1,6 @@
 'use client';
 
 import * as Dialog from '@radix-ui/react-dialog';
-import { AgentuityProvider } from '@agentuity/react';
 import { RotateCcw, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { AgentuityLogo } from '../icons/AgentuityLogo';
@@ -10,7 +9,7 @@ import { MessageList } from './MessageList';
 import { SearchInput } from './SearchInput';
 import type { CustomSearchDialogProps } from './types';
 
-function CustomSearchDialogContent(props: CustomSearchDialogProps) {
+export default function CustomSearchDialog(props: CustomSearchDialogProps) {
 	const { open, onOpenChange } = props;
 	const [currentInput, setCurrentInput] = useState('');
 	const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -112,13 +111,5 @@ function CustomSearchDialogContent(props: CustomSearchDialogProps) {
 				</Dialog.Content>
 			</Dialog.Portal>
 		</Dialog.Root>
-	);
-}
-
-export default function CustomSearchDialog(props: CustomSearchDialogProps) {
-	return (
-		<AgentuityProvider>
-			<CustomSearchDialogContent {...props} />
-		</AgentuityProvider>
 	);
 }
