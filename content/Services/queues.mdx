@@ -94,7 +94,7 @@ interface QueuePublishResult {
 ## Error Handling
 
 ```typescript
-import { QueueNotFoundError, QueueValidationError } from '@agentuity/runtime';
+import { QueueNotFoundError, QueueValidationError } from '@agentuity/core';
 
 const agent = createAgent('SafePublisher', {
   handler: async (ctx, input) => {
@@ -143,79 +143,22 @@ agentuity cloud queue resume order-processing
 agentuity cloud queue delete order-processing
 ```
 
-### Programmatic Management
-
-Use `@agentuity/server` for full queue management in routes or standalone scripts:
-
-```typescript
-import { createQueue, listQueues, deleteQueue } from '@agentuity/server';
-
-// Create a queue
-const queue = await createQueue(client, {
-  name: 'order-processing',
-  queue_type: 'worker',
-  settings: {
-    default_max_retries: 5,
-    default_visibility_timeout_seconds: 60,
-  },
-});
-
-// List queues
-const { queues } = await listQueues(client);
-
-// Delete a queue
-await deleteQueue(client, 'old-queue');
-```
+For programmatic queue management, see [SDK Utilities for External Apps](/Learn/Cookbook/Patterns/server-utilities#queue-management).
 
 ## Consuming Messages
 
 ### Webhook Destinations
 
-Configure a webhook destination to automatically deliver messages to an HTTP endpoint:
+Configure webhook destinations to automatically deliver messages to HTTP endpoints. Set these up in the [App](https://app-v1.agentuity.com) or [programmatically](/Learn/Cookbook/Patterns/server-utilities#webhook-destinations).
 
-```typescript
-import { createDestination } from '@agentuity/server';
-
-await createDestination(client, 'order-processing', {
-  destination_type: 'http',
-  config: {
-    url: 'https://api.example.com/webhook/orders',
-    method: 'POST',
-    headers: { 'X-API-Key': 'secret' },
-    timeout_ms: 30000,
-    retry_policy: {
-      max_attempts: 5,
-      initial_backoff_ms: 1000,
-      max_backoff_ms: 60000,
-      backoff_multiplier: 2.0,
-    },
-  },
-});
-```
+Webhook destinations support:
+- Custom headers and authentication
+- Configurable timeouts (up to 30 seconds)
+- Retry policies with exponential backoff
 
 ### Pull-Based Consumption
 
-For workers that pull messages:
-
-```typescript
-import { receiveMessage, ackMessage, nackMessage } from '@agentuity/server';
-
-// Receive a message (blocks until available or timeout)
-const message = await receiveMessage(client, 'order-processing');
-
-if (message) {
-  try {
-    // Process the message
-    await processOrder(message.payload);
-
-    // Acknowledge success
-    await ackMessage(client, 'order-processing', message.id);
-  } catch (error) {
-    // Negative acknowledge - message returns to queue for retry
-    await nackMessage(client, 'order-processing', message.id);
-  }
-}
-```
+For workers that pull and process messages, see [Pull-Based Consumption](/Learn/Cookbook/Patterns/server-utilities#pull-based-consumption). This pattern is useful for long-running workers that need fine-grained control over message processing.
 
 ## Dead Letter Queue
 
@@ -232,49 +175,11 @@ agentuity cloud queue dlq replay order-processing --message-id msg_abc123
 agentuity cloud queue dlq purge order-processing
 ```
 
-Programmatically:
-
-```typescript
-import { createApp, createAgentContext } from '@agentuity/runtime';
-import { listDeadLetterMessages, replayDeadLetterMessage } from '@agentuity/server';
-
-await createApp();
-const ctx = createAgentContext();
-
-// List failed messages
-const { messages } = await listDeadLetterMessages(client, 'order-processing');
-
-for (const msg of messages) {
-  ctx.logger.warn('Failed message', {
-    id: msg.id,
-    reason: msg.failure_reason,
-    attempts: msg.delivery_attempts,
-  });
-
-  // Replay back to the queue
-  await replayDeadLetterMessage(client, 'order-processing', msg.id);
-}
-```
-
-This example uses `createAgentContext()` for logging and tracing. See [Running Agents Without HTTP](/Agents/standalone-execution) for more on standalone execution.
+For programmatic DLQ access, see [Dead Letter Queue Operations](/Learn/Cookbook/Patterns/server-utilities#dead-letter-queue-operations).
 
 ## HTTP Ingestion Sources
 
-Create public HTTP endpoints to ingest data into queues from external services:
-
-```typescript
-import { createSource } from '@agentuity/server';
-
-const source = await createSource(client, 'webhook-queue', {
-  name: 'stripe-webhooks',
-  description: 'Receives Stripe payment events',
-  auth_type: 'header',
-  auth_value: 'Bearer whsec_...',
-});
-
-// External services POST to this URL
-console.log(`Webhook URL: ${source.url}`);
-```
+Create public HTTP endpoints to ingest data into queues from external services. Configure these in the [App](https://app-v1.agentuity.com) or [programmatically](/Learn/Cookbook/Patterns/server-utilities#http-ingestion-sources).
 
 | Auth Type | Description |
 |-----------|-------------|
