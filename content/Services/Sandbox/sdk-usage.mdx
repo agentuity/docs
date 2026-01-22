@@ -423,6 +423,9 @@ Returned by `sandbox.execute()`:
 | `durationMs` | `number` | Execution duration in milliseconds |
 | `stdoutStreamUrl` | `string` | URL to fetch stdout stream |
 | `stderrStreamUrl` | `string` | URL to fetch stderr stream |
+| `cpuTimeMs` | `number` | CPU time consumed in milliseconds |
+| `memoryByteSec` | `number` | Memory usage in byte-seconds |
+| `networkEgressBytes` | `number` | Outbound network traffic in bytes |
 
 ### SandboxRunResult
 
@@ -433,6 +436,9 @@ Returned by `sandbox.execute()`:
 | `durationMs` | `number` | Execution duration |
 | `stdout` | `string` | Captured stdout (if available) |
 | `stderr` | `string` | Captured stderr (if available) |
+| `cpuTimeMs` | `number` | CPU time consumed in milliseconds |
+| `memoryByteSec` | `number` | Memory usage in byte-seconds |
+| `networkEgressBytes` | `number` | Outbound network traffic in bytes |
 
 ### SandboxInfo
 
