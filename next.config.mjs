@@ -9,6 +9,11 @@ const config = {
 	serverExternalPackages: ['twoslash', 'typescript'],
 	redirects: async () => [
 		{
+			source: '/CLI/mcp',
+			destination: '/',
+			permanent: true,
+		},
+		{
 			source: '/Get-Started/what-is-agentuity',
 			destination: '/',
 			permanent: false,
