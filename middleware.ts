@@ -15,8 +15,9 @@ const TYPE_MAP: Record<string, string> = {
 const COOKIE_NAME = 'chat_user_id';
 const COOKIE_MAX_AGE = 24 * 60 * 60 * 14; // 14 days
 
-// Agentuity backend config (no fallbacks - must be set explicitly)
-const AGENT_BASE_URL = process.env.AGENT_BASE_URL;
+// Agentuity backend config
+const DEFAULT_AGENT_BASE_URL = 'https://p0f83a312791b60ff.agentuity.run';
+const AGENT_BASE_URL = process.env.AGENT_BASE_URL || DEFAULT_AGENT_BASE_URL;
 const AGENT_BEARER_TOKEN = process.env.AGENT_BEARER_TOKEN;
 
 export function middleware(request: NextRequest) {
@@ -31,14 +32,11 @@ export function middleware(request: NextRequest) {
 
 	// Proxy API requests to Agentuity backend with bearer token
 	if (pathname.startsWith('/api/sessions') || pathname === '/api/agent_pulse' || pathname === '/api/doc-qa') {
-		const missingVars = [];
-		if (!AGENT_BASE_URL) missingVars.push('AGENT_BASE_URL');
-		if (!AGENT_BEARER_TOKEN) missingVars.push('AGENT_BEARER_TOKEN');
-
-		if (missingVars.length > 0) {
-			console.error(`[middleware] Missing required env vars: ${missingVars.join(', ')}`);
+		// AGENT_BEARER_TOKEN is required for authenticated endpoints
+		if (!AGENT_BEARER_TOKEN) {
+			console.error('[middleware] Missing required env var: AGENT_BEARER_TOKEN');
 			return NextResponse.json(
-				{ error: `Server misconfigured: missing ${missingVars.join(', ')}` },
+				{ error: 'Server misconfigured: missing AGENT_BEARER_TOKEN' },
 				{ status: 503 }
 			);
 		}
