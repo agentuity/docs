@@ -5,27 +5,26 @@ import type { Message } from '../types';
 
 const STORAGE_KEY = 'agentuity-search-history';
 
-interface DocQaResponse {
-	answer: string;
-	documents?: Array<{
-		url: string;
-		title: string;
-	}>;
+interface RagSearchResult {
+	id: string;
+	url: string;
+	title: string;
+	content: string;
+	type: 'ai-answer' | 'document';
 }
 
-const DOC_QA_ENDPOINT = '/api/doc-qa';
+const RAG_SEARCH_ENDPOINT = '/api/rag-search';
 
-async function queryDocQa(message: string): Promise<DocQaResponse> {
-	const response = await fetch(DOC_QA_ENDPOINT, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ message }),
-	});
+async function queryRagSearch(query: string): Promise<RagSearchResult[]> {
+	const url = new URL(RAG_SEARCH_ENDPOINT, window.location.origin);
+	url.searchParams.set('query', query);
+
+	const response = await fetch(url.toString());
 
 	if (!response.ok) {
 		const errorText = await response.text().catch(() => response.statusText);
-		console.error(`[doc-qa] API request failed:`, {
-			endpoint: DOC_QA_ENDPOINT,
+		console.error('[rag-search] API request failed:', {
+			endpoint: RAG_SEARCH_ENDPOINT,
 			status: response.status,
 			statusText: response.statusText,
 			error: errorText,
@@ -81,21 +80,26 @@ export function useMessages() {
 		setLoading(true);
 
 		try {
-			const result = await queryDocQa(query.trim());
+			const results = await queryRagSearch(query.trim());
 
-			if (result?.answer) {
+			// Find the AI answer from results
+			const aiAnswerResult = results.find((r) => r.type === 'ai-answer');
+			// Get document results (with properly transformed URLs)
+			const documentResults = results.filter((r) => r.type === 'document');
+
+			if (aiAnswerResult) {
 				const aiMessage: Message = {
 					id: `ai-${Date.now()}`,
 					type: 'ai',
-					content: result.answer,
+					content: aiAnswerResult.content,
 					timestamp: new Date(),
 					sources:
-						result.documents && result.documents.length > 0
-							? result.documents.map((doc, index) => ({
-								id: `doc-${Date.now()}-${index}`,
+						documentResults.length > 0
+							? documentResults.map((doc) => ({
+								id: doc.id,
 								title: doc.title,
-								url: doc.url || '#',
-								content: '',
+								url: doc.url,
+								content: doc.content,
 							}))
 							: undefined,
 				};
