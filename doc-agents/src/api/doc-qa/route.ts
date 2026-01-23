@@ -12,7 +12,7 @@ function documentPathToUrl(docPath: string): string {
 	const path = docPath.replace(/\.mdx?(?=#|$)/, '');
 
 	// Split path and hash (if any)
-	const [basePath, hash] = path.split('#');
+	const [basePath = '', hash] = path.split('#');
 
 	// Split the base path into segments
 	const segments = basePath.split('/').filter(Boolean);
@@ -20,7 +20,7 @@ function documentPathToUrl(docPath: string): string {
 	// If the last segment is 'index', remove it
 	if (
 		segments.length > 0 &&
-		segments[segments.length - 1].toLowerCase() === 'index'
+		segments[segments.length - 1]?.toLowerCase() === 'index'
 	) {
 		segments.pop();
 	}

@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-vector-delete
 description: Delete one or more vectors by key. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.1.20"
+version: "0.1.24"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<namespace> <keys...>"
@@ -17,7 +17,6 @@ Delete one or more vectors by key
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Project context required (run from project directory or use `--project-id`)
 
 ## Usage
 
