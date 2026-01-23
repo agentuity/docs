@@ -28,14 +28,12 @@ export default function ChatSessionPage() {
       id: uuidv4(),
       author: 'USER',
       content: content,
-      timestamp: new Date().toISOString()
     };
 
     const assistantMessage: Message = {
       id: uuidv4(),
       author: 'ASSISTANT',
       content: '',
-      timestamp: new Date().toISOString()
     };
 
     try {
@@ -73,6 +71,18 @@ export default function ChatSessionPage() {
               const updatedMessages = prev.messages.map(msg =>
                 msg.id === assistantMessage.id
                   ? { ...msg, tutorialData: tutorialData }
+                  : msg
+              );
+              return { ...prev, messages: updatedMessages };
+            });
+          },
+
+          onSources: (sources) => {
+            setSession(prev => {
+              if (!prev) return prev;
+              const updatedMessages = prev.messages.map(msg =>
+                msg.id === assistantMessage.id
+                  ? { ...msg, sources }
                   : msg
               );
               return { ...prev, messages: updatedMessages };
@@ -129,13 +139,11 @@ export default function ChatSessionPage() {
       id: uuidv4(),
       author: 'USER',
       content: initialMessage,
-      timestamp: new Date().toISOString(),
     };
     const assistantPlaceholder: Message = {
       id: uuidv4(),
       author: 'ASSISTANT',
       content: '',
-      timestamp: new Date().toISOString(),
     };
     const temporarySession: Session = {
       sessionId: sessionId as string,

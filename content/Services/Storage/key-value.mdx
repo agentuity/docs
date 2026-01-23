@@ -10,10 +10,10 @@ Key-value ("KV") storage provides fast data access for agents. Use it for cachin
 | Storage Type | Best For |
 |--------------|----------|
 | **Key-Value** | Fast lookups, caching, configuration, rate limits |
-| [Vector](/Storage/vector) | Semantic search, embeddings, RAG |
-| [Object (S3)](/Storage/object) | Files, images, documents, media |
-| [Database](/Storage/database) | Structured data, complex queries, transactions |
-| [Durable Streams](/Storage/durable-streams) | Large exports, audit logs, real-time data |
+| [Vector](/Services/Storage/vector) | Semantic search, embeddings, RAG |
+| [Object (S3)](/Services/Storage/object) | Files, images, documents, media |
+| [Database](/Services/Storage/database) | Structured data, complex queries, transactions |
+| [Durable Streams](/Services/Storage/durable-streams) | Large exports, audit logs, real-time data |
 
 <Callout type="info" title="KV vs Built-in State">
 Use built-in state (`ctx.state`, `ctx.thread.state`, `ctx.session.state`) for data tied to active requests and conversations. Use KV when you need custom TTL, *persistent data across sessions*, or *shared state across agents*.
@@ -278,8 +278,8 @@ See [Running Agents Without HTTP](/Agents/standalone-execution) for more pattern
 
 ## Next Steps
 
-- [Vector Storage](/Storage/vector): Semantic search and embeddings
-- [Object Storage (S3)](/Storage/object): File and media storage
-- [Database](/Storage/database): Relational data with queries and transactions
-- [Durable Streams](/Storage/durable-streams): Large data exports
+- [Vector Storage](/Services/Storage/vector): Semantic search and embeddings
+- [Object Storage (S3)](/Services/Storage/object): File and media storage
+- [Database](/Services/Storage/database): Relational data with queries and transactions
+- [Durable Streams](/Services/Storage/durable-streams): Large data exports
 - [State Management](/Agents/state-management): Built-in request/thread/session state

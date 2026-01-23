@@ -1,14 +1,44 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Message, SearchResult } from '../types';
+import { useCallback, useEffect, useState } from 'react';
+import type { Message } from '../types';
 
 const STORAGE_KEY = 'agentuity-search-history';
+
+interface DocQaResponse {
+	answer: string;
+	documents?: Array<{
+		url: string;
+		title: string;
+	}>;
+}
+
+const DOC_QA_ENDPOINT = '/api/doc-qa';
+
+async function queryDocQa(message: string): Promise<DocQaResponse> {
+	const response = await fetch(DOC_QA_ENDPOINT, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ message }),
+	});
+
+	if (!response.ok) {
+		const errorText = await response.text().catch(() => response.statusText);
+		console.error(`[doc-qa] API request failed:`, {
+			endpoint: DOC_QA_ENDPOINT,
+			status: response.status,
+			statusText: response.statusText,
+			error: errorText,
+		});
+		throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+	}
+
+	return response.json();
+}
 
 export function useMessages() {
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [loading, setLoading] = useState(false);
-	const abortControllerRef = useRef<AbortController | null>(null);
 
 	useEffect(() => {
 		try {
@@ -37,14 +67,6 @@ export function useMessages() {
 		}
 	}, [messages]);
 
-	useEffect(() => {
-		return () => {
-			if (abortControllerRef.current) {
-				abortControllerRef.current.abort();
-			}
-		};
-	}, []);
-
 	const sendMessage = useCallback(async (query: string) => {
 		if (!query.trim()) return;
 
@@ -59,55 +81,28 @@ export function useMessages() {
 		setLoading(true);
 
 		try {
-			const searchParams = new URLSearchParams({ query: query.trim() });
+			const result = await queryDocQa(query.trim());
 
-			if (abortControllerRef.current) {
-				abortControllerRef.current.abort();
-			}
-
-			const controller = new AbortController();
-			abortControllerRef.current = controller;
-			const timeoutId = setTimeout(() => controller.abort(), 90000);
-
-			const response = await fetch(`/api/rag-search?${searchParams}`, {
-				signal: controller.signal,
-			});
-
-			clearTimeout(timeoutId);
-			if (!response.ok) {
-				throw new Error(`Search failed: ${response.status}`);
-			}
-
-			const data: SearchResult[] = await response.json();
-
-			if (!Array.isArray(data)) {
-				throw new Error('Incorrect search result format.');
-			}
-
-			// Find AI answer and documents
-			const aiAnswer = data.find((result) => result.type === 'ai-answer');
-			const documents = data.filter((result) => result.type === 'document');
-
-			if (aiAnswer) {
+			if (result?.answer) {
 				const aiMessage: Message = {
 					id: `ai-${Date.now()}`,
 					type: 'ai',
-					content: aiAnswer.content,
+					content: result.answer,
 					timestamp: new Date(),
 					sources:
-						documents.length > 0
-							? documents.map((doc) => ({
-									id: doc.id,
-									title: doc.title,
-									url: doc.url || '#',
-									content: doc.content,
-								}))
+						result.documents && result.documents.length > 0
+							? result.documents.map((doc, index) => ({
+								id: `doc-${Date.now()}-${index}`,
+								title: doc.title,
+								url: doc.url || '#',
+								content: '',
+							}))
 							: undefined,
 				};
 
 				setMessages((prev) => [...prev, aiMessage]);
 			} else {
-				// Fallback if no AI answer
+				// Fallback if no answer
 				const fallbackMessage: Message = {
 					id: `ai-${Date.now()}`,
 					type: 'ai',

@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { User } from 'lucide-react';
+import { User, ExternalLink } from 'lucide-react';
 import { AgentuityLogo } from '@/components/icons/AgentuityLogo';
 import { MarkdownRenderer } from './MarkdownRenderer';
-import type { TutorialSnippet } from '../types';
+import type { TutorialSnippet, Source } from '../types';
 import { formatTime } from '../utils/dateUtils';
 import type { TutorialData } from '../types';
 
@@ -68,8 +68,9 @@ interface ChatMessageProps {
     message: {
         author: 'USER' | 'ASSISTANT';
         content: string;
-        timestamp: string;
-        tutorialData?: TutorialData
+        timestamp?: string;
+        tutorialData?: TutorialData;
+        sources?: Source[];
     };
     setEditorContent?: (content: string) => void;
     setEditorOpen?: (open: boolean) => void;
@@ -84,16 +85,34 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
     const tutorialSnippets = message.tutorialData?.tutorialStep.snippets as TutorialSnippet[] | undefined;
     const currentStep = message.tutorialData?.currentStep;
     const totalSteps = message.tutorialData?.totalSteps;
-    
+
     // Memoize tutorial content transformation to avoid Rules of Hooks violation
-    const memoizedTutorialContent = useMemo(() => 
-        tutorialMdx ? transformMdxWithSnippets(tutorialMdx, tutorialSnippets || []) : null, 
+    const memoizedTutorialContent = useMemo(() =>
+        tutorialMdx ? transformMdxWithSnippets(tutorialMdx, tutorialSnippets || []) : null,
         [tutorialMdx, tutorialSnippets]
     );
-    
+
     const handleOpenInEditor = (code: string) => {
         setEditorContent(code);
         setEditorOpen(true);
+    };
+
+    const handleSourceClick = (url: string) => {
+        if (!url) return;
+
+        let normalizedUrl = url;
+
+        if (!url.startsWith('http')) {
+            if (!url.startsWith('/')) {
+                normalizedUrl = '/' + url;
+            }
+            normalizedUrl = normalizedUrl.replace(/\.mdx?(?=#|$)/, '');
+            const [basePath, hash] = normalizedUrl.split('#');
+            const cleanPath = basePath.replace(/\/index$/, '');
+            normalizedUrl = cleanPath + (hash ? '#' + hash : '');
+        }
+
+        window.open(normalizedUrl, '_blank', 'noopener,noreferrer');
     };
 
     return (
@@ -115,9 +134,9 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                             {message.content === '' ? (
                                 <div className="flex items-center gap-4 text-gray-300 mb-4">
                                     <div className="flex space-x-2">
-                                        <div className="w-3 h-3 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite]"/>
-                                        <div className="w-3 h-3 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite_0.2s]"/>
-                                        <div className="w-3 h-3 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite_0.4s]"/>
+                                        <div className="w-3 h-3 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite]" />
+                                        <div className="w-3 h-3 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite_0.2s]" />
+                                        <div className="w-3 h-3 bg-gradient-to-br from-cyan-400 to-teal-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite_0.4s]" />
                                     </div>
                                     <span className="text-sm tracking-wide text-gray-200">Agent is processing...</span>
                                 </div>
@@ -133,6 +152,25 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                                     <MarkdownRenderer content={memoizedTutorialContent} />
                                 </div>
                             )}
+                            {message.sources && message.sources.length > 0 && (
+                                <div className="mt-3 pt-3 border-t border-gray-700/50">
+                                    <p className="text-xs text-gray-400 font-medium mb-2">Related Documentation:</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {message.sources.map((source, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => handleSourceClick(source.url)}
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs
+                                                    bg-gray-800/50 hover:bg-gray-700/70 text-gray-300 hover:text-cyan-400
+                                                    rounded-lg border border-gray-700/50 hover:border-cyan-500/30 transition-all"
+                                            >
+                                                <ExternalLink className="w-3 h-3" />
+                                                <span className="truncate max-w-[200px]">{source.title}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
@@ -140,9 +178,11 @@ export const ChatMessageComponent = React.memo(function ChatMessageComponent({
                 </div>
 
                 {/* Timestamp */}
-                <div className="text-xs text-gray-300 mt-2 px-2">
-                    {formatTime(message.timestamp)}
-                </div>
+                {message.timestamp && (
+                    <div className="text-xs text-gray-300 mt-2 px-2">
+                        {formatTime(message.timestamp)}
+                    </div>
+                )}
             </div>
 
             {message.author === 'USER' && (
