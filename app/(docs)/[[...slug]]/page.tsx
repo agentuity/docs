@@ -11,25 +11,33 @@ import { notFound } from 'next/navigation';
 import { CLICommand } from '@/components/CLICommand';
 import { CodeExample } from '@/components/CodeExample';
 import { Mermaid } from '@/components/Mermaid';
+import { SDKExplorerIframe } from '@/components/SDKExplorerIframe';
 import { Sparkle } from '@/components/Sparkle';
 import { Tag } from '@/components/Tag';
 import { ThemeImage } from '@/components/ThemeImage';
 import { TypingAnimation } from '@/components/TypingAnimation';
 import { XButton } from '@/components/XButton';
 import { source } from '@/lib/source';
+import CodeFromFiles from '../../../components/CodeFromFiles';
 import { CommunityButton } from '../../../components/Community';
 import CopyPageDropdown from '../../../components/CopyPageDropdown';
 import { NavButton } from '../../../components/NavButton';
-import CodeFromFiles from '../../../components/CodeFromFiles';
 import TutorialStep from '../../../components/TutorialStep';
-
 
 export default async function Page(props: {
 	params: Promise<{ slug?: string[] }>;
 }) {
 	const params = await props.params;
-	const page = source.getPage(params.slug);
 
+	if (params.slug === undefined) {
+		return (
+			<DocsPage full footer={{ enabled: false }}>
+				<SDKExplorerIframe />
+			</DocsPage>
+		);
+	}
+
+	const page = source.getPage(params.slug);
 	if (!page) notFound();
 
 	const MDX = page.data.body;
@@ -107,6 +115,14 @@ export async function generateMetadata(props: {
 	params: Promise<{ slug?: string[] }>;
 }) {
 	const params = await props.params;
+
+	if (params.slug === undefined) {
+		return {
+			title: 'SDK Explorer — Agentuity Docs',
+			description: 'Interactive examples showcasing the Agentuity SDK',
+		};
+	}
+
 	const page = source.getPage(params.slug);
 
 	if (!page) notFound();

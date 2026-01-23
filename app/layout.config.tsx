@@ -8,7 +8,7 @@ import { XButton } from '../components/XButton';
  */
 export const baseOptions: BaseLayoutProps = {
 	nav: {
-		url: '/Get-Started/what-is-agentuity',
+		url: '/',
 		title: (
 			<div className="flex items-center gap-3 font-medium ml-2">
 				<svg
