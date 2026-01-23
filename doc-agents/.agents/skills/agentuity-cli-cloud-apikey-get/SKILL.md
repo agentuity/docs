@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-apikey-get
 description: Get a specific API key by id. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.1.20"
+version: "0.1.24"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<id>"

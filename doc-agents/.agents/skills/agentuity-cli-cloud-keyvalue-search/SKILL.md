@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-keyvalue-search
 description: Search for keys matching a keyword in a keyvalue namespace. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.1.20"
+version: "0.1.24"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<name> <keyword>"

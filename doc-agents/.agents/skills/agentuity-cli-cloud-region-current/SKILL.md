@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-region-current
 description: Show the current default region. Use for Agentuity cloud platform operations
-version: "0.1.20"
+version: "0.1.24"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:

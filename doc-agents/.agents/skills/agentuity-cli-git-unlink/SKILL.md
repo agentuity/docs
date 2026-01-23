@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-git-unlink
 description: Unlink a project from its GitHub repository. Requires authentication
-version: "0.1.20"
+version: "0.1.24"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:

@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-auth-whoami
 description: Display information about the currently authenticated user. Requires authentication. Use for managing authentication credentials
-version: "0.1.20"
+version: "0.1.24"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:

@@ -11,9 +11,9 @@ Learn more at the [Agent Skills Specification](https://agentskills.io/specificat
 
 ## Generated From
 
-- **CLI Version**: 0.1.20
-- **Generated**: 2026-01-21
-- **Total Skills**: 139
+- **CLI Version**: 0.1.24
+- **Generated**: 2026-01-23
+- **Total Skills**: 148
 
 ## Available Skills
 
@@ -24,6 +24,7 @@ Learn more at the [Agent Skills Specification](https://agentskills.io/specificat
 | [agentuity-cli-auth-apikey](./agentuity-cli-auth-apikey) | `agentuity auth apikey` | Display the API key for the currently authenticated user |
 | [agentuity-cli-auth-login](./agentuity-cli-auth-login) | `agentuity auth login` | Login to the Agentuity Platform using a browser-based authen... |
 | [agentuity-cli-auth-logout](./agentuity-cli-auth-logout) | `agentuity auth logout` | Logout of the Agentuity Cloud Platform |
+| [agentuity-cli-auth-machine-setup](./agentuity-cli-auth-machine-setup) | `agentuity auth machine setup` | Set up machine authentication by uploading a public key for ... |
 | [agentuity-cli-auth-org-current](./agentuity-cli-auth-org-current) | `agentuity auth org current` | Show the current default organization |
 | [agentuity-cli-auth-org-select](./agentuity-cli-auth-org-select) | `agentuity auth org select` | Set the default organization for all commands |
 | [agentuity-cli-auth-org-unselect](./agentuity-cli-auth-org-unselect) | `agentuity auth org unselect` | Clear the default organization preference |
@@ -68,6 +69,10 @@ Learn more at the [Agent Skills Specification](https://agentskills.io/specificat
 | [agentuity-cli-cloud-env-pull](./agentuity-cli-cloud-env-pull) | `agentuity cloud env pull` | Pull environment variables from cloud to local .env file |
 | [agentuity-cli-cloud-env-push](./agentuity-cli-cloud-env-push) | `agentuity cloud env push` | Push environment variables and secrets from local .env file ... |
 | [agentuity-cli-cloud-env-set](./agentuity-cli-cloud-env-set) | `agentuity cloud env set` | Set an environment variable or secret |
+| [agentuity-cli-cloud-eval-get](./agentuity-cli-cloud-eval-get) | `agentuity cloud eval get` | Get details about a specific eval |
+| [agentuity-cli-cloud-eval-list](./agentuity-cli-cloud-eval-list) | `agentuity cloud eval list` | List evals |
+| [agentuity-cli-cloud-eval-run-get](./agentuity-cli-cloud-eval-run-get) | `agentuity cloud eval-run get` | Get details about a specific eval run |
+| [agentuity-cli-cloud-eval-run-list](./agentuity-cli-cloud-eval-run-list) | `agentuity cloud eval-run list` | List eval runs |
 | [agentuity-cli-cloud-keyvalue-create-namespace](./agentuity-cli-cloud-keyvalue-create-namespace) | `agentuity cloud keyvalue create-namespace` | Create a new keyvalue namespace |
 | [agentuity-cli-cloud-keyvalue-delete](./agentuity-cli-cloud-keyvalue-delete) | `agentuity cloud keyvalue delete` | Delete a key from the keyvalue storage |
 | [agentuity-cli-cloud-keyvalue-delete-namespace](./agentuity-cli-cloud-keyvalue-delete-namespace) | `agentuity cloud keyvalue delete-namespace` | Delete a keyvalue namespace and all its keys |
@@ -78,6 +83,10 @@ Learn more at the [Agent Skills Specification](https://agentskills.io/specificat
 | [agentuity-cli-cloud-keyvalue-search](./agentuity-cli-cloud-keyvalue-search) | `agentuity cloud keyvalue search` | Search for keys matching a keyword in a keyvalue namespace |
 | [agentuity-cli-cloud-keyvalue-set](./agentuity-cli-cloud-keyvalue-set) | `agentuity cloud keyvalue set` | Set a key and value in the keyvalue storage |
 | [agentuity-cli-cloud-keyvalue-stats](./agentuity-cli-cloud-keyvalue-stats) | `agentuity cloud keyvalue stats` | Get statistics for keyvalue storage |
+| [agentuity-cli-cloud-machine-delete](./agentuity-cli-cloud-machine-delete) | `agentuity cloud machine delete` | Delete an organization managed machine |
+| [agentuity-cli-cloud-machine-deployments](./agentuity-cli-cloud-machine-deployments) | `agentuity cloud machine deployments` | List deployments running on a specific organization managed ... |
+| [agentuity-cli-cloud-machine-get](./agentuity-cli-cloud-machine-get) | `agentuity cloud machine get` | Get details about a specific organization managed machine |
+| [agentuity-cli-cloud-machine-list](./agentuity-cli-cloud-machine-list) | `agentuity cloud machine list` | List organization managed machines |
 | [agentuity-cli-cloud-queue-ack](./agentuity-cli-cloud-queue-ack) | `agentuity cloud queue ack` | Acknowledge a message (mark as processed) |
 | [agentuity-cli-cloud-queue-create](./agentuity-cli-cloud-queue-create) | `agentuity cloud queue create` | Create a new queue |
 | [agentuity-cli-cloud-queue-delete](./agentuity-cli-cloud-queue-delete) | `agentuity cloud queue delete` | Delete a queue by name |
