@@ -4,6 +4,7 @@ import { getTutorialMeta } from './tutorial';
 import docQAAgent from '@agent/doc_qa';
 import type { Action } from './types';
 import { ActionType } from './types';
+import { documentPathToUrl } from '@utils/url';
 
 interface ToolState {
 	action: Action | null;
@@ -60,6 +61,13 @@ export async function createTools(state: ToolState, agentContext: any) {
 				const response = await docQAAgent.run({
 					message: query,
 				});
+				// Transform document URLs from raw paths to proper URLs
+				if (response.documents && Array.isArray(response.documents)) {
+					response.documents = response.documents.map((doc) => ({
+						...doc,
+						url: documentPathToUrl(doc.url),
+					}));
+				}
 				return response;
 			} catch (error) {
 				agentContext.logger.error('Error calling doc-qa agent: %s', error);
