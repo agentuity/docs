@@ -40,6 +40,11 @@ const config = {
 			destination: '/:path*',
 			permanent: true,
 		},
+		{
+			source: '/CLI/installation',
+			destination: '/Get-Started/installation',
+			permanent: true,
+		},
 	],
 	// API rewrites are handled by middleware.ts (to inject bearer token)
 };
