@@ -143,12 +143,18 @@ const agent = createAgent('BatchRetriever', {
 
 ### exists() - Check Namespace
 
+Check if a namespace contains any vectors:
+
 ```typescript
 const hasData = await ctx.vector.exists('knowledge-base');
 if (!hasData) {
   return { error: 'Knowledge base not initialized' };
 }
 ```
+
+<Callout type="info" title="Empty Namespace Behavior">
+`exists()` returns `false` for namespaces that exist but contain no vectors. Use this to verify your knowledge base has been populated with data before searching.
+</Callout>
 
 ## Deleting Vectors
 

@@ -197,7 +197,15 @@ All implement [StandardSchema](https://github.com/standard-schema/standard-schem
 
 ### Type Inference
 
-TypeScript automatically infers types from your schemas:
+TypeScript automatically infers types from your schemas. Don't add explicit type annotations to handler parameters:
+
+```typescript
+// Good: types inferred from schema
+handler: async (ctx, input) => { ... }
+
+// Bad: explicit types can cause issues
+handler: async (ctx: AgentContext, input: MyInput) => { ... }
+```
 
 ```typescript
 const agent = createAgent('Search', {

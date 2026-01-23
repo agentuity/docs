@@ -5,6 +5,19 @@ description: Deploy your agents to Agentuity Cloud with automatic infrastructure
 
 Deploy your Agentuity project to the cloud with a single command. The platform handles infrastructure, scaling, and monitoring automatically.
 
+## Why Deploy to Agentuity?
+
+Deploying agents *should be* as easy as deploying a web app. But agents need long-running processes, persistent storage, sandbox environments, and observability built in. Setting this up yourself means stitching together containers, databases, secret management, and monitoring.
+
+Agentuity handles all of this automatically. You push code, and the platform provisions everything your agents need: compute, storage, networking, and observability. No infrastructure configuration, no Docker files, no Kubernetes.
+
+**What this gives you:**
+
+- **Single-command deployment**: `agentuity deploy` handles build, upload, and provisioning
+- **Automatic HTTPS**: Every deployment gets secure URLs with SSL certificates
+- **Built-in rollback**: Revert to any previous deployment instantly
+- **Zero infrastructure management**: No containers, orchestration, or scaling to configure
+
 ## Deploy Your Project
 
 ```bash
@@ -124,16 +137,19 @@ agentuity cloud deployment show dep_abc123xyz --project-id=proj_abc123
 - Active status
 - Tags and custom domains
 - Cloud region
+- DNS records (for custom domain configuration)
 - Git metadata (repo, commit, branch, PR)
 - Build information (SDK version, runtime, platform)
 
 ```
-ID:       dep_abc123xyz
-Project:  proj_456def
-State:    completed
-Active:   Yes
-Created:  12/1/25, 3:45 PM
-Tags:     staging, hotfix-123
+ID:          dep_abc123xyz
+Project:     proj_456def
+State:       completed
+Active:      Yes
+Created:     12/1/25, 3:45 PM
+Tags:        staging, hotfix-123
+Domains:     api.example.com
+DNS Records: api.example.com CNAME p1234567890.agentuity.cloud
 
 Git Information
   Repo:     myorg/myapp
@@ -147,6 +163,10 @@ Build Information
   Platform:  linux
   Arch:      x64
 ```
+
+<Callout type="tip" title="DNS Records">
+When custom domains are configured, the `show` command displays the required DNS records. Use this to verify your CNAME configuration.
+</Callout>
 
 ## Viewing Logs
 

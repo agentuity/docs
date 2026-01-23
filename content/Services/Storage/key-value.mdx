@@ -152,8 +152,15 @@ Create and delete namespaces programmatically:
 ```typescript
 const agent = createAgent('NamespaceManager', {
   handler: async (ctx, input) => {
-    // Create a new namespace
-    await ctx.kv.createNamespace('tenant-123');
+    // Create a namespace with default TTL for all keys
+    await ctx.kv.createNamespace('cache', {
+      defaultTTLSeconds: 3600,  // all keys expire in 1 hour by default
+    });
+
+    // Create a namespace with no expiration
+    await ctx.kv.createNamespace('config', {
+      defaultTTLSeconds: 0,  // keys never expire
+    });
 
     // Delete a namespace (removes all keys)
     await ctx.kv.deleteNamespace('old-cache');
@@ -163,13 +170,25 @@ const agent = createAgent('NamespaceManager', {
 });
 ```
 
+**Default TTL options:**
+
+| Value | Behavior |
+|-------|----------|
+| `undefined` | Keys expire after 7 days (default) |
+| `0` | Keys never expire |
+| `60` - `7776000` | Custom TTL in seconds (1 minute to 90 days) |
+
+<Callout type="info" title="Sliding Expiration">
+When a key is read with less than 50% of its TTL remaining, the expiration is automatically extended. This keeps frequently-accessed data alive without manual renewal.
+</Callout>
+
 <Callout type="warning" title="Destructive Operation">
 `deleteNamespace()` permanently removes the namespace and all its keys. This operation cannot be undone.
 </Callout>
 
 ## TTL Strategy
 
-Keys persist indefinitely by default. Use TTL for temporary data:
+Keys expire after 7 days by default unless a namespace-level or per-key TTL is set. Use TTL for temporary data:
 
 | Data Type | Suggested TTL |
 |-----------|---------------|

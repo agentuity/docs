@@ -5,6 +5,19 @@ description: Use the built-in development UI to test agents, validate schemas, a
 
 Workbench is a built-in UI for testing your agents during development. It automatically discovers your agents, displays their input/output schemas, and lets you execute them with real inputs.
 
+## Why Workbench?
+
+Testing agents isn't like testing traditional APIs. You need to validate input schemas, see how responses format, test multi-turn conversations, and understand execution timing. Using `curl` or Postman means manually constructing JSON payloads and parsing responses.
+
+Workbench understands your agents. It reads your schemas, generates test forms, maintains conversation threads, and shows execution metrics. When something goes wrong, you see exactly what the agent received and returned.
+
+**Key capabilities:**
+
+- **Schema-aware testing**: Input forms generated from your actual schemas
+- **Thread persistence**: Test multi-turn conversations without manual state tracking
+- **Execution metrics**: See token usage and response times for every request
+- **Quick iteration**: Test prompts display in the UI for one-click execution
+
 ## Enabling Workbench
 
 Add a `workbench` section to your `agentuity.config.ts`:
