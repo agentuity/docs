@@ -1,13 +1,15 @@
 /**
  * Transforms a document path (e.g., "Get-Started/quickstart.mdx#7-deploy") to a proper URL (e.g., "/Get-Started/quickstart#7-deploy")
  */
-export function documentPathToUrl(docPath: string): string {
+export function documentPathToUrl(docPath?: string | null): string {
+	if (!docPath) {
+		return '/';
+	}
 	// Remove the .md or .mdx extension before any # symbol
 	const path = docPath.replace(/\.mdx?(?=#|$)/, '');
 
 	// Split path and hash (if any)
 	const [basePath = '', hash] = path.split('#');
-
 	// Split the base path into segments
 	const segments = basePath.split('/').filter(Boolean);
 
