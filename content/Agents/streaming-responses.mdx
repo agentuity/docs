@@ -40,7 +40,7 @@ await stream.write('data');
 await stream.close();
 ```
 
-This page focuses on ephemeral streaming with the AI SDK. For persistent streaming patterns, see the [Storage documentation](/Build/Storage/durable-streams).
+This page focuses on ephemeral streaming with the AI SDK. For persistent streaming patterns, see the [Storage documentation](/Services/Storage/durable-streams).
 
 <Callout type="info" title="Two Parts to Streaming">
 Streaming requires both: `schema.stream: true` in your agent (so the handler returns a stream) and `stream()` middleware in your route (so the response is streamed to the client).
@@ -147,7 +147,7 @@ function Chat() {
 }
 ```
 
-For streaming with React, see [Frontend Hooks](/Build/Frontend/react-hooks).
+For streaming with React, see [Frontend Hooks](/Frontend/react-hooks).
 
 ## Streaming with System Prompts
 
@@ -228,6 +228,6 @@ Errors in streaming are part of the stream, not thrown exceptions. Always provid
 
 ## Next Steps
 
-- [Using the AI SDK](/Build/Agents/ai-sdk-integration): Structured output and non-streaming responses
-- [State Management](/Build/Agents/state-management): Multi-turn conversations with memory
-- [Server-Sent Events](/Build/Routes/sse): Server-push updates without polling
+- [Using the AI SDK](/Agents/ai-sdk-integration): Structured output and non-streaming responses
+- [State Management](/Agents/state-management): Multi-turn conversations with memory
+- [Server-Sent Events](/Routes/sse): Server-push updates without polling

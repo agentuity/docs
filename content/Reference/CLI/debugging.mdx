@@ -19,6 +19,9 @@ agentuity cloud ssh proj_abc123xyz
 # SSH into specific deployment
 agentuity cloud ssh dep_abc123xyz
 
+# SSH into a sandbox
+agentuity cloud ssh sbx_abc123xyz
+
 # Run a command and exit
 agentuity cloud ssh 'ps aux'
 
@@ -174,7 +177,7 @@ Session logs show output for a single request. Deployment logs show all output f
 
 ## Thread Inspection
 
-List and manage conversation threads. For details on how threads work in agents, see [State Management](/Build/Agents/state-management).
+List and manage conversation threads. For details on how threads work in agents, see [State Management](/Agents/state-management).
 
 ```bash
 # List recent threads
@@ -287,4 +290,4 @@ agentuity --json cloud thread list --count=100 | \
 
 - [Managing Cloud Data](/Reference/CLI/data-management): Inspect storage, env vars, and secrets
 - [Deploying to the Cloud](/Reference/CLI/deployment): Deploy and manage projects
-- [Logging](/Build/Observability/logging): Configure logging in your agents
+- [Logging](/Services/Observability/logging): Configure logging in your agents

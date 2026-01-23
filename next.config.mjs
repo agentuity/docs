@@ -9,13 +9,8 @@ const config = {
 	serverExternalPackages: ['twoslash', 'typescript'],
 	redirects: async () => [
 		{
-			source: '/Get-Started/what-is-agentuity',
-			destination: '/',
-			permanent: false,
-		},
-		{
 			source: '/Introduction',
-			destination: '/',
+			destination: '/Get-Started/what-is-agentuity',
 			permanent: true,
 		},
 		{
@@ -46,6 +41,7 @@ const config = {
 			permanent: true,
 		},
 	],
+	// API rewrites are handled by middleware.ts (to inject bearer token)
 };
 
 export default withMDX(config);

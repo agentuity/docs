@@ -92,7 +92,7 @@ router.get('/search', async (c) => {
 
 ## Calling Agents
 
-Import and call agents directly. To create agents, see [Creating Agents](/Build/Agents/creating-agents).
+Import and call agents directly. To create agents, see [Creating Agents](/Agents/creating-agents).
 
 ```typescript
 import { createRouter } from '@agentuity/runtime';
@@ -387,7 +387,7 @@ router.use(authMiddleware);
 router.get('/protected', handler); // Both middlewares apply
 ```
 
-For authentication patterns, rate limiting, and more, see [Middleware](/Build/Routes/middleware).
+For authentication patterns, rate limiting, and more, see [Middleware](/Routes/middleware).
 
 ### Handle errors gracefully
 
@@ -473,7 +473,7 @@ export default router;
 | `sse()` | Server → Client | SSE events | Progress updates, notifications |
 | `websocket()` | Bidirectional | Messages | Chat, collaboration |
 
-Use `stream()` middleware for raw streaming (like AI SDK `textStream`). Use `sse()` middleware when you need named events or auto-reconnection. See [Streaming Responses](/Build/Agents/streaming-responses) for the full guide on streaming agents.
+Use `stream()` middleware for raw streaming (like AI SDK `textStream`). Use `sse()` middleware when you need named events or auto-reconnection. See [Streaming Responses](/Agents/streaming-responses) for the full guide on streaming agents.
 
 ## Routes Without Agents
 
@@ -569,9 +569,9 @@ Use agents when you need LLM orchestration, complex schemas, streaming AI respon
 
 ## Next Steps
 
-- [Middleware](/Build/Routes/middleware): Authentication, rate limiting, logging
-- [Scheduled Jobs (Cron)](/Build/Routes/cron): Run tasks on a schedule
-- [WebSockets](/Build/Routes/websockets): Real-time bidirectional communication
-- [Server-Sent Events](/Build/Routes/sse): Stream updates to clients
-- [Creating Agents](/Build/Agents/creating-agents): Build agents to call from routes
-- [Calling Other Agents](/Build/Agents/calling-other-agents): Multi-agent orchestration patterns
+- [Middleware](/Routes/middleware): Authentication, rate limiting, logging
+- [Scheduled Jobs (Cron)](/Routes/cron): Run tasks on a schedule
+- [WebSockets](/Routes/websockets): Real-time bidirectional communication
+- [Server-Sent Events](/Routes/sse): Stream updates to clients
+- [Creating Agents](/Agents/creating-agents): Build agents to call from routes
+- [Calling Other Agents](/Agents/calling-other-agents): Multi-agent orchestration patterns

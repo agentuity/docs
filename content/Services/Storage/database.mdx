@@ -10,10 +10,10 @@ Database storage provides relational database capabilities using [Bun's native S
 | Storage Type | Best For |
 |--------------|----------|
 | **Database** | Structured data, complex queries, transactions, relational data |
-| [Key-Value](/Build/Storage/key-value) | Fast lookups, caching, configuration |
-| [Vector](/Build/Storage/vector) | Semantic search, embeddings, RAG |
-| [Object (S3)](/Build/Storage/object) | Files, images, documents, media |
-| [Durable Streams](/Build/Storage/durable-streams) | Large exports, audit logs |
+| [Key-Value](/Services/Storage/key-value) | Fast lookups, caching, configuration |
+| [Vector](/Services/Storage/vector) | Semantic search, embeddings, RAG |
+| [Object (S3)](/Services/Storage/object) | Files, images, documents, media |
+| [Durable Streams](/Services/Storage/durable-streams) | Large exports, audit logs |
 
 <Callout type="info" title="Credentials Auto-Injected">
 When you create a database with `agentuity cloud db create`, the `DATABASE_URL` is automatically added to your `.env` file. During deployment, credentials are injected automatically.
@@ -153,7 +153,7 @@ For complete API documentation including dynamic queries, bulk inserts, savepoin
 
 ## Next Steps
 
-- [Key-Value Storage](/Build/Storage/key-value): Fast caching and session data
-- [Object Storage (S3)](/Build/Storage/object): File and media storage
-- [Vector Storage](/Build/Storage/vector): Semantic search and embeddings
-- [Durable Streams](/Build/Storage/durable-streams): Streaming large data exports
+- [Key-Value Storage](/Services/Storage/key-value): Fast caching and session data
+- [Object Storage (S3)](/Services/Storage/object): File and media storage
+- [Vector Storage](/Services/Storage/vector): Semantic search and embeddings
+- [Durable Streams](/Services/Storage/durable-streams): Streaming large data exports

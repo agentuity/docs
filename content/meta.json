@@ -2,7 +2,7 @@
 	"title": "Agentuity Docs",
 	"root": true,
 	"pages": [
-		"index",
+		"[SDK Explorer](/)",
 		"Get-Started",
 		"Agents",
 		"APIs",

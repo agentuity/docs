@@ -5,9 +5,22 @@ description: Save and restore sandbox filesystem states for faster cold starts
 
 Skip slow dependency installation on every run by saving sandbox filesystem states as snapshots.
 
+Manage snapshots via the [Web App](https://app-v1.agentuity.com) under **Services > Sandbox > Snapshots**, the [SDK](/Services/Sandbox/sdk-usage), or [CLI](/Reference/CLI/sandbox).
+
 <Callout type="warning" title="Snapshots Are Not Executable">
-A snapshot captures the filesystem state of a sandbox at a point in time. Think of it like Docker: a snapshot is an image, a sandbox is a running container. You create new sandboxes *from* snapshots.
+A snapshot captures the filesystem state of a sandbox at a point in time. You create new sandboxes *from* snapshots, not run them directly.
 </Callout>
+
+## How Snapshots Work
+
+Snapshots build on top of [runtimes](/Services/Sandbox#runtimes). When you create a snapshot:
+
+1. Start with a **runtime** (e.g., `bun:1`) as the base layer
+2. Add your **dependencies** (apt packages, npm modules, etc.)
+3. Include your **files** (source code, config)
+4. The snapshot captures everything: runtime + dependencies + files
+
+When you create a sandbox from a snapshot, it starts with all of this pre-configured.
 
 ## The Snapshot Workflow
 
@@ -17,13 +30,72 @@ A snapshot captures the filesystem state of a sandbox at a point in time. Think 
 4. Later, create new sandboxes from that snapshot
 5. New sandboxes start with everything pre-configured
 
-## Creating a Snapshot
+## Declarative Snapshots (Recommended)
 
-Snapshots are created via CLI from an existing sandbox:
+Define snapshots in a YAML file for reproducible, version-controlled environments. This approach is ideal for CI/CD pipelines and team collaboration.
+
+### Quick Start
+
+Generate a template with helpful comments explaining each field:
 
 ```bash
-# Create a sandbox and configure it
-agentuity cloud sandbox create --memory 1Gi --network
+agentuity cloud sandbox snapshot generate > agentuity-snapshot.yaml
+```
+
+The generated file includes documentation for all options: runtime selection, apt dependencies, file patterns, environment variables, and metadata. Customize it for your needs, then build:
+
+```bash
+agentuity cloud sandbox snapshot build .
+```
+
+### Build File Example
+
+```yaml
+version: 1
+runtime: bun:1  # Base runtime - snapshot layers on top of this
+description: Node.js environment with common dependencies
+
+dependencies:  # Apt packages to install
+  - curl
+  - jq
+
+files:  # Files to include from your project
+  - src/**
+  - package.json
+  - "!**/*.test.ts"    # Exclude test files
+  - "!node_modules/**" # Exclude node_modules
+
+env:
+  NODE_ENV: production
+```
+
+### Build Options
+
+```bash
+# Build with a custom tag
+agentuity cloud sandbox snapshot build . --tag production
+
+# Build with environment variable substitution
+agentuity cloud sandbox snapshot build . --env API_KEY=secret
+
+# Force rebuild even if content unchanged
+agentuity cloud sandbox snapshot build . --force
+```
+
+### When to Use Declarative vs Manual
+
+| Approach | Best For |
+|----------|----------|
+| **Declarative** | CI/CD pipelines, reproducible environments, team collaboration, version control |
+| **Manual** | Quick experimentation, one-off debugging, exploring new configurations |
+
+## Creating a Snapshot Manually
+
+Create a sandbox, configure it, then save a snapshot:
+
+```bash
+# Create a sandbox with a runtime
+agentuity cloud sandbox create --runtime bun:1 --memory 1Gi --network
 # Returns: sbx_abc123
 
 # Install dependencies
@@ -143,14 +215,14 @@ Create snapshots for each language you support:
 
 ```bash
 # Python with common packages
-agentuity cloud sandbox create --network
+agentuity cloud sandbox create --runtime base:latest --network
 agentuity cloud sandbox exec sbx_... -- apt-get update
 agentuity cloud sandbox exec sbx_... -- apt-get install -y python3 python3-pip
 agentuity cloud sandbox exec sbx_... -- pip install numpy pandas requests
 agentuity cloud sandbox snapshot create sbx_... --tag python-data
 
 # Node.js with TypeScript
-agentuity cloud sandbox create --network
+agentuity cloud sandbox create --runtime bun:1 --network
 agentuity cloud sandbox exec sbx_... -- npm install -g typescript tsx
 agentuity cloud sandbox snapshot create sbx_... --tag node-typescript
 ```
@@ -222,9 +294,9 @@ Snapshots don't include:
 - **Tag important snapshots**: Use descriptive tags like `python-ml-v2` instead of relying on IDs
 - **Keep snapshots lean**: Only include necessary dependencies to minimize size
 - **Version your snapshots**: Use semantic versioning tags for reproducibility
-- **Clean up unused snapshots**: Delete old snapshots to free storage
+- **Clean up unused snapshots**: Delete snapshots you no longer need
 
 ## Next Steps
 
-- [SDK Usage](/Build/Sandbox/sdk-usage): File I/O, streaming, and advanced configuration options
+- [SDK Usage](/Services/Sandbox/sdk-usage): File I/O, streaming, and advanced configuration options
 - [CLI Commands](/Reference/CLI/sandbox): Debug sandboxes and manage snapshots from the terminal

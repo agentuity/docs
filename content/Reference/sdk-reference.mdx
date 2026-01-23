@@ -1315,7 +1315,7 @@ const mysql = new SQL("mysql://user:pass@localhost:3306/mydb");
 const sqlite = new SQL("sqlite://data/app.db");
 ```
 
-For Agentuity-specific patterns, see [Database Storage](/Build/Storage/database). For the complete Bun SQL API, see [Bun SQL documentation](https://bun.com/docs/runtime/sql).
+For Agentuity-specific patterns, see [Database Storage](/Services/Storage/database). For the complete Bun SQL API, see [Bun SQL documentation](https://bun.com/docs/runtime/sql).
 
 ### Object Storage (Bun S3)
 
@@ -1408,7 +1408,7 @@ writer.write(chunk2);
 await writer.end();
 ```
 
-For Agentuity-specific patterns, see [Object Storage](/Build/Storage/object). For the complete Bun S3 API, see [Bun S3 documentation](https://bun.com/docs/runtime/s3).
+For Agentuity-specific patterns, see [Object Storage](/Services/Storage/object). For the complete Bun S3 API, see [Bun S3 documentation](https://bun.com/docs/runtime/s3).
 
 ### Stream Storage
 
@@ -2132,7 +2132,7 @@ await ctx.invoke(async () => {
 });
 ```
 
-See [Running Agents Without HTTP](/Build/Agents/standalone-execution) for Discord bots, CLI tools, and queue worker patterns.
+See [Running Agents Without HTTP](/Agents/standalone-execution) for Discord bots, CLI tools, and queue worker patterns.
 
 #### From External Backends (Next.js, Express)
 
@@ -2181,7 +2181,7 @@ function SessionView({ id }: { id: string }) {
 }
 ```
 
-See [React Hooks](/Build/Frontend/react-hooks) for `useAPI`, `useWebsocket`, and `useEventStream`.
+See [React Hooks](/Frontend/react-hooks) for `useAPI`, `useWebsocket`, and `useEventStream`.
 
 ### HTTP Methods
 

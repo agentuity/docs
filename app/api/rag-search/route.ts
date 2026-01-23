@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { getAgentQaConfig } from '@/lib/env';
+import { queryAgentQa } from '@/lib/api/services';
 import { source } from '@/lib/source';
 
 function documentPathToUrl(docPath: string): string {
@@ -93,31 +93,7 @@ export async function GET(request: NextRequest) {
 	}
 
 	try {
-		const agentConfig = getAgentQaConfig();
-
-		// Prepare headers
-		const headers: Record<string, string> = {
-			'Content-Type': 'application/json',
-		};
-
-		// Add bearer token if provided
-		if (agentConfig.bearerToken) {
-			headers['Authorization'] = `Bearer ${agentConfig.bearerToken}`;
-		}
-
-		const response = await fetch(agentConfig.url, {
-			method: 'POST',
-			headers,
-			body: JSON.stringify({ message: query }),
-		});
-
-		if (!response.ok) {
-			throw new Error(
-				`Agent API error: ${response.status} ${response.statusText}`
-			);
-		}
-
-		const data = await response.json();
+		const data = await queryAgentQa(query);
 		const results = [];
 
 		if (data?.answer?.trim()) {
@@ -136,23 +112,30 @@ export async function GET(request: NextRequest) {
 			Array.isArray(data.documents) &&
 			data.documents.length > 0
 		) {
-			const uniqueDocuments = [...new Set(data.documents as string[])];
+			// Deduplicate by URL
+			const seenUrls = new Set<string>();
+			const uniqueDocuments = data.documents.filter((doc) => {
+				if (seenUrls.has(doc.url)) return false;
+				seenUrls.add(doc.url);
+				return true;
+			});
 
-			uniqueDocuments.forEach((docPath: string, index: number) => {
+			uniqueDocuments.forEach((doc, index: number) => {
 				try {
-					const url = documentPathToUrl(docPath);
-					const metadata = getDocumentMetadata(docPath);
-					const snippet = getDocumentSnippet(docPath);
+					const url = documentPathToUrl(doc.url);
+
+					const title = doc.title || getDocumentMetadata(doc.url).title;
+					const snippet = getDocumentSnippet(doc.url);
 
 					results.push({
 						id: `doc-${Date.now()}-${index}`,
 						url: url,
-						title: metadata.title,
+						title: title,
 						content: snippet,
 						type: 'document',
 					});
 				} catch (error) {
-					console.warn(`Failed to process document ${docPath}:`, error);
+					console.warn(`Failed to process document ${doc.url}:`, error);
 				}
 			});
 		}

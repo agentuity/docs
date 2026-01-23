@@ -51,7 +51,7 @@ v1 has a different project structure, so we recommend creating a new project and
 Install the v1 CLI:
 
 ```bash
-curl -sSL https://v1.agentuity.sh | sh
+curl -sSL https://agentuity.sh | sh
 ```
 
 Create a new v1 project:
@@ -510,7 +510,7 @@ These features are optional but can improve your agents.
 
 ### Cron Routes
 
-v1 adds cron routes via middleware. See [Routes documentation](/Build/Routes) for WebSocket, SSE, and streaming.
+v1 adds cron routes via middleware. See [Routes documentation](/Routes) for WebSocket, SSE, and streaming.
 
 ```typescript
 import { cron } from '@agentuity/runtime';
@@ -523,15 +523,15 @@ router.post('/daily-job', cron('0 0 * * *', async (c) => {
 
 ### Evaluations
 
-Test agent outputs automatically with `agent.createEval()`. See [Evaluations](/Build/Agents/evaluations).
+Test agent outputs automatically with `agent.createEval()`. See [Evaluations](/Agents/evaluations).
 
 ### Event Listeners
 
-Monitor agent lifecycle with `agent.addEventListener('started' | 'completed' | 'errored', ...)`. See [Events](/Build/Agents/events-lifecycle).
+Monitor agent lifecycle with `agent.addEventListener('started' | 'completed' | 'errored', ...)`. See [Events](/Agents/events-lifecycle).
 
 ### Sessions and Threads
 
-Manage conversational state with `ctx.session` and `ctx.thread`. See [State Management](/Build/Agents/state-management).
+Manage conversational state with `ctx.session` and `ctx.thread`. See [State Management](/Agents/state-management).
 
 ---
 
@@ -633,7 +633,7 @@ If you encounter issues not covered in this guide:
 
 After migrating your agents:
 
-1. **Add Schema Validation**: Improve type safety with [Schema Validation](/Build/Routes/http)
-2. **Implement Evaluations**: Ensure quality with [Evaluations](/Build/Agents/evaluations)
-3. **Use Advanced Routing**: Explore [WebSocket](/Build/Routes/websockets), [SSE](/Build/Routes/sse), and [other routes](/Build/Routes)
-4. **Add Event Listeners**: Monitor your agents with [Events & Lifecycle](/Build/Agents/events-lifecycle)
+1. **Add Schema Validation**: Improve type safety with [Schema Validation](/Routes/http)
+2. **Implement Evaluations**: Ensure quality with [Evaluations](/Agents/evaluations)
+3. **Use Advanced Routing**: Explore [WebSocket](/Routes/websockets), [SSE](/Routes/sse), and [other routes](/Routes)
+4. **Add Event Listeners**: Monitor your agents with [Events & Lifecycle](/Agents/events-lifecycle)

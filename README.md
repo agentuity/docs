@@ -6,53 +6,90 @@
 
 # Agentuity Docs Website
 
-This project contains the Agentuity documentation website, created using Fumadocs and running on NextJS 15.
+Documentation website for Agentuity, built with [Fumadocs](https://fumadocs.vercel.app) and Next.js 15.
 
+## Project Structure
 
-To make the search feature work, you must set up `.env.local` with the following steps.
+```
+docs/
+├── app/                    # Next.js app router
+├── content/                # Documentation content (MDX files)
+├── components/             # React components
+├── lib/                    # Shared utilities
+├── doc-agents/             # Agentuity agents backend (AI search, chat, etc.)
+└── public/                 # Static assets
+```
 
-## Quick Start Guide
+## Quick Start
 
-1. **Navigate to the Agent Directory:**
-   ```bash
-   cd agent-docs
-   ```
+### 1. Install Dependencies
 
-2. **Generate Agent Environment:**
-   ```bash
-   agentuity dev
-   ```
-   This will generate a `.env` file in the `agent-docs` directory with your SDK key. The key is required for the next steps.
+```bash
+npm install
+```
 
+### 2. Set Up Environment
 
+Copy the example environment file:
 
-3. **Copy Environment Configuration:**
-   For local development, copy the `.env.example` file to `.env.local` in the root directory of the docs project:
-   ```bash
-   # Make sure you are in the root directory, not in agent-docs
-   cd ../
-   cp .env.example .env.local
-   ```
+```bash
+cp .env.example .env.local
+```
 
-4. **Update `AGENTUITY_API_KEY`:**
-   If you are a contributor from outside the Agentuity organization, ensure that you update the `AGENTUITY_API_KEY` in your `.env.local` file with your specific SDK key from the `agentuity dev` run.
+Configure the following variables in `.env.local`:
 
-## Running Docs Application
+| Variable | Description |
+|----------|-------------|
+| `AGENT_BASE_URL` | URL of the doc-agents backend (local: `http://127.0.0.1:3500`) |
+| `AGENT_BEARER_TOKEN` | Bearer token for authenticating with the agent backend |
+
+### 3. Start the Doc-Agents Backend (Optional)
+
+If you need AI search or chat features, start the agents backend:
+
+```bash
+cd doc-agents
+agentuity dev
+```
+
+This starts the agents backend at `http://localhost:3500`. See [doc-agents/README.md](doc-agents/README.md) for more details.
+
+### 4. Run the Docs Site
 
 ```bash
 npm run dev
-# or
-pnpm dev
-# or
-yarn dev
 ```
+
+Open [http://localhost:3201](http://localhost:3201) to view the docs.
+
+## Environment Variables
+
+### Local Development
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `AGENT_BASE_URL` | No | Agent backend URL (defaults to `http://127.0.0.1:3500`) |
+| `AGENT_BEARER_TOKEN` | For AI features | Token for agent backend authentication |
+
+### Production (Cloudflare)
+
+Set these as **runtime** environment variables (not build-time):
+
+| Variable | Description |
+|----------|-------------|
+| `AGENT_BASE_URL` | Your deployed doc-agents URL |
+| `AGENT_BEARER_TOKEN` | Secret token (use encrypted secrets) |
+
+## GitHub Actions Secrets
+
+For CI/CD workflows:
+
+| Secret | Description |
+|--------|-------------|
+| `AGENT_BEARER_TOKEN` | Bearer token for the `process-docs` API endpoint |
 
 ## Learn More
 
-To learn more about Next.js and Fumadocs, take a look at the following
-resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js
-  features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [Fumadocs](https://fumadocs.vercel.app) - learn about Fumadocs
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Fumadocs](https://fumadocs.vercel.app)
+- [Agentuity Documentation](https://agentuity.dev)

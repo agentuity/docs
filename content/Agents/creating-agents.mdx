@@ -116,7 +116,7 @@ const agent = createAgent('Assistant', {
 export default agent;
 ```
 
-For streaming, structured output, and more patterns, see [Using the AI SDK](/Build/Agents/ai-sdk-integration).
+For streaming, structured output, and more patterns, see [Using the AI SDK](/Agents/ai-sdk-integration).
 
 ## Adding Schema Validation
 
@@ -192,7 +192,7 @@ export default agent;
 - **[Valibot](https://valibot.dev)** — Tiny bundle size, tree-shakeable
 - **[ArkType](https://arktype.io)** — TypeScript-native syntax
 
-All implement [StandardSchema](https://github.com/standard-schema/standard-schema). See [Schema Libraries](/Build/Agents/schema-libraries) for detailed examples.
+All implement [StandardSchema](https://github.com/standard-schema/standard-schema). See [Schema Libraries](/Agents/schema-libraries) for detailed examples.
 </Callout>
 
 ### Type Inference
@@ -303,7 +303,7 @@ handler: async (ctx, input) => {
 }
 ```
 
-For detailed state management patterns, see [Managing State](/Build/Agents/state-management).
+For detailed state management patterns, see [Managing State](/Agents/state-management).
 
 ## Agent Name and Description
 
@@ -321,7 +321,7 @@ The name is used for identification in logs, Workbench, and the Agentuity consol
 
 ## Adding Test Prompts
 
-Export a `welcome` function to add test prompts for [Workbench](/Build/Agents/workbench):
+Export a `welcome` function to add test prompts for [Workbench](/Agents/workbench):
 
 ```typescript
 export const welcome = () => ({
@@ -337,7 +337,7 @@ export const welcome = () => ({
 export default agent;
 ```
 
-See [Testing with Workbench](/Build/Agents/workbench) for full setup and configuration.
+See [Testing with Workbench](/Agents/workbench) for full setup and configuration.
 
 ## Best Practices
 
@@ -364,6 +364,6 @@ handler: async (ctx, input) => {
 
 ## Next Steps
 
-- [Using the AI SDK](/Build/Agents/ai-sdk-integration): Add LLM capabilities with generateText and streamText
-- [Managing State](/Build/Agents/state-management): Persist data across requests with thread and session state
-- [Calling Other Agents](/Build/Agents/calling-other-agents): Build multi-agent workflows
+- [Using the AI SDK](/Agents/ai-sdk-integration): Add LLM capabilities with generateText and streamText
+- [Managing State](/Agents/state-management): Persist data across requests with thread and session state
+- [Calling Other Agents](/Agents/calling-other-agents): Build multi-agent workflows

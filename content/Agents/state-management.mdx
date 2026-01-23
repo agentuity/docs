@@ -24,7 +24,7 @@ Threads "wrap" sessions. Think of a *thread* as a conversation and a *session* a
 </Callout>
 
 <Callout type="info" title="State in Routes">
-Routes have the same state access via `c.var.thread` and `c.var.session`. Use `c.var.thread.state` for conversation context and `c.var.session.state` for request-scoped data. See [HTTP Routes](/Build/Routes/http#request-context) for route examples.
+Routes have the same state access via `c.var.thread` and `c.var.session`. Use `c.var.thread.state` for conversation context and `c.var.session.state` for request-scoped data. See [HTTP Routes](/Routes/http#request-context) for route examples.
 </Callout>
 
 ### Quick Example
@@ -197,10 +197,10 @@ Both `ctx.state` and `ctx.session.state` are request-scoped and reset after each
 - **`ctx.state`**: General request state, accessible in agent event listeners and evals
 - **`ctx.session.state`**: Accessible via `session` in completion event callbacks
 
-For most use cases, use `ctx.state`. Use `ctx.session.state` only when you need data in session completion events. See [Events & Lifecycle](/Build/Agents/events-lifecycle) for more on event handlers.
+For most use cases, use `ctx.state`. Use `ctx.session.state` only when you need data in session completion events. See [Events & Lifecycle](/Agents/events-lifecycle) for more on event handlers.
 
 <Callout type="info" title="Persistent Data">
-Neither `ctx.state` nor `ctx.session.state` persist across requests. For data that should survive across requests, use `ctx.thread.state` (up to 1 hour) or [KV storage](/Build/Storage/key-value) (durable).
+Neither `ctx.state` nor `ctx.session.state` persist across requests. For data that should survive across requests, use `ctx.thread.state` (up to 1 hour) or [KV storage](/Services/Storage/key-value) (durable).
 </Callout>
 
 ## Persisting to Storage
@@ -297,7 +297,7 @@ ctx.thread.addEventListener('destroyed', async (eventName, thread) => {
 
 Similarly, track when sessions complete with `ctx.session.addEventListener('completed', ...)`.
 
-For app-level monitoring of all threads and sessions, see [Events & Lifecycle](/Build/Agents/events-lifecycle).
+For app-level monitoring of all threads and sessions, see [Events & Lifecycle](/Agents/events-lifecycle).
 
 ## Thread vs Session IDs
 
@@ -436,7 +436,7 @@ Thread and session state are limited to **1MB** after JSON serialization. Values
 </Callout>
 
 To stay within limits:
-- Store large data in [KV storage](/Build/Storage/key-value) instead of state
+- Store large data in [KV storage](/Services/Storage/key-value) instead of state
 - Keep only recent messages (e.g., last 20-50)
 - Store IDs or references rather than full objects
 
@@ -467,6 +467,6 @@ if (messages.length > 50) {
 
 ## Next Steps
 
-- [Key-Value Storage](/Build/Storage/key-value): Durable data persistence with namespaces and TTL
-- [Calling Other Agents](/Build/Agents/calling-other-agents): Share state between agents in workflows
-- [Events & Lifecycle](/Build/Agents/events-lifecycle): Monitor agent execution and cleanup
+- [Key-Value Storage](/Services/Storage/key-value): Durable data persistence with namespaces and TTL
+- [Calling Other Agents](/Agents/calling-other-agents): Share state between agents in workflows
+- [Events & Lifecycle](/Agents/events-lifecycle): Monitor agent execution and cleanup

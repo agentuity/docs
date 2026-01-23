@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentuity.dev/schema/cli/v1/agentuity-snapshot.json",
+  "title": "Agentuity Snapshot Build File",
+  "description": "Schema for agentuity-snapshot.yaml files that define reproducible sandbox environments. Build with: agentuity cloud sandbox snapshot build <directory>. Note: At least one of dependencies, files, or env must be specified.",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "number",
+      "const": 1,
+      "description": "Schema version, must be 1"
+    },
+    "runtime": {
+      "type": "string",
+      "description": "Runtime identifier (name:tag format, e.g., bun:1, node:20, python:3.12)"
+    },
+    "name": {
+      "description": "Snapshot name (alphanumeric, underscores, dashes only)",
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "description": {
+      "description": "Human-readable description of the snapshot",
+      "type": "string"
+    },
+    "dependencies": {
+      "description": "List of apt packages to install. Supports version pinning: package=version or package=version* for prefix matching",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "files": {
+      "description": "Glob patterns for files to include from the build context. Supports negative patterns with ! prefix for exclusions",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "env": {
+      "description": "Environment variables to set. Use ${VAR} syntax for build-time substitution via --env flag",
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "metadata": {
+      "description": "User-defined metadata key-value pairs. Use ${VAR} syntax for build-time substitution via --metadata flag",
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "public": {
+      "description": "Whether to make the snapshot publicly accessible (default: false)",
+      "type": "boolean"
+    },
+    "$schema": {
+      "description": "JSON Schema reference URL",
+      "type": "string"
+    }
+  },
+  "required": ["version", "runtime"],
+  "additionalProperties": true
+}

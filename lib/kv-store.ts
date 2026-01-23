@@ -1,8 +1,13 @@
 /**
- * KV Store utility functions for Agentuity
- * Handles communication with the Agentuity KV store API
+ * KV Store utility functions for Agentuity V1 SDK
+ * Uses the native KeyValueStorageService from @agentuity/core
+ *
+ * IMPORTANT: Only use in server-side code (API routes, server actions)
+ * Never expose AGENTUITY_SDK_KEY to the browser
  */
 
+import { KeyValueStorageService } from '@agentuity/core';
+import { createServerFetchAdapter, getServiceUrls, createLogger } from '@agentuity/server';
 import { config } from './config';
 
 // Types
@@ -10,103 +15,62 @@ export interface KVStoreOptions {
   storeName?: string;
 }
 
-export interface KVStoreResponse<T = any> {
-  success: boolean;
+export interface KVGetResult<T = any> {
+  exists: boolean;
   data?: T;
-  error?: string;
-  statusCode?: number;
 }
 
-/**
- * Shared validation function for KV store operations
- */
-function validateKVRequest(key: string): KVStoreResponse | null {
-  if (!key) {
-    return {
-      success: false,
-      error: 'Key parameter is required'
-    };
+export interface KVSetOptions extends KVStoreOptions {
+  ttl?: number; // TTL in seconds, minimum 60
+}
+
+export interface KVDeleteResult {
+  exists: boolean;
+}
+
+// Create logger for SDK
+const logger = createLogger('info');
+
+// Initialize the KV service
+function initializeKVService() {
+  if (!process.env.AGENTUITY_SDK_KEY) {
+    throw new Error('AGENTUITY_SDK_KEY environment variable is required');
   }
 
-  if (!process.env.AGENTUITY_API_KEY) {
-    return {
-      success: false,
-      error: 'AGENTUITY_API_KEY environment variable is required'
-    };
-  }
+  const adapter = createServerFetchAdapter({
+    headers: {
+      Authorization: `Bearer ${process.env.AGENTUITY_SDK_KEY}`
+    },
+  }, logger);
 
-  return null;
+  const serviceUrls = getServiceUrls(config.agentuityRegion);
+  return new KeyValueStorageService(serviceUrls.keyvalue, adapter);
 }
 
 /**
  * Retrieve a value from the KV store
  * @param key - The key to retrieve
- * @param options - Optional configuration
- * @returns Promise<KVStoreResponse<T>>
+ * @param options - Optional configuration with storeName
+ * @returns Promise<KVGetResult<T>>
  */
 export async function getKVValue<T = any>(
   key: string,
   options: KVStoreOptions = {}
-): Promise<KVStoreResponse<T>> {
-  const { storeName } = options;
-  const finalStoreName = storeName || config.defaultStoreName;
-
-  // Validate required parameters
-  const validationError = validateKVRequest(key);
-  if (validationError) {
-    return validationError;
-  }
+): Promise<KVGetResult<T>> {
+  const storeName = options.storeName || config.kvStoreName;
 
   try {
-    const url = `${config.baseUrl}/sdk/kv/${encodeURIComponent(finalStoreName)}/${encodeURIComponent(key)}`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${process.env.AGENTUITY_API_KEY}`,
-        'Content-Type': 'application/json',
-        'User-Agent': 'Next.js KV Client'
-      }
-    });
+    const kv = initializeKVService();
+    const result = await kv.get(storeName, key);
 
-    if (response.status === 404) {
-      return {
-        success: false,
-        error: `Key '${key}' not found in store '${finalStoreName}'`,
-        statusCode: 404
-      };
-    }
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      return {
-        success: false,
-        error: `HTTP ${response.status}: ${errorText}`,
-        statusCode: response.status
-      };
-    }
-
-    const data = await response.text();
-
-    try {
-      const jsonData = JSON.parse(data) as T;
-      return {
-        success: true,
-        data: jsonData,
-        statusCode: response.status
-      };
-    } catch (parseError) {
-      // Return raw data if JSON parsing fails
-      return {
-        success: true,
-        data: data as T,
-        statusCode: response.status
-      };
-    }
-
-  } catch (error) {
     return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+      exists: result.exists,
+      data: result.data as T
+    };
+  } catch (error) {
+    console.error(`Failed to get KV value for key '${key}':`, error);
+    return {
+      exists: false
     };
   }
 }
@@ -115,174 +79,51 @@ export async function getKVValue<T = any>(
  * Set a value in the KV store
  * @param key - The key to set
  * @param value - The value to store
- * @param options - Optional configuration including TTL
- * @returns Promise<KVStoreResponse>
+ * @param options - Optional configuration with storeName and TTL (in seconds, min 60)
+ * @returns Promise<boolean>
  */
 export async function setKVValue(
   key: string,
   value: any,
-  options: KVStoreOptions & { ttl?: number } = {}
-): Promise<KVStoreResponse> {
-  const { storeName, ttl } = options;
-  const finalStoreName = storeName || config.defaultStoreName;
+  options: KVSetOptions = {}
+): Promise<boolean> {
+  const storeName = options.storeName || config.kvStoreName;
+  const ttl = options.ttl;
 
-  // Validate required parameters
-  const validationError = validateKVRequest(key);
-  if (validationError) {
-    return validationError;
+  // Validate TTL if provided
+  if (ttl !== undefined && ttl < 60) {
+    throw new Error('TTL must be at least 60 seconds');
   }
 
   try {
-    const ttlStr = ttl ? `/${ttl}` : '';
-    const url = `${config.baseUrl}/sdk/kv/${encodeURIComponent(finalStoreName)}/${encodeURIComponent(key)}${ttlStr}`;
-
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${process.env.AGENTUITY_API_KEY}`,
-        'Content-Type': 'application/json',
-        'User-Agent': 'Next.js KV Client'
-      },
-      body: JSON.stringify(value)
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      return {
-        success: false,
-        error: `HTTP ${response.status}: ${errorText}`,
-        statusCode: response.status
-      };
-    }
-
-    return {
-      success: true,
-      statusCode: response.status
-    };
-
+    const kv = initializeKVService();
+    const setOptions = ttl ? { ttl } : undefined;
+    await kv.set(storeName, key, value, setOptions);
+    return true;
   } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
-    };
+    console.error(`Failed to set KV value for key '${key}':`, error);
+    return false;
   }
 }
 
 /**
  * Delete a value from the KV store
  * @param key - The key to delete
- * @param options - Optional configuration
- * @returns Promise<KVStoreResponse>
+ * @param options - Optional configuration with storeName
+ * @returns Promise<boolean>
  */
 export async function deleteKVValue(
   key: string,
   options: KVStoreOptions = {}
-): Promise<KVStoreResponse> {
-  const { storeName } = options;
-  const finalStoreName = storeName || config.defaultStoreName;
-
-  // Validate required parameters
-  const validationError = validateKVRequest(key);
-  if (validationError) {
-    return validationError;
-  }
+): Promise<boolean> {
+  const storeName = options.storeName || config.kvStoreName;
 
   try {
-    const url = `${config.baseUrl}/sdk/kv/${encodeURIComponent(finalStoreName)}/${encodeURIComponent(key)}`;
-
-    const response = await fetch(url, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${process.env.AGENTUITY_API_KEY}`,
-        'User-Agent': 'Next.js KV Client'
-      }
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      return {
-        success: false,
-        error: `HTTP ${response.status}: ${errorText}`,
-        statusCode: response.status
-      };
-    }
-
-    return {
-      success: true,
-      statusCode: response.status
-    };
-
+    const kv = initializeKVService();
+    await kv.delete(storeName, key);
+    return true;
   } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
-    };
-  }
-}
-
-/**
- * Search for keys in the KV store by keyword pattern
- * @param keyword - The keyword pattern to search for
- * @param options - Optional configuration
- * @returns Promise<KVStoreResponse<Array<{key: string, value: any, metadata?: any}>>>
- */
-export async function searchKVByKeyword<T = any>(
-  keyword: string,
-  options: KVStoreOptions = {}
-): Promise<KVStoreResponse<Array<{key: string, value: T, metadata?: any}>>> {
-  const { storeName } = options;
-  const finalStoreName = storeName || config.defaultStoreName;
-
-  // Validate API key
-  if (!process.env.AGENTUITY_API_KEY) {
-    return {
-      success: false,
-      error: 'AGENTUITY_API_KEY environment variable is required'
-    };
-  }
-
-  try {
-    const url = `${config.baseUrl}/sdk/kv/search/${encodeURIComponent(finalStoreName)}/${encodeURIComponent(keyword)}`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${process.env.AGENTUITY_API_KEY}`,
-        'Content-Type': 'application/json',
-        'User-Agent': 'Next.js KV Client'
-      }
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      return {
-        success: false,
-        error: `HTTP ${response.status}: ${errorText}`,
-        statusCode: response.status
-      };
-    }
-
-    const data = await response.text();
-
-    try {
-      const jsonData = JSON.parse(data);
-      return {
-        success: true,
-        data: jsonData,
-        statusCode: response.status
-      };
-    } catch (parseError) {
-      return {
-        success: false,
-        error: 'Failed to parse search results as JSON',
-        statusCode: response.status
-      };
-    }
-
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
-    };
+    console.error(`Failed to delete KV value for key '${key}':`, error);
+    return false;
   }
 } 

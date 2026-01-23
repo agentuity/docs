@@ -94,7 +94,7 @@ agentuity cloud kv create-namespace staging
 agentuity cloud kv delete-namespace old-cache
 ```
 
-**In agents:** Use `ctx.kv` for programmatic access. See [Key-Value Storage](/Build/Storage/key-value).
+**In agents:** Use `ctx.kv` for programmatic access. See [Key-Value Storage](/Services/Storage/key-value).
 
 ## S3 Storage
 
@@ -141,64 +141,7 @@ agentuity cloud s3 get <storage-id>
 agentuity cloud s3 delete <storage-id>
 ```
 
-**In agents:** Use Bun's `s3` API (`import { s3 } from "bun"`). See [Object Storage (S3)](/Build/Storage/object).
-
-## Object Storage (Legacy)
-
-The `cloud obj` commands provide bucket-based object management. For new projects, consider using `cloud s3` instead.
-
-### Interactive REPL
-
-```bash
-agentuity cloud obj repl
-```
-
-### Upload a File
-
-```bash
-# Upload from file path
-agentuity cloud obj put uploads images/logo.png @./logo.png
-
-# Store JSON directly
-agentuity cloud obj put assets config.json '{"api":"https://api.example.com"}'
-
-# With custom content type
-agentuity cloud obj put backups db.sql @~/backup.sql --content-type application/sql
-```
-
-### Download a File
-
-```bash
-agentuity cloud obj get uploads images/logo.png
-agentuity cloud obj get assets config.json
-```
-
-### Delete a File
-
-```bash
-agentuity cloud obj delete uploads old-image.png
-```
-
-### Generate Public URL
-
-```bash
-# Permanent URL
-agentuity cloud obj url uploads images/logo.png
-
-# Temporary URL (expires in 1 hour)
-agentuity cloud obj url uploads private-doc.pdf --expires 3600
-
-# 5-minute presigned URL
-agentuity cloud obj presigned backups db.sql --expires 300
-```
-
-### List Buckets and Files
-
-```bash
-agentuity cloud obj list-buckets
-agentuity cloud obj list-keys uploads
-agentuity cloud obj ls assets  # Using alias
-```
+**In agents:** Use Bun's `s3` API (`import { s3 } from "bun"`). See [Object Storage (S3)](/Services/Storage/object).
 
 ## Vector Storage
 
@@ -288,7 +231,7 @@ agentuity cloud vector delete-namespace old-products
 Deleting a namespace removes all vectors within it. This cannot be undone.
 </Callout>
 
-**In agents:** Use `ctx.vector` for programmatic access. See [Vector Storage](/Build/Storage/vector).
+**In agents:** Use `ctx.vector` for programmatic access. See [Vector Storage](/Services/Storage/vector).
 
 ## Database
 
@@ -304,7 +247,13 @@ agentuity cloud db list
 
 ```bash
 agentuity cloud db create --name my-database
+agentuity cloud db create --name analytics-db --description "Analytics data warehouse"
 ```
+
+| Option | Description |
+|--------|-------------|
+| `--name <name>` | Custom database name |
+| `--description <text>` | Optional database description |
 
 This adds `DATABASE_URL` to your local `.env` file automatically.
 
@@ -341,7 +290,7 @@ agentuity cloud db logs <database-id>
 agentuity cloud db delete <database-id>
 ```
 
-**In agents:** Use Bun's `sql` API (`import { sql } from "bun"`). See [Database](/Build/Storage/database).
+**In agents:** Use Bun's `sql` API (`import { sql } from "bun"`). See [Database](/Services/Storage/database).
 
 ## Streams
 
@@ -365,7 +314,7 @@ agentuity cloud stream get <stream-id>
 agentuity cloud stream delete <stream-id>
 ```
 
-**In agents:** Use `ctx.stream` for programmatic access. See [Durable Streams](/Build/Storage/durable-streams).
+**In agents:** Use `ctx.stream` for programmatic access. See [Durable Streams](/Services/Storage/durable-streams).
 
 ## Redis
 
@@ -397,7 +346,7 @@ REDIS_URL=redis://...
 ## Next Steps
 
 - [Configuration Commands](/Reference/CLI/configuration): Manage environment variables, secrets, and API keys
-- [Key-Value Storage](/Build/Storage/key-value): Programmatic KV access in agents
-- [Object Storage (S3)](/Build/Storage/object): File storage with Bun S3
-- [Database](/Build/Storage/database): SQL queries with Bun SQL
-- [Vector Storage](/Build/Storage/vector): Semantic search in agents
+- [Key-Value Storage](/Services/Storage/key-value): Programmatic KV access in agents
+- [Object Storage (S3)](/Services/Storage/object): File storage with Bun S3
+- [Database](/Services/Storage/database): SQL queries with Bun SQL
+- [Vector Storage](/Services/Storage/vector): Semantic search in agents

@@ -6,7 +6,7 @@ description: Call your API routes from React with useAPI, useWebsocket, and useE
 Call your API routes from React components using type-safe hooks from `@agentuity/react`.
 
 <Callout type="tip" title="Non-React Alternative">
-For non-React apps (Vue, Svelte, vanilla JS) or server-side code, use the [RPC Client](/Build/Frontend/rpc-client) from `@agentuity/frontend` instead.
+For non-React apps (Vue, Svelte, vanilla JS) or server-side code, use the [RPC Client](/Frontend/rpc-client) from `@agentuity/frontend` instead.
 </Callout>
 
 ## Installation
@@ -313,11 +313,11 @@ function ProtectedContent() {
 | `setAuthLoading` | `(loading: boolean) => void` | Control the loading state |
 
 <Callout type="info" title="useAuth vs useAgentuity">
-`useAuth` provides auth-specific state. For non-auth context like `baseUrl`, use `useAgentuity()` instead. See [Authentication](/Build/Frontend/authentication) for integrating with identity providers.
+`useAuth` provides auth-specific state. For non-auth context like `baseUrl`, use `useAgentuity()` instead. See [Authentication](/Frontend/authentication) for integrating with identity providers.
 </Callout>
 
 ## Next Steps
 
-- [Provider Setup](/Build/Frontend/provider-setup): Configure `AgentuityProvider` for deployments
-- [Advanced Hooks](/Build/Frontend/advanced-hooks): Custom handlers for WebSocket and SSE
-- [Deployment Scenarios](/Build/Frontend/deployment-scenarios): Choose where your frontend lives
+- [Provider Setup](/Frontend/provider-setup): Configure `AgentuityProvider` for deployments
+- [Advanced Hooks](/Frontend/advanced-hooks): Custom handlers for WebSocket and SSE
+- [Deployment Scenarios](/Frontend/deployment-scenarios): Choose where your frontend lives
