@@ -10,7 +10,7 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const rawParams = await params;
-    
+
     // Validate parameters with Zod
     const validationResult = TutorialIdParamsSchema.safeParse(rawParams);
     if (!validationResult.success) {
@@ -19,12 +19,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         { status: 400 }
       );
     }
-    
+
     const { id } = validationResult.data;
-    const filePath = join(process.cwd(), 'content', 'Tutorial', `${id}.mdx`);
-    
+    const filePath = join(process.cwd(), 'content', 'Learn', 'Training', 'developers', `${id}.mdx`);
+
     const parsed = await parseTutorialMDXCached(filePath);
-    
+
     return NextResponse.json({
       success: true,
       data: {

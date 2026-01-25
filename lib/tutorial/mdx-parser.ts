@@ -2,7 +2,7 @@ import matter from 'gray-matter';
 import { readFile, stat } from 'fs/promises';
 import path from 'path';
 import {
-  TutorialMetadataSchema,
+  TutorialFrontmatterSchema,
   ParsedTutorialSchema,
   type TutorialStepData,
   type ParsedTutorial
@@ -12,13 +12,13 @@ export async function parseTutorialMDX(filePath: string): Promise<ParsedTutorial
   const fileContent = await readFile(filePath, 'utf-8');
   const { data: frontmatter, content } = matter(fileContent);
 
-  // Validate frontmatter with Zod
-  const validationResult = TutorialMetadataSchema.safeParse(frontmatter);
+  // Validate frontmatter with Zod (allows optional totalSteps)
+  const validationResult = TutorialFrontmatterSchema.safeParse(frontmatter);
   if (!validationResult.success) {
     throw new Error(`Invalid tutorial frontmatter in ${filePath}: ${validationResult.error.message}`);
   }
 
-  const metadata = validationResult.data;
+  const parsedFrontmatter = validationResult.data;
 
   // Extract tutorial steps using regex
   const stepRegex = /<TutorialStep\s+([^>]*?)>(.*?)<\/TutorialStep>/gs;
@@ -45,10 +45,24 @@ export async function parseTutorialMDX(filePath: string): Promise<ParsedTutorial
     });
   }
 
+  const sortedSteps = steps.sort((a, b) => a.stepNumber - b.stepNumber);
+
+  // Compute totalSteps from parsed steps if not in frontmatter
+  const totalSteps = parsedFrontmatter.totalSteps ?? sortedSteps.length;
+
+  // Build final metadata with required totalSteps
+  const metadata = {
+    title: parsedFrontmatter.title,
+    description: parsedFrontmatter.description,
+    totalSteps,
+    difficulty: parsedFrontmatter.difficulty,
+    estimatedTime: parsedFrontmatter.estimatedTime,
+  };
+
   const result = {
     metadata,
     fullContent: content,
-    steps: steps.sort((a, b) => a.stepNumber - b.stepNumber)
+    steps: sortedSteps
   };
 
   // Validate the complete parsed result

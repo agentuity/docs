@@ -6,7 +6,7 @@ import { TutorialListItemSchema, type TutorialListItem } from '@/lib/tutorial/sc
 
 export async function GET() {
   try {
-    const tutorialsDir = join(process.cwd(), 'content', 'Tutorial');
+    const tutorialsDir = join(process.cwd(), 'content', 'Learn', 'Training', 'developers');
     
     // Check if Tutorial directory exists, if not create it for future use
     let entries: string[];
