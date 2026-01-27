@@ -66,11 +66,10 @@ Re-check version
 
 Ensure CLI is up to date
 
+Run: bun add @agentuity/cli@latest
 
-Run: agentuity upgrade
 
-
-If upgrade fails, surface the error and stop
+If upgrade fails for any other reason, surface the error and stop.
 
 
 Do not force reinstall unless explicitly instructed
