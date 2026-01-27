@@ -397,20 +397,7 @@ Call other agents using otherAgent.run(input)
 Remove JSON stringification and manual parsing
 
 
-
-Phase 10 — Triggers
-If the v0 project relied on triggers, re-implement using:
-router.cron()
-
-
-router.email()
-
-
-router.sms()
-
-
-
-Phase 11 — Final Validation
+Phase 10 — Final Validation
 Provide a checklist confirming:
 v0 project remains untouched
 
