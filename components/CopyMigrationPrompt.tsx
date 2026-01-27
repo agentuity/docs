@@ -460,14 +460,19 @@ export function CopyMigrationPrompt() {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(MIGRATION_PROMPT);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(MIGRATION_PROMPT);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+    }
   }
 
   return (
     <div className="my-4 flex items-center">
       <button
+        type="button"
         onClick={handleCopy}
         className="
           inline-flex items-center gap-2
