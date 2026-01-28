@@ -10,6 +10,7 @@ import {
 import { notFound } from 'next/navigation';
 import { CLICommand } from '@/components/CLICommand';
 import { CodeExample } from '@/components/CodeExample';
+import { CopyMigrationPrompt } from '@/components/CopyMigrationPrompt';
 import { Mermaid } from '@/components/Mermaid';
 import { SDKExplorerIframe } from '@/components/SDKExplorerIframe';
 import { Sparkle } from '@/components/Sparkle';
@@ -69,6 +70,7 @@ export default async function Page(props: {
 						PopupTrigger,
 						CodeExample,
 						CodeFromFiles,
+						CopyMigrationPrompt,
 						CLICommand,
 						CommunityButton,
 						Mermaid,
