@@ -20,6 +20,18 @@ Queues enable asynchronous message processing for background tasks, webhooks, an
 - Handle bursty workloads with rate limiting
 - Retry failed operations with exponential backoff
 
+## Access Patterns
+
+| Context | Access | Details |
+|---------|--------|---------|
+| Agents | `ctx.queue` | See examples below |
+| Routes | `c.var.queue` | See [Using in Routes](#using-in-routes) |
+| Standalone | `createAgentContext()` | See [Standalone Usage](#standalone-usage) |
+
+<Callout type="info" title="Same API Everywhere">
+The Queue API is identical in all contexts. `ctx.queue.publish()` and `c.var.queue.publish()` work the same way.
+</Callout>
+
 ## Queue Types
 
 | Type | Behavior |
@@ -90,6 +102,92 @@ interface QueuePublishResult {
   publishedAt: string; // ISO 8601 timestamp
 }
 ```
+
+### Synchronous Publishing
+
+Use `sync: true` when you need to wait for the message to be persisted before returning:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const agent = createAgent('CriticalProcessor', {
+  handler: async (ctx, input) => {
+    // Wait for message to be persisted
+    const result = await ctx.queue.publish('critical-tasks', {
+      taskId: input.taskId,
+      payload: input.data,
+    }, {
+      sync: true,
+    });
+
+    ctx.logger.info('Task queued synchronously', { taskId: input.taskId });
+    return { status: 'queued', messageId: result.id };
+  },
+});
+```
+
+<Callout type="warning" title="Sync Mode Performance">
+Synchronous publishing blocks until the message is persisted. Use it only when you need confirmation that the message was accepted. For most use cases, async publishing is faster and more resilient.
+</Callout>
+
+## Using in Routes
+
+Routes have the same queue access via `c.var.queue`:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.post('/webhook/stripe', async (c) => {
+  const event = await c.req.json();
+
+  // Queue webhook for async processing
+  await c.var.queue.publish('stripe-webhooks', {
+    type: event.type,
+    data: event.data,
+  });
+
+  // Return 200 immediately (Stripe expects fast responses)
+  return c.json({ received: true });
+});
+
+export default router;
+```
+
+<Callout type="tip" title="Webhook Pattern">
+Use queues for webhooks that need quick acknowledgment. Return 200 immediately, then process the payload asynchronously.
+</Callout>
+
+## Standalone Usage
+
+Use queues from background jobs with `createAgentContext()`:
+
+```typescript
+import { createApp, createAgentContext } from '@agentuity/runtime';
+
+await createApp();
+
+// Scheduled job to send daily reports
+async function sendDailyReports() {
+  const ctx = createAgentContext({ trigger: 'cron' });
+
+  await ctx.invoke(async () => {
+    const users = await getActiveUsers();
+
+    for (const user of users) {
+      await ctx.queue.publish('email-reports', {
+        userId: user.id,
+        reportType: 'daily',
+      });
+    }
+
+    ctx.logger.info('Queued daily reports', { count: users.length });
+  });
+}
+```
+
+See [Running Agents Without HTTP](/Agents/standalone-execution) for more patterns.
 
 ## Error Handling
 

@@ -146,7 +146,7 @@ Build Information
 ```
 
 <Callout type="tip" title="DNS Records">
-When custom domains are configured, the `show` command displays the required DNS records. Use this to verify your CNAME configuration.
+When custom domains are configured, the `show` command displays the required DNS records for each domain. Use this to verify your CNAME configuration.
 </Callout>
 
 ## Viewing Logs
@@ -255,6 +255,8 @@ Once enabled, every pull request to your connected repository automatically depl
 - Test changes in an isolated environment before merging
 - Share preview links with reviewers
 - Run integration tests against the preview deployment
+
+Preview environments are automatically cleaned up when the pull request is closed or merged.
 
 <Callout type="info" title="GitHub Connection Required">
 Preview environments require a connected GitHub repository. Connect your repo in **Project > Settings > GitHub**.
@@ -402,12 +404,16 @@ Machine details include status, region, resource allocation, and uptime. Use mac
 - Debug performance issues
 - Clean up unused machines
 
+<Callout type="warning" title="Deleting Machines">
+Deleting a machine immediately terminates any deployments running on it. Only delete machines that are unused or when intentionally removing capacity.
+</Callout>
+
 ## Deploy Options
 
 | Option | Description |
 |--------|-------------|
-| `-y, --confirm` | Confirm region change without prompting |
-| `--dry-run` | Simulate deployment without executing (global option) |
+| `-y, --confirm` | Skip all confirmation prompts (useful for CI/CD) |
+| `--dry-run` | Simulate deployment without executing (place before `deploy`) |
 | `--log-level debug` | Show verbose output |
 | `--project-id <id>` | Deploy specific project |
 | `--message <msg>` | Message to associate with this build |

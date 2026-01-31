@@ -64,17 +64,19 @@ agentuity dev --inspect-wait
 agentuity dev --inspect-brk
 ```
 
-After starting with `--inspect`, open `chrome://inspect` in Chrome or use VS Code's debugger to attach. The inspector listens on port 9229 by default.
+Bun dynamically selects an available port and prints it to the console. Check the output for the debugger URL and port number.
+
+After starting, open `chrome://inspect` in Chrome or use VS Code's debugger to attach.
 
 <Callout type="tip" title="VS Code Debugging">
-Create a launch configuration that attaches to the running process:
+Create a launch configuration that attaches to the running process. Update the port to match the one shown in the console output:
 
 ```json
 {
   "type": "node",
   "request": "attach",
   "name": "Attach to Agentuity",
-  "port": 9229
+  "port": 6499
 }
 ```
 </Callout>
