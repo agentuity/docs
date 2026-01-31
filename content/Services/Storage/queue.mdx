@@ -1,0 +1,171 @@
+---
+title: Queues
+description: Publish and process messages asynchronously with durable message queues
+---
+
+Queues enable asynchronous message processing between agents. Use them to decouple work, handle spikes in load, and build reliable event-driven architectures.
+
+## When to Use Queues
+
+| Storage Type | Best For |
+|--------------|----------|
+| **Queue** | Async processing, event-driven workflows, load balancing |
+| [Key-Value](/Services/Storage/key-value) | Fast lookups, caching, configuration |
+| [Vector](/Services/Storage/vector) | Semantic search, embeddings, RAG |
+| [Object (S3)](/Services/Storage/object) | Files, images, documents, media |
+| [Database](/Services/Storage/database) | Structured data, complex queries, transactions |
+| [Durable Streams](/Services/Storage/durable-streams) | Large exports, audit logs |
+
+## Access Patterns
+
+| Context | Access | Details |
+|---------|--------|---------|
+| Agents | `ctx.queue` | See examples below |
+| Routes | `c.var.queue` | See [Using in Routes](#using-in-routes) |
+| Standalone | `createAgentContext()` | See [Standalone Usage](#standalone-usage) |
+
+<Callout type="info" title="Same API Everywhere">
+The Queue API is identical in all contexts. `ctx.queue.publish()` and `c.var.queue.publish()` work the same way.
+</Callout>
+
+## Publishing Messages
+
+Send messages to a queue for async processing:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const agent = createAgent('OrderProcessor', {
+  handler: async (ctx, input) => {
+    // Publish order for async processing
+    await ctx.queue.publish('orders', {
+      orderId: input.orderId,
+      items: input.items,
+      customerId: input.customerId,
+    });
+
+    ctx.logger.info('Order queued', { orderId: input.orderId });
+    return { status: 'queued', orderId: input.orderId };
+  },
+});
+```
+
+Messages are delivered at least once to consumers subscribed to the queue.
+
+## Synchronous Publishing
+
+Use `sync: true` when you need to wait for the message to be acknowledged by a consumer:
+
+```typescript
+import { createAgent } from '@agentuity/runtime';
+
+const agent = createAgent('CriticalProcessor', {
+  handler: async (ctx, input) => {
+    // Wait for message to be processed
+    const result = await ctx.queue.publish('critical-tasks', {
+      taskId: input.taskId,
+      payload: input.data,
+    }, {
+      sync: true,  // blocks until consumer acknowledges
+    });
+
+    ctx.logger.info('Task processed synchronously', { taskId: input.taskId });
+    return { status: 'completed', result };
+  },
+});
+```
+
+<Callout type="warning" title="Sync Mode Performance">
+Synchronous publishing blocks until the message is processed. Use it only when you need confirmation that work completed. For most use cases, async publishing is faster and more resilient.
+</Callout>
+
+## Publishing with Options
+
+Customize message delivery with additional options:
+
+```typescript
+await ctx.queue.publish('notifications', {
+  userId: input.userId,
+  message: input.message,
+}, {
+  metadata: {          // attach metadata for routing or filtering
+    source: 'api',
+    version: '2',
+  },
+  partitionKey: input.userId,  // ensure ordering for this user
+  idempotencyKey: input.messageId,  // prevent duplicate processing
+  ttl: 3600,           // message expires after 1 hour
+});
+```
+
+## Using in Routes
+
+Routes have the same queue access via `c.var.queue`:
+
+```typescript
+import { createRouter } from '@agentuity/runtime';
+
+const router = createRouter();
+
+router.post('/webhook/stripe', async (c) => {
+  const event = await c.req.json();
+
+  // Queue webhook for async processing
+  await c.var.queue.publish('stripe-webhooks', {
+    type: event.type,
+    data: event.data,
+  });
+
+  // Return 200 immediately (Stripe expects fast responses)
+  return c.json({ received: true });
+});
+
+export default router;
+```
+
+<Callout type="tip" title="Webhook Pattern">
+Use queues for webhooks that need quick acknowledgment. Return 200 immediately, then process the payload asynchronously.
+</Callout>
+
+## Standalone Usage
+
+Use queues from background jobs with `createAgentContext()`:
+
+```typescript
+import { createApp, createAgentContext } from '@agentuity/runtime';
+
+await createApp();
+
+// Scheduled job to send daily reports
+async function sendDailyReports() {
+  const ctx = createAgentContext({ trigger: 'cron' });
+
+  await ctx.invoke(async () => {
+    const users = await getActiveUsers();
+
+    for (const user of users) {
+      await ctx.queue.publish('email-reports', {
+        userId: user.id,
+        reportType: 'daily',
+      });
+    }
+
+    ctx.logger.info('Queued daily reports', { count: users.length });
+  });
+}
+```
+
+See [Running Agents Without HTTP](/Agents/standalone-execution) for more patterns.
+
+## Best Practices
+
+- **Use async by default**: Only use `sync: true` when you need confirmation
+- **Keep messages small**: Store large payloads in Object Storage, pass references in messages
+- **Handle failures**: Consumers should handle retries gracefully
+- **Use metadata**: Add context for routing, debugging, and filtering
+
+## Next Steps
+
+- [Key-Value Storage](/Services/Storage/key-value): Fast caching and configuration
+- [Durable Streams](/Services/Storage/durable-streams): Large data exports
+- [Background Tasks](/Learn/Cookbook/Patterns/background-tasks): Patterns for async processing

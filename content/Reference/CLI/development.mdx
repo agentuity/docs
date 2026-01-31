@@ -25,11 +25,11 @@ The server starts on port 3500 by default with:
 |--------|---------|-------------|
 | `--port` | 3500 (or `PORT` env) | TCP port for the dev server |
 | `--local` | false | Use local services instead of cloud |
-| `--public` | true | Enable public URL tunneling |
 | `--no-public` | - | Disable public URL tunneling |
-| `--interactive` | true | Enable interactive keyboard shortcuts |
-| `--watch <path>` | - | Additional paths to watch for changes (repeatable) |
-| `--profile <name>` | - | Load `.env.<name>` in addition to `.env` |
+| `--no-interactive` | - | Disable interactive keyboard shortcuts |
+| `--inspect` | - | Enable Bun debugger for debugging |
+| `--inspect-wait` | - | Enable debugger and wait for connection before starting |
+| `--inspect-brk` | - | Enable debugger and break on first line |
 
 <Callout type="tip" title="PORT Environment Variable">
 The dev server respects the `PORT` environment variable. The `--port` flag takes precedence if both are set.
@@ -47,13 +47,36 @@ agentuity dev --no-public
 
 # Non-interactive mode (useful for CI/CD)
 agentuity dev --no-interactive
-
-# Watch additional directories (e.g., local packages)
-agentuity dev --watch ../my-shared-lib/dist --watch ../other-package/src
 ```
 
-<Callout type="tip" title="Watching External Packages">
-Use `--watch` when developing with local packages outside your project. Changes in watched paths trigger rebuilds just like changes in your source directory.
+## Debugging with Inspector
+
+Use the inspector flags to debug your agents with Chrome DevTools or VS Code:
+
+```bash
+# Enable inspector (attach debugger anytime)
+agentuity dev --inspect
+
+# Wait for debugger before starting the server
+agentuity dev --inspect-wait
+
+# Break on first line of executed code
+agentuity dev --inspect-brk
+```
+
+After starting with `--inspect`, open `chrome://inspect` in Chrome or use VS Code's debugger to attach. The inspector listens on port 9229 by default.
+
+<Callout type="tip" title="VS Code Debugging">
+Create a launch configuration that attaches to the running process:
+
+```json
+{
+  "type": "node",
+  "request": "attach",
+  "name": "Attach to Agentuity",
+  "port": 9229
+}
+```
 </Callout>
 
 ## Keyboard Shortcuts
@@ -104,50 +127,16 @@ const app = createApp({
 
 See [Custom Storage](/Services/Storage/custom) for implementation details.
 
-## Profile-Specific Environment Variables
-
-Load different environment variables based on a profile name:
-
-```bash
-# Load .env.staging
-agentuity dev --profile staging
-
-# Load .env.testing
-agentuity dev --profile testing
-```
-
-Profile-specific files are loaded in addition to the base `.env` file. Variables in the profile file override those in `.env`.
-
-**Example setup:**
-
-```bash
-# .env (base, always loaded)
-DATABASE_URL=postgres://localhost:5432/myapp
-LOG_LEVEL=info
-
-# .env.staging (loaded with --profile staging)
-DATABASE_URL=postgres://staging.example.com:5432/myapp
-API_BASE_URL=https://staging-api.example.com
-
-# .env.testing (loaded with --profile testing)
-DATABASE_URL=postgres://localhost:5432/myapp_test
-MOCK_EXTERNAL_APIS=true
-```
-
-<Callout type="tip" title="Profile Use Cases">
-Use profiles to switch between configurations without editing files. Common profiles: `staging`, `testing`, `local`, `demo`.
-</Callout>
-
 ## Public URLs
 
-Enable public URLs to share your local dev server or receive webhooks:
+Public URLs are enabled by default to share your local dev server or receive webhooks:
 
 ```bash
 # Public URL enabled by default
 agentuity dev
 
-# Or explicitly
-agentuity dev --public
+# Disable if not needed
+agentuity dev --no-public
 ```
 
 ### Why Public URLs?

@@ -44,11 +44,13 @@ const agent = createAgent('KnowledgeLoader', {
         key: 'doc-1',
         document: 'Agentuity is an agent-native cloud platform',
         metadata: { category: 'platform', source: 'docs' },
+        ttl: 86400 * 7,  // expires in 7 days
       },
       {
         key: 'doc-2',
         document: 'Vector storage enables semantic search capabilities',
         metadata: { category: 'features', source: 'docs' },
+        // No TTL specified: uses 30-day default
       }
     );
 
@@ -58,6 +60,18 @@ const agent = createAgent('KnowledgeLoader', {
 });
 ```
 
+**TTL semantics:**
+
+| Value | Behavior |
+|-------|----------|
+| `undefined` | Vectors expire after 30 days (default) |
+| `null` or `0` | Vectors never expire |
+| `>= 60` | Custom TTL in seconds (minimum 60 seconds, maximum 90 days) |
+
+<Callout type="info" title="TTL in Local Development">
+TTL is enforced only in cloud deployments. During local development, vectors persist indefinitely regardless of the TTL value. The `expiresAt` field will not be populated in local search results.
+</Callout>
+
 **With pre-computed embeddings:**
 
 ```typescript
@@ -65,6 +79,7 @@ await ctx.vector.upsert('custom-embeddings', {
   key: 'embedding-1',
   embeddings: [0.1, 0.2, 0.3, 0.4, ...],
   metadata: { source: 'external' },
+  ttl: null,  // never expires
 });
 ```
 
@@ -74,6 +89,8 @@ await ctx.vector.upsert('custom-embeddings', {
 Find semantically similar documents:
 
 ```typescript
+import { createAgent } from '@agentuity/runtime';
+
 const agent = createAgent('SemanticSearch', {
   handler: async (ctx, input) => {
     const results = await ctx.vector.search('knowledge-base', {
@@ -83,12 +100,13 @@ const agent = createAgent('SemanticSearch', {
       metadata: { category: 'platform' },  // filter by metadata
     });
 
-    // Each result includes: id, key, similarity, metadata
+    // Each result includes: id, key, similarity, metadata, expiresAt
     return {
       results: results.map(r => ({
         key: r.key,
         similarity: r.similarity,
         title: r.metadata?.title,
+        expiresAt: r.expiresAt,  // ISO timestamp when vector expires
       })),
     };
   },
@@ -102,6 +120,8 @@ const agent = createAgent('SemanticSearch', {
 Retrieve a specific vector by key without similarity search:
 
 ```typescript
+import { createAgent } from '@agentuity/runtime';
+
 const agent = createAgent('DocumentRetriever', {
   handler: async (ctx, input) => {
     const result = await ctx.vector.get('knowledge-base', 'doc-1');
@@ -124,6 +144,8 @@ const agent = createAgent('DocumentRetriever', {
 Retrieve multiple vectors efficiently:
 
 ```typescript
+import { createAgent } from '@agentuity/runtime';
+
 const agent = createAgent('BatchRetriever', {
   handler: async (ctx, input) => {
     const keys = ['doc-1', 'doc-2', 'doc-3'];
@@ -171,6 +193,8 @@ const count = await ctx.vector.delete('knowledge-base', 'doc-1', 'doc-2', 'doc-3
 Use generics for type-safe metadata:
 
 ```typescript
+import { createAgent } from '@agentuity/runtime';
+
 interface DocumentMetadata {
   title: string;
   category: 'guide' | 'api' | 'tutorial';

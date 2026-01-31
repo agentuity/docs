@@ -78,25 +78,6 @@ agentuity deploy
 
 Both URLs are automatically provisioned with HTTPS. The project URL always routes to the active deployment.
 
-## Tagging Deployments
-
-Add tags to label deployments:
-
-```bash
-# Single tag
-agentuity deploy --tag staging
-
-# Multiple tags
-agentuity deploy --tag staging --tag hotfix-123
-```
-
-Tags appear in deployment lists and help organize versions:
-
-```bash
-agentuity cloud deployment list
-# Shows tags column for each deployment
-```
-
 ## Viewing Deployments
 
 List recent deployments:
@@ -262,6 +243,23 @@ agentuity cloud deployment remove dep_abc123xyz --project-id=proj_abc123xyz
 Removing a deployment permanently deletes it. You cannot rollback to a removed deployment.
 </Callout>
 
+## Preview Environments
+
+Deploy pull requests to isolated preview environments for testing before merging. Enable this feature in the [Agentuity App](https://app-v1.agentuity.com):
+
+1. Navigate to your project's **Settings** page
+2. Under **GitHub**, find the **Preview Environments** toggle
+3. Enable "Deploy PRs to preview environments for this repository"
+
+Once enabled, every pull request to your connected repository automatically deploys to a unique preview URL. This allows you to:
+- Test changes in an isolated environment before merging
+- Share preview links with reviewers
+- Run integration tests against the preview deployment
+
+<Callout type="info" title="GitHub Connection Required">
+Preview environments require a connected GitHub repository. Connect your repo in **Project > Settings > GitHub**.
+</Callout>
+
 ## Custom Domains
 
 Configure custom domains in `agentuity.json`:
@@ -306,6 +304,10 @@ agentuity deploy
 
 <Callout type="warning" title="DNS Validation">
 Deployment fails if DNS records are missing or incorrect. The CLI shows the required CNAME value in the error message.
+</Callout>
+
+<Callout type="info" title="Activate Custom Domains">
+After adding a custom domain to your configuration, you must deploy to activate it. The domain becomes active only after a successful deployment.
 </Callout>
 
 ### Multiple Domains
@@ -375,31 +377,56 @@ Variables are automatically:
 Variables with suffixes like `_SECRET`, `_KEY`, `_TOKEN`, `_PASSWORD`, or `_PRIVATE` are automatically encrypted as secrets. All other variables are stored as regular environment variables.
 </Callout>
 
+## Machine Management
+
+Machines are the compute instances running your deployments. View and manage them when debugging infrastructure issues.
+
+View and manage the machines running your deployments:
+
+```bash
+# List all machines for current project
+agentuity cloud machine list
+
+# Get details for a specific machine
+agentuity cloud machine get mach_abc123xyz
+
+# Delete a machine
+agentuity cloud machine delete mach_abc123xyz
+
+# List deployments running on a machine
+agentuity cloud machine deployments mach_abc123xyz
+```
+
+Machine details include status, region, resource allocation, and uptime. Use machine management to:
+- Monitor infrastructure health
+- Debug performance issues
+- Clean up unused machines
+
 ## Deploy Options
 
 | Option | Description |
 |--------|-------------|
-| `--tag <name>` | Add deployment tag (repeatable) |
-| `-f, --force` | Force deployment without confirmation |
-| `--dry-run` | Simulate deployment without executing |
+| `-y, --confirm` | Confirm region change without prompting |
+| `--dry-run` | Simulate deployment without executing (global option) |
 | `--log-level debug` | Show verbose output |
 | `--project-id <id>` | Deploy specific project |
+| `--message <msg>` | Message to associate with this build |
 
 ```bash
 # Verbose deployment
 agentuity deploy --log-level=debug
 
-# Multiple tags
-agentuity deploy --tag staging --tag v1.2.0
-
 # Specific project
 agentuity deploy --project-id=proj_abc123xyz
 
-# Simulate deployment
-agentuity deploy --dry-run
+# With a message
+agentuity deploy --message "Fix authentication bug"
 
-# Force deployment
-agentuity deploy --force
+# Simulate deployment (dry run)
+agentuity --dry-run deploy
+
+# Skip confirmation prompts (for CI/CD)
+agentuity deploy --confirm
 ```
 
 ## CI/CD Pipelines

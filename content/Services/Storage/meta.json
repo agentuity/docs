@@ -1,4 +1,4 @@
 {
 	"title": "Storage",
-	"pages": ["key-value", "vector", "object", "database", "durable-streams", "custom"]
+	"pages": ["key-value", "vector", "object", "database", "queue", "durable-streams", "custom"]
 }

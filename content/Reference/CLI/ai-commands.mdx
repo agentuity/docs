@@ -36,28 +36,6 @@ The schema includes:
 - Parameter types and validation rules
 - Command descriptions and examples
 
-## Agent Skills Generation
-
-Generate [Agent Skills](https://agentskills.io) documentation from the CLI schema:
-
-```bash
-# Generate SKILL.md files
-agentuity ai skills generate
-
-# Output to custom directory
-agentuity ai skills generate --output ./skills
-```
-
-This creates machine-readable skill definitions that enable coding agents (e.g., Claude Code, Cursor, Codex) to discover and use Agentuity CLI capabilities.
-
-**Generated files:**
-- `SKILL.md` files with YAML frontmatter for each command
-- `README.md` with a skill index
-
-<Callout type="info" title="Auto-regeneration">
-In dev mode (`agentuity dev`), skills are automatically regenerated when the CLI version changes.
-</Callout>
-
 ## Project Context Files
 
 During development (`agentuity dev` or `bun run dev`), the CLI generates AGENTS.md files to help AI coding assistants (e.g., Claude Code, Codex, Cursor) understand Agentuity patterns:
@@ -111,23 +89,21 @@ These prompts are useful for:
 Use the CLI to provide autocomplete, validation, and project configuration help:
 
 ```typescript
-// Get CLI capabilities for IDE integration
-const { execSync } = require('child_process');
+import { execSync } from 'child_process';
 
+// Get CLI capabilities for IDE integration
 const capabilities = JSON.parse(
   execSync('agentuity --json ai capabilities show').toString()
 );
-
-// Use capabilities to build autocomplete, validation, etc.
 ```
 
 ```typescript
+import { execSync } from 'child_process';
+
 // Get agentuity.json schema for configuration validation
 const schema = JSON.parse(
   execSync('agentuity --json ai schema generate').toString()
 );
-
-// Use schema to validate project configuration files
 ```
 
 ### AI Coding Agent
@@ -139,6 +115,46 @@ agentuity ai prompt agent > /tmp/agentuity-context.md
 # Include in your AI agent's system prompt
 cat /tmp/agentuity-context.md
 ```
+
+## OpenCode Plugin
+
+Install the Agentuity plugin for [OpenCode](https://opencode.ai) to enable AI-assisted development:
+
+```bash
+# Install the plugin
+agentuity ai opencode install
+
+# Remove the plugin
+agentuity ai opencode uninstall
+
+# Run a task in headless mode
+agentuity ai opencode run "Create an agent that validates email addresses"
+```
+
+The plugin provides specialized agents, slash commands, and MCP servers for Agentuity development. See [OpenCode Plugin](/Reference/CLI/opencode-plugin) for full documentation.
+
+## Cadence Commands
+
+Manage long-running AI tasks with the cadence system:
+
+```bash
+# List all cadence tasks
+agentuity ai cadence list
+
+# Check task status
+agentuity ai cadence status <task-id>
+
+# Pause a running task
+agentuity ai cadence pause <task-id>
+
+# Resume a paused task
+agentuity ai cadence resume <task-id>
+
+# Stop a task
+agentuity ai cadence stop <task-id>
+```
+
+Cadence tasks persist across sessions, allowing complex operations to continue in the background.
 
 ## Next Steps
 
