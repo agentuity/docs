@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-agent-get
 description: Get details about a specific agent. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.1.20"
+version: "0.1.24"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<agent_id>"

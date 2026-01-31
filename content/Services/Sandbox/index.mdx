@@ -56,10 +56,13 @@ Use these for general code execution:
 
 | Runtime | Description |
 |---------|-------------|
-| `bun:1` | Bun 1.x with JavaScript/TypeScript support (default) |
+| `base:latest` | Minimal Debian runtime with essential tools  (default) |
+| `bun:1` | Bun 1.x with JavaScript/TypeScript support |
 | `node:latest` | Node.js latest version |
 | `node:lts` | Node.js LTS version |
-| `base:latest` | Minimal runtime with essential tools |
+| `python:3.13` | Python 3.13 |
+| `python:3.14` | Python 3.14 |
+| `golang:latest` | Golang latest |
 
 ### Agent Runtimes
 
@@ -72,6 +75,16 @@ Pre-configured AI coding assistants:
 | `codex:latest` | OpenAI Codex CLI agent |
 | `gemini-cli:latest` | Google Gemini CLI agent |
 | `opencode:latest` | OpenCode AI coding assistant |
+| `agentuity:latest` | Agentuity CLI for building and running AI agents |
+
+### Testing Runtimes
+
+Pre-configured testing runtimes:
+
+| Runtime | Description |
+|---------|-------------|
+| `agent-browser:latest` | Headless browser automation CLI for AI agents |
+| `playwright:v1` | Playwright browser automation runtime (Chrome, Firefox, WebKit) |
 
 <Callout type="tip" title="List Available Runtimes">
 Run `agentuity cloud sandbox runtime list` to see all available runtimes, or view them in the [Agentuity App](https://app-v1.agentuity.com) under **Services > Sandbox > Runtimes**.

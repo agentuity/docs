@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-vector-list-namespaces
 description: List all vector namespaces. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.1.20"
+version: "0.1.24"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:
@@ -16,7 +16,6 @@ List all vector namespaces
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Project context required (run from project directory or use `--project-id`)
 
 ## Usage
 

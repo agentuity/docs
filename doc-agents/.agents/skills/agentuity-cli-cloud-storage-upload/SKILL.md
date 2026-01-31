@@ -1,13 +1,13 @@
 ---
 name: agentuity-cli-cloud-storage-upload
 description: Upload a file to storage bucket. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.1.20"
+version: "0.1.24"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<name> <filename>"
 metadata:
   command: "agentuity cloud storage upload"
-  tags: "write requires-auth"
+  tags: "write requires-auth uses-stdin"
 ---
 
 # Cloud Storage Upload

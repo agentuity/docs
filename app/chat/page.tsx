@@ -26,9 +26,9 @@ export default function ChatPage() {
                         onClick={() => handleMessageSend("List all tutorials available in Agentuity")}
                     />
                     <RecommendationCard
-                        title="How do I do agent handoff"
-                        subtitle="in the Python SDK?"
-                        onClick={() => handleMessageSend("How do I do agent handoff in the Python SDK?")}
+                        title="What's the difference between"
+                        subtitle="Route and Agent in Agentuity?"
+                        onClick={() => handleMessageSend("What's the difference between Route and Agent?")}
                     />
                 </div>
                 <ChatInput onSendMessage={handleMessageSend} />

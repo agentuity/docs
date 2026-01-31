@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-env-import
 description: Import environment variables and secrets from a file to cloud and local .env. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.1.20"
+version: "0.1.24"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<file>"

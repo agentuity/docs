@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-git-list
 description: List GitHub repositories accessible to your organization. Requires authentication
-version: "0.1.20"
+version: "0.1.24"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 metadata:

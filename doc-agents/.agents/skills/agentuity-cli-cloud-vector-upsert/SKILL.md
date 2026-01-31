@@ -1,13 +1,13 @@
 ---
 name: agentuity-cli-cloud-vector-upsert
 description: Add or update vectors in the vector storage. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.1.20"
+version: "0.1.24"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<namespace> [key]"
 metadata:
   command: "agentuity cloud vector upsert"
-  tags: "mutating updates-resource slow requires-auth"
+  tags: "mutating updates-resource slow requires-auth uses-stdin"
 ---
 
 # Cloud Vector Upsert
@@ -17,7 +17,6 @@ Add or update vectors in the vector storage
 ## Prerequisites
 
 - Authenticated with `agentuity auth login`
-- Project context required (run from project directory or use `--project-id`)
 
 ## Usage
 

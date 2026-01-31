@@ -1,7 +1,7 @@
 ---
 name: agentuity-cli-cloud-keyvalue-create-namespace
 description: Create a new keyvalue namespace. Requires authentication. Use for Agentuity cloud platform operations
-version: "0.1.20"
+version: "0.1.24"
 license: Apache-2.0
 allowed-tools: "Bash(agentuity:*)"
 argument-hint: "<name>"
