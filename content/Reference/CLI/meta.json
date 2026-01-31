@@ -9,6 +9,7 @@
     "sandbox",
     "configuration",
     "debugging",
-    "ai-commands"
+    "ai-commands",
+    "opencode-plugin"
   ]
 }

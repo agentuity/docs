@@ -16,10 +16,20 @@ import { createAgentContext } from '@agentuity/runtime';
 import chatAgent from '@agent/chat';
 
 const ctx = createAgentContext();
-const result = await ctx.invoke(() => chatAgent.run({ message: 'Hello' }));
+const result = await ctx.run(chatAgent, { message: 'Hello' });
 ```
 
-The `invoke()` method executes your agent with full infrastructure support: tracing, session management, and access to all storage services.
+The `run()` method executes your agent with full infrastructure support: tracing, session management, and access to all storage services.
+
+For agents that don't require input:
+
+```typescript
+const result = await ctx.run(statusAgent);
+```
+
+<Callout type="info" title="Legacy invoke() Method">
+The older `ctx.invoke(() => agent.run(input))` pattern still works but `ctx.run(agent, input)` is preferred for its cleaner syntax.
+</Callout>
 
 ## Options
 
@@ -45,10 +55,7 @@ await createApp();
 // Run cleanup every hour
 cron.schedule('0 * * * *', async () => {
   const ctx = createAgentContext({ trigger: 'cron' });
-
-  await ctx.invoke(async () => {
-    await cleanupAgent.run({ task: 'expired-sessions' });
-  });
+  await ctx.run(cleanupAgent, { task: 'expired-sessions' });
 });
 ```
 
@@ -58,24 +65,22 @@ For most scheduled tasks, use the [`cron()` middleware](/Routes/cron) instead. I
 
 ## Multiple Agents in Sequence
 
-Run multiple agents within a single `invoke()` call to share the same session and tracing context:
+Run multiple agents in sequence with the same context:
 
 ```typescript
 const ctx = createAgentContext();
 
-const result = await ctx.invoke(async () => {
-  // First agent analyzes the input
-  const analysis = await analyzeAgent.run({ text: userInput });
+// First agent analyzes the input
+const analysis = await ctx.run(analyzeAgent, { text: userInput });
 
-  // Second agent generates response based on analysis
-  const response = await respondAgent.run({
-    analysis: analysis.summary,
-    sentiment: analysis.sentiment,
-  });
-
-  return response;
+// Second agent generates response based on analysis
+const response = await ctx.run(respondAgent, {
+  analysis: analysis.summary,
+  sentiment: analysis.sentiment,
 });
 ```
+
+Each `ctx.run()` call shares the same session and tracing context.
 
 ## Reusing Contexts
 
@@ -84,9 +89,9 @@ Create a context once and reuse it for multiple invocations:
 ```typescript
 const ctx = createAgentContext({ trigger: 'websocket' });
 
-// Each invoke() gets its own session and tracing span
+// Each run() gets its own session and tracing span
 websocket.on('message', async (data) => {
-  const result = await ctx.invoke(() => messageAgent.run(data));
+  const result = await ctx.run(messageAgent, data);
   websocket.send(result);
 });
 ```
@@ -103,6 +108,28 @@ Standalone contexts provide the same infrastructure as HTTP request handlers:
 - **Background tasks**: `waitUntil` support for fire-and-forget work
 - **Session events**: Start/complete events for observability
 </Callout>
+
+## Detecting Runtime Context
+
+Use `isInsideAgentRuntime()` to check if code is running within the Agentuity runtime:
+
+```typescript
+import { isInsideAgentRuntime, createAgentContext } from '@agentuity/runtime';
+import myAgent from '@agent/my-agent';
+
+async function processRequest(data: unknown) {
+  if (isInsideAgentRuntime()) {
+    // Already in runtime context, call agent directly
+    return myAgent.run(data);
+  }
+
+  // Outside runtime, create context first
+  const ctx = createAgentContext();
+  return ctx.run(myAgent, data);
+}
+```
+
+This is useful for writing utility functions that work both inside agent handlers and in standalone scripts.
 
 ## Next Steps
 

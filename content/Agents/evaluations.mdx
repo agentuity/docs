@@ -5,6 +5,21 @@ description: Automatically test and validate agent outputs for quality and compl
 
 Evaluations (evals) are automated tests that run after your agent completes. They validate output quality, check compliance, and monitor performance without blocking agent responses.
 
+## Why Evals?
+
+Most evaluation tools test the LLM: did the model respond appropriately? That's fine for chatbots, but agents aren't single LLM calls. They're entire runs with multiple model calls, tool executions, and orchestration working together.
+
+Agent failures can happen anywhere in the run—a tool call that returned bad data, a state bug that corrupted context, and more. Testing just the LLM response misses most of this.
+
+Agentuity evals test the whole run—every tool call, state change, and orchestration step. They run on every session in production, so you catch issues with real traffic.
+
+**The result:**
+
+- **Full-run evaluation**: Test the entire agent execution, not just LLM responses
+- **Production monitoring**: Once configured, evals run automatically on every session
+- **Async by default**: Evals don't block responses, so users aren't waiting
+- **Preset library**: Common checks (PII, safety, hallucination) available out of the box
+
 Evals come in two types: **binary** (pass/fail) for yes/no criteria, and **score** (0-1) for quality gradients.
 
 <Callout type="info" title="Where Scores Appear">
@@ -425,6 +440,37 @@ export const politenessCheck = agent.createEval(politeness({
 ```
 
 All preset evals use a default model optimized for cost and speed. Override `model` when you need specific capabilities.
+
+### Lifecycle Hooks
+
+Preset evals support `onStart` and `onComplete` hooks for custom logic around eval execution:
+
+```typescript
+import { politeness } from '@agentuity/evals';
+
+export const politenessCheck = agent.createEval(politeness({
+  onStart: async (ctx, input, output) => {
+    ctx.logger.info('Starting politeness eval', {
+      inputLength: input.request?.length,
+    });
+  },
+  onComplete: async (ctx, result) => {
+    // Track results in external monitoring
+    if (!result.passed) {
+      ctx.logger.warn('Politeness check failed', {
+        score: result.score,
+        reason: result.reason,
+      });
+    }
+  },
+}));
+```
+
+**Use cases for lifecycle hooks:**
+- Log eval execution for debugging
+- Send results to external monitoring systems
+- Track eval performance metrics
+- Trigger alerts on failures
 
 ### Schema Middleware
 

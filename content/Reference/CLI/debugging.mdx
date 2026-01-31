@@ -36,7 +36,7 @@ agentuity cloud ssh --show
 Add your SSH public key before connecting:
 
 ```bash
-agentuity auth ssh add ~/.ssh/id_rsa.pub
+agentuity auth ssh add --file ~/.ssh/id_rsa.pub
 ```
 
 See [Getting Started](/Reference/CLI/getting-started) for authentication setup.
@@ -102,22 +102,16 @@ agentuity cloud agent list --project-id=proj_abc123xyz
 
 # Get details for a specific agent
 agentuity cloud agent get agent_abc123xyz
-
-# View agent input/output schema
-agentuity cloud agent schema agent_abc123xyz
 ```
 
 **Agent details include:**
 - Agent ID and name
 - Description and metadata
 - Associated routes
-- Schema definitions (input/output types)
 
 Use agent inspection to:
 - Verify deployed agent configuration
-- Debug schema mismatches
 - Explore available agents in a project
-- Generate client code from schemas
 
 ## Session Logs
 
@@ -208,6 +202,33 @@ Use thread inspection to:
 - Verify thread metadata
 - Track thread lifecycle
 
+## Evaluation Commands
+
+Monitor and inspect evaluation runs to understand agent performance against test cases.
+
+List and inspect evaluations and evaluation runs:
+
+```bash
+# List all evaluations
+agentuity cloud eval list
+
+# Get details for a specific evaluation
+agentuity cloud eval get eval_abc123xyz
+
+# List evaluation runs
+agentuity cloud eval-run list
+
+# Get details for a specific run
+agentuity cloud eval-run get run_abc123xyz
+```
+
+Use evaluation commands to:
+- Monitor eval progress and results
+- Debug failing evaluations
+- Track evaluation history across deployments
+
+For more on configuring evaluations, see [Evaluations](/Agents/evaluations).
+
 ## Deployment Logs
 
 Stream logs from a specific deployment:
@@ -285,6 +306,35 @@ fi
 agentuity --json cloud thread list --count=100 | \
   jq -r '.[] | [.id, .user_data] | @csv' > threads.csv
 ```
+
+## Support Commands
+
+Generate diagnostic information for troubleshooting or support requests:
+
+```bash
+# Generate a support report (system info, project config, recent errors)
+agentuity support report
+
+# Export recent logs
+agentuity support logs
+agentuity support logs > debug-logs.txt
+agentuity support logs --limit 100
+
+# Show system information
+agentuity support system
+```
+
+**What's included:**
+
+| Command | Output |
+|---------|--------|
+| `support report` | CLI/runtime versions, project config (sanitized), recent errors, system info |
+| `support logs` | Recent log entries for local analysis |
+| `support system` | OS, Node.js/Bun versions, CLI version, memory/disk |
+
+<Callout type="info" title="Privacy">
+Support reports automatically redact sensitive information like API keys, tokens, and environment variable values. Review the output before sharing.
+</Callout>
 
 ## Next Steps
 

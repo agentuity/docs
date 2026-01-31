@@ -19,6 +19,20 @@ Database storage provides relational database capabilities using [Bun's native S
 When you create a database with `agentuity cloud db create`, the `DATABASE_URL` is automatically added to your `.env` file. During deployment, credentials are injected automatically.
 </Callout>
 
+## Creating a Database
+
+Create a database from the CLI with optional name and description:
+
+```bash
+# Create with default settings
+agentuity cloud db create
+
+# Create with name and description
+agentuity cloud db create --name "users-db" --description "Primary user data store"
+```
+
+The name and description help identify databases in the dashboard when managing multiple databases.
+
 <Callout type="tip" title="Same Code Everywhere">
 Database access uses Bun's native SQL API directly. The same `import { sql } from "bun"` code works identically in agents, routes, and standalone scripts with no wrapper needed.
 </Callout>
@@ -150,6 +164,125 @@ const sqlite = new SQL("sqlite://data/app.db");
 ## Bun SQL Documentation
 
 For complete API documentation including dynamic queries, bulk inserts, savepoints, array operations, error handling, and connection pooling, see the [Bun SQL documentation](https://bun.com/docs/runtime/sql).
+
+## Resilient Postgres Client
+
+The `@agentuity/postgres` package provides a connection-resilient PostgreSQL client built for serverless environments. It handles connection drops, cold starts, and automatic reconnection.
+
+```bash
+bun add @agentuity/postgres
+```
+
+```typescript
+import { postgres } from '@agentuity/postgres';
+
+// Create client (uses DATABASE_URL by default)
+const sql = postgres();
+
+// Queries automatically retry on connection errors
+const users = await sql`SELECT * FROM users WHERE active = ${true}`;
+
+// Transactions
+const tx = await sql.begin();
+await tx`INSERT INTO users (name) VALUES (${'Alice'})`;
+await tx.commit();
+```
+
+### Configuration
+
+```typescript
+import { postgres } from '@agentuity/postgres';
+
+const sql = postgres({
+  url: 'postgres://user:pass@localhost:5432/mydb',
+
+  // Reconnection
+  reconnect: {
+    maxAttempts: 10,
+    initialDelayMs: 100,
+    maxDelayMs: 30000,
+  },
+
+  // Callbacks
+  onclose: (error) => console.log('Connection closed', error),
+  onreconnected: () => console.log('Reconnected!'),
+});
+```
+
+**Key features:**
+
+- **Automatic reconnection**: Exponential backoff with jitter on connection drops
+- **Query retry**: Retries queries on retryable errors (connection reset, timeout)
+- **Transaction support**: Full transaction and savepoint support with `sql.begin()`
+- **Graceful shutdown**: Skips reconnection on SIGTERM/SIGINT for clean process exit
+- **Connection stats**: Track connection health via `sql.stats`
+
+<Callout type="tip" title="When to Use">
+Use `@agentuity/postgres` when you need resilient connections in serverless environments, especially with Neon or similar providers that have cold start latency.
+</Callout>
+
+## Drizzle ORM Integration
+
+The `@agentuity/drizzle` package provides type-safe database access with [Drizzle ORM](https://orm.drizzle.team/) and automatic reconnection.
+
+```bash
+bun add @agentuity/drizzle
+```
+
+```typescript
+import { createPostgresDrizzle, eq } from '@agentuity/drizzle';
+import * as schema from './schema';
+
+// Create database instance (uses DATABASE_URL by default)
+const { db, client, close } = createPostgresDrizzle({ schema });
+
+// Type-safe queries with schema inference
+const activeUsers = await db.select().from(schema.users).where(eq(schema.users.active, true));
+
+// Access connection stats via the underlying client
+console.log(client.stats);
+
+// Clean up when done
+await close();
+```
+
+**Key features:**
+
+- **Type-safe queries**: Full TypeScript inference from your Drizzle schema
+- **Resilient connection**: Built on `@agentuity/postgres` for automatic reconnection
+- **Convenient re-exports**: Common Drizzle utilities (`eq`, `and`, `pgTable`, etc.) available from a single import
+- **Auth integration**: Works with `@agentuity/auth` via `drizzleAdapter`
+
+```typescript
+import { createPostgresDrizzle, eq } from '@agentuity/drizzle';
+import * as schema from './schema';
+
+const { db, close } = createPostgresDrizzle({
+  schema,
+  logger: true,  // Enable query logging
+  reconnect: {
+    maxAttempts: 5,
+    initialDelayMs: 100,
+  },
+  onReconnected: () => console.log('Reconnected to database'),
+});
+
+// Drizzle infers the joined type
+const usersWithPosts = await db
+  .select()
+  .from(schema.users)
+  .leftJoin(schema.posts, eq(schema.users.id, schema.posts.authorId));
+
+// Insert with returning
+const [newUser] = await db
+  .insert(schema.users)
+  .values({ name: 'Alice', email: 'alice@example.com' })
+  .returning();
+```
+
+<Callout type="info" title="Drizzle Schema">
+Define your schema in a separate file and use `drizzle-kit` for migrations. See the [Drizzle documentation](https://orm.drizzle.team/docs/sql-schema-declaration) for schema syntax.
+</Callout>
 
 ## Next Steps
 
