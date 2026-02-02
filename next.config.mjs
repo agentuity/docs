@@ -72,7 +72,7 @@ const config = {
 		},
 		{
 			source: '/Introduction/kitchen-sink',
-			destination: '/Learn/Cookbook/overview',
+			destination: '/Cookbook/overview',
 			permanent: true,
 		},
 		{
@@ -268,12 +268,12 @@ const config = {
 		},
 		{
 			source: '/Guides/what-is-an-agent',
-			destination: '/Learn/Cookbook/Tutorials/understanding-agents',
+			destination: '/Cookbook/Tutorials/understanding-agents',
 			permanent: true,
 		},
 		{
 			source: '/Guides/:path*',
-			destination: '/Learn/Cookbook/overview',
+			destination: '/Cookbook/overview',
 			permanent: true,
 		},
 
@@ -320,7 +320,7 @@ const config = {
 		},
 		{
 			source: '/SDKs/javascript/examples/index',
-			destination: '/Learn/Cookbook/overview',
+			destination: '/Cookbook/overview',
 			permanent: true,
 		},
 		{
@@ -372,7 +372,7 @@ const config = {
 		},
 		{
 			source: '/SDKs/python/examples/index',
-			destination: '/Learn/Cookbook/overview',
+			destination: '/Cookbook/overview',
 			permanent: true,
 		},
 		{
@@ -436,12 +436,12 @@ const config = {
 		// Examples section
 		{
 			source: '/Examples/index',
-			destination: '/Learn/Cookbook/overview',
+			destination: '/Cookbook/overview',
 			permanent: true,
 		},
 		{
 			source: '/Examples/:path*',
-			destination: '/Learn/Cookbook/overview',
+			destination: '/Cookbook/overview',
 			permanent: true,
 		},
 

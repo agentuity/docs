@@ -241,13 +241,13 @@ agentuity cloud queue resume order-processing
 agentuity cloud queue delete order-processing
 ```
 
-For programmatic queue management, see [SDK Utilities for External Apps](/Learn/Cookbook/Patterns/server-utilities#queue-management).
+For programmatic queue management, see [SDK Utilities for External Apps](/Cookbook/Patterns/server-utilities#queue-management).
 
 ## Consuming Messages
 
 ### Webhook Destinations
 
-Configure webhook destinations to automatically deliver messages to HTTP endpoints. Set these up in the [App](https://app-v1.agentuity.com) or [programmatically](/Learn/Cookbook/Patterns/server-utilities#webhook-destinations).
+Configure webhook destinations to automatically deliver messages to HTTP endpoints. Set these up in the [App](https://app-v1.agentuity.com) or [programmatically](/Cookbook/Patterns/server-utilities#webhook-destinations).
 
 Webhook destinations support:
 - Custom headers and authentication
@@ -256,7 +256,7 @@ Webhook destinations support:
 
 ### Pull-Based Consumption
 
-For workers that pull and process messages, see [Pull-Based Consumption](/Learn/Cookbook/Patterns/server-utilities#pull-based-consumption). This pattern is useful for long-running workers that need fine-grained control over message processing.
+For workers that pull and process messages, see [Pull-Based Consumption](/Cookbook/Patterns/server-utilities#pull-based-consumption). This pattern is useful for long-running workers that need fine-grained control over message processing.
 
 ## Dead Letter Queue
 
@@ -273,11 +273,11 @@ agentuity cloud queue dlq replay order-processing --message-id msg_abc123
 agentuity cloud queue dlq purge order-processing
 ```
 
-For programmatic DLQ access, see [Dead Letter Queue Operations](/Learn/Cookbook/Patterns/server-utilities#dead-letter-queue-operations).
+For programmatic DLQ access, see [Dead Letter Queue Operations](/Cookbook/Patterns/server-utilities#dead-letter-queue-operations).
 
 ## HTTP Ingestion Sources
 
-Create public HTTP endpoints to ingest data into queues from external services. Configure these in the [App](https://app-v1.agentuity.com) or [programmatically](/Learn/Cookbook/Patterns/server-utilities#http-ingestion-sources).
+Create public HTTP endpoints to ingest data into queues from external services. Configure these in the [App](https://app-v1.agentuity.com) or [programmatically](/Cookbook/Patterns/server-utilities#http-ingestion-sources).
 
 | Auth Type | Description |
 |-----------|-------------|
@@ -323,5 +323,5 @@ Configure queue behavior when creating or updating:
 
 - [Durable Streams](/Services/Storage/durable-streams): Streaming storage for large exports
 - [Key-Value Storage](/Services/Storage/key-value): Fast caching and configuration
-- [Background Tasks](/Learn/Cookbook/Patterns/background-tasks): Patterns for async processing
-- [Webhook Handler](/Learn/Cookbook/Patterns/webhook-handler): Receiving external webhooks
+- [Background Tasks](/Cookbook/Patterns/background-tasks): Patterns for async processing
+- [Webhook Handler](/Cookbook/Patterns/webhook-handler): Receiving external webhooks
