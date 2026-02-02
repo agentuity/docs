@@ -5,7 +5,6 @@ description: Real-world integrations and tutorials built with Agentuity
 
 import { Cards } from 'fumadocs-ui/components/card';
 import { ExternalCard } from '@/components/external-card';
-import { Database } from 'lucide-react';
 
 ## From the Community
 
@@ -13,7 +12,12 @@ import { Database } from 'lucide-react';
   <ExternalCard
     href="https://docs.snowleopard.ai/quickstarts/agentuity"
     title="Snow Leopard: Data Retrieval Agent"
-    icon={<Database />}
+    icon={
+      <picture>
+        <img src="/images/snow-leopard-icon.png" alt="Snow Leopard" width={28} height={28} />
+      </picture>
+    }
+    className="bg-white text-[#2D2D2D] border-gray-200 hover:bg-gray-50 hover:border-[#2D2D2D] dark:bg-[#2D2D2D] dark:text-white dark:border-[#484848] dark:hover:bg-[#484848] dark:hover:border-[#9DEDEB]"
   >
     Build a question-answering agent that retrieves live SQL data, no MCP setup, ETL pipelines, or RAG required.
   </ExternalCard>

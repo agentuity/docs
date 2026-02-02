@@ -312,13 +312,15 @@ agentuity --json cloud thread list --count=100 | \
 Generate diagnostic information for troubleshooting or support requests:
 
 ```bash
-# Generate a support report (system info, project config, recent errors)
+# Create a support ticket (opens GitHub issue with logs attached)
 agentuity support report
+agentuity support report --description "Deployment fails after upgrade"
 
-# Export recent logs
-agentuity support logs
-agentuity support logs > debug-logs.txt
-agentuity support logs --limit 100
+# View recent CLI logs
+agentuity support logs show
+
+# Get the path to the log session file
+agentuity support logs path
 
 # Show system information
 agentuity support system
@@ -328,9 +330,10 @@ agentuity support system
 
 | Command | Output |
 |---------|--------|
-| `support report` | CLI/runtime versions, project config (sanitized), recent errors, system info |
-| `support logs` | Recent log entries for local analysis |
-| `support system` | OS, Node.js/Bun versions, CLI version, memory/disk |
+| `support report` | Creates GitHub issue with CLI/runtime versions, project config (sanitized), recent errors |
+| `support logs show` | Recent CLI command logs for local analysis |
+| `support logs path` | Path to log session file for manual inspection |
+| `support system` | OS, Bun versions, CLI version, memory/disk info |
 
 <Callout type="info" title="Privacy">
 Support reports automatically redact sensitive information like API keys, tokens, and environment variable values. Review the output before sharing.

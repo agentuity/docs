@@ -28,6 +28,8 @@ agentuity ai opencode uninstall
 
 The plugin provides various specialized agents, each focused on a specific aspect of development:
 
+### Primary Agents
+
 | Agent | Role | When to Use |
 |-------|------|-------------|
 | **Lead** | Orchestrator | Automatically coordinates all work |
@@ -39,6 +41,15 @@ The plugin provides various specialized agents, each focused on a specific aspec
 | **Expert** | Agentuity Specialist | CLI commands, cloud services, SDK questions |
 | **Planner** | Strategic Advisor | Complex architecture decisions, deep technical planning (read-only) |
 | **Runner** | Command Executor | Run lint/build/test/typecheck/format, returns structured summaries |
+
+### Sub-Agents
+
+These agents work as sub-agents, called by other agents when needed:
+
+| Agent | Role | Called By |
+|-------|------|-----------|
+| **Reasoner** | Conclusion Extractor | Memory: extracts structured conclusions from sessions |
+| **Product** | Product Strategy | Lead: defines requirements, validates features, generates PRDs |
 
 OpenCode automatically routes tasks to the appropriate agent based on context.
 
@@ -53,6 +64,21 @@ OpenCode automatically routes tasks to the appropriate agent based on context.
 | **Context** | Session-based | Checkpoint-based |
 
 Use **Builder** when working interactively, making quick changes, or needing guidance. Use **Architect** when running Cadence mode, implementing complex multi-file features, or needing autonomous execution with deep reasoning.
+
+### Memory System
+
+The Memory agent uses entity-centric storage to persist context across sessions. It stores:
+
+| Entity Type | Scope | Examples |
+|-------------|-------|----------|
+| `user` | Cross-project | Your preferences, patterns, corrections |
+| `project` | Project-specific | Architecture decisions, codebase patterns |
+| `repo` | Cross-project | Repository conventions, commit styles |
+| `agent` | Cross-project | Agent-specific behaviors, model preferences |
+
+Memory tracks **conclusions** (patterns learned from your work), **corrections** (mistakes to avoid), and **relationships** between entities. The Reasoner sub-agent periodically extracts new insights from sessions.
+
+Use `/agentuity-memory-save` to explicitly save important context, or let Memory capture it automatically during Cadence sessions.
 
 ### Model Configuration
 

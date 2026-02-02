@@ -262,6 +262,53 @@ Preview environments are automatically cleaned up when the pull request is close
 Preview environments require a connected GitHub repository. Connect your repo in **Project > Settings > GitHub**.
 </Callout>
 
+## Regions
+
+Agentuity Cloud deploys to multiple geographic regions. Choose a region based on latency requirements and data residency needs.
+
+### Available Regions
+
+- `use` - US East
+- `usc` - US Central
+- `usw` - US West
+
+More regions coming soon.
+
+### Setting a Default Region
+
+Set a default region to skip the selection prompt on every deployment:
+
+```bash
+# Set default region
+agentuity cloud region select usw
+
+# View current default
+agentuity cloud region current
+
+# Clear default (prompts on each deploy)
+agentuity cloud region unselect
+```
+
+### Region in Configuration
+
+The region is stored in `agentuity.json` after your first deployment:
+
+```json
+{
+  "projectId": "proj_abc123xyz",
+  "orgId": "org_def456",
+  "region": "use"
+}
+```
+
+### Changing Regions
+
+When you deploy to a different region than the one in `agentuity.json`, the CLI prompts for confirmation. This prevents accidental region changes that could affect latency or data residency.
+
+### Cross-Region Resources
+
+The SDK automatically handles cross-region resource access. If you create a sandbox or storage resource in one region and access it from another, the platform routes requests transparently. No configuration needed.
+
 ## Custom Domains
 
 Configure custom domains in `agentuity.json`:
@@ -270,14 +317,12 @@ Configure custom domains in `agentuity.json`:
 {
   "projectId": "proj_abc123xyz",
   "orgId": "org_def456",
-  "region": "us-east-1",
+  "region": "use",
   "deployment": {
     "domains": ["api.example.com", "app.example.com"]
   }
 }
 ```
-
-Available regions are fetched from the API at deployment time. If multiple regions are available, the CLI prompts you to select one.
 
 ### DNS Configuration
 

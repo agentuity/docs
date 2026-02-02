@@ -484,6 +484,119 @@ if (info.project) {
 }
 ```
 
+## Snapshot Management API
+
+Manage snapshots programmatically through `ctx.sandbox.snapshot`. This lets agents create, list, and manage snapshots without CLI access.
+
+### Creating Snapshots
+
+Save the current state of a sandbox as a snapshot:
+
+```typescript
+const sandbox = await ctx.sandbox.create({
+  network: { enabled: true },
+  resources: { memory: '1Gi' },
+});
+
+// Set up the environment
+await sandbox.execute({ command: ['npm', 'init', '-y'] });
+await sandbox.execute({ command: ['npm', 'install', 'typescript', 'zod'] });
+
+// Save as snapshot
+const snapshot = await ctx.sandbox.snapshot.create(sandbox.id, {
+  name: 'typescript-zod-env',
+  description: 'TypeScript environment with Zod validation',
+  tag: 'latest',
+  public: false,  // Keep private to your org
+});
+
+ctx.logger.info('Snapshot created', {
+  snapshotId: snapshot.snapshotId,
+  sizeBytes: snapshot.sizeBytes,
+  fileCount: snapshot.fileCount,
+});
+
+await sandbox.destroy();
+```
+
+### Listing Snapshots
+
+```typescript
+const { snapshots, total } = await ctx.sandbox.snapshot.list({
+  sandboxId: 'sbx_abc123',  // Filter by source sandbox
+  limit: 50,
+  offset: 0,
+});
+
+for (const snap of snapshots) {
+  ctx.logger.info('Snapshot', {
+    id: snap.snapshotId,
+    name: snap.name,
+    tag: snap.tag,
+    createdAt: snap.createdAt,
+  });
+}
+```
+
+### Getting Snapshot Details
+
+```typescript
+const snapshot = await ctx.sandbox.snapshot.get('snp_xyz789');
+
+ctx.logger.info('Snapshot details', {
+  name: snapshot.name,
+  sizeBytes: snapshot.sizeBytes,
+  fileCount: snapshot.fileCount,
+  files: snapshot.files,  // Array of file info
+});
+```
+
+### Tagging Snapshots
+
+Update or remove a snapshot's tag:
+
+```typescript
+// Add or update tag
+await ctx.sandbox.snapshot.tag('snp_xyz789', 'v1.0');
+
+// Point "latest" to a new snapshot
+await ctx.sandbox.snapshot.tag('snp_newversion', 'latest');
+
+// Remove tag
+await ctx.sandbox.snapshot.tag('snp_xyz789', null);
+```
+
+### Deleting Snapshots
+
+```typescript
+await ctx.sandbox.snapshot.delete('snp_xyz789');
+```
+
+### SnapshotCreateOptions
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `name` | `string` | Display name (URL-safe: letters, numbers, underscores, dashes) |
+| `description` | `string` | Description of the snapshot |
+| `tag` | `string` | Tag name (defaults to "latest") |
+| `public` | `boolean` | Make snapshot publicly accessible (default: `false`) |
+
+### SnapshotInfo
+
+Returned by create, get, and list operations:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `snapshotId` | `string` | Unique identifier |
+| `name` | `string` | Display name |
+| `tag` | `string \| null` | Current tag |
+| `sizeBytes` | `number` | Total size in bytes |
+| `fileCount` | `number` | Number of files |
+| `files` | `SnapshotFileInfo[]` | File details (path, size, mime type) |
+| `createdAt` | `string` | ISO timestamp |
+| `downloadUrl` | `string` | URL to download snapshot archive |
+| `public` | `boolean` | Whether publicly accessible |
+
 ## Best Practices
 
 - **Set [resource limits](#sandboxcreateoptions)**: Control memory and CPU usage for predictable performance
@@ -491,8 +604,9 @@ if (info.project) {
 - **Enable network when needed**: Required for package installation, API calls, and external requests
 - **Clean up interactive sandboxes**: Use try/finally to ensure `destroy()` is called
 - **Use snapshots for common environments**: Pre-install dependencies to reduce cold start time
+- **Tag important snapshots**: Use semantic versioning tags (`v1.0`, `latest`) for reproducibility
 
 ## Next Steps
 
-- [Snapshots](/Services/Sandbox/snapshots): Skip dependency installation with pre-configured environments
-- [CLI Commands](/Reference/CLI/sandbox): Debug sandboxes and create snapshots from the terminal
+- [Snapshots](/Services/Sandbox/snapshots): CLI commands and declarative snapshot definitions
+- [CLI Commands](/Reference/CLI/sandbox): Debug sandboxes from the terminal
