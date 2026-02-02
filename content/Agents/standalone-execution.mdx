@@ -80,7 +80,7 @@ const response = await ctx.run(respondAgent, {
 });
 ```
 
-Each `ctx.run()` call shares the same session and tracing context.
+Each `ctx.run()` call gets its own session and tracing span, while sharing the logger, tracer, and app state.
 
 ## Reusing Contexts
 
@@ -89,7 +89,7 @@ Create a context once and reuse it for multiple invocations:
 ```typescript
 const ctx = createAgentContext({ trigger: 'websocket' });
 
-// Each run() gets its own session and tracing span
+// Each run gets its own session and tracing span
 websocket.on('message', async (data) => {
   const result = await ctx.run(messageAgent, data);
   websocket.send(result);
@@ -119,11 +119,12 @@ import myAgent from '@agent/my-agent';
 
 async function processRequest(data: unknown) {
   if (isInsideAgentRuntime()) {
-    // Already in runtime context, call agent directly
+    // Inside the runtime, the ambient context is already available
+    // so agent.run() works directly without explicit context
     return myAgent.run(data);
   }
 
-  // Outside runtime, create context first
+  // Outside runtime (standalone scripts), create context first
   const ctx = createAgentContext();
   return ctx.run(myAgent, data);
 }
