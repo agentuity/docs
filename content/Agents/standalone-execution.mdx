@@ -109,28 +109,30 @@ Standalone contexts provide the same infrastructure as HTTP request handlers:
 - **Session events**: Start/complete events for observability
 </Callout>
 
-## Detecting Runtime Context
+## Detecting Context
 
-Use `isInsideAgentRuntime()` to check if code is running within the Agentuity runtime:
+Use `inAgentContext()` to check if code is running inside an agent handler with ambient context available:
 
 ```typescript
-import { isInsideAgentRuntime, createAgentContext } from '@agentuity/runtime';
+import { inAgentContext, createAgentContext } from '@agentuity/runtime';
 import myAgent from '@agent/my-agent';
 
 async function processRequest(data: unknown) {
-  if (isInsideAgentRuntime()) {
-    // Inside the runtime, the ambient context is already available
+  if (inAgentContext()) {
+    // Inside an agent handler, ambient context is available
     // so agent.run() works directly without explicit context
     return myAgent.run(data);
   }
 
-  // Outside runtime (standalone scripts), create context first
+  // Outside agent handler, create context first
   const ctx = createAgentContext();
   return ctx.run(myAgent, data);
 }
 ```
 
 This is useful for writing utility functions that work both inside agent handlers and in standalone scripts.
+
+To check if the Agentuity runtime is initialized (but not necessarily inside a handler), use `isInsideAgentRuntime()` instead.
 
 ## Next Steps
 
