@@ -5,6 +5,19 @@ description: Deploy your agents to Agentuity Cloud with automatic infrastructure
 
 Deploy your Agentuity project to the cloud with a single command. The platform handles infrastructure, scaling, and monitoring automatically.
 
+## Why Deploy to Agentuity?
+
+Deploying agents *should be* as easy as deploying a web app. But agents need long-running processes, persistent storage, sandbox environments, and observability built in. Setting this up yourself means stitching together containers, databases, secret management, and monitoring.
+
+Agentuity handles all of this automatically. You push code, and the platform provisions everything your agents need: compute, storage, networking, and observability. No infrastructure configuration, no Docker files, no Kubernetes.
+
+**What this gives you:**
+
+- **Single-command deployment**: `agentuity deploy` handles build, upload, and provisioning
+- **Automatic HTTPS**: Every deployment gets secure URLs with SSL certificates
+- **Built-in rollback**: Revert to any previous deployment instantly
+- **Zero infrastructure management**: No containers, orchestration, or scaling to configure
+
 ## Deploy Your Project
 
 ```bash
@@ -65,25 +78,6 @@ agentuity deploy
 
 Both URLs are automatically provisioned with HTTPS. The project URL always routes to the active deployment.
 
-## Tagging Deployments
-
-Add tags to label deployments:
-
-```bash
-# Single tag
-agentuity deploy --tag staging
-
-# Multiple tags
-agentuity deploy --tag staging --tag hotfix-123
-```
-
-Tags appear in deployment lists and help organize versions:
-
-```bash
-agentuity cloud deployment list
-# Shows tags column for each deployment
-```
-
 ## Viewing Deployments
 
 List recent deployments:
@@ -124,16 +118,19 @@ agentuity cloud deployment show dep_abc123xyz --project-id=proj_abc123
 - Active status
 - Tags and custom domains
 - Cloud region
+- DNS records (for custom domain configuration)
 - Git metadata (repo, commit, branch, PR)
 - Build information (SDK version, runtime, platform)
 
 ```
-ID:       dep_abc123xyz
-Project:  proj_456def
-State:    completed
-Active:   Yes
-Created:  12/1/25, 3:45 PM
-Tags:     staging, hotfix-123
+ID:          dep_abc123xyz
+Project:     proj_456def
+State:       completed
+Active:      Yes
+Created:     12/1/25, 3:45 PM
+Tags:        staging, hotfix-123
+Domains:     api.example.com
+DNS Records: api.example.com CNAME p1234567890.agentuity.cloud
 
 Git Information
   Repo:     myorg/myapp
@@ -147,6 +144,10 @@ Build Information
   Platform:  linux
   Arch:      x64
 ```
+
+<Callout type="tip" title="DNS Records">
+When custom domains are configured, the `show` command displays the required DNS records for each domain. Use this to verify your CNAME configuration.
+</Callout>
 
 ## Viewing Logs
 
@@ -242,6 +243,72 @@ agentuity cloud deployment remove dep_abc123xyz --project-id=proj_abc123xyz
 Removing a deployment permanently deletes it. You cannot rollback to a removed deployment.
 </Callout>
 
+## Preview Environments
+
+Deploy pull requests to isolated preview environments for testing before merging. Enable this feature in the [Agentuity App](https://app-v1.agentuity.com):
+
+1. Navigate to your project's **Settings** page
+2. Under **GitHub**, find the **Preview Environments** toggle
+3. Enable "Deploy PRs to preview environments for this repository"
+
+Once enabled, every pull request to your connected repository automatically deploys to a unique preview URL. This allows you to:
+- Test changes in an isolated environment before merging
+- Share preview links with reviewers
+- Run integration tests against the preview deployment
+
+Preview environments are automatically cleaned up when the pull request is closed or merged.
+
+<Callout type="info" title="GitHub Connection Required">
+Preview environments require a connected GitHub repository. Connect your repo in **Project > Settings > GitHub**.
+</Callout>
+
+## Regions
+
+Agentuity Cloud deploys to multiple geographic regions. Choose a region based on latency requirements and data residency needs.
+
+### Available Regions
+
+- `use` - US East
+- `usc` - US Central
+- `usw` - US West
+
+More regions coming soon.
+
+### Setting a Default Region
+
+Set a default region to skip the selection prompt on every deployment:
+
+```bash
+# Set default region
+agentuity cloud region select usw
+
+# View current default
+agentuity cloud region current
+
+# Clear default (prompts on each deploy)
+agentuity cloud region unselect
+```
+
+### Region in Configuration
+
+The region is stored in `agentuity.json` after your first deployment:
+
+```json
+{
+  "projectId": "proj_abc123xyz",
+  "orgId": "org_def456",
+  "region": "use"
+}
+```
+
+### Changing Regions
+
+When you deploy to a different region than the one in `agentuity.json`, the CLI prompts for confirmation. This prevents accidental region changes that could affect latency or data residency.
+
+### Cross-Region Resources
+
+The SDK automatically handles cross-region resource access. If you create a sandbox or storage resource in one region and access it from another, the platform routes requests transparently. No configuration needed.
+
 ## Custom Domains
 
 Configure custom domains in `agentuity.json`:
@@ -250,14 +317,12 @@ Configure custom domains in `agentuity.json`:
 {
   "projectId": "proj_abc123xyz",
   "orgId": "org_def456",
-  "region": "us-east-1",
+  "region": "use",
   "deployment": {
     "domains": ["api.example.com", "app.example.com"]
   }
 }
 ```
-
-Available regions are fetched from the API at deployment time. If multiple regions are available, the CLI prompts you to select one.
 
 ### DNS Configuration
 
@@ -286,6 +351,10 @@ agentuity deploy
 
 <Callout type="warning" title="DNS Validation">
 Deployment fails if DNS records are missing or incorrect. The CLI shows the required CNAME value in the error message.
+</Callout>
+
+<Callout type="info" title="Activate Custom Domains">
+After adding a custom domain to your configuration, you must deploy to activate it. The domain becomes active only after a successful deployment.
 </Callout>
 
 ### Multiple Domains
@@ -355,31 +424,60 @@ Variables are automatically:
 Variables with suffixes like `_SECRET`, `_KEY`, `_TOKEN`, `_PASSWORD`, or `_PRIVATE` are automatically encrypted as secrets. All other variables are stored as regular environment variables.
 </Callout>
 
+## Machine Management
+
+Machines are the compute instances running your deployments. View and manage them when debugging infrastructure issues.
+
+View and manage the machines running your deployments:
+
+```bash
+# List all machines for current project
+agentuity cloud machine list
+
+# Get details for a specific machine
+agentuity cloud machine get mach_abc123xyz
+
+# Delete a machine
+agentuity cloud machine delete mach_abc123xyz
+
+# List deployments running on a machine
+agentuity cloud machine deployments mach_abc123xyz
+```
+
+Machine details include status, region, resource allocation, and uptime. Use machine management to:
+- Monitor infrastructure health
+- Debug performance issues
+- Clean up unused machines
+
+<Callout type="warning" title="Deleting Machines">
+Deleting a machine immediately terminates any deployments running on it. Only delete machines that are unused or when intentionally removing capacity.
+</Callout>
+
 ## Deploy Options
 
 | Option | Description |
 |--------|-------------|
-| `--tag <name>` | Add deployment tag (repeatable) |
-| `-f, --force` | Force deployment without confirmation |
-| `--dry-run` | Simulate deployment without executing |
+| `-y, --confirm` | Skip all confirmation prompts (useful for CI/CD) |
+| `--dry-run` | Simulate deployment without executing (place before `deploy`) |
 | `--log-level debug` | Show verbose output |
 | `--project-id <id>` | Deploy specific project |
+| `--message <msg>` | Message to associate with this build |
 
 ```bash
 # Verbose deployment
 agentuity deploy --log-level=debug
 
-# Multiple tags
-agentuity deploy --tag staging --tag v1.2.0
-
 # Specific project
 agentuity deploy --project-id=proj_abc123xyz
 
-# Simulate deployment
-agentuity deploy --dry-run
+# With a message
+agentuity deploy --message "Fix authentication bug"
 
-# Force deployment
-agentuity deploy --force
+# Simulate deployment (dry run)
+agentuity --dry-run deploy
+
+# Skip confirmation prompts (for CI/CD)
+agentuity deploy --confirm
 ```
 
 ## CI/CD Pipelines

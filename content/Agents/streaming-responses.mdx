@@ -50,6 +50,10 @@ Streaming requires both: `schema.stream: true` in your agent (so the handler ret
 
 Enable streaming by setting `stream: true` in your schema and returning a `textStream`:
 
+<Callout type="info" title="AI SDK Integration">
+The `textStream` from AI SDK's `streamText()` works directly with Agentuity's streaming middleware. Return it from your handler without additional processing.
+</Callout>
+
 ```typescript
 import { createAgent } from '@agentuity/runtime';
 import { streamText } from 'ai';

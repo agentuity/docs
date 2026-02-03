@@ -12,7 +12,7 @@ Key-value ("KV") storage provides fast data access for agents. Use it for cachin
 | **Key-Value** | Fast lookups, caching, configuration, rate limits |
 | [Vector](/Services/Storage/vector) | Semantic search, embeddings, RAG |
 | [Object (S3)](/Services/Storage/object) | Files, images, documents, media |
-| [Database](/Services/Storage/database) | Structured data, complex queries, transactions |
+| [Database](/Services/Database/overview) | Structured data, complex queries, transactions |
 | [Durable Streams](/Services/Storage/durable-streams) | Large exports, audit logs, real-time data |
 
 <Callout type="info" title="KV vs Built-in State">
@@ -26,7 +26,7 @@ Use built-in state (`ctx.state`, `ctx.thread.state`, `ctx.session.state`) for da
 | Agents | `ctx.kv` | See examples below |
 | Routes | `c.var.kv` | See [Using in Routes](#using-in-routes) |
 | Standalone | `createAgentContext()` | See [Standalone Usage](#standalone-usage) |
-| External backends | HTTP routes | [SDK Utilities for External Apps](/Learn/Cookbook/Patterns/server-utilities) |
+| External backends | HTTP routes | [SDK Utilities for External Apps](/Cookbook/Patterns/server-utilities) |
 | Frontend | Via routes | [React Hooks](/Frontend/react-hooks) |
 
 <Callout type="info" title="Same API Everywhere">
@@ -44,16 +44,21 @@ import { createAgent } from '@agentuity/runtime';
 
 const agent = createAgent('CacheManager', {
   handler: async (ctx, input) => {
-    // Store with optional TTL (minimum 60 seconds)
+    // Store with custom TTL (minimum 60 seconds, maximum 90 days)
     await ctx.kv.set('cache', 'api-response', responseData, {
       ttl: 3600,  // expires in 1 hour
       contentType: 'application/json',
     });
 
-    // Store without TTL (persists indefinitely)
+    // Store with default TTL (7 days)
+    await ctx.kv.set('cache', 'user-prefs', { theme: 'dark' });
+
+    // Store with no expiration (persists indefinitely)
     await ctx.kv.set('config', 'feature-flags', {
       darkMode: true,
       betaFeatures: false,
+    }, {
+      ttl: null,  // never expires (0 also works)
     });
 
     return { success: true };
@@ -64,12 +69,17 @@ const agent = createAgent('CacheManager', {
 ### Retrieving Data
 
 ```typescript
+import { createAgent } from '@agentuity/runtime';
+
 const agent = createAgent('CacheRetriever', {
   handler: async (ctx, input) => {
     const result = await ctx.kv.get('cache', 'api-response');
 
     if (result.exists) {
-      ctx.logger.info('Cache hit', { contentType: result.contentType });
+      ctx.logger.info('Cache hit', {
+        contentType: result.contentType,
+        expiresAt: result.expiresAt,  // ISO timestamp when key expires (if TTL set)
+      });
       return { data: result.data };
     }
 
@@ -82,6 +92,8 @@ const agent = createAgent('CacheRetriever', {
 ### Deleting Data
 
 ```typescript
+import { createAgent } from '@agentuity/runtime';
+
 const agent = createAgent('SessionCleaner', {
   handler: async (ctx, input) => {
     await ctx.kv.delete('sessions', input.sessionId);
@@ -95,6 +107,7 @@ const agent = createAgent('SessionCleaner', {
 Use generics for type-safe data access:
 
 ```typescript
+import { createAgent } from '@agentuity/runtime';
 import { type } from 'arktype';
 
 const UserPreferences = type({
@@ -123,6 +136,8 @@ const agent = createAgent('PreferenceLoader', {
 ## Additional Methods
 
 ```typescript
+import { createAgent } from '@agentuity/runtime';
+
 const agent = createAgent('StorageExplorer', {
   handler: async (ctx, input) => {
     // Search keys by keyword (returns keys with metadata)
@@ -150,10 +165,19 @@ const agent = createAgent('StorageExplorer', {
 Create and delete namespaces programmatically:
 
 ```typescript
+import { createAgent } from '@agentuity/runtime';
+
 const agent = createAgent('NamespaceManager', {
   handler: async (ctx, input) => {
-    // Create a new namespace
-    await ctx.kv.createNamespace('tenant-123');
+    // Create a namespace with default TTL for all keys
+    await ctx.kv.createNamespace('cache', {
+      defaultTTLSeconds: 3600,  // all keys expire in 1 hour by default
+    });
+
+    // Create a namespace with no expiration
+    await ctx.kv.createNamespace('config', {
+      defaultTTLSeconds: 0,  // keys never expire
+    });
 
     // Delete a namespace (removes all keys)
     await ctx.kv.deleteNamespace('old-cache');
@@ -163,13 +187,29 @@ const agent = createAgent('NamespaceManager', {
 });
 ```
 
+**TTL semantics:**
+
+| Value | Behavior |
+|-------|----------|
+| `undefined` | Keys expire after 7 days (default) |
+| `null` or `0` | Keys never expire |
+| `>= 60` | Custom TTL in seconds (minimum 60 seconds, maximum 90 days) |
+
+<Callout type="info" title="TTL Limits">
+The minimum TTL is 60 seconds. The maximum is 90 days (7,776,000 seconds). Values outside this range will be rejected.
+</Callout>
+
+<Callout type="info" title="Sliding Expiration">
+When a key is read with less than 50% of its TTL remaining, the expiration is automatically extended. This keeps frequently-accessed data alive without manual renewal.
+</Callout>
+
 <Callout type="warning" title="Destructive Operation">
 `deleteNamespace()` permanently removes the namespace and all its keys. This operation cannot be undone.
 </Callout>
 
 ## TTL Strategy
 
-Keys persist indefinitely by default. Use TTL for temporary data:
+Keys expire after 7 days by default unless a namespace-level or per-key TTL is set. Use TTL for temporary data:
 
 | Data Type | Suggested TTL |
 |-----------|---------------|
@@ -179,6 +219,8 @@ Keys persist indefinitely by default. Use TTL for temporary data:
 | Feature flags | No TTL (persistent) |
 
 ```typescript
+import { createAgent } from '@agentuity/runtime';
+
 interface UserSession {
   userId: string;
   email: string;
@@ -237,7 +279,7 @@ export default router;
 ```
 
 <Callout type="tip" title="External Backend Access">
-Need to access KV from a Next.js backend or other external service? Create authenticated routes that expose storage operations, then call them via HTTP. See [SDK Utilities for External Apps](/Learn/Cookbook/Patterns/server-utilities).
+Need to access KV from a Next.js backend or other external service? Create authenticated routes that expose storage operations, then call them via HTTP. See [SDK Utilities for External Apps](/Cookbook/Patterns/server-utilities).
 </Callout>
 
 ## Standalone Usage
@@ -280,6 +322,6 @@ See [Running Agents Without HTTP](/Agents/standalone-execution) for more pattern
 
 - [Vector Storage](/Services/Storage/vector): Semantic search and embeddings
 - [Object Storage (S3)](/Services/Storage/object): File and media storage
-- [Database](/Services/Storage/database): Relational data with queries and transactions
+- [Database](/Services/Database/overview): Relational data with queries and transactions
 - [Durable Streams](/Services/Storage/durable-streams): Large data exports
 - [State Management](/Agents/state-management): Built-in request/thread/session state

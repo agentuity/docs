@@ -103,6 +103,29 @@ type User = s.infer<typeof User>;
 // { name: string; age: number; role: 'admin' | 'user' }
 ```
 
+### JSON Schema Generation
+
+Convert schemas to JSON Schema for use with LLM structured output:
+
+```typescript
+import { s } from '@agentuity/schema';
+
+const ResponseSchema = s.object({
+  answer: s.string(),
+  confidence: s.number(),
+});
+
+// Generate JSON Schema
+const jsonSchema = s.toJSONSchema(ResponseSchema);
+
+// Generate strict JSON Schema for LLM structured output
+const strictSchema = s.toJSONSchema(ResponseSchema, { strict: true });
+```
+
+<Callout type="tip" title="Strict Mode for LLMs">
+Use `{ strict: true }` when generating schemas for LLM structured output (e.g., OpenAI's `response_format`). Strict mode ensures the schema is compatible with model constraints and produces more reliable outputs.
+</Callout>
+
 <Callout type="info" title="When to Use">
 Use `@agentuity/schema` for simple validation needs. For advanced features like email validation, string length constraints, or complex transformations, consider Zod or Valibot.
 </Callout>
