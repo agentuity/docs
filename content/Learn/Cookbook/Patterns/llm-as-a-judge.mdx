@@ -162,7 +162,11 @@ Declare a winner with reasoning.`,
   },
 });
 
-async function generateWithTiming(model: any, prompt: string, tone: string) {
+async function generateWithTiming(
+  model: Parameters<typeof generateText>[0]['model'],
+  prompt: string,
+  tone: string
+) {
   const start = Date.now();
   const { text } = await generateText({
     model,
@@ -197,6 +201,11 @@ const GroundingJudgment = z.object({
   reason: z.string(),
 });
 
+interface DocumentMetadata {
+  content: string;
+  title?: string;
+}
+
 const ragAgent = createAgent('RAGWithGrounding', {
   schema: {
     input: z.object({ question: z.string() }),
@@ -208,7 +217,7 @@ const ragAgent = createAgent('RAGWithGrounding', {
   },
   handler: async (ctx, input) => {
     // Retrieve relevant documents
-    const results = await ctx.vector.search('knowledge-base', {
+    const results = await ctx.vector.search<DocumentMetadata>('knowledge-base', {
       query: input.question,
       limit: 3,
     });

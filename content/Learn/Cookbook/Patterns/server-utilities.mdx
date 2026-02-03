@@ -129,8 +129,15 @@ Manage queues programmatically from external apps or scripts using `APIClient`:
 ```typescript title="lib/agentuity-queues.ts"
 import { APIClient, createLogger, getServiceUrls } from '@agentuity/server';
 
+if (!process.env.AGENTUITY_REGION) {
+  throw new Error('AGENTUITY_REGION environment variable is required');
+}
+if (!process.env.AGENTUITY_SDK_KEY) {
+  throw new Error('AGENTUITY_SDK_KEY environment variable is required');
+}
+
 export const logger = createLogger('info');
-const urls = getServiceUrls(process.env.AGENTUITY_REGION!);
+const urls = getServiceUrls(process.env.AGENTUITY_REGION);
 
 export const client = new APIClient(
   urls.catalyst,
@@ -207,7 +214,7 @@ await createDestination(client, 'order-processing', {
   config: {
     url: 'https://api.example.com/webhook/orders',
     method: 'POST',
-    headers: { 'X-API-Key': 'secret' },
+    headers: { 'X-API-Key': process.env.WEBHOOK_API_KEY! },
     timeout_ms: 30000,
     retry_policy: {
       max_attempts: 5,
@@ -229,7 +236,7 @@ const source = await createSource(client, 'webhook-queue', {
   name: 'stripe-webhooks',
   description: 'Receives Stripe payment events',
   auth_type: 'header',
-  auth_value: 'Bearer whsec_...',
+  auth_value: `Bearer ${process.env.STRIPE_WEBHOOK_SECRET}`,
 });
 
 // External services POST to this URL

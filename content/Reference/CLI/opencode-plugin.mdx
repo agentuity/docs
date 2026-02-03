@@ -216,13 +216,13 @@ Agent models are configured in `~/.config/opencode/opencode.json`. Plugin behavi
 
 ### Agent Model Overrides
 
-Override any agent's model in `opencode.json`:
+Override any agent's default model in `opencode.json`:
 
 ```json
 {
   "agent": {
     "Agentuity Coder Builder": {
-      "model": "anthropic/claude-sonnet-4-5-20250514",
+      "model": "anthropic/claude-opus-4-5-20251101",
       "temperature": 0.7
     },
     "Agentuity Coder Architect": {
@@ -235,7 +235,7 @@ Override any agent's model in `opencode.json`:
 
 | Option | Description |
 |--------|-------------|
-| `model` | Model identifier (e.g., `anthropic/claude-sonnet-4-5-20250514`) |
+| `model` | Model identifier (e.g., `anthropic/claude-opus-4-5-20251101`) |
 | `temperature` | Number between 0-1 (lower = more deterministic) |
 | `reasoningEffort` | For OpenAI: `low`, `medium`, `high`, `xhigh` |
 | `variant` | For Anthropic: `low`, `medium`, `high`, `max` (extended thinking) |
