@@ -26,6 +26,7 @@
     "@agentuity/react": "0.1.28",
     "@agentuity/server": "0.1.28",
     "@radix-ui/react-dialog": "^1.1.14",
+    "@radix-ui/react-popover": "^1.1.15",
     "@radix-ui/react-visually-hidden": "^1.2.3",
     "allotment": "^1.20.4",
     "cmdk": "^1.1.1",
