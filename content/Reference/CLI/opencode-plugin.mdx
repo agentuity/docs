@@ -129,30 +129,29 @@ This executes the task using the appropriate agents and outputs the result. Usef
 - Scripting repetitive development tasks
 - Batch processing multiple requests
 
-## Cadence System
+## Cadence Mode
 
-Cadence manages long-running AI tasks that continue in the background. This is useful for complex multi-step operations that take time to complete.
+Cadence enables long-running autonomous work sessions. Start it with the `/agentuity-cadence` slash command:
 
-### Managing Cadence Tasks
-
-```bash
-# List all cadence tasks
-agentuity ai cadence list
-
-# Check status of a specific task
-agentuity ai cadence status <task-id>
-
-# Pause a running task
-agentuity ai cadence pause <task-id>
-
-# Resume a paused task
-agentuity ai cadence resume <task-id>
-
-# Stop a task completely
-agentuity ai cadence stop <task-id>
+```
+/agentuity-cadence Build a complete auth system with tests
 ```
 
-Tasks persist across sessions, so you can start a complex operation, close your editor, and check on it later.
+Control Cadence through natural language:
+
+| Action | How |
+|--------|-----|
+| Start | `/agentuity-cadence <task description>` |
+| Status | "what's the status?" |
+| Pause | "pause" or "hold on" |
+| Resume | "continue" or "resume" |
+| Stop | "stop" or Ctrl+C |
+
+For headless execution:
+
+```bash
+agentuity ai opencode run "/agentuity-cadence Build the feature"
+```
 
 ## Background Agents
 

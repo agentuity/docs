@@ -447,7 +447,7 @@ Returned by `ctx.sandbox.get()` and in list results:
 | Field | Type | Description |
 |-------|------|-------------|
 | `sandboxId` | `string` | Unique sandbox identifier |
-| `status` | `string` | `'idle'`, `'busy'`, `'terminated'` |
+| `status` | `SandboxStatus` | `'creating'`, `'idle'`, `'running'`, `'terminated'`, `'failed'`, `'deleted'` |
 | `createdAt` | `string` | ISO timestamp |
 | `snapshotId` | `string` | Source snapshot (if created from snapshot) |
 | `networkPort` | `number` | Port exposed from sandbox (if configured) |
