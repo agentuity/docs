@@ -35,6 +35,48 @@ All sandbox commands require the `cloud` prefix. For example: `agentuity cloud s
 
 **Alias:** `sb` (e.g., `agentuity cloud sb list`)
 
+## SSH Access to Sandboxes
+
+You can SSH directly into a running sandbox for interactive debugging:
+
+```bash
+# SSH into a sandbox
+agentuity cloud ssh sbx_abc123xyz
+
+# Run a command and exit
+agentuity cloud ssh sbx_abc123xyz 'ls -la /workspace'
+
+# Show SSH command without executing
+agentuity cloud ssh sbx_abc123xyz --show
+```
+
+<Callout type="warning" title="SSH Key Required">
+Before you can SSH into a sandbox, you must add your SSH public key to your Agentuity account:
+
+```bash
+# Add your SSH key (interactive - discovers keys in ~/.ssh/)
+agentuity auth ssh add
+
+# Or specify a key file directly
+agentuity auth ssh add --file ~/.ssh/id_ed25519.pub
+```
+
+If you don't have an SSH key, generate one first:
+
+```bash
+ssh-keygen -t ed25519 -C "your_email@example.com"
+```
+
+See [SSH Key Management](/Reference/CLI/getting-started#ssh-key-management) for more details.
+</Callout>
+
+Once connected, you have full shell access to the sandbox environment. This is useful for:
+
+- Debugging running processes
+- Inspecting file system state
+- Testing commands interactively
+- Viewing logs in real-time
+
 ## One-shot Execution
 
 Run a single command in a new sandbox that's automatically destroyed afterward.
