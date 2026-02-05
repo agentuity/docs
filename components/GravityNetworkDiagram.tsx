@@ -3,6 +3,7 @@
 import {
 	Background,
 	BackgroundVariant,
+	Controls,
 	type Edge,
 	Handle,
 	type Node,
@@ -346,7 +347,7 @@ export function GravityNetworkDiagram() {
 				nodesDraggable={false}
 				nodesConnectable={false}
 				elementsSelectable={false}
-				panOnDrag={false}
+				panOnDrag={true}
 				zoomOnScroll={true}
 				zoomOnPinch={true}
 				zoomOnDoubleClick={true}
@@ -359,6 +360,7 @@ export function GravityNetworkDiagram() {
 					size={1}
 					color={isDark ? '#374151' : '#e5e7eb'}
 				/>
+				<Controls showInteractive={false} />
 			</ReactFlow>
 			<p className="text-xs text-muted-foreground text-center py-2">
 				* Coming soon
