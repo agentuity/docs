@@ -21,6 +21,7 @@ import {
 	Radio,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
 
 // Icon mapping
 const iconMap: Record<string, LucideIcon> = {
@@ -314,7 +315,20 @@ const createEdges = (isDark: boolean): Edge[] => {
 };
 
 export function GravityNetworkDiagram() {
+	const [mounted, setMounted] = useState(false);
 	const { theme, resolvedTheme } = useTheme();
+
+	useEffect(() => {
+		setMounted(true);
+	}, []);
+
+	// Avoid hydration mismatch by not rendering until mounted
+	if (!mounted) {
+		return (
+			<div className="w-full h-[380px] rounded-lg border border-border overflow-hidden my-6 bg-muted/20 animate-pulse" />
+		);
+	}
+
 	const isDark =
 		theme === 'dark' || (theme === 'system' && resolvedTheme === 'dark');
 
