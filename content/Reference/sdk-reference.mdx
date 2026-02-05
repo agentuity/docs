@@ -1242,7 +1242,7 @@ ctx.logger.info(`Deleted ${deletedCount4} vector(s)`); // May be less than numbe
 
 ### Database (Bun SQL)
 
-Database storage uses [Bun's native SQL APIs](https://bun.com/docs/runtime/sql). Agentuity auto-injects credentials (`DATABASE_URL`) for PostgreSQL.
+Database storage uses [Bun's native SQL APIs](https://bun.sh/docs/runtime/sql). Agentuity auto-injects credentials (`DATABASE_URL`) for PostgreSQL.
 
 ```typescript
 import { sql } from 'bun';
@@ -1315,11 +1315,11 @@ const mysql = new SQL("mysql://user:pass@localhost:3306/mydb");
 const sqlite = new SQL("sqlite://data/app.db");
 ```
 
-For Agentuity-specific patterns, see [Database Storage](/Services/Storage/database). For the complete Bun SQL API, see [Bun SQL documentation](https://bun.com/docs/runtime/sql).
+For Agentuity-specific patterns, see [Database](/Services/Database/overview). For the complete Bun SQL API, see [Bun SQL documentation](https://bun.sh/docs/runtime/sql).
 
 ### Object Storage (Bun S3)
 
-Object storage uses [Bun's native S3 APIs](https://bun.com/docs/runtime/s3). Agentuity auto-injects the required credentials (`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_ENDPOINT`).
+Object storage uses [Bun's native S3 APIs](https://bun.sh/docs/runtime/s3). Agentuity auto-injects the required credentials (`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_ENDPOINT`).
 
 ```typescript
 import { s3 } from 'bun';
@@ -1408,7 +1408,7 @@ writer.write(chunk2);
 await writer.end();
 ```
 
-For Agentuity-specific patterns, see [Object Storage](/Services/Storage/object). For the complete Bun S3 API, see [Bun S3 documentation](https://bun.com/docs/runtime/s3).
+For Agentuity-specific patterns, see [Object Storage](/Services/Storage/object). For the complete Bun S3 API, see [Bun S3 documentation](https://bun.sh/docs/runtime/s3).
 
 ### Stream Storage
 
@@ -2164,7 +2164,7 @@ export async function getSession(id: string) {
 }
 ```
 
-See [SDK Utilities for External Apps](/Learn/Cookbook/Patterns/server-utilities) for the complete pattern with authentication.
+See [SDK Utilities for External Apps](/Cookbook/Patterns/server-utilities) for the complete pattern with authentication.
 
 #### From Frontend
 

@@ -229,6 +229,35 @@ Or with cURL:
 curl -N https://your-project.agentuity.cloud/agent-name
 ```
 
+## Streaming LLM Responses
+
+Use SSE to stream AI SDK responses to clients:
+
+```typescript
+import { createRouter, sse } from '@agentuity/runtime';
+import { streamText } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
+
+const router = createRouter();
+
+router.post('/chat', sse(async (c, stream) => {
+  const { message } = await c.req.json();
+
+  const result = streamText({
+    model: anthropic('claude-sonnet-4-5'),
+    prompt: message,
+  });
+
+  for await (const chunk of result.textStream) {
+    await stream.write(chunk);
+  }
+
+  stream.close();
+}));
+
+export default router;
+```
+
 ## SSE vs WebSocket
 
 | Aspect | SSE | WebSocket |

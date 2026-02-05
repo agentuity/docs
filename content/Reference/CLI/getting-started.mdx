@@ -92,6 +92,38 @@ agentuity auth logout
 agentuity logout
 ```
 
+## Preferences
+
+Set default organization and region to avoid specifying them on every command.
+
+### Organization Preferences
+
+```bash
+# Set default organization
+agentuity auth org select org_abc123
+
+# Show current default organization
+agentuity auth org current
+
+# Clear default organization
+agentuity auth org unselect
+```
+
+When a default organization is set, commands that support `--org` will use it automatically.
+
+### Region Preferences
+
+```bash
+# Set default region for deployments
+agentuity cloud region select usw
+
+# Show current default region
+agentuity cloud region current
+
+# Clear default region
+agentuity cloud region unselect
+```
+
 ## Creating Projects
 
 ### Create a New Project
@@ -130,12 +162,17 @@ The agent uses the OpenAI SDK routed through Agentuity's AI Gateway. This means 
 
 ### Project Creation Options
 
-- `--name <name>`: Project name
-- `--dir <path>`: Directory to create the project in
-- `--template <name>`: Template to use (optional, defaults to "default")
-- `--no-install`: Skip dependency installation
-- `--no-build`: Skip initial build
-- `--no-register`: Don't register the project with Agentuity Cloud
+| Option | Description |
+|--------|-------------|
+| `--name <name>` | Project name |
+| `--dir <path>` | Directory to create the project in |
+| `--template <name>` | Template to use (optional, defaults to "default") |
+| `--no-install` | Skip dependency installation |
+| `--no-build` | Skip initial build |
+| `--no-register` | Don't register the project with Agentuity Cloud |
+| `--database <value>` | Database option: `skip`, `new`, or existing database name |
+| `--storage <value>` | Storage option: `skip`, `new`, or existing bucket name |
+| `--enable-auth` | Enable Agentuity Auth for the project |
 
 Example:
 
@@ -145,6 +182,35 @@ agentuity project create \
   --dir ~/projects \
   --no-build
 ```
+
+### Headless Project Creation
+
+Create projects non-interactively for CI/CD pipelines and automation:
+
+```bash
+# Create with new database and storage
+agentuity project create \
+  --name my-agent \
+  --database new \
+  --storage new \
+  --enable-auth
+
+# Skip optional resources
+agentuity project create \
+  --name my-agent \
+  --database skip \
+  --storage skip
+
+# Use existing resources
+agentuity project create \
+  --name my-agent \
+  --database my-existing-db \
+  --storage my-bucket
+```
+
+<Callout type="info" title="Authentication Required">
+The `--database` and `--storage` options require authentication. Run `agentuity login` first or the command will fail.
+</Callout>
 
 ## Managing Projects
 
@@ -192,6 +258,27 @@ agentuity project delete <project-id> --confirm
 
 <Callout type="warning" title="Permanent Deletion">
 Project deletion is permanent and cannot be undone. Deployed agents and associated resources will be removed.
+</Callout>
+
+### Import a Project
+
+Register an existing local Agentuity project with the cloud:
+
+```bash
+# Import current directory
+agentuity project import
+
+# Import from specific directory
+agentuity project import --dir ./my-existing-project
+
+# Validate without importing
+agentuity project import --validate-only
+```
+
+The import command verifies that the directory contains a valid Agentuity project (requires `@agentuity/runtime` dependency and either `agentuity.config.ts` or an `agentuity/` directory).
+
+<Callout type="info" title="Automatic Reconciliation">
+When you run `agentuity dev` or `agentuity deploy` on an unregistered project while authenticated, the CLI will prompt you to import it automatically.
 </Callout>
 
 ## Command Shortcuts
@@ -327,3 +414,4 @@ Now that you have the CLI installed and authenticated:
 - [Local Development](/Reference/CLI/development): Run agents locally with hot reload
 - [Deploying to the Cloud](/Reference/CLI/deployment): Deploy agents to Agentuity Cloud
 - [Managing Cloud Data](/Reference/CLI/data-management): Inspect storage, env vars, and secrets
+- [OpenCode Plugin](/Reference/CLI/opencode-plugin): AI-assisted development with specialized agents

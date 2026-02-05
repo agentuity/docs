@@ -5,6 +5,21 @@ description: Run code in isolated, secure containers with configurable resources
 
 Execute code in isolated Linux containers with configurable resource limits, network controls, and execution timeouts.
 
+## Why Sandboxes?
+
+Agents that reason about code need somewhere safe to execute it. Whether generating Python scripts, validating builds, or running user-provided code, you can't let arbitrary execution happen on your infrastructure.
+
+The pattern keeps repeating: spin up a secure environment, run code, tear it down. Without proper isolation, a single bad script could access sensitive data, exhaust resources, or compromise your systems.
+
+Agentuity sandboxes handle this automatically. Every execution runs in an isolated container with its own filesystem, configurable resource limits, and network controls. When execution completes, the environment is destroyed.
+
+**What this gives you:**
+
+- **Security by default**: Network disabled, filesystem isolated, resource limits enforced
+- **No infrastructure management**: Containers spin up and tear down automatically
+- **Multi-language support**: Run Python, Node.js, shell scripts, and more
+- **Consistent environments**: Use snapshots to get the same setup every time, with dependencies pre-installed
+
 ## Three Ways to Use Sandboxes
 
 | Method | Best For |
@@ -74,6 +89,21 @@ Pre-configured testing runtimes:
 <Callout type="tip" title="List Available Runtimes">
 Run `agentuity cloud sandbox runtime list` to see all available runtimes, or view them in the [Agentuity App](https://app-v1.agentuity.com) under **Services > Sandbox > Runtimes**.
 </Callout>
+
+### Runtime Metadata
+
+Each runtime includes metadata for identification and resource planning:
+
+| Field | Description |
+|-------|-------------|
+| `description` | What the runtime provides |
+| `icon` | URL to runtime icon |
+| `brandColor` | Hex color for UI display |
+| `documentationUrl` | Link to runtime documentation |
+| `tags` | Categories like `language`, `ai-agent` |
+| `requirements` | Minimum memory, CPU, disk, and network needs |
+
+View runtime details with `agentuity cloud sandbox runtime list --json`.
 
 ## Snapshots
 
@@ -156,6 +186,8 @@ The API is identical in both contexts.
 | `resources.cpu` | CPU limit in millicores | `'500m'`, `'1000m'` |
 | `resources.disk` | Disk space limit | `'1Gi'` |
 | `network.enabled` | Allow outbound network | `true` (default: `false`) |
+| `network.port` | Port to expose to internet (1024-65535) | `3000` |
+| `projectId` | Associate sandbox with a project | `'proj_abc123'` |
 | `timeout.idle` | Idle timeout before cleanup | `'10m'`, `'1h'` |
 | `timeout.execution` | Max execution time per command | `'5m'`, `'30s'` |
 | `dependencies` | Apt packages to install | `['python3', 'git']` |

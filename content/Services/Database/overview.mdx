@@ -1,9 +1,9 @@
 ---
-title: Database
+title: Overview
 description: Relational database storage using Bun's native SQL APIs
 ---
 
-Database storage provides relational database capabilities using [Bun's native SQL APIs](https://bun.com/docs/runtime/sql). Use it for structured data that benefits from queries, joins, and transactions.
+Store structured data with queries, joins, and transactions using [Bun's native SQL APIs](https://bun.sh/docs/runtime/sql).
 
 ## When to Use Database Storage
 
@@ -19,9 +19,15 @@ Database storage provides relational database capabilities using [Bun's native S
 When you create a database with `agentuity cloud db create`, the `DATABASE_URL` is automatically added to your `.env` file. During deployment, credentials are injected automatically.
 </Callout>
 
-<Callout type="tip" title="Same Code Everywhere">
-Database access uses Bun's native SQL API directly. The same `import { sql } from "bun"` code works identically in agents, routes, and standalone scripts with no wrapper needed.
-</Callout>
+## Creating a Database
+
+```bash
+# Create with default settings
+agentuity cloud db create
+
+# Create with name and description
+agentuity cloud db create --name "users-db" --description "Primary user data store"
+```
 
 ## Quick Start
 
@@ -103,27 +109,12 @@ export default router;
 Use transactions for operations that must succeed or fail together:
 
 ```typescript
-import { createAgent } from '@agentuity/runtime';
 import { sql } from "bun";
 
-const agent = createAgent('MoneyTransfer', {
-  handler: async (ctx, input) => {
-    const { fromAccount, toAccount, amount } = input;
-
-    try {
-      await sql.begin(async (tx) => {
-        await tx`UPDATE accounts SET balance = balance - ${amount} WHERE id = ${fromAccount}`;
-        await tx`UPDATE accounts SET balance = balance + ${amount} WHERE id = ${toAccount}`;
-        await tx`INSERT INTO transfers (from_id, to_id, amount) VALUES (${fromAccount}, ${toAccount}, ${amount})`;
-      });
-
-      ctx.logger.info("Transfer completed", { fromAccount, toAccount, amount });
-      return { success: true };
-    } catch (error) {
-      ctx.logger.error("Transfer failed", { error: error.message });
-      return { error: "Transfer failed" };
-    }
-  },
+await sql.begin(async (tx) => {
+  await tx`UPDATE accounts SET balance = balance - ${amount} WHERE id = ${fromAccount}`;
+  await tx`UPDATE accounts SET balance = balance + ${amount} WHERE id = ${toAccount}`;
+  await tx`INSERT INTO transfers (from_id, to_id, amount) VALUES (${fromAccount}, ${toAccount}, ${amount})`;
 });
 ```
 
@@ -147,13 +138,11 @@ const mysql = new SQL("mysql://user:pass@localhost:3306/mydb");
 const sqlite = new SQL("sqlite://data/app.db");
 ```
 
-## Bun SQL Documentation
-
-For complete API documentation including dynamic queries, bulk inserts, savepoints, array operations, error handling, and connection pooling, see the [Bun SQL documentation](https://bun.com/docs/runtime/sql).
+For complete Bun SQL documentation, see the [Bun SQL docs](https://bun.sh/docs/runtime/sql).
 
 ## Next Steps
 
+- [Resilient Postgres Client](/Services/Database/postgres): Auto-reconnecting PostgreSQL client for serverless
+- [Drizzle ORM](/Services/Database/drizzle): Type-safe database access with Drizzle
 - [Key-Value Storage](/Services/Storage/key-value): Fast caching and session data
-- [Object Storage (S3)](/Services/Storage/object): File and media storage
 - [Vector Storage](/Services/Storage/vector): Semantic search and embeddings
-- [Durable Streams](/Services/Storage/durable-streams): Streaming large data exports

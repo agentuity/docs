@@ -28,6 +28,7 @@
     "@agentuity/server": "0.1.28",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-visually-hidden": "^1.2.3",
+    "@xyflow/react": "^12.10.0",
     "allotment": "^1.20.4",
     "cmdk": "^1.1.1",
     "fumadocs-core": "15.2.6",
