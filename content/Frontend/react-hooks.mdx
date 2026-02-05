@@ -280,6 +280,44 @@ function SearchResults({ query }: { query: string }) {
 }
 ```
 
+### Dynamic Path Parameters
+
+For routes with path parameters (e.g., `/api/items/:itemId`), pass params at invocation time:
+
+```tsx
+import { useAPI } from '@agentuity/react';
+
+function ItemActions({ itemId }: { itemId: string }) {
+  const { invoke: deleteItem, isLoading } = useAPI('DELETE /api/items/:itemId');
+  const { invoke: updateItem } = useAPI('PUT /api/items/:itemId');
+
+  const handleDelete = async () => {
+    await deleteItem(undefined, { params: { itemId } });
+  };
+
+  const handleUpdate = async (name: string) => {
+    await updateItem({ name }, { params: { itemId } });
+  };
+
+  return (
+    <div>
+      <button onClick={() => handleUpdate('New Name')} disabled={isLoading}>
+        Rename
+      </button>
+      <button onClick={handleDelete} disabled={isLoading}>
+        Delete
+      </button>
+    </div>
+  );
+}
+```
+
+The second argument to `invoke()` accepts `params` for path parameter values (e.g., `{ params: { itemId: '123' } }`).
+
+<Callout type="info" title="Query and Headers">
+To set `query` or `headers`, pass them when calling `useAPI()`, not to `invoke()`. For dynamic query parameters, see the [example above](#request-options).
+</Callout>
+
 ## Auth State with useAuth
 
 Access authentication state for protected components or custom auth logic:
