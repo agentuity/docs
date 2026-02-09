@@ -118,6 +118,58 @@ agentuity cloud secret import .env.secrets
 
 **In agents:** Access secrets via `process.env.API_KEY`. Secrets are injected at runtime and never logged.
 
+## Organization-Level Configuration
+
+Set environment variables and secrets at the organization level to share them across all projects in that organization. Use the `--org` flag with any `env` or `secret` command.
+
+### Set Org-Level Variables
+
+```bash
+# Set using your default org
+agentuity cloud env set DATABASE_URL "postgresql://..." --org
+
+# Set for a specific org
+agentuity cloud env set DATABASE_URL "postgresql://..." --org org_abc123
+```
+
+### Set Org-Level Secrets
+
+```bash
+# Set shared secret for default org
+agentuity cloud secret set SHARED_API_KEY "sk_..." --org
+
+# Set for specific org
+agentuity cloud secret set SHARED_API_KEY "sk_..." --org org_abc123
+```
+
+### List Org-Level Values
+
+```bash
+# List org environment variables
+agentuity cloud env list --org
+
+# List org secrets
+agentuity cloud secret list --org
+```
+
+### Get/Delete Org-Level Values
+
+```bash
+# Get an org variable
+agentuity cloud env get DATABASE_URL --org
+
+# Delete an org secret
+agentuity cloud secret delete OLD_KEY --org
+```
+
+<Callout type="info" title="Inheritance">
+Organization-level values are inherited by all projects in that organization. Project-level values take precedence over organization-level values when both are set.
+</Callout>
+
+<Callout type="tip" title="Default Organization">
+Set a default organization with `agentuity auth org select` to avoid specifying `--org` on every command. See [Getting Started](/Reference/CLI/getting-started) for details.
+</Callout>
+
 ## API Keys
 
 Create and manage API keys for programmatic access to your project.

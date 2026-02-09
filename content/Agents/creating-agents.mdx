@@ -197,7 +197,15 @@ All implement [StandardSchema](https://github.com/standard-schema/standard-schem
 
 ### Type Inference
 
-TypeScript automatically infers types from your schemas:
+TypeScript automatically infers types from your schemas. Don't add explicit type annotations to handler parameters:
+
+```typescript
+// Good: types inferred from schema
+handler: async (ctx, input) => { ... }
+
+// Bad: explicit types can cause issues
+handler: async (ctx: AgentContext, input: MyInput) => { ... }
+```
 
 ```typescript
 const agent = createAgent('Search', {
@@ -363,6 +371,10 @@ handler: async (ctx, input) => {
 ```
 
 ## Next Steps
+
+<Callout type="tip" title="AI-Assisted Development">
+The [OpenCode plugin](/Reference/CLI/opencode-plugin) provides AI-assisted development for full-stack Agentuity projects, including agents, routes, frontend, and deployment.
+</Callout>
 
 - [Using the AI SDK](/Agents/ai-sdk-integration): Add LLM capabilities with generateText and streamText
 - [Managing State](/Agents/state-management): Persist data across requests with thread and session state

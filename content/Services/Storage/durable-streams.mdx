@@ -3,7 +3,22 @@ title: Durable Streams
 description: Streaming storage for large exports, audit logs, and real-time data
 ---
 
-Durable streams provide streaming storage for large data exports, audit logs, and real-time processing. Streams follow a **write-once, read-many** pattern: once data is written and the stream is closed, the content is immutable and can be accessed via a permanent public URL.
+Durable streams provide streaming storage for large data exports, audit logs, and real-time processing. Streams follow a **write-once, read-many** pattern: once data is written and the stream is closed, the content is immutable and accessible via URL until deleted.
+
+## Why Durable Streams?
+
+WebSocket and SSE connections are straightforward to set up, but they're fragile in practice. Tabs get suspended, networks disconnect, pages get refreshed. When the connection drops, any in-flight data is lost—unless you build custom reconnection logic on top.
+
+This becomes a real problem when you're streaming LLM responses. Token streaming is often the primary UI for chat applications, and agentic apps stream tool outputs and progress events over long-running sessions. If someone refreshes mid-generation, you're faced with two bad options: re-run an expensive inference call, or lose the response entirely.
+
+Durable streams solve this by decoupling the data from the connection. Instead of streaming directly to the client, you write to persistent storage and return a URL. The stream continues writing in the background regardless of what happens on the client side.
+
+**What this gives you:**
+
+- **Refresh-safe**: If someone refreshes the page mid-stream, the URL still works and the content is preserved. The expensive work you already did isn't wasted.
+- **Background processing**: Return the stream URL immediately and write data asynchronously with `ctx.waitUntil()`. Your handler responds fast while the stream continues writing.
+- **Shareable URLs**: A stream is just a URL. You can share it, open it on another device, or have multiple viewers access the same output.
+- **Durable artifacts**: Once closed, streams are immutable and remain accessible via their public URL. Useful for audit logs, exports, and generated reports.
 
 ## When to Use Durable Streams
 
@@ -13,7 +28,7 @@ Durable streams provide streaming storage for large data exports, audit logs, an
 | [Key-Value](/Services/Storage/key-value) | Fast lookups, caching, configuration |
 | [Vector](/Services/Storage/vector) | Semantic search, embeddings, RAG |
 | [Object (S3)](/Services/Storage/object) | Files, images, documents, media |
-| [Database](/Services/Storage/database) | Structured data, complex queries, transactions |
+| [Database](/Services/Database/overview) | Structured data, complex queries, transactions |
 
 **Use streams when you need to:**
 - Export large datasets incrementally
@@ -28,7 +43,7 @@ Durable streams provide streaming storage for large data exports, audit logs, an
 | Agents | `ctx.stream` | See examples below |
 | Routes | `c.var.stream` | See [Using in Routes](#using-in-routes) |
 | Standalone | `createAgentContext()` | See [Standalone Usage](#standalone-usage) |
-| External backends | HTTP routes | [SDK Utilities for External Apps](/Learn/Cookbook/Patterns/server-utilities) |
+| External backends | HTTP routes | [SDK Utilities for External Apps](/Cookbook/Patterns/server-utilities) |
 | Frontend | Via routes | [React Hooks](/Frontend/react-hooks) |
 
 <Callout type="info" title="Same API Everywhere">
@@ -46,6 +61,7 @@ const agent = createAgent('StreamCreator', {
       contentType: 'text/csv',
       compress: true,  // optional gzip compression
       metadata: { userId: input.userId },
+      ttl: 86400 * 7,  // expires in 7 days
     });
 
     // Stream is ready immediately
@@ -63,12 +79,27 @@ const agent = createAgent('StreamCreator', {
 - `contentType`: MIME type for the stream content (e.g., `text/csv`, `application/json`)
 - `compress`: Enable gzip compression for smaller storage and faster transfers
 - `metadata`: Key-value pairs for tracking stream context (user IDs, timestamps, etc.)
+- `ttl`: Time-to-live in seconds (see TTL semantics below)
+
+**TTL semantics:**
+
+| Value | Behavior |
+|-------|----------|
+| `undefined` | Streams expire after 30 days (default) |
+| `null` or `0` | Streams never expire |
+| `>= 60` | Custom TTL in seconds (minimum 60 seconds, maximum 90 days) |
+
+<Callout type="info" title="TTL in Local Development">
+TTL is enforced only in cloud deployments. During local development, streams persist indefinitely regardless of the TTL value. The `expiresAt` field will not be populated in local stream metadata.
+</Callout>
 
 ## Writing Data
 
 Write data incrementally, then close the stream:
 
 ```typescript
+import { createAgent } from '@agentuity/runtime';
+
 const agent = createAgent('CSVExporter', {
   handler: async (ctx, input) => {
     const stream = await ctx.stream.create('export', {
@@ -104,6 +135,8 @@ Streams must be closed manually with `stream.close()`. They do not auto-close. F
 Use `ctx.waitUntil()` to write data in the background while returning immediately:
 
 ```typescript
+import { createAgent } from '@agentuity/runtime';
+
 const agent = createAgent('BackgroundExporter', {
   handler: async (ctx, input) => {
     const stream = await ctx.stream.create('report', {
@@ -133,11 +166,13 @@ const agent = createAgent('BackgroundExporter', {
 ### Listing Streams
 
 ```typescript
+import { createAgent } from '@agentuity/runtime';
+
 const agent = createAgent('StreamManager', {
   handler: async (ctx, input) => {
     // List streams with optional filtering
     const result = await ctx.stream.list({
-      name: 'export',  // filter by stream name
+      namespace: 'export',  // filter by stream namespace
       metadata: { userId: input.userId },  // filter by metadata
       limit: 100,  // max 1000, default 100
       offset: 0,   // pagination offset
@@ -156,11 +191,17 @@ const agent = createAgent('StreamManager', {
 ### Reading Stream Content
 
 ```typescript
+import { createAgent } from '@agentuity/runtime';
+
 const agent = createAgent('StreamReader', {
   handler: async (ctx, input) => {
     // Get stream metadata by ID
     const info = await ctx.stream.get(input.streamId);
-    ctx.logger.info('Stream info', { name: info.name, sizeBytes: info.sizeBytes });
+    ctx.logger.info('Stream info', {
+      namespace: info.namespace,
+      sizeBytes: info.sizeBytes,
+      expiresAt: info.expiresAt,  // ISO timestamp when stream expires
+    });
 
     // Download stream content as ReadableStream
     const content = await ctx.stream.download(input.streamId);
@@ -183,6 +224,8 @@ const agent = createAgent('StreamReader', {
 ### Deleting Streams
 
 ```typescript
+import { createAgent } from '@agentuity/runtime';
+
 const agent = createAgent('StreamCleaner', {
   handler: async (ctx, input) => {
     await ctx.stream.delete(input.streamId);
@@ -250,6 +293,7 @@ const agent = createAgent('DualStreamWriter', {
 Buffer and evaluate content in real-time using an LLM-as-a-judge pattern:
 
 ```typescript
+import { createAgent } from '@agentuity/runtime';
 import { generateObject, streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { groq } from '@ai-sdk/groq';
@@ -302,7 +346,7 @@ const agent = createAgent('ModeratedStreamer', {
 // Use Groq for low-latency moderation
 async function moderateContent(text: string): Promise<boolean> {
   const { object } = await generateObject({
-    model: groq('openai/gpt-oss-20b'),
+    model: groq('openai/gpt-oss-120b'),
     schema: s.object({
       safe: s.boolean(),
       reason: s.optional(s.string()),
@@ -346,7 +390,7 @@ export default router;
 ```
 
 <Callout type="tip" title="External Backend Access">
-Need to create streams from a Next.js backend or other external service? Create authenticated routes that expose stream operations, then call them via HTTP. See [SDK Utilities for External Apps](/Learn/Cookbook/Patterns/server-utilities).
+Need to create streams from a Next.js backend or other external service? Create authenticated routes that expose stream operations, then call them via HTTP. See [SDK Utilities for External Apps](/Cookbook/Patterns/server-utilities).
 </Callout>
 
 ## Standalone Usage
@@ -399,5 +443,5 @@ See [Running Agents Without HTTP](/Agents/standalone-execution) for more pattern
 - [Key-Value Storage](/Services/Storage/key-value): Fast caching and configuration
 - [Vector Storage](/Services/Storage/vector): Semantic search and embeddings
 - [Object Storage (S3)](/Services/Storage/object): File and media storage
-- [Database](/Services/Storage/database): Relational data with queries and transactions
+- [Database](/Services/Database/overview): Relational data with queries and transactions
 - [Streaming Responses](/Agents/streaming-responses): HTTP streaming patterns

@@ -1,6 +1,6 @@
 ---
 title: SDK Utilities for External Apps
-description: Use storage, logging, error handling, and schema utilities from external backends like Next.js or Express
+description: Use storage, queues, logging, and error handling utilities from external backends like Next.js or Express
 ---
 
 Use `@agentuity/server` and `@agentuity/core` utilities in external apps, scripts, or backends that integrate with Agentuity.
@@ -122,6 +122,153 @@ export async function GET(request: NextRequest) {
 }
 ```
 
+## Queue Management
+
+Manage queues programmatically from external apps or scripts using `APIClient`:
+
+```typescript title="lib/agentuity-queues.ts"
+import { APIClient, createLogger, getServiceUrls } from '@agentuity/server';
+
+if (!process.env.AGENTUITY_REGION) {
+  throw new Error('AGENTUITY_REGION environment variable is required');
+}
+if (!process.env.AGENTUITY_SDK_KEY) {
+  throw new Error('AGENTUITY_SDK_KEY environment variable is required');
+}
+
+export const logger = createLogger('info');
+const urls = getServiceUrls(process.env.AGENTUITY_REGION);
+
+export const client = new APIClient(
+  urls.catalyst,
+  logger,
+  process.env.AGENTUITY_SDK_KEY
+);
+```
+
+### Creating and Managing Queues
+
+```typescript
+import {
+  createQueue,
+  listQueues,
+  deleteQueue,
+  pauseQueue,
+  resumeQueue,
+} from '@agentuity/server';
+import { client } from '@/lib/agentuity-queues';
+
+// Create a worker queue
+const queue = await createQueue(client, {
+  name: 'order-processing',
+  queue_type: 'worker',
+  settings: {
+    default_max_retries: 5,
+    default_visibility_timeout_seconds: 60,
+  },
+});
+
+// List all queues
+const { queues } = await listQueues(client);
+
+// Pause and resume
+await pauseQueue(client, 'order-processing');
+await resumeQueue(client, 'order-processing');
+
+// Delete a queue
+await deleteQueue(client, 'old-queue');
+```
+
+### Dead Letter Queue Operations
+
+```typescript
+import {
+  listDeadLetterMessages,
+  replayDeadLetterMessage,
+  purgeDeadLetter,
+} from '@agentuity/server';
+import { client, logger } from '@/lib/agentuity-queues';
+
+// List failed messages
+const { messages } = await listDeadLetterMessages(client, 'order-processing');
+
+for (const msg of messages) {
+  logger.warn('Failed message', { id: msg.id, reason: msg.failure_reason });
+
+  // Replay back to the queue
+  await replayDeadLetterMessage(client, 'order-processing', msg.id);
+}
+
+// Purge all DLQ messages
+await purgeDeadLetter(client, 'order-processing');
+```
+
+### Webhook Destinations
+
+```typescript
+import { createDestination } from '@agentuity/server';
+import { client } from '@/lib/agentuity-queues';
+
+await createDestination(client, 'order-processing', {
+  destination_type: 'http',
+  config: {
+    url: 'https://api.example.com/webhook/orders',
+    method: 'POST',
+    headers: { 'X-API-Key': process.env.WEBHOOK_API_KEY! },
+    timeout_ms: 30000,
+    retry_policy: {
+      max_attempts: 5,
+      initial_backoff_ms: 1000,
+      max_backoff_ms: 60000,
+      backoff_multiplier: 2.0,
+    },
+  },
+});
+```
+
+### HTTP Ingestion Sources
+
+```typescript
+import { createSource } from '@agentuity/server';
+import { client, logger } from '@/lib/agentuity-queues';
+
+const source = await createSource(client, 'webhook-queue', {
+  name: 'stripe-webhooks',
+  description: 'Receives Stripe payment events',
+  auth_type: 'header',
+  auth_value: `Bearer ${process.env.STRIPE_WEBHOOK_SECRET}`,
+});
+
+// External services POST to this URL
+logger.info('Source created', { url: source.url });
+```
+
+### Pull-Based Consumption
+
+For workers that pull and acknowledge messages:
+
+```typescript
+import { receiveMessage, ackMessage, nackMessage } from '@agentuity/server';
+import { client } from '@/lib/agentuity-queues';
+
+// Receive a message (blocks until available or timeout)
+const message = await receiveMessage(client, 'order-processing');
+
+if (message) {
+  try {
+    await processOrder(message.payload);
+    await ackMessage(client, 'order-processing', message.id);
+  } catch (error) {
+    // Message returns to queue for retry
+    await nackMessage(client, 'order-processing', message.id);
+  }
+}
+```
+
+<Callout type="info" title="CLI for Quick Operations">
+For one-off queue management, use the CLI instead: `agentuity cloud queue create`, `agentuity cloud queue dlq`, etc. See [Queues](/Services/queues) for CLI commands.
+</Callout>
+
 ## Alternative: HTTP Routes
 
 If you want to centralize storage logic in your Agentuity project (for [middleware](/Routes/middleware), sharing across multiple apps, or avoiding SDK key distribution), use [HTTP routes](/Routes/http) instead.
@@ -182,7 +329,8 @@ export default router;
 Add authentication middleware to protect storage endpoints:
 
 ```typescript title="src/api/sessions/route.ts"
-import { createRouter, createMiddleware } from '@agentuity/runtime';
+import { createRouter } from '@agentuity/runtime';
+import { createMiddleware } from 'hono/factory';
 
 const router = createRouter();
 
@@ -330,6 +478,7 @@ const jsonSchema = toJSONSchema(schema);
 
 ## See Also
 
+- [Queues](/Services/queues): Queue concepts and CLI commands
 - [HTTP Routes](/Routes/http): Route creation with `createRouter`
 - [Route Middleware](/Routes/middleware): Authentication patterns
 - [RPC Client](/Frontend/rpc-client): Typed client generation
