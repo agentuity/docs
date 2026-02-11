@@ -98,9 +98,11 @@ The plugin adds slash commands for common Agentuity tasks:
 |---------|-------------|
 | `/agentuity-coder` | Run tasks with the full agent team (Lead orchestrates) |
 | `/agentuity-cadence` | Start a long-running autonomous loop |
+| `/agentuity-cadence-cancel` | Cancel an active Cadence loop |
 | `/agentuity-cloud` | Interact with any Agentuity cloud service |
 | `/agentuity-sandbox` | Run code in isolated sandbox environments |
 | `/agentuity-memory-save` | Save session context to memory |
+| `/agentuity-memory-share` | Share memory content publicly with a shareable URL |
 
 Use these commands by typing them directly in OpenCode:
 
@@ -115,6 +117,52 @@ The plugin configures two MCP servers that provide additional context to the AI 
 **context7**: Provides access to library documentation for common dependencies (AI SDK, Zod, Hono, etc.). Agents can look up API references and examples without leaving your editor.
 
 **grep_app**: Enables searching GitHub repositories for code examples and patterns. Useful when you need to see how others have implemented similar features.
+
+## Custom Skills
+
+Extend the plugin with custom skills loaded from markdown files. Skills are loaded in priority order:
+
+| Priority | Location | Scope |
+|----------|----------|-------|
+| 1 | `.opencode/skills/` | Project |
+| 2 | `.claude/skills/` | Project (Claude Code compatible) |
+| 3 | `~/.config/opencode/skills/` | User |
+| 4 | `~/.config/agentuity/opencode/skills/` | User |
+| 5 | `~/.claude/skills/` | User (Claude Code compatible) |
+
+Each skill is a markdown file with optional frontmatter:
+
+```markdown
+---
+name: my-skill
+description: What this skill does
+agent: Scout
+model: anthropic/claude-sonnet-4-5-20250929
+---
+
+Instructions for the agent when this skill is invoked...
+```
+
+| Frontmatter | Description |
+|-------------|-------------|
+| `name` | Skill name (used as slash command) |
+| `description` | Short description shown in command list |
+| `agent` | Route to a specific agent (Lead, Scout, Builder, etc.) |
+| `model` | Override the agent's default model |
+| `subtask` | Run as an isolated sub-agent (`true`/`false`) |
+| `allowed-tools` | Restrict which tools the skill can use |
+
+Configure skills in your CLI profile (`~/.config/agentuity/production.yaml`):
+
+```yaml
+coder:
+  skills:
+    enabled: true
+    paths:
+      - /path/to/additional/skills
+    disabled:
+      - skill-to-disable
+```
 
 ## Headless Mode
 
@@ -274,6 +322,7 @@ coder:
 
 ## Next Steps
 
+- [Claude Code Plugin](/Reference/CLI/claude-code-plugin): Agentuity Coder plugin for Claude Code
 - [AI Commands](/Reference/CLI/ai-commands): Other AI-related CLI commands
 - [Local Development](/Reference/CLI/development): Run agents locally
 - [Creating Agents](/Agents/creating-agents): Build your first agent

@@ -95,6 +95,16 @@ const sql = postgres({
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `url` | `string` | `DATABASE_URL` | PostgreSQL connection string |
+| `hostname` | `string` | - | Database hostname |
+| `port` | `number` | `5432` | Database port |
+| `username` | `string` | - | Database username |
+| `password` | `string` | - | Database password |
+| `database` | `string` | - | Database name |
+| `tls` | `boolean \| TLSConfig` | - | TLS configuration (see below) |
+| `max` | `number` | `10` | Maximum connections in pool |
+| `connectionTimeout` | `number` | `30000` | Connection timeout in milliseconds |
+| `idleTimeout` | `number` | `0` | Idle timeout in milliseconds (0 = no timeout) |
+| `preconnect` | `boolean` | `false` | Establish connection immediately (see below) |
 | `reconnect.enabled` | `boolean` | `true` | Enable automatic reconnection |
 | `reconnect.maxAttempts` | `number` | `10` | Maximum reconnection attempts |
 | `reconnect.initialDelayMs` | `number` | `100` | Initial delay before first retry |
@@ -102,7 +112,52 @@ const sql = postgres({
 | `reconnect.multiplier` | `number` | `2` | Exponential backoff multiplier |
 | `reconnect.jitterMs` | `number` | `1000` | Maximum random jitter added to delays |
 | `onclose` | `(error) => void` | - | Callback when connection closes |
+| `onreconnect` | `(attempt) => void` | - | Callback when reconnection starts |
 | `onreconnected` | `() => void` | - | Callback when reconnection succeeds |
+| `onreconnectfailed` | `(error) => void` | - | Callback when reconnection fails permanently |
+
+### TLS Configuration
+
+Configure TLS for secure connections:
+
+```typescript
+import fs from 'node:fs';
+import { postgres } from '@agentuity/postgres';
+
+const sql = postgres({
+  url: 'postgres://user:pass@localhost:5432/mydb',
+  tls: {
+    require: true,               // true | false | 'prefer'
+    rejectUnauthorized: false,   // Allow self-signed certificates
+    ca: fs.readFileSync('ca.pem'),      // CA certificate
+    cert: fs.readFileSync('cert.pem'),  // Client certificate (mutual TLS)
+    key: fs.readFileSync('key.pem'),    // Client private key (mutual TLS)
+  },
+});
+```
+
+### Lazy Connection Behavior
+
+By default, connections are established lazily on first query. The `connected` property is `false` until a query is executed:
+
+```typescript
+const sql = postgres();
+
+console.log(sql.connected);  // false (no TCP connection yet)
+
+await sql`SELECT 1`;
+
+console.log(sql.connected);  // true (connection established)
+```
+
+Set `preconnect: true` to establish the connection immediately:
+
+```typescript
+const sql = postgres({ preconnect: true });
+
+// Connection is established during client creation
+console.log(sql.connected);  // true (if successful)
+```
 
 ## Connection Stats
 
@@ -161,6 +216,82 @@ Access the underlying Bun.SQL instance:
 ```typescript
 const bunSql = sql.raw;
 ```
+
+## Error Handling
+
+The package exports typed error classes for different failure scenarios:
+
+```typescript
+import {
+  PostgresError,
+  ConnectionClosedError,
+  ReconnectFailedError,
+  QueryTimeoutError,
+  TransactionError,
+  UnsupportedOperationError,
+  isRetryableError,
+} from '@agentuity/postgres';
+```
+
+### Error Classes
+
+| Error | Description |
+|-------|-------------|
+| `PostgresError` | Base error for PostgreSQL issues (includes `code` and `query` properties) |
+| `ConnectionClosedError` | Thrown when using a closed connection (includes `wasReconnecting` flag) |
+| `ReconnectFailedError` | Thrown after exhausting all reconnection attempts (includes `attempts` and `lastError`) |
+| `QueryTimeoutError` | Thrown when a query exceeds the timeout (includes `timeoutMs` and `query`) |
+| `TransactionError` | Thrown on transaction failures (includes `phase`: begin, commit, rollback, savepoint, query) |
+| `UnsupportedOperationError` | Thrown for unsupported operations like `reserve()` (includes `operation` and `reason`) |
+
+### Retryable Errors
+
+Use `isRetryableError()` to determine if an error can be resolved by reconnecting:
+
+```typescript
+try {
+  const result = await sql`SELECT * FROM users`;
+} catch (error) {
+  if (isRetryableError(error)) {
+    // Connection-related error that triggers automatic reconnection
+    // Includes: ECONNRESET, ETIMEDOUT, ECONNREFUSED, PostgreSQL shutdown codes, etc.
+  }
+
+  if (error instanceof ConnectionClosedError) {
+    console.log('Connection closed', error.wasReconnecting);
+  }
+}
+```
+
+## Global Registry
+
+All clients are tracked in a global registry for coordinated shutdown:
+
+```typescript
+import {
+  shutdownAll,
+  getClientCount,
+  getClients,
+  hasActiveClients,
+} from '@agentuity/postgres';
+
+// Check active clients
+console.log('Client count:', getClientCount());
+console.log('Has active clients:', hasActiveClients());
+
+// Get all clients (read-only set)
+for (const client of getClients()) {
+  console.log('Connected:', client.connected);
+}
+
+// Graceful shutdown with timeout
+process.on('SIGTERM', async () => {
+  await shutdownAll(5000);  // 5 second timeout
+  process.exit(0);
+});
+```
+
+When `@agentuity/runtime` is available, the package automatically registers a shutdown hook, closing all clients during graceful shutdown without additional code.
 
 ## Key Features
 

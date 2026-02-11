@@ -153,6 +153,7 @@ Agentuity's Gravity network handles this automatically. When you run `agentuity 
 - **Zero setup**: Works out of the box, no firewall rules or port forwarding
 - **Secure tunneling**: Encrypted connections through Agentuity's edge network
 - **Automatic reconnection**: Handles network interruptions gracefully
+- **Hot reload support**: HMR (Hot Module Replacement) works through the tunnel, so live reloading works even when accessing your app via the public URL
 
 **Example output:**
 ```
@@ -232,7 +233,7 @@ The dev server uses Vite for frontend hot module replacement (HMR) and Bun for s
 
 - **Frontend changes** (React, CSS) reload instantly via Vite HMR
 - **Server changes** (agents, routes) trigger a fast Bun rebuild
-- **WebSocket connections** work seamlessly
+- **WebSocket connections** work without additional configuration
 
 ## Development vs Production
 

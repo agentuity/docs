@@ -232,6 +232,63 @@ The `setup` function receives the app state (from `createApp`'s setup) and retur
 - Pre-computed data or models
 - External service clients
 
+### registerShutdownHook
+
+`registerShutdownHook(hook: () => Promise<void> | void): () => void`
+
+Register cleanup functions that run during graceful shutdown. Useful for packages and libraries that need to clean up resources without modifying app-level shutdown logic.
+
+**Parameters**
+
+- `hook`: Async or sync function to call during shutdown
+
+**Return Value**
+
+Returns an unregister function to remove the hook.
+
+**Execution Order**
+
+Hooks run after the app's `shutdown` callback and agent shutdowns, in LIFO order (last registered runs first).
+
+**Example: Package-Level Cleanup**
+
+```typescript
+// In a package like @agentuity/postgres
+import { registerShutdownHook } from '@agentuity/runtime';
+
+let dbPool: Pool | null = null;
+
+export function getDatabase() {
+  if (!dbPool) {
+    dbPool = createPool();
+    // Register cleanup without requiring users to wire it up
+    registerShutdownHook(async () => {
+      if (dbPool) {
+        await dbPool.end();
+        dbPool = null;
+      }
+    });
+  }
+  return dbPool;
+}
+```
+
+**Example: Manual Cleanup**
+
+```typescript
+import { registerShutdownHook } from '@agentuity/runtime';
+
+// Register cleanup for a file handle
+const file = await Bun.file('data.json').writer();
+const unregister = registerShutdownHook(async () => {
+  await file.end();
+});
+
+// Later, if you close the file early, unregister the hook
+await file.end();
+unregister();
+```
+
 ### agent.validator()
 
 Creates Hono middleware for type-safe request validation using the agent's schema.

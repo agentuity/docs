@@ -356,7 +356,7 @@ function ProtectedContent() {
 
 ## Analytics Hooks
 
-Track user behavior and custom events with analytics hooks. See [Web Analytics](/Services/Observability/web-analytics) for full documentation.
+Track page views and custom events from React components. See [Web Analytics](/Services/Observability/web-analytics) for configuration, privacy options, and the full API.
 
 ```tsx
 import { useAnalytics, useTrackOnMount } from '@agentuity/react';
@@ -364,7 +364,7 @@ import { useAnalytics, useTrackOnMount } from '@agentuity/react';
 function ProductPage({ productId }: { productId: string }) {
   const { track, trackClick } = useAnalytics();
 
-  // Track page view on mount
+  // Fires once when the component mounts
   useTrackOnMount({
     eventName: 'product_viewed',
     properties: { productId },
@@ -377,6 +377,8 @@ function ProductPage({ productId }: { productId: string }) {
   );
 }
 ```
+
+A `withPageTracking` HOC is also available for class components or simpler page-level tracking.
 
 ## Next Steps
 

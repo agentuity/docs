@@ -96,6 +96,108 @@ const apiUrl = import.meta.env.AGENTUITY_PUBLIC_API_URL;
 Public environment variables are bundled into frontend code and visible in the browser. Never put secrets or API keys in public variables.
 </Callout>
 
+## Public Assets
+
+Static files like images, fonts, and documents go in `src/web/public/`. Reference them with `/public/` paths in your frontend code.
+
+```tsx
+// src/web/App.tsx
+export function App() {
+  return (
+    <div>
+      <img src="/public/logo.svg" alt="Logo" />
+      <link rel="icon" href="/public/favicon.ico" />
+    </div>
+  );
+}
+```
+
+**How it works:**
+
+- **Development:** Assets served via local proxy at `http://localhost:3500/public/*`
+- **Production:** Uploaded to CDN and paths rewritten to CDN URLs
+- **Build:** Vite plugin auto-corrects asset paths and warns about incorrect patterns
+
+### File Structure
+
+```
+src/web/public/
+├── logo.svg
+├── favicon.ico
+├── images/
+│   ├── hero.png
+│   └── thumbnail.jpg
+└── fonts/
+    └── custom.woff2
+```
+
+### Correct Path Patterns
+
+Use `/public/` prefix for all static assets:
+
+```tsx
+// Recommended - absolute path
+<img src="/public/logo.svg" />
+
+// Also works - relative path
+<img src="./public/logo.svg" />
+
+// Incorrect - references source path
+<img src="/src/web/public/logo.svg" />
+```
+
+The build system automatically rewrites `/public/` paths to CDN URLs in production:
+
+```tsx
+// Development
+<img src="/public/logo.svg" />
+
+// Production (after build)
+<img src="https://cdn.agentuity.com/{deployment}/client/logo.svg" />
+```
+
+### Using with CSS
+
+Public assets work in CSS files:
+
+```css
+/* src/web/styles.css */
+.hero {
+  background-image: url('/public/images/hero.png');
+}
+
+@font-face {
+  font-family: 'Custom';
+  src: url('/public/fonts/custom.woff2') format('woff2');
+}
+```
+
+### Fetch API and Dynamic Paths
+
+Reference public assets in JavaScript:
+
+```typescript
+// Fetch text file
+const response = await fetch('/public/data.json');
+const data = await response.json();
+
+// Dynamic image loading
+const theme = 'dark';
+const imagePath = `/public/images/logo-${theme}.png`;
+```
+
+### Development Warnings
+
+The build system warns about incorrect paths during development:
+
+```
+Found incorrect asset path(s):
+  - 'src/web/public/' should be '/public/'
+Use '/public/...' paths for static assets.
+```
+
+Fix these warnings by updating paths to use the `/public/` prefix.
+
 ## Build Architecture
 
 Agentuity uses a hybrid build system:

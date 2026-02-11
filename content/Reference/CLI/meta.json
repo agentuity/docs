@@ -10,6 +10,7 @@
     "configuration",
     "debugging",
     "ai-commands",
-    "opencode-plugin"
+    "opencode-plugin",
+    "claude-code-plugin"
   ]
 }
