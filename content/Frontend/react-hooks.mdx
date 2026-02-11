@@ -354,8 +354,33 @@ function ProtectedContent() {
 `useAuth` provides auth-specific state. For non-auth context like `baseUrl`, use `useAgentuity()` instead. See [Authentication](/Frontend/authentication) for integrating with identity providers.
 </Callout>
 
+## Analytics Hooks
+
+Track user behavior and custom events with analytics hooks. See [Web Analytics](/Services/Observability/web-analytics) for full documentation.
+
+```tsx
+import { useAnalytics, useTrackOnMount } from '@agentuity/react';
+
+function ProductPage({ productId }: { productId: string }) {
+  const { track, trackClick } = useAnalytics();
+
+  // Track page view on mount
+  useTrackOnMount({
+    eventName: 'product_viewed',
+    properties: { productId },
+  });
+
+  return (
+    <button onClick={trackClick('add_to_cart', { productId })}>
+      Add to Cart
+    </button>
+  );
+}
+```
+
 ## Next Steps
 
 - [Provider Setup](/Frontend/provider-setup): Configure `AgentuityProvider` for deployments
 - [Advanced Hooks](/Frontend/advanced-hooks): Custom handlers for WebSocket and SSE
 - [Deployment Scenarios](/Frontend/deployment-scenarios): Choose where your frontend lives
+- [Web Analytics](/Services/Observability/web-analytics): Track page views and custom events
