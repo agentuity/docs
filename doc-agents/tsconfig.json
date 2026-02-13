@@ -21,7 +21,8 @@
 		"paths": {
 			"@agent/*": ["./src/agent/*"],
 			"@api/*": ["./src/api/*"],
-			"@middleware/*": ["./src/middleware/*"]
+			"@middleware/*": ["./src/middleware/*"],
+			"@utils/*": ["./src/utils/*"]
 		}
 	},
 	"include": ["src/**/*", "app.ts"]
