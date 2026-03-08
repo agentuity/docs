@@ -78,6 +78,30 @@ agentuity deploy
 
 Both URLs are automatically provisioned with HTTPS. The project URL always routes to the active deployment.
 
+### Deployment Environment Variables
+
+When deployed, the platform automatically injects environment variables so your agents can discover their own URLs at runtime:
+
+| Variable | Description |
+|----------|-------------|
+| `AGENTUITY_CLOUD_BASE_URL` | The base URL of the current deployment (e.g., `https://dep-abc123.agentuity.cloud`). |
+| `AGENTUITY_CLOUD_DOMAINS` | Comma-separated list of all domains for the deployment — deployment URL, project URL, custom domains (CNAMEs), and PR preview URLs. |
+| `AGENTUITY_CLOUD_DEPLOYMENT_ID` | The current deployment ID. |
+| `AGENTUITY_CLOUD_PROJECT_ID` | The project ID. |
+| `AGENTUITY_CLOUD_ORG_ID` | The organization ID. |
+
+```typescript
+// Get the canonical URL for this deployment
+const myUrl = process.env.AGENTUITY_CLOUD_BASE_URL;
+
+// Get all domains (including custom domains / CNAMEs)
+const domains = process.env.AGENTUITY_CLOUD_DOMAINS?.split(',');
+```
+
+<Callout type="info" title="Automatic CORS & Auth">
+These variables are automatically used by the runtime for CORS origin validation and by `@agentuity/auth` for trusted origins. You only need to reference them directly if you have custom domain logic.
+</Callout>
+
 ## Viewing Deployments
 
 List recent deployments:

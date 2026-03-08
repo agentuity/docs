@@ -126,6 +126,20 @@ Agentuity applications access configuration and secrets through standard Node.js
 - `AGENTUITY_SDK_KEY` - SDK-level API key (used in development to access Agentuity Cloud)
 - `AGENTUITY_PROJECT_KEY` - Project-level API key (used when deployed)
 
+**Platform-Injected Environment Variables (Cloud Deployments):**
+
+These are automatically set by the Agentuity platform when your project is deployed. You do not need to configure them.
+
+| Variable | Description |
+|----------|-------------|
+| `AGENTUITY_CLOUD_BASE_URL` | The base URL of your deployment (e.g., `https://dep-abc123.agentuity.cloud`). Used for authentication callbacks and as the canonical deployment URL. |
+| `AGENTUITY_CLOUD_DOMAINS` | Comma-separated list of all domains for the deployment — includes the deployment URL, project URL, custom domains (CNAMEs), and PR preview URLs. |
+| `AGENTUITY_CLOUD_ORG_ID` | Your organization ID. |
+| `AGENTUITY_CLOUD_PROJECT_ID` | Your project ID. |
+| `AGENTUITY_CLOUD_DEPLOYMENT_ID` | The current deployment ID. |
+
+`AGENTUITY_CLOUD_BASE_URL` and `AGENTUITY_CLOUD_DOMAINS` are used automatically by the runtime for CORS origin validation and by `@agentuity/auth` for trusted origins.
+
 **Example**
 
 ```typescript
@@ -143,9 +157,13 @@ const { server, logger } = await createApp();
 const apiEndpoint = process.env.API_ENDPOINT || 'https://api.example.com';
 const openaiKey = process.env.OPENAI_API_KEY;
 // Optional: you can use the AI Gateway to access OpenAI, Anthropic, etc without needing to set various API keys.
+
+// Access platform-injected variables (available in cloud deployments)
+const deployedUrl = process.env.AGENTUITY_CLOUD_BASE_URL;
+const allDomains = process.env.AGENTUITY_CLOUD_DOMAINS?.split(',');
 ```
 
-**Note**: Environment variables are typically loaded from a `.env` file in development and configured in your deployment environment.
+**Note**: Environment variables are typically loaded from a `.env` file in development and configured in your deployment environment. Platform-injected variables like `AGENTUITY_CLOUD_BASE_URL` and `AGENTUITY_CLOUD_DOMAINS` are only available when deployed to Agentuity Cloud.
 
 ---
 

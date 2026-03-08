@@ -159,6 +159,30 @@ If you don't set provider API keys, LLM requests are routed through the Agentuit
 Environment variables prefixed with `AGENTUITY_PUBLIC_`, `VITE_`, or `PUBLIC_` are exposed to the frontend bundle and visible in the browser. Never put secrets or API keys in these variables.
 </Callout>
 
+### Platform-Injected Environment Variables
+
+When your project is deployed to Agentuity Cloud, the platform automatically injects the following environment variables into your runtime. You do not need to set these yourself.
+
+| Variable | Description |
+|----------|-------------|
+| `AGENTUITY_CLOUD_BASE_URL` | The base URL of your deployment (e.g., `https://dep-abc123.agentuity.cloud`). Used internally for authentication callbacks and as the canonical URL for the running deployment. |
+| `AGENTUITY_CLOUD_DOMAINS` | Comma-separated list of all domains associated with the deployment, including the deployment URL, project URL, any custom domains (CNAMEs), and PR preview URLs. |
+| `AGENTUITY_CLOUD_ORG_ID` | Your organization ID. |
+| `AGENTUITY_CLOUD_PROJECT_ID` | Your project ID. |
+| `AGENTUITY_CLOUD_DEPLOYMENT_ID` | The current deployment ID. |
+
+```typescript
+// Access the deployed URL
+const baseUrl = process.env.AGENTUITY_CLOUD_BASE_URL;
+
+// Access all associated domains
+const domains = process.env.AGENTUITY_CLOUD_DOMAINS?.split(',');
+```
+
+<Callout type="info" title="Automatic CORS & Auth">
+`AGENTUITY_CLOUD_BASE_URL` and `AGENTUITY_CLOUD_DOMAINS` are automatically used by the runtime for CORS origin validation and by `@agentuity/auth` for trusted origins. You typically don't need to reference them directly unless you have custom domain logic.
+</Callout>
+
 ## Infrastructure as Code
 
 Unlike traditional platforms, Agentuity defines infrastructure in your route files:
